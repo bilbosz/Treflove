@@ -12,11 +12,17 @@ function love.conf(t)
     if not params then
         t.window = nil
     elseif params.appType == "server" then
-        t.window = nil
+        t.window.title = "Treflun - Server"
+        t.window.icon = "icon.png"
+        -- t.window = nil
+        t.window.width = 1000
+        t.window.height = 500
+        t.console = true
     elseif params.appType == "client" then
         t.window.title = "Treflun"
         t.window.icon = "icon.png"
     else
         assert( false )
     end
+    config = t
 end

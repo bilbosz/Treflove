@@ -61,6 +61,9 @@ local function DumpGenerator(config)
             local repr = tostring(val)
             if type == "userdata" then
                 local userdataType, address = string.match(repr, "(%a+) %((.+)%)")
+                if not address then
+                    userdataType, address = string.match(repr, "(%a+): (.+)")
+                end
                 return "0x" .. string.lower(address), userdataType
             elseif type == "function" or type == "thread" or type == "table" then
                 local address = string.match(repr, type .. ": (.+)")

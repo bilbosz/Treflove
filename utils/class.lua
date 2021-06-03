@@ -6,7 +6,7 @@ function Player:GetColor()
     return self.color
 end
 
-function Player:__init(color)
+function Player:Init(color)
     self.color = color
     print("Player " .. tostring(self.color))
 end
@@ -17,8 +17,8 @@ function ComputerPlayer:GetDifficulty()
     return self.difficulty
 end
 
-function ComputerPlayer:__init(color, difficulty)
-    self.Player.__init(self, color)
+function ComputerPlayer:Init(color, difficulty)
+    self.Player.Init(self, color)
 end
 
 HumanPlayer = class("HumanPlayer", Player)
@@ -28,6 +28,15 @@ print(player2:GetColor())
 print(player1:GetColor())
 ]]
 class = {}
+
+local function populateOrder(cls, order)
+    local bases = cls.__bases
+    for i = #bases, 1, -1 do
+        local v = bases[i]
+        populateOrder(v, order)
+    end
+    table.insert(order, cls)
+end
 
 setmetatable(class, {
     __call = function(...) -- ... are base classes
@@ -43,21 +52,24 @@ setmetatable(class, {
             cls[v.__name] = v
         end
 
+        local mt = {
+            __index = {}
+        }
+
+        local order = {}
+        populateOrder(cls, order)
+        for _, v in ipairs(order) do
+            table.merge(mt.__index, v)
+        end
+
         setmetatable(cls, {
             __call = function(...) -- ... are constructor params
-                local mt = {
-                    __index = {}
-                }
-                for i = #cls.__bases, 1, -1 do
-                    local baseClass = cls.__bases[i]
-                    table.merge(mt.__index, baseClass)
-                end
-                table.merge(mt.__index, cls)
-
                 local obj = {}
+
+                table.merge(mt.__index, cls)
                 setmetatable(obj, mt)
-                if obj.__init then
-                    obj:__init(select(2, ...))
+                if obj.Init then
+                    obj:Init(select(2, ...))
                 end
                 return obj
             end

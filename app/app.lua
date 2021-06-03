@@ -1,17 +1,57 @@
-params = ArgParser():Parse(arg)
+App = class("App")
 
-if not params then
-    print("Usage:\n    treflun <app_type> <address> <port>")
-    love.event.quit(0)
-    return
+function App:RegistryLoveCallbacks()
+    if self.Load then
+        function love.load()
+            self:Load()
+        end
+    end
+    if self.Draw then
+        function love.draw()
+            self:Draw()
+        end
+    end
+    if self.Update then
+        function love.update(dt)
+            self:Update(dt)
+            collectgarbage("step")
+        end
+    end
+    if self.KeyPressed then
+        function love.keypressed(key)
+            if key == "escape" then
+                love.event.quit(0)
+                return
+            end
+            self:KeyPressed(key)
+        end
+    end
+    if self.WheelMoved then
+        function love.wheelmoved(x, y)
+            self:WheelMoved(x, y)
+        end
+    end
+    if self.MousePressed then
+        function love.mousepressed(x, y, button)
+            self:MousePressed(x, y, button)
+        end
+    end
+    if self.MouseReleased then
+        function love.mousereleased(x, y, button)
+            self:MouseReleased(x, y, button)
+        end
+    end
+    if self.MouseMoved then
+        function love.mousemoved(x, y)
+            self:MouseMoved(x, y)
+        end
+    end
 end
 
-if params.appType == "client" then
-    Client = Loader:Load("app/client.lua")
-    App = Client
-elseif params.appType == "server" then
-    Server = Loader:Load("app/server.lua")
-    App = Server
-else
-    assert(false)
+function App:Init(params)
+    self.params = params
+    self.isServer = false
+    self.isClient = false
+
+    self:RegistryLoveCallbacks()
 end

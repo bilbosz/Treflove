@@ -18,7 +18,6 @@ local function parseAddress(str)
         if #findings ~= 6 then
             return false
         end
-        local start, stop = unpack(findings)
         for i = 3, 6 do
             local v = findings[i]
             local num = tonumber(v)
@@ -36,7 +35,6 @@ local function parsePort(str)
 end
 
 function ArgParser:Parse(args)
-    local result = {}
     if #args ~= 4 then
         return nil
     else
