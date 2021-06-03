@@ -1,7 +1,7 @@
 --[[
 Example:
 love . server 0.0.0.0 8080
-love . client 0.0.0.0 8080
+love . client 192.0.0.1 8080
 ]]
 ArgParser = class("ArgParser")
 
