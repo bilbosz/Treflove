@@ -5,6 +5,7 @@ Loader:Load("controls/drawable-control.lua")
 Loader:Load("controls/rectangle.lua")
 Loader:Load("game/game-object.lua")
 Loader:Load("controls/image.lua")
+Loader:Load("controls/clipping.lua")
 
 local function UpdateRootScale(self)
     local w, h = love.graphics:getDimensions()
@@ -16,21 +17,15 @@ end
 function Game:Init()
     self.root = Control()
     UpdateRootScale(self)
-    self.rect1 = Rectangle(self.root, 1000, 500, {255, 0, 0, 255})
-    self.image = Image(self.root, "game/world/world.jpg")
-    self.image:SetPosition(1000, 500)
-    self.image:SetOrigin(0, 555)
 end
 
 function Game:Draw()
     self.root:Draw()
+    love.graphics.reset()
 end
 
 function Game:Update(dt)
     self.root:Update(dt)
-    self.total = self.total or 0
-    self.total = self.total + dt
-    self.image:SetRotation(self.total)
 end
 
 function Game:WheelMoved(_, _)

@@ -13,6 +13,7 @@ function Rectangle:Draw()
 end
 
 function Rectangle:Init(parent, width, height, color)
+    assert(width and height)
     self.Control.Init(self, parent)
     self.width = width
     self.height = height
