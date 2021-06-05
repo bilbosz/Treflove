@@ -1,5 +1,9 @@
 DrawableControl = class("DrawableControl", Control)
 
+function DrawableControl:GetDrawable()
+    return self.drawable
+end
+
 function DrawableControl:Draw()
     love.graphics.draw(self.drawable, self.globalTransform)
     self.Control.Draw(self)

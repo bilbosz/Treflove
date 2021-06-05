@@ -22,7 +22,7 @@ function love.conf(t)
         t.window.title = "Treflun"
         t.window.icon = "icon.png"
     else
-        assert( false )
+        assert(false)
     end
     config = t
 end

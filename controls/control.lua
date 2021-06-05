@@ -9,6 +9,7 @@ Control = class("Control")
             Rotation
             Position
 ]]
+
 function Control:UpdateGlobalTransform()
     if self.parent then
         self.globalTransform:setMatrix(self.parent.globalTransform:getMatrix())

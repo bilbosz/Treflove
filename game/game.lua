@@ -6,17 +6,23 @@ Loader:Load("controls/rectangle.lua")
 Loader:Load("game/game-object.lua")
 Loader:Load("controls/image.lua")
 Loader:Load("controls/clipping.lua")
+Loader:Load("game/world/world.lua")
 
 local function UpdateRootScale(self)
-    local w, h = love.graphics:getDimensions()
-    assert(w >= h)
-    local modelW = 2000
-    self.root:SetScale(w / modelW)
+    self.root:SetScale(self.realW / self.modelW)
 end
 
 function Game:Init()
+    self.realW, self.realH = love.graphics:getDimensions()
+    assert(self.realW >= self.realH)
+    self.modelW = 2000
+    self.modelH = self.realH / self.realW * self.modelW
+
     self.root = Control()
     UpdateRootScale(self)
+
+    self.world = World(self.root, 1200, 800, "game/world/world.jpg", 175.61)
+    self.world:SetPosition(300, 0)
 end
 
 function Game:Draw()
