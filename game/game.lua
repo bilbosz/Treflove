@@ -5,7 +5,8 @@ Loader:Load("controls/drawable-control.lua")
 Loader:Load("controls/rectangle.lua")
 Loader:Load("game/game-object.lua")
 Loader:Load("controls/image.lua")
-Loader:Load("controls/clipping.lua")
+Loader:Load("controls/clipping-rectangle.lua")
+Loader:Load("controls/clipping-mask.lua")
 Loader:Load("game/world/world.lua")
 
 local function UpdateRootScale(self)
@@ -21,8 +22,7 @@ function Game:Init()
     self.root = Control()
     UpdateRootScale(self)
 
-    self.world = World(self.root, 1200, 800, "game/world/world.jpg", 175.61)
-    self.world:SetPosition(300, 0)
+    self.world = World(self.root, self.modelW, self.modelH, "game/world/world.jpg", 175.61)
 end
 
 function Game:Draw()

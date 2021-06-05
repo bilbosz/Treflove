@@ -1,7 +1,9 @@
-World = class("World", Clipping)
+World = class("World", ClippingRectangle)
 
-function World:CreateBackground()
-    local bg = Image(self, self.path)
+Loader:Load("game/token/token.lua")
+
+function World:CreateBackground(path)
+    local bg = Image(self, path)
     self.background = bg
     local bgW, bgH = bg:GetSize()
 
@@ -20,18 +22,18 @@ function World:CreateWorldCoordinates()
 end
 
 function World:Init(parent, width, height, path, worldWidth)
-    self.Clipping.Init(self, parent, width, height)
-    self.path = path
+    self.ClippingRectangle.Init(self, parent, width, height)
     self.worldWidth = worldWidth
     self.scaleToPixelsPerMeter = 10
     self.prevMouseX, self.prevMouseY = nil, nil
     self.dragMouseButton = 2
     self.mouseZoomInc = 1.3
 
-    self:CreateBackground()
+    self:CreateBackground(path)
     self:CreateWorldCoordinates()
 
-    self.rect = Rectangle(self.background, 100, 100)
+    self.token = Token(self.worldCoordinates, 2, 2, "game/token/gaben.png")
+    self.token:SetPosition(80, 60)
 end
 
 function World:MousePressed(x, y, button)

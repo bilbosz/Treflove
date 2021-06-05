@@ -41,6 +41,11 @@ function Control:TransformToGlobal(x, y)
     return self.globalTransform:transformPoint(x, y)
 end
 
+function Control:GetGlobalScale()
+    local scaleX, _, _, _, _, scaleY = self.globalTransform:getMatrix()
+    return scaleX, scaleY
+end
+
 function Control:SetPosition(x, y)
     assert(x or y)
     if x then
@@ -200,8 +205,4 @@ function Control:Init(parent, width, height)
     self.size = {width or 0, height or 0}
 
     self:UpdateGlobalTransform()
-end
-
-function Control:Release()
-
 end
