@@ -34,27 +34,22 @@ function Game:Update(dt)
     self.root:Update(dt)
 end
 
-function Game:WheelMoved(_, _)
-end
-
-function Game:MousePressed(x, y, button)
-    if button == 2 then
-        self.rmbX, self.rmbY = x, y
-    end
-end
-
 function Game:KeyPressed(code)
 
 end
 
-function Game:MouseReleased(_, _, button)
-    if button == 2 then
-        self.rmbX, self.rmbY = nil, nil
-    end
+function Game:MousePressed(x, y, button)
+    self.root:MousePressed(x, y, button)
+end
+
+function Game:MouseReleased(x, y, button)
+    self.root:MouseReleased(x, y, button)
 end
 
 function Game:MouseMoved(x, y)
-    if self.rmbX then
-        self.rmbX, self.rmbY = x, y
-    end
+    self.root:MouseMoved(x, y)
+end
+
+function Game:WheelMoved(x, y)
+    self.root:WheelMoved(x, y)
 end

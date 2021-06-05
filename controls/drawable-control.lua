@@ -10,7 +10,7 @@ function DrawableControl:Draw()
 end
 
 function DrawableControl:Init(parent, drawable)
-    self.Control.Init(self, parent)
+    self.Control.Init(self, parent, drawable:getDimensions())
     assert(drawable)
     self.drawable = drawable
 end

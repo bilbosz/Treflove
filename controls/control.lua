@@ -10,6 +10,11 @@ Control = class("Control")
             Position
 ]]
 
+function Control:UpdateLocalTransform()
+    self.localTransform = self.localTransform:setTransformation(self.position[1], self.position[2], self.rotation,
+                              self.scale[1], self.scale[2], self.origin[1], self.origin[2])
+end
+
 function Control:UpdateGlobalTransform()
     if self.parent then
         self.globalTransform:setMatrix(self.parent.globalTransform:getMatrix())
@@ -23,14 +28,17 @@ function Control:UpdateGlobalTransform()
     end
 end
 
-function Control:UpdateLocalTransform()
-    self.localTransform = self.localTransform:setTransformation(self.position[1], self.position[2], self.rotation,
-                              self.scale[1], self.scale[2], self.origin[1], self.origin[2])
-end
-
 function Control:UpdateGeometry()
     self:UpdateLocalTransform()
     self:UpdateGlobalTransform()
+end
+
+function Control:TransformToLocal(x, y)
+    return self.globalTransform:inverseTransformPoint(x, y)
+end
+
+function Control:TransformToGlobal(x, y)
+    return self.globalTransform:transformPoint(x, y)
 end
 
 function Control:SetPosition(x, y)
@@ -127,16 +135,42 @@ function Control:GetParent()
     return self.parent
 end
 
-function Control:GetSize()
-    return 0, 0
-end
-
 function Control:GetAabb()
-    return 0, 0, 0, 0
+    return 0, 0, unpack(self.size)
 end
 
-function Control:GetWholeAabb()
-    assert(false, "To be implemented")
+function Control:GetGlobalAabb()
+    local x1, y1 = self:TransformToGlobal(0, 0)
+    local x2, y2 = self:TransformToGlobal(self:GetSize())
+    return math.min(x1, x2), math.min(y1, y2), math.max(x1, x2), math.max(y1, y2)
+end
+
+function Control:GetSize()
+    return unpack(self.size)
+end
+
+function Control:MousePressed(x, y, button)
+    for _, child in ipairs(self.children) do
+        child:MousePressed(x, y, button)
+    end
+end
+
+function Control:MouseReleased(x, y, button)
+    for _, child in ipairs(self.children) do
+        child:MouseReleased(x, y, button)
+    end
+end
+
+function Control:MouseMoved(x, y)
+    for _, child in ipairs(self.children) do
+        child:MouseMoved(x, y)
+    end
+end
+
+function Control:WheelMoved(x, y)
+    for _, child in ipairs(self.children) do
+        child:WheelMoved(x, y)
+    end
 end
 
 function Control:Update(dt)
@@ -151,7 +185,7 @@ function Control:Draw()
     end
 end
 
-function Control:Init(parent)
+function Control:Init(parent, width, height)
     self.parent = nil
     if parent then
         self:SetParent(parent)
@@ -161,8 +195,9 @@ function Control:Init(parent)
     self.scale = {1, 1}
     self.rotation = 0
     self.origin = {0, 0}
-    self.globalTransform = love.math.newTransform()
     self.localTransform = love.math.newTransform()
+    self.globalTransform = love.math.newTransform()
+    self.size = {width or 0, height or 0}
 
     self:UpdateGlobalTransform()
 end
