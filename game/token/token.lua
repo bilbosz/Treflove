@@ -12,7 +12,7 @@ function Token:CreateImage(path)
 end
 
 function Token:Init(parent, width, height, path)
-    self.ClippingMask.Init(self, parent, width, height, function()
+    ClippingMask.Init(self, parent, width, height, function()
         local x, y = self:TransformToGlobal(0, 0)
         local scaleX, scaleY = self:GetGlobalScale()
         love.graphics.circle("fill", x, y, width * scaleX * 0.5, height * scaleY * 0.5)

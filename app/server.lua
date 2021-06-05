@@ -3,7 +3,7 @@ Server = class("Server", App)
 Loader:Load("game/game.lua")
 
 function Server:Init(params)
-    self.App.Init(self, params)
+    App.Init(self, params)
     self.game = Game()
 end
 

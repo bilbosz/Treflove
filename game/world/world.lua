@@ -9,7 +9,7 @@ function World:CreateBackground(path)
 
     local w, h = self:GetSize()
 
-    bg:SetScale(self.scaleToPixelsPerMeter * self.worldWidth / bgW)
+    bg:SetScale(self.scaleToPixelsPerMeter * bgW / self.worldWidth)
     bg:SetOrigin(bgW * 0.5, bgH * 0.5)
     bg:SetPosition(w * 0.5, h * 0.5)
 end
@@ -22,9 +22,9 @@ function World:CreateWorldCoordinates()
 end
 
 function World:Init(parent, width, height, path, worldWidth)
-    self.ClippingRectangle.Init(self, parent, width, height)
+    ClippingRectangle.Init(self, parent, width, height)
     self.worldWidth = worldWidth
-    self.scaleToPixelsPerMeter = 10
+    self.scaleToPixelsPerMeter = 1
     self.prevMouseX, self.prevMouseY = nil, nil
     self.dragMouseButton = 2
     self.mouseZoomInc = 1.3
@@ -32,8 +32,8 @@ function World:Init(parent, width, height, path, worldWidth)
     self:CreateBackground(path)
     self:CreateWorldCoordinates()
 
-    self.token = Token(self.worldCoordinates, 2, 2, "game/token/gaben.png")
-    self.token:SetPosition(80, 60)
+    self.gaben = Token(self.worldCoordinates, 2, 2, "game/token/gaben.png")
+    self.gaben:SetPosition(85, 60)
 end
 
 function World:MousePressed(x, y, button)
@@ -43,14 +43,14 @@ function World:MousePressed(x, y, button)
             self.prevMouseX, self.prevMouseY = tx, ty
         end
     end
-    self.Control.MousePressed(self, x, y, button)
+    Control.MousePressed(self, x, y, button)
 end
 
 function World:MouseReleased(x, y, button)
     if button == self.dragMouseButton then
         self.prevMouseX, self.prevMouseY = nil, nil
     end
-    self.Control.MouseReleased(self, x, y, button)
+    Control.MouseReleased(self, x, y, button)
 end
 
 function World:MouseMoved(x, y)
@@ -61,7 +61,7 @@ function World:MouseMoved(x, y)
         bg:SetPosition(bgX + tx - self.prevMouseX, bgY + ty - self.prevMouseY)
         self.prevMouseX, self.prevMouseY = tx, ty
     end
-    self.Control.MouseMoved(self, x, y)
+    Control.MouseMoved(self, x, y)
 end
 
 function World:WheelMoved(x, y)
@@ -79,5 +79,5 @@ function World:WheelMoved(x, y)
         local scale = bg:GetScale() * zoomInc
         bg:SetScale(scale)
     end
-    self.Control.WheelMoved(self, x, y)
+    Control.WheelMoved(self, x, y)
 end

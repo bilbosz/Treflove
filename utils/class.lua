@@ -18,7 +18,7 @@ function ComputerPlayer:GetDifficulty()
 end
 
 function ComputerPlayer:Init(color, difficulty)
-    self.Player.Init(self, color)
+    Player.Init(self, color)
 end
 
 HumanPlayer = class("HumanPlayer", Player)
@@ -47,10 +47,6 @@ setmetatable(class, {
         assert(type(cls.__name) == "string")
         cls.__bases = {select(3, ...)}
         assert(type(cls.__bases) == "table")
-
-        for _, v in ipairs(cls.__bases) do
-            cls[v.__name] = v
-        end
 
         local mt = {
             __index = {}
