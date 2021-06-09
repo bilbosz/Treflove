@@ -17,8 +17,12 @@ end
 
 function Server:KeyPressed(key)
     if key == "f9" then
+        -- load
         Loader:Load("game/game.lua")
         self.game = Game()
+    elseif key == "f5" then
+        -- save
+        -- TODO to be implemented
     end
     self.game:KeyPressed(key)
 end
