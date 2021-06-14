@@ -14,7 +14,7 @@ local function UpdateRootScale(self)
     self.root:SetScale(self.realW / self.modelW)
 end
 
-function Game:Init()
+function Game:Init(data)
     self.realW, self.realH = love.graphics:getDimensions()
     assert(self.realW >= self.realH)
     self.modelW = 2000
@@ -23,7 +23,8 @@ function Game:Init()
     self.root = Control()
     UpdateRootScale(self)
 
-    self.world = World(self.root, self.modelW, self.modelH, "game/world/world.jpg", 175.61)
+    self.data = data
+    self.screen = _G[data.screen.name](self.root, self.modelW, self.modelH, data)
 end
 
 function Game:Draw()

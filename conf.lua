@@ -14,7 +14,7 @@ function love.conf(t)
     elseif params.appType == "server" then
         t.window.title = "Treflun - Server"
         t.window.icon = "icon.png"
-        t.window.display = 2
+        -- t.window.display = 2
         -- t.window = nil
         -- t.window.width = 1000
         -- t.window.height = 500

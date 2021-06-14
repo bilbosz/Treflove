@@ -52,6 +52,7 @@ function App:Init(params)
     self.params = params
     self.isServer = false
     self.isClient = false
+    self.data = nil
 
     self:RegistryLoveCallbacks()
 end
