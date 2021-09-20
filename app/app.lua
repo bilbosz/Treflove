@@ -56,3 +56,5 @@ function App:Init(params)
 
     self:RegistryLoveCallbacks()
 end
+
+function App:PostInit() end

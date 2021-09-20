@@ -4,8 +4,11 @@ Loader:Load("game/game.lua")
 
 function Server:Init(params)
     App.Init(self, params)
+end
+
+function Server:PostInit()
     self:LoadData("save/game-01.lua")
-    self.screen = _G[self.data.screen.group](self.data)
+    self.screen = Game(app.data.game)
 end
 
 function Server:Draw()

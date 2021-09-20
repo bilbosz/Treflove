@@ -24,7 +24,9 @@ function Game:Init(data)
     UpdateRootScale(self)
 
     self.data = data
-    self.screen = _G[data.screen.name](self.root, self.modelW, self.modelH, data)
+    if data.screen == "World" then
+        self.screen = World(self.root, self.modelW, self.modelH, data.params)
+    end
 end
 
 function Game:Draw()

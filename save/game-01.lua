@@ -1,7 +1,6 @@
 return {
-    screen = {
-        group = "Game", -- "Login", "Menu", "Game"
-        name = "World", -- "Login", "Menu", "World", "Athmosphere", "Map", "Shop", "Equipment", "Skills"
+    game = {
+        screen = "World", -- "World", "Athmosphere", "Map", "Shop", "Equipment", "Skills"
         params = {
             name = "Old Town"
         }

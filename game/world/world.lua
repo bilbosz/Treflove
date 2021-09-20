@@ -24,8 +24,8 @@ end
 function World:Init(parent, width, height, data)
     ClippingRectangle.Init(self, parent, width, height)
     self.data = data
-    self.name = self.data.screen.params.name
-    self.worldDef = self.data.worlds[self.name]
+    self.name = data.name
+    self.worldDef = app.data.worlds[self.name]
     self.worldWidth = self.worldDef.width
     self.scaleToPixelsPerMeter = 100
     self.prevDragMouseX, self.prevDragMouseY = nil, nil
@@ -37,7 +37,7 @@ function World:Init(parent, width, height, data)
 
     self.tokens = {}
     for _, name in ipairs(self.worldDef.tokens) do
-        local tokenData = self.data.tokens[name]
+        local tokenData = app.data.tokens[name]
         table.insert(self.tokens, Token(self.worldCoordinates, tokenData))
     end
 end
