@@ -40,9 +40,6 @@ function table.tostring(self)
         assert(not visited[self])
         visited[self] = true
         depth = depth + 1
-        local prefix = string.rep("    ", depth)
-        local result = "{"
-        local last = 0
         local nums = {}
         local strings = {}
         local others = {}
@@ -59,7 +56,9 @@ function table.tostring(self)
         end
         table.sort(strings)
 
-        last = 0
+        local prefix = string.rep("    ", depth)
+        local result = "{"
+        local last = 0
         for _, group in ipairs({nums, strings, others}) do
             for _, k in ipairs(group) do
                 local v = self[k]
