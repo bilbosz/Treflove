@@ -42,13 +42,21 @@ function table.tostring(self)
         depth = depth + 1
         local prefix = string.rep("    ", depth)
         local result = "{"
+        local last = 0
         for k, v in pairs(self) do
             local kType = type(k)
             local vType = type(v)
-            local kDisplay = keyDisplay[kType]
             local vDisplay = valueDisplay[vType]
-            if kDisplay and vDisplay then
-                result = result .. "\n" .. prefix .. "[" .. kDisplay(k) .. "] = " .. vDisplay(v) .. ","
+            if vDisplay then
+                local kDisplay = keyDisplay[kType]
+                if kType == "number" and k == last + 1 then
+                    result = result .. "\n" .. prefix .. vDisplay(v) .. ","
+                    last = k
+                elseif kType == "string" and IsIdentifier(k) then
+                    result = result .. "\n" .. prefix .. k .. " = " .. vDisplay(v) .. ","
+                elseif kDisplay then
+                    result = result .. "\n" .. prefix .. "[" .. kDisplay(k) .. "] = " .. vDisplay(v) .. ","
+                end
             end
         end
         depth = depth - 1

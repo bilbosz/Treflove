@@ -14,11 +14,12 @@ end
 function Server:Init(params)
     App.Init(self, params)
     self.DATA_DIR = "save"
+    self.DATA_FILE = "game-01.lua"
     assert(TryCreateDataDirectory(self))
 end
 
 function Server:PostInit()
-    self:LoadData("game-01.lua")
+    self:LoadData(self.DATA_FILE)
 end
 
 function Server:Draw()
@@ -31,9 +32,9 @@ end
 
 function Server:KeyPressed(key)
     if key == "f9" then
-        self:LoadData("game-01.lua")
+        self:LoadData(self.DATA_FILE)
     elseif key == "f5" then
-        self:SaveData("game-02.lua")
+        self:SaveData(self.DATA_FILE)
     end
     self.screen:KeyPressed(key)
 end
