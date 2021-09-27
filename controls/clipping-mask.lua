@@ -1,4 +1,4 @@
-ClippingMask = class("ClippingMask", Control)
+ClippingMask = {}
 
 function ClippingMask:Draw()
     love.graphics.stencil(function()
@@ -14,3 +14,5 @@ function ClippingMask:Init(parent, width, height, drawMaskCb)
     Control.Init(self, parent, width, height)
     self.drawMaskCb = drawMaskCb
 end
+
+MakeClass(ClippingMask, Control)

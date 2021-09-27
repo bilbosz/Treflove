@@ -1,4 +1,4 @@
-Control = class("Control")
+Control = {}
 
 --[[
     Transformations
@@ -206,3 +206,5 @@ function Control:Init(parent, width, height)
 
     self:UpdateGlobalTransform()
 end
+
+MakeClass(Control)

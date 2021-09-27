@@ -1,5 +1,3 @@
-Game = class("Game")
-
 Loader:Load("controls/control.lua")
 Loader:Load("controls/drawable-control.lua")
 Loader:Load("controls/rectangle.lua")
@@ -9,6 +7,8 @@ Loader:Load("controls/clipping-rectangle.lua")
 Loader:Load("controls/clipping-mask.lua")
 Loader:Load("controls/text.lua")
 Loader:Load("game/world/world.lua")
+
+Game = {}
 
 local function UpdateRootScale(self)
     self.root:SetScale(self.realW / self.modelW)
@@ -57,3 +57,5 @@ end
 function Game:WheelMoved(x, y)
     self.root:WheelMoved(x, y)
 end
+
+MakeClass(Game)

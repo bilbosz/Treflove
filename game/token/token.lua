@@ -1,4 +1,4 @@
-Token = class("Token", Control)
+Token = {}
 
 function Token:CreateAvatar(path)
     local width, height = self:GetSize()
@@ -68,3 +68,5 @@ function Token:MouseMoved(x, y)
     end
     Control.MouseMoved(self, x, y)
 end
+
+MakeClass(Token, Control)

@@ -1,4 +1,4 @@
-World = class("World", ClippingRectangle)
+World = {}
 
 Loader:Load("game/token/token.lua")
 
@@ -87,3 +87,5 @@ function World:WheelMoved(x, y)
     end
     Control.WheelMoved(self, x, y)
 end
+
+MakeClass(World, ClippingRectangle)

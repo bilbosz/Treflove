@@ -3,7 +3,7 @@ Example:
 love . server 0.0.0.0 8080
 love . client 192.0.0.1 8080
 ]]
-ArgParser = class("ArgParser")
+ArgParser = {}
 
 local function parseAppType(str)
     return str == "server" and str or str == "client" and str or false
@@ -49,3 +49,5 @@ function ArgParser:Parse(args)
         }
     end
 end
+
+MakeClass(ArgParser)

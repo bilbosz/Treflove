@@ -1,4 +1,4 @@
-Client = class("Client")
+Client = {}
 
 function love.load()
 
@@ -11,5 +11,7 @@ end
 function love.update()
 
 end
+
+MakeClass(Client)
 
 return Client

@@ -1,4 +1,4 @@
-Server = class("Server", App)
+Server = {}
 
 Loader:Load("game/game.lua")
 
@@ -66,5 +66,7 @@ function Server:SaveData(file)
     local success, message = love.filesystem.write(self.DATA_DIR .. "/" .. file, content)
     assert(success, message)
 end
+
+MakeClass(Server, App)
 
 return Server

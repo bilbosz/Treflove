@@ -1,3 +1,5 @@
-GameObject = class("GameObject")
+GameObject = {}
+
+MakeClass(GameObject)
 
 return GameObject

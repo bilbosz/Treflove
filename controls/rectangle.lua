@@ -1,4 +1,4 @@
-Rectangle = class("Rectangle", Control)
+Rectangle = {}
 
 function Rectangle:Draw()
     love.graphics.push()
@@ -17,3 +17,5 @@ function Rectangle:Init(parent, width, height, color)
     Control.Init(self, parent, width, height)
     self.color = color or {255, 255, 255, 255}
 end
+
+MakeClass(Rectangle, Control)

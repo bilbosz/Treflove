@@ -1,6 +1,7 @@
 --[[
 Example:
-Player = class("Player")
+---------------------------------------
+Player = {}
 
 function Player:GetColor()
     return self.color
@@ -11,7 +12,9 @@ function Player:Init(color)
     print("Player " .. tostring(self.color))
 end
 
-ComputerPlayer = class("ComputerPlayer", Player)
+MakeClass(Player)
+---------------------------------------
+ComputerPlayer = {}
 
 function ComputerPlayer:GetDifficulty()
     return self.difficulty
@@ -21,55 +24,46 @@ function ComputerPlayer:Init(color, difficulty)
     Player.Init(self, color)
 end
 
-HumanPlayer = class("HumanPlayer", Player)
+MakeClass(ComputerPlayer, Player)
+---------------------------------------
+HumanPlayer = {}
+MakeClass(HumanPlayer, Player)
+
 
 player1, player2 = HumanPlayer("red"), ComputerPlayer("blue", 1)
 print(player2:GetColor())
 print(player1:GetColor())
+---------------------------------------
 ]]
-class = {}
 
-local function populateOrder(cls, order)
-    local bases = cls.__bases
-    for i = #bases, 1, -1 do
-        local v = bases[i]
-        populateOrder(v, order)
+local function CreateIndex(self, ...)
+    local n = select("#", ...)
+    local index = {}
+    for i = n, 2, -1  do
+        local base = select(i, ...)
+        assert(type(base) == "table")
+        table.merge(index, getmetatable(base).__index)
     end
-    table.insert(order, cls)
+    table.merge(index, self)
+    return index
 end
 
-setmetatable(class, {
-    __call = function(...) -- ... are base classes
-        local cls = {}
-
-        local args = {...}
-        cls.__name = args[2]
-        assert(type(cls.__name) == "string")
-        cls.__bases = {select(3, ...)}
-        assert(type(cls.__bases) == "table")
-
-        local mt = {
-            __index = {}
-        }
-
-        local order = {}
-        populateOrder(cls, order)
-        for _, v in ipairs(order) do
-            table.merge(mt.__index, v)
-        end
-
-        setmetatable(cls, {
-            __call = function(...) -- ... are constructor params
-                local obj = {}
-
-                table.merge(mt.__index, cls)
-                setmetatable(obj, mt)
-                if obj.Init then
-                    obj:Init(select(2, ...))
-                end
-                return obj
+function MakeClass(...)
+    local self = ...
+    local objMt = {
+        __index = CreateIndex(self, ...)
+    }
+    local mt = {
+        __index = objMt.__index,
+        __call = function(...)
+            local obj = {}
+            setmetatable(obj, objMt)
+            if obj.Init then
+                obj:Init(select(2, ...))
             end
-        })
-        return cls
-    end
-})
+            return obj
+        end
+    }
+    setmetatable(self, mt)
+    return self
+end

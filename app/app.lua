@@ -1,4 +1,4 @@
-App = class("App")
+App = {}
 
 function App:RegistryLoveCallbacks()
     if self.Load then
@@ -59,3 +59,5 @@ end
 
 function App:PostInit()
 end
+
+MakeClass(App)

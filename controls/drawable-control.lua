@@ -1,4 +1,4 @@
-DrawableControl = class("DrawableControl", Control)
+DrawableControl = {}
 
 function DrawableControl:GetDrawable()
     return self.drawable
@@ -14,3 +14,5 @@ function DrawableControl:Init(parent, drawable)
     assert(drawable)
     self.drawable = drawable
 end
+
+MakeClass(DrawableControl, Control)
