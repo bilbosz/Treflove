@@ -21,25 +21,25 @@ function World:CreateWorldCoordinates()
     self.worldCoordinates:SetScale(bgW / self.worldWidth)
 end
 
-function World:Init(parent, width, height, path, worldWidth)
+function World:Init(parent, width, height, data)
     ClippingRectangle.Init(self, parent, width, height)
-    self.worldWidth = worldWidth
+    self.data = data
+    self.name = data.name
+    self.worldDef = app.data.worlds[self.name]
+    self.worldWidth = self.worldDef.width
     self.scaleToPixelsPerMeter = 100
     self.prevDragMouseX, self.prevDragMouseY = nil, nil
     self.dragMouseButton = 2
     self.mouseZoomInc = 1.3
 
-    self:CreateBackground(path)
+    self:CreateBackground(self.worldDef.image)
     self:CreateWorldCoordinates()
 
-    self.gaben = Token(self.worldCoordinates, 3, 3, "game/token/gaben.png", "Gaben")
-    self.gaben:SetPosition(85, 60)
-
-    self.bilbosz = Token(self.worldCoordinates, 3, 3, "game/token/bilbosz.png", "Bilbosz")
-    self.bilbosz:SetPosition(90, 60)
-
-    self.bilbosza = Token(self.worldCoordinates, 3, 3, "game/token/bilbosza.png", "Bilbosza")
-    self.bilbosza:SetPosition(87.5, 62.5)
+    self.tokens = {}
+    for _, name in ipairs(self.worldDef.tokens) do
+        local tokenData = app.data.tokens[name]
+        table.insert(self.tokens, Token(self.worldCoordinates, tokenData))
+    end
 end
 
 function World:MousePressed(x, y, button)

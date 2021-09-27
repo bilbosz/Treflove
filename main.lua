@@ -2,6 +2,7 @@ love.filesystem.load("utils/loader.lua")()
 if debug then
     dump = Loader:Load("utils/dump.lua")
 end
+Loader:Load("utils/utils.lua")
 Loader:Load("utils/table.lua")
 Loader:Load("utils/class.lua")
 Loader:Load("app/arg-parser.lua")
@@ -16,11 +17,10 @@ if not params then
 end
 
 if params.appType == "client" then
-    app = Loader:Load("app/client.lua")
-    app(params)
+    app = Loader:Load("app/client.lua")(params)
 elseif params.appType == "server" then
-    app = Loader:Load("app/server.lua")
-    app(params)
+    app = Loader:Load("app/server.lua")(params)
 else
     assert(false)
 end
+app:PostInit()

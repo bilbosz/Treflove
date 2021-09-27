@@ -2,45 +2,69 @@ Server = class("Server", App)
 
 Loader:Load("game/game.lua")
 
+local function TryCreateDataDirectory(self)
+    local info = love.filesystem.getInfo(love.filesystem.getSaveDirectory() .. "/" .. self.DATA_DIR)
+    assert(not info or info.type == "directory")
+    if not info then
+        return love.filesystem.createDirectory(self.DATA_DIR)
+    end
+    return true
+end
+
 function Server:Init(params)
     App.Init(self, params)
-    self.game = Game()
+    self.DATA_DIR = "save"
+    self.DATA_FILE = "game-01.lua"
+    assert(TryCreateDataDirectory(self))
+end
+
+function Server:PostInit()
+    self:LoadData(self.DATA_FILE)
 end
 
 function Server:Draw()
-    self.game:Draw()
+    self.screen:Draw()
 end
 
 function Server:Update(dt)
-    self.game:Update(dt)
+    self.screen:Update(dt)
 end
 
 function Server:KeyPressed(key)
     if key == "f9" then
-        -- load
-        Loader:Load("game/game.lua")
-        self.game = Game()
+        self:LoadData(self.DATA_FILE)
     elseif key == "f5" then
-        -- save
-        -- TODO to be implemented
+        self:SaveData(self.DATA_FILE)
     end
-    self.game:KeyPressed(key)
+    self.screen:KeyPressed(key)
 end
 
 function Server:WheelMoved(x, y)
-    self.game:WheelMoved(x, y)
+    self.screen:WheelMoved(x, y)
 end
 
 function Server:MousePressed(x, y, button)
-    self.game:MousePressed(x, y, button)
+    self.screen:MousePressed(x, y, button)
 end
 
 function Server:MouseReleased(x, y, button)
-    self.game:MouseReleased(x, y, button)
+    self.screen:MouseReleased(x, y, button)
 end
 
 function Server:MouseMoved(x, y)
-    self.game:MouseMoved(x, y)
+    self.screen:MouseMoved(x, y)
+end
+
+function Server:LoadData(file)
+    local content = love.filesystem.read(self.DATA_DIR .. "/" .. file)
+    self.data = table.fromstring(content)
+    self.screen = Game(app.data.game)
+end
+
+function Server:SaveData(file)
+    local content = table.tostring(self.data)
+    local success, message = love.filesystem.write(self.DATA_DIR .. "/" .. file, content)
+    assert(success, message)
 end
 
 return Server
