@@ -49,7 +49,7 @@ function table.tostring(self)
         for k, v in pairs(self) do
             local kType = type(k)
             local vType = type(v)
-            if kType == "number" and k == last + 1 then
+            if kType == "number" then
                 table.insert(nums, k)
             elseif kType == "string" then
                 table.insert(strings, k)
