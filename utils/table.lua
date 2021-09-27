@@ -43,19 +43,39 @@ function table.tostring(self)
         local prefix = string.rep("    ", depth)
         local result = "{"
         local last = 0
+        local nums = {}
+        local strings = {}
+        local others = {}
         for k, v in pairs(self) do
             local kType = type(k)
             local vType = type(v)
-            local vDisplay = valueDisplay[vType]
-            if vDisplay then
-                local kDisplay = keyDisplay[kType]
-                if kType == "number" and k == last + 1 then
-                    result = result .. "\n" .. prefix .. vDisplay(v) .. ","
-                    last = k
-                elseif kType == "string" and IsIdentifier(k) then
-                    result = result .. "\n" .. prefix .. k .. " = " .. vDisplay(v) .. ","
-                elseif kDisplay then
-                    result = result .. "\n" .. prefix .. "[" .. kDisplay(k) .. "] = " .. vDisplay(v) .. ","
+            if kType == "number" and k == last + 1 then
+                table.insert(nums, k)
+            elseif kType == "string" then
+                table.insert(strings, k)
+            else
+                table.insert(others, k)
+            end
+        end
+        table.sort(strings)
+
+        last = 0
+        for _, group in ipairs({nums, strings, others}) do
+            for _, k in ipairs(group) do
+                local v = self[k]
+                local kType = type(k)
+                local vType = type(v)
+                local vDisplay = valueDisplay[vType]
+                if vDisplay then
+                    local kDisplay = keyDisplay[kType]
+                    if kType == "number" and k == last + 1 then
+                        result = result .. "\n" .. prefix .. vDisplay(v) .. ","
+                        last = k
+                    elseif kType == "string" and IsIdentifier(k) then
+                        result = result .. "\n" .. prefix .. k .. " = " .. vDisplay(v) .. ","
+                    elseif kDisplay then
+                        result = result .. "\n" .. prefix .. "[" .. kDisplay(k) .. "] = " .. vDisplay(v) .. ","
+                    end
                 end
             end
         end
