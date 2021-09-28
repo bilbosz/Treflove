@@ -13,11 +13,11 @@ function MakeClassOf(self, ...)
     }
     local mt = {
         __index = objMt.__index,
-        __call = function(...)
+        __call = function(self, ...)
             local obj = {}
             setmetatable(obj, objMt)
             if obj.Init then
-                obj:Init(select(2, ...))
+                obj:Init(...)
             end
             return obj
         end
@@ -31,10 +31,10 @@ function MakeInjectorOf(self, ...)
     }
     local mt = {
         __index = objMt.__index,
-        __call = function(inj, ...)
+        __call = function(self, inj, ...)
             setmetatable(inj, objMt)
             if inj.Init then
-                inj:Init(select(3, ...))
+                inj:Init(...)
             end
             return inj
         end
