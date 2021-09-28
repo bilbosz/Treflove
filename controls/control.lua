@@ -207,4 +207,4 @@ function Control:Init(parent, width, height)
     self:UpdateGlobalTransform()
 end
 
-MakeClass(Control)
+MakeClassOf(Control)

@@ -12,4 +12,4 @@ function ClippingRectangle:Init(parent, width, height)
     Control.Init(self, parent, width, height)
 end
 
-MakeClass(ClippingRectangle, Control)
+MakeClassOf(ClippingRectangle, Control)

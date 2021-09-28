@@ -15,4 +15,4 @@ function ClippingMask:Init(parent, width, height, drawMaskCb)
     self.drawMaskCb = drawMaskCb
 end
 
-MakeClass(ClippingMask, Control)
+MakeClassOf(ClippingMask, Control)

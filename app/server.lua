@@ -67,6 +67,6 @@ function Server:SaveData(file)
     assert(success, message)
 end
 
-MakeClass(Server, App)
+MakeClassOf(Server, App)
 
 return Server

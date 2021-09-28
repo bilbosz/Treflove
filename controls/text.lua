@@ -7,4 +7,4 @@ function Text:Init(parent, text)
     DrawableControl.Init(self, parent, textDrawable)
 end
 
-MakeClass(Text, DrawableControl)
+MakeClassOf(Text, DrawableControl)

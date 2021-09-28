@@ -88,4 +88,4 @@ function World:WheelMoved(x, y)
     Control.WheelMoved(self, x, y)
 end
 
-MakeClass(World, ClippingRectangle)
+MakeClassOf(World, ClippingRectangle)

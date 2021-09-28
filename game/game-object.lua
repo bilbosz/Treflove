@@ -1,5 +1,5 @@
 GameObject = {}
 
-MakeClass(GameObject)
+MakeClassOf(GameObject)
 
 return GameObject

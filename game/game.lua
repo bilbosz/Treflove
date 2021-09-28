@@ -58,4 +58,4 @@ function Game:WheelMoved(x, y)
     self.root:WheelMoved(x, y)
 end
 
-MakeClass(Game)
+MakeClassOf(Game)

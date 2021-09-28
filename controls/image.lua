@@ -5,4 +5,4 @@ function Image:Init(parent, path)
     DrawableControl.Init(self, parent, drawable)
 end
 
-MakeClass(Image, DrawableControl)
+MakeClassOf(Image, DrawableControl)

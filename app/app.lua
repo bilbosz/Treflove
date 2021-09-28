@@ -60,4 +60,4 @@ end
 function App:PostInit()
 end
 
-MakeClass(App)
+MakeClassOf(App)

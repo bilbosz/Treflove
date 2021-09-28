@@ -12,6 +12,6 @@ function love.update()
 
 end
 
-MakeClass(Client)
+MakeClassOf(Client)
 
 return Client

@@ -69,4 +69,4 @@ function Token:MouseMoved(x, y)
     Control.MouseMoved(self, x, y)
 end
 
-MakeClass(Token, Control)
+MakeClassOf(Token, Control)

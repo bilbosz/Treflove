@@ -50,4 +50,4 @@ function ArgParser:Parse(args)
     end
 end
 
-MakeClass(ArgParser)
+MakeClassOf(ArgParser)

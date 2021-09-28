@@ -1,17 +1,13 @@
 local function CreateIndex(self, ...)
-    local n = select("#", ...)
-    local index = {}
-    for i = n, 2, -1  do
-        local base = select(i, ...)
-        assert(type(base) == "table")
-        table.merge(index, getmetatable(base).__index)
+    local idx = {}
+    for i = select("#", ...), 1, -1 do
+        table.merge(idx, getmetatable(select(i, ...)).__index)
     end
-    table.merge(index, self)
-    return index
+    table.merge(idx, self)
+    return idx
 end
 
-function MakeClass(...)
-    local self = ...
+function MakeClassOf(self, ...)
     local objMt = {
         __index = CreateIndex(self, ...)
     }
@@ -27,5 +23,21 @@ function MakeClass(...)
         end
     }
     setmetatable(self, mt)
-    return self
+end
+
+function MakeInjectorOf(self, ...)
+    local objMt = {
+        __index = CreateIndex(self, ...)
+    }
+    local mt = {
+        __index = objMt.__index,
+        __call = function(inj, ...)
+            setmetatable(inj, objMt)
+            if inj.Init then
+                inj:Init(select(3, ...))
+            end
+            return inj
+        end
+    }
+    setmetatable(self, mt)
 end

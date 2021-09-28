@@ -15,4 +15,4 @@ function DrawableControl:Init(parent, drawable)
     self.drawable = drawable
 end
 
-MakeClass(DrawableControl, Control)
+MakeClassOf(DrawableControl, Control)
