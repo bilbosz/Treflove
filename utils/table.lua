@@ -13,6 +13,18 @@ function table.copy(self)
     return result
 end
 
+function table.deepcopy(self)
+    local result = {}
+    for k, v in pairs(self) do
+        if type(v) == "table" then
+            result[k] = table.deepcopy(v)
+        else
+            result[k] = v
+        end
+    end
+    return result
+end
+
 function table.tostring(self)
     local tableDisplay
     local valueDisplay = {

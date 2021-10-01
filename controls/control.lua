@@ -12,7 +12,7 @@ Control = {}
 
 function Control:UpdateLocalTransform()
     self.localTransform = self.localTransform:setTransformation(self.position[1], self.position[2], self.rotation,
-                              self.scale[1], self.scale[2], self.origin[1], self.origin[2])
+        self.scale[1], self.scale[2], self.origin[1], self.origin[2])
 end
 
 function Control:UpdateGlobalTransform()
@@ -140,6 +140,27 @@ function Control:GetParent()
     return self.parent
 end
 
+function Control:Reattach(n)
+    local children = self.parent.children
+    local found
+    for i, v in ipairs(children) do
+        if v == self then
+            found = i
+            break
+        end
+    end
+    if found then
+        table.remove(children, found)
+        if n then
+            table.insert(children, n, self)
+        else
+            table.insert(children, self)
+        end
+    else
+        assert(false)
+    end
+end
+
 function Control:GetAabb()
     return 0, 0, unpack(self.size)
 end
@@ -155,37 +176,37 @@ function Control:GetSize()
 end
 
 function Control:MousePressed(x, y, button)
-    for _, child in ipairs(self.children) do
+    for _, child in ipairs(table.copy(self.children)) do
         child:MousePressed(x, y, button)
     end
 end
 
 function Control:MouseReleased(x, y, button)
-    for _, child in ipairs(self.children) do
+    for _, child in ipairs(table.copy(self.children)) do
         child:MouseReleased(x, y, button)
     end
 end
 
 function Control:MouseMoved(x, y)
-    for _, child in ipairs(self.children) do
+    for _, child in ipairs(table.copy(self.children)) do
         child:MouseMoved(x, y)
     end
 end
 
 function Control:WheelMoved(x, y)
-    for _, child in ipairs(self.children) do
+    for _, child in ipairs(table.copy(self.children)) do
         child:WheelMoved(x, y)
     end
 end
 
 function Control:Update(dt)
-    for _, child in ipairs(self.children) do
+    for _, child in ipairs(table.copy(self.children)) do
         child:Update(dt)
     end
 end
 
 function Control:Draw()
-    for _, child in ipairs(self.children) do
+    for _, child in ipairs(table.copy(self.children)) do
         child:Draw()
     end
 end

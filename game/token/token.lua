@@ -29,11 +29,11 @@ function Token:CreateLabel(label)
     self.label:SetPosition(0, selfH * 0.6)
 end
 
-function Token:Init(parent, data)
+function Token:Init(parent)
+    local data = self.data
     Control.Init(self, parent, data.radius, data.radius)
     self.dragMouseButton = 1
     self.prevDragMouseX, self.prevDragMouseY = nil, nil
-    self.data = data
 
     self:SetPosition(unpack(data.position))
     self:CreateAvatar(data.avatar)
@@ -42,10 +42,12 @@ end
 
 function Token:MousePressed(x, y, button)
     local tx, ty = self:TransformToLocal(x, y)
-    if tx >= -self.size[1] * 0.5 and tx < self.size[1] * 0.5 and ty >= -self.size[2] * 0.5 and ty < self.size[2] * 0.5 then
+    local size = self.size
+    if tx >= -size[1] * 0.5 and tx < size[1] * 0.5 and ty >= -size[2] * 0.5 and ty < size[2] * 0.5 then
         if button == self.dragMouseButton then
             local parentX, parentY = self.parent:TransformToLocal(x, y)
             self.prevDragMouseX, self.prevDragMouseY = parentX, parentY
+            self:Reattach()
         end
     end
     Control.MousePressed(self, x, y, button)
@@ -69,4 +71,4 @@ function Token:MouseMoved(x, y)
     Control.MouseMoved(self, x, y)
 end
 
-MakeClassOf(Token, Control)
+MakeModelOf(Token, Control)
