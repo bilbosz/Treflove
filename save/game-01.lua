@@ -9,7 +9,7 @@ return {
         ["Old Town"] = {
             width = 175.61,
             image = "game/world/world.jpg",
-            tokens = {"Bilbosz", "Gaben", "Bilbosza"}
+            tokens = {"Bilbosz", "Gaben", "Bilbosza", "Anonim"}
         }
     },
     tokens = {
@@ -30,6 +30,12 @@ return {
             radius = 3,
             avatar = "game/token/bilbosza.png",
             position = {87.5, 62.5}
+        },
+        ["Anonim"] = {
+            name = "Anonim",
+            radius = 2,
+            avatar = "game/token/default.png",
+            position = {81.83, 61.10}
         }
     }
 }

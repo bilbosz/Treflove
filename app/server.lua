@@ -68,5 +68,3 @@ function Server:SaveData(file)
 end
 
 MakeClassOf(Server, App)
-
-return Server
