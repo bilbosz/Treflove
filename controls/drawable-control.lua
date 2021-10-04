@@ -15,4 +15,5 @@ function DrawableControl:Init(parent, drawable)
     self.drawable = drawable
 end
 
+Loader:LoadClass("controls/control.lua")
 MakeClassOf(DrawableControl, Control)

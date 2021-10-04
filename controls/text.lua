@@ -7,4 +7,5 @@ function Text:Init(parent, text)
     DrawableControl.Init(self, parent, textDrawable)
 end
 
+Loader:LoadClass("controls/drawable-control.lua")
 MakeClassOf(Text, DrawableControl)

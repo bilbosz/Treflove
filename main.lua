@@ -1,12 +1,14 @@
 love.filesystem.load("utils/loader.lua")()
 if debug then
-    dump = Loader:Load("utils/dump.lua")
+    Loader:LoadFile("utils/dump.lua")
 end
-Loader:Load("utils/utils.lua")
-Loader:Load("utils/table.lua")
-Loader:Load("utils/class.lua")
-Loader:Load("app/arg-parser.lua")
-Loader:Load("app/app.lua")
+Loader:LoadFile("utils/utils.lua")
+Loader:LoadFile("utils/table.lua")
+Loader:LoadFile("utils/class.lua")
+Loader:LoadClass("app/arg-parser.lua")
+Loader:LoadModule("controls")
+Loader:LoadModule("login")
+Loader:LoadModule("game")
 
 local params = ArgParser():Parse(arg)
 
@@ -17,12 +19,11 @@ if not params then
 end
 
 if params.appType == "client" then
-    Loader:Load("app/client.lua")
+    Loader:LoadClass("app/client.lua")
     app = Client(params)
 elseif params.appType == "server" then
-    Loader:Load("app/server.lua")
+    Loader:LoadClass("app/server.lua")
     app = Server(params)
 else
     assert(false)
 end
-app:PostInit()

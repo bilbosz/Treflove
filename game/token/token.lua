@@ -71,4 +71,5 @@ function Token:MouseMoved(x, y)
     Control.MouseMoved(self, x, y)
 end
 
+Loader:LoadClass("controls/control.lua")
 MakeModelOf(Token, Control)

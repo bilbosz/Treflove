@@ -22,6 +22,10 @@ function App:RegistryLoveCallbacks()
             if key == "escape" then
                 love.event.quit(0)
                 return
+            elseif debug and key == "f11" then
+                Loader:ReloadClasses()
+                ReloadObjects()
+                return
             end
             self:KeyPressed(key)
         end
@@ -55,9 +59,6 @@ function App:Init(params)
     self.data = nil
 
     self:RegistryLoveCallbacks()
-end
-
-function App:PostInit()
 end
 
 MakeClassOf(App)

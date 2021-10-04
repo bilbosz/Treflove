@@ -199,4 +199,4 @@ local defaultDumpConfig = {
     textProcessor = LongPrint
 }
 
-return DumpGenerator(defaultDumpConfig)
+dump = DumpGenerator(defaultDumpConfig)

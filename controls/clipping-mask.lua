@@ -15,4 +15,5 @@ function ClippingMask:Init(parent, width, height, drawMaskCb)
     self.drawMaskCb = drawMaskCb
 end
 
+Loader:LoadClass("controls/control.lua")
 MakeClassOf(ClippingMask, Control)

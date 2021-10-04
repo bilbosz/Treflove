@@ -1,7 +1,5 @@
 Client = {}
 
-Loader:Load("game/game.lua")
-
 local function TryCreateDataDirectory(self)
     local info = love.filesystem.getInfo(love.filesystem.getSaveDirectory() .. "/" .. self.DATA_DIR)
     assert(not info or info.type == "directory")
@@ -18,7 +16,7 @@ function Client:Init(params)
     assert(TryCreateDataDirectory(self))
 end
 
-function Client:PostInit()
+function Client:Load()
     self:LoadData(self.DATA_FILE)
 end
 
@@ -67,4 +65,5 @@ function Client:SaveData(file)
     assert(success, message)
 end
 
+Loader:LoadClass("app/app.lua")
 MakeClassOf(Client, App)

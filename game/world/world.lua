@@ -1,7 +1,5 @@
 World = {}
 
-Loader:Load("game/token/token.lua")
-
 function World:CreateBackground(path)
     local bg = Image(self, path)
     self.background = bg
@@ -87,4 +85,5 @@ function World:WheelMoved(x, y)
     Control.WheelMoved(self, x, y)
 end
 
+Loader:LoadClass("controls/clipping-rectangle.lua")
 MakeModelOf(World, ClippingRectangle)

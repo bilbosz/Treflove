@@ -5,4 +5,5 @@ function Image:Init(parent, path)
     DrawableControl.Init(self, parent, drawable)
 end
 
+Loader:LoadClass("controls/drawable-control.lua")
 MakeClassOf(Image, DrawableControl)

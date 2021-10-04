@@ -1,13 +1,3 @@
-Loader:Load("controls/control.lua")
-Loader:Load("controls/drawable-control.lua")
-Loader:Load("controls/rectangle.lua")
-Loader:Load("game/game-object.lua")
-Loader:Load("controls/image.lua")
-Loader:Load("controls/clipping-rectangle.lua")
-Loader:Load("controls/clipping-mask.lua")
-Loader:Load("controls/text.lua")
-Loader:Load("game/world/world.lua")
-
 Game = {}
 
 local function UpdateRootScale(self)
@@ -38,7 +28,7 @@ function Game:Update(dt)
 end
 
 function Game:KeyPressed(code)
-
+    
 end
 
 function Game:MousePressed(x, y, button)

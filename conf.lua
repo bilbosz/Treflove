@@ -1,10 +1,10 @@
 love.filesystem.load("utils/loader.lua")()
 if debug then
-    dump = Loader:Load("utils/dump.lua")
+    Loader:LoadFile("utils/dump.lua")
 end
-Loader:Load("utils/table.lua")
-Loader:Load("utils/class.lua")
-Loader:Load("app/arg-parser.lua")
+Loader:LoadFile("utils/table.lua")
+Loader:LoadFile("utils/class.lua")
+Loader:LoadClass("app/arg-parser.lua")
 
 params = ArgParser():Parse(arg)
 
