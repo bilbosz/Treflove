@@ -3,9 +3,7 @@ Token = {}
 function Token:CreateAvatar(path)
     local width, height = self:GetSize()
     local clip = ClippingMask(self, width, height, function()
-        local x, y = self:TransformToGlobal(0, 0)
-        local scaleX, scaleY = self:GetGlobalScale()
-        love.graphics.circle("fill", x, y, width * scaleX * 0.5, height * scaleY * 0.5)
+        love.graphics.circle("fill", 0, 0, width * 0.5)
     end)
     self.clip = clip
 
