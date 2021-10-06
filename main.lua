@@ -19,10 +19,10 @@ if not params then
 end
 
 if params.appType == "client" then
-    Loader:LoadClass("app/client.lua")
+    Loader:LoadClass("app/client/client.lua")
     app = Client(params)
 elseif params.appType == "server" then
-    Loader:LoadClass("app/server.lua")
+    Loader:LoadClass("app/server/server.lua")
     app = Server(params)
 else
     assert(false)

@@ -14,55 +14,35 @@ function Server:Init(params)
     self.DATA_DIR = "save"
     self.DATA_FILE = "game-01.lua"
     assert(TryCreateDataDirectory(self))
+
+    self.channel = love.thread.newChannel()
+    self.dispatcher = love.thread.newThread("app/server/dispatcher.lua")
 end
 
 function Server:Load()
     self:LoadData(self.DATA_FILE)
-end
-
-function Server:Draw()
-    self.screen:Draw()
-end
-
-function Server:Update(dt)
-    self.screen:Update(dt)
-end
-
-function Server:KeyPressed(key)
-    if key == "f9" then
-        self:LoadData(self.DATA_FILE)
-    elseif key == "f5" then
-        self:SaveData(self.DATA_FILE)
-    end
-    self.screen:KeyPressed(key)
-end
-
-function Server:WheelMoved(x, y)
-    self.screen:WheelMoved(x, y)
-end
-
-function Server:MousePressed(x, y, button)
-    self.screen:MousePressed(x, y, button)
-end
-
-function Server:MouseReleased(x, y, button)
-    self.screen:MouseReleased(x, y, button)
-end
-
-function Server:MouseMoved(x, y)
-    self.screen:MouseMoved(x, y)
+    self.dispatcher:start(self.channel, params)
 end
 
 function Server:LoadData(file)
     local content = love.filesystem.read(self.DATA_DIR .. "/" .. file)
     self.data = table.fromstring(content)
-    self.screen = Game(app.data.game)
 end
 
 function Server:SaveData(file)
     local content = table.tostring(self.data)
     local success, message = love.filesystem.write(self.DATA_DIR .. "/" .. file, content)
     assert(success, message)
+end
+
+function Server:Update(dt)
+    local channel = self.channel:pop()
+    while channel do
+        if channel then
+            channel:push(table.tostring(self.data))
+        end
+        channel = self.channel:pop()
+    end
 end
 
 Loader:LoadClass("app/app.lua")

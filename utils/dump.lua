@@ -8,7 +8,23 @@ local function DumpGenerator(config)
     end
 
     local function createStacktrace(config)
-        return "\n[STACKTRACE]\n" .. debug.traceback() .. "\n"
+        local result = "\n[STACKTRACE]\n"
+        local trace = debug.traceback()
+        local current = 1
+        local lineNo = 1
+        local ignoreHead = 3
+        local lines = select(2, string.gsub(trace, "\n", "\n"))
+        local found = 0
+        while found do
+            local prev = found
+            found = string.find(trace, "\n", found + 1)
+            local line = string.sub(trace, prev + 1, found)
+            if lineNo > ignoreHead and not string.find(line, "boot%.lua") and not string.find(line, "%[C%]") then
+                result = result .. line
+            end
+            lineNo = lineNo + 1
+        end
+        return result
     end
 
     local nodeTypes = {
@@ -57,20 +73,6 @@ local function DumpGenerator(config)
             end
         end
 
-        local function parseValue(val, type)
-            local repr = tostring(val)
-            if type == "userdata" then
-                local userdataType, address = string.match(repr, "(%a+) %((.+)%)")
-                if not address then
-                    userdataType, address = string.match(repr, "(%a+): (.+)")
-                end
-                return "0x" .. string.lower(address), userdataType
-            elseif type == "function" or type == "thread" or type == "table" then
-                local address = string.match(repr, type .. ": (.+)")
-                return address
-            end
-        end
-
         local function dump(val, level, node, recursionCheck)
             local result = ""
 
@@ -80,7 +82,6 @@ local function DumpGenerator(config)
             local valueIndention = node == nodeTypes.Value and "" or indention
 
             local type_ = type(val)
-            local address, userdataType = parseValue(val, type_)
             local varName
             if config.showGlobalNames then
                 varName = getGlobVarName(val)
@@ -105,7 +106,7 @@ local function DumpGenerator(config)
                 end
                 content = content .. indention .. '}'
             end
-            return valueIndention .. nodeDisplays[node](val, address, type_, varName, content, userdataType)
+            return valueIndention .. nodeDisplays[node](val, type_, varName, content)
         end
 
         local result = "\n[DUMP]\n"
@@ -163,13 +164,12 @@ local defaultDumpConfig = {
         tableIndention = "    ",
         tableUnfoldRepeated = false,
         tableNewline = "\n",
-        indexDisplay = function(value, address, type, globalName, content, userdataType)
+        indexDisplay = function(value, type, globalName, content)
             return ""
         end,
-        keyDisplay = function(value, address, type, globalName, content, userdataType)
+        keyDisplay = function(value, type, globalName, content)
             if type == "table" or type == "userdata" or type == "function" or type == "thread" then
-                return address .. (globalName and " (" .. globalName .. ")" or "") .. " : " .. type ..
-                           (userdataType and " <" .. userdataType .. ">" or "") .. " = "
+                return tostring(value)
             elseif type == "string" then
                 if IsIdentifier(value) then
                     return value .. " = "
@@ -180,23 +180,18 @@ local defaultDumpConfig = {
                 return "[" .. tostring(value) .. "] = "
             end
         end,
-        valueDisplay = function(value, address, type, globalName, content, userdataType)
+        valueDisplay = function(value, type, globalName, content)
             if type == "table" then
-                return content and content or address .. (globalName and " (" .. globalName .. ")" or "") .. " : " ..
-                           type
+                return content and content or tostring(value)
             elseif type == "string" then
                 return "\"" .. tostring(value) .. "\""
-            elseif type == "userdata" then
-                return address .. " : " .. type .. " <" .. userdataType .. ">"
-            elseif type == "function" or type == "thread" then
-                return address .. (globalName and " (" .. globalName .. ")" or "") .. " : " .. type
             else
                 return tostring(value)
             end
         end,
         separator = ",\n"
     },
-    textProcessor = LongPrint
+    textProcessor = print
 }
 
 dump = DumpGenerator(defaultDumpConfig)
