@@ -15,6 +15,7 @@ function Server:Init(params)
     self.DATA_FILE = "game-01.lua"
     assert(TryCreateDataDirectory(self))
 
+    self.screenSaver = ScreenSaver()
     self.channel = love.thread.newChannel()
     self.dispatcher = love.thread.newThread("app/server/dispatcher.lua")
 end
@@ -35,6 +36,10 @@ function Server:SaveData(file)
     assert(success, message)
 end
 
+function Server:Draw()
+    self.screenSaver:Draw()
+end
+
 function Server:Update(dt)
     local channel = self.channel:pop()
     while channel do
@@ -43,6 +48,8 @@ function Server:Update(dt)
         end
         channel = self.channel:pop()
     end
+
+    self.screenSaver:Update(dt)
 end
 
 Loader:LoadClass("app/app.lua")

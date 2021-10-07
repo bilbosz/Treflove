@@ -7,8 +7,9 @@ Loader:LoadFile("utils/table.lua")
 Loader:LoadFile("utils/class.lua")
 Loader:LoadClass("app/arg-parser.lua")
 Loader:LoadModule("controls")
-Loader:LoadModule("login")
 Loader:LoadModule("game")
+Loader:LoadModule("login")
+Loader:LoadModule("screens")
 
 local params = ArgParser():Parse(arg)
 
