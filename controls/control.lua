@@ -199,12 +199,6 @@ function Control:WheelMoved(x, y)
     end
 end
 
-function Control:Update(dt)
-    for _, child in ipairs(table.copy(self.children)) do
-        child:Update(dt)
-    end
-end
-
 function Control:Draw()
     for _, child in ipairs(table.copy(self.children)) do
         child:Draw()

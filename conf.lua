@@ -14,7 +14,9 @@ function love.conf(t)
     elseif params.appType == "server" then
         t.window.title = "Treflove - Server"
         t.window.icon = "icon.png"
-        t.window = nil
+        if jit.os ~= "Windows" then
+            t.window = nil
+        end
         t.console = true
     elseif params.appType == "client" then
         t.window.title = "Treflove"

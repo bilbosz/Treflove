@@ -51,7 +51,7 @@ function Loader:LoadModule(path, force)
         local n = #itemPath
         if info.type == "file" and string.sub(itemPath, n - 3, n) == ".lua" then
             self:LoadClass(itemPath, force)
-        elseif info.type == "directory" then
+        elseif info.type == "directory" and string.sub(itemPath, n - 4, n) ~= "/impl" then
             self:LoadModule(itemPath, force)
         end
     end

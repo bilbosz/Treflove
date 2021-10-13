@@ -10,6 +10,7 @@ Loader:LoadModule("controls")
 Loader:LoadModule("game")
 Loader:LoadModule("login")
 Loader:LoadModule("screens")
+Loader:LoadModule("networking")
 
 local params = ArgParser():Parse(arg)
 
@@ -20,11 +21,11 @@ if not params then
 end
 
 if params.appType == "client" then
-    Loader:LoadClass("app/client/client.lua")
-    app = Client(params)
+    Loader:LoadClass("app/client.lua")
+    Client(params)
 elseif params.appType == "server" then
-    Loader:LoadClass("app/server/server.lua")
-    app = Server(params)
+    Loader:LoadClass("app/server.lua")
+    Server(params)
 else
     assert(false)
 end

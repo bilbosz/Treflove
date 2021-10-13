@@ -11,21 +11,37 @@ end
 
 function Server:Init(params)
     App.Init(self, params)
+    self.isServer = true
     self.DATA_DIR = "save"
     self.DATA_FILE = "game-01.lua"
     assert(TryCreateDataDirectory(self))
 
-
     if config.window then
         self.screenSaver = ScreenSaver()
     end
-    self.channel = love.thread.newChannel()
-    self.dispatcher = love.thread.newThread("app/server/dispatcher.lua")
+    self.connector = Connector(params.address, params.port)
+    self.connections = {}
 end
 
 function Server:Load()
     self:LoadData(self.DATA_FILE)
-    self.dispatcher:start(self.channel, params)
+    self.connector:Start(function(connection)
+        self.connections[connection] = true
+        connection:Start(function(msg)
+            self.data = table.fromstring(msg)
+            self:SaveData(self.DATA_FILE)
+            for c in pairs(self.connections) do
+                if c ~= connection then
+                    c:SendRequest(table.tostring(self.data), function()
+                        print("Received game data")
+                    end)
+                end
+            end
+        end)
+        connection:SendRequest(table.tostring(self.data), function()
+            print("Received game data")
+        end)
+    end)
 end
 
 function Server:LoadData(file)
@@ -42,20 +58,6 @@ end
 if config.window then
     function Server:Draw()
         self.screenSaver:Draw()
-    end
-end
-
-function Server:Update(dt)
-    local channel = self.channel:pop()
-    while channel do
-        if channel then
-            channel:push(table.tostring(self.data))
-        end
-        channel = self.channel:pop()
-    end
-
-    if config.window then
-        self.screenSaver:Update(dt)
     end
 end
 

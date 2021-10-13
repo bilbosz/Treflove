@@ -11,12 +11,6 @@ function App:RegistryLoveCallbacks()
             self:Draw()
         end
     end
-    if self.Update then
-        function love.update(dt)
-            self:Update(dt)
-            collectgarbage("step")
-        end
-    end
     if self.KeyPressed then
         function love.keypressed(key)
             if key == "escape" then
@@ -50,9 +44,14 @@ function App:RegistryLoveCallbacks()
             self:MouseMoved(x, y)
         end
     end
+    function love.update(dt)
+        UpdateObserver.Notify(dt)
+        collectgarbage("step")
+    end
 end
 
 function App:Init(params)
+    app = self
     self.params = params
     self.isServer = false
     self.isClient = false

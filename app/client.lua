@@ -2,29 +2,25 @@ Client = {}
 
 function Client:Init(params)
     App.Init(self, params)
+    self.isClient = true
     self.channel = love.thread.newChannel()
-    self.connection = love.thread.newThread("app/client/client-connection.lua")
+    self.connector = Connector(params.address, params.port)
+    self.connection = nil
 end
 
 function Client:Load()
-    self.connection:start(self.channel, params)
+    self.connector:Start(function(connection)
+        self.connection = connection
+        connection:Start(function(msg)
+            self.data = table.fromstring(msg)
+            self.screen = Game(app.data.game)
+        end)
+    end)
 end
 
 function Client:Draw()
     if self.screen then
         self.screen:Draw()
-    end
-end
-
-function Client:Update(dt)
-    local message = self.channel:pop()
-    while message do
-        self.data = table.fromstring(message)
-        self.screen = Game(app.data.game)
-        message = self.channel:pop()
-    end
-    if self.screen then
-        self.screen:Update(dt)
     end
 end
 

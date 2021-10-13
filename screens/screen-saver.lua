@@ -82,12 +82,12 @@ function ScreenSaver:Update(dt)
     end
 
     self.logo:SetPosition(newX, newY)
-    self.screen:Update(dt)
 end
 
 function ScreenSaver:Init()
     local w, h = love.graphics.getDimensions()
     Control.Init(self, nil, w, h)
+    UpdateObserver.Init(self)
 
     self.screen = Rectangle(self, w, h, {255, 255, 255, 255})
     CreateLogo(self)
@@ -97,4 +97,5 @@ function ScreenSaver:Init()
 end
 
 Loader:LoadClass("controls/control.lua")
-MakeClassOf(ScreenSaver, Control)
+Loader:LoadClass("events/update-observer.lua")
+MakeClassOf(ScreenSaver, Control, UpdateObserver)
