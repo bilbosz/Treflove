@@ -17,7 +17,7 @@ function App:RegistryLoveCallbacks()
                 love.event.quit(0)
                 return
             elseif debug and key == "f11" then
-                Loader:ReloadClasses()
+                Loader.Reload()
                 ReloadObjects()
                 return
             end
@@ -52,6 +52,7 @@ end
 
 function App:Init(params)
     app = self
+    self.logger = Logger({}, "main")
     self.params = params
     self.isServer = false
     self.isClient = false

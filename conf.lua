@@ -1,12 +1,13 @@
 love.filesystem.load("utils/loader.lua")()
 if debug then
-    Loader:LoadFile("utils/dump.lua")
+    Loader.LoadFile("utils/dump.lua")
 end
-Loader:LoadFile("utils/table.lua")
-Loader:LoadFile("utils/class.lua")
-Loader:LoadClass("app/arg-parser.lua")
+Loader.LoadFile("utils/table.lua")
+Loader.LoadFile("utils/class.lua")
+Loader.LoadFile("app/arg-parser.lua")
 
-params = ArgParser():Parse(arg)
+local parser = ArgParser()
+params = parser:Parse(arg)
 
 function love.conf(t)
     if not params then

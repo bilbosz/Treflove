@@ -4,17 +4,18 @@ function Client:Init(params)
     App.Init(self, params)
     self.isClient = true
     self.channel = love.thread.newChannel()
-    self.connector = Connector(params.address, params.port)
-    self.connection = nil
+    self.connectionManager = ConnectionManager(params.address, params.port)
 end
 
 function Client:Load()
-    self.connector:Start(function(connection)
-        self.connection = connection
+    self.connectionManager:Start(function(connection)
         connection:Start(function(msg)
-            self.data = table.fromstring(msg)
+            self.data = msg
             self.screen = Game(app.data.game)
         end)
+    end, function(connection)
+        self.data = nil
+        self.screen = nil
     end)
 end
 
@@ -54,5 +55,5 @@ function Client:MouseMoved(x, y)
     end
 end
 
-Loader:LoadClass("app/app.lua")
+Loader.LoadFile("app/app.lua")
 MakeClassOf(Client, App)

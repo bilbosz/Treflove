@@ -1,3 +1,9 @@
+Model = {}
+
+function Model:GetData()
+    return self.data
+end
+
 local function CreateIndex(self, ...)
     local idx = {}
     for i = select("#", ...), 1, -1 do
@@ -59,7 +65,7 @@ if debug then
 
     function MakeModelOf(self, ...)
         local objMt = {
-            __index = CreateIndex(self, ...),
+            __index = CreateIndex(self, Model, ...),
             class = self
         }
         local mt = {
@@ -100,7 +106,7 @@ else
 
     function MakeModelOf(self, ...)
         local objMt = {
-            __index = CreateIndex(self, ...)
+            __index = CreateIndex(self, Model, ...)
         }
         local mt = {
             __index = objMt.__index,
@@ -118,3 +124,5 @@ else
         setmetatable(self, mt)
     end
 end
+
+MakeClassOf(Model)

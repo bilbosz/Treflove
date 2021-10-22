@@ -18,5 +18,5 @@ function ClippingMask:Init(parent, width, height, drawMaskCb)
     end
 end
 
-Loader:LoadClass("controls/control.lua")
+Loader.LoadFile("controls/control.lua")
 MakeClassOf(ClippingMask, Control)

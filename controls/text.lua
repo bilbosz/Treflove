@@ -10,5 +10,5 @@ function Text:Init(parent, text)
     end)
 end
 
-Loader:LoadClass("controls/drawable-control.lua")
+Loader.LoadFile("controls/drawable-control.lua")
 MakeClassOf(Text, DrawableControl)

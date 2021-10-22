@@ -18,5 +18,5 @@ function Rectangle:Init(parent, width, height, color)
     self.color = color or {255, 255, 255, 255}
 end
 
-Loader:LoadClass("controls/control.lua")
+Loader.LoadFile("controls/control.lua")
 MakeClassOf(Rectangle, Control)

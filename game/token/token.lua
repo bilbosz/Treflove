@@ -53,11 +53,11 @@ function Token:MousePressed(x, y, button)
 end
 
 function Token:MouseReleased(x, y, button)
-    if button == self.dragMouseButton then
+    if button == self.dragMouseButton and self.prevDragMouseX then
         self.prevDragMouseX, self.prevDragMouseY = nil, nil
+        self.data.position = {self:GetPosition()}
+        next(app.connectionManager:GetConnections()):SendRequest(app.data)
     end
-    self.data.position = {self:GetPosition()}
-    app.connection:SendRequest(table.tostring(app.data))
     Control.MouseReleased(self, x, y, button)
 end
 
@@ -76,6 +76,6 @@ function Token:Update(dt)
     self.image:SetRotation(self.total)
 end
 
-Loader:LoadClass("controls/control.lua")
-Loader:LoadClass("events/update-observer.lua")
+Loader.LoadFile("controls/control.lua")
+Loader.LoadFile("events/update-observer.lua")
 MakeModelOf(Token, Control, UpdateObserver)

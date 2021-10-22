@@ -96,6 +96,6 @@ function ScreenSaver:Init()
     self.dirX, self.dirY = 1, 1
 end
 
-Loader:LoadClass("controls/control.lua")
-Loader:LoadClass("events/update-observer.lua")
+Loader.LoadFile("controls/control.lua")
+Loader.LoadFile("events/update-observer.lua")
 MakeClassOf(ScreenSaver, Control, UpdateObserver)

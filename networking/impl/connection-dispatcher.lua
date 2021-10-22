@@ -1,16 +1,35 @@
-local channel, address, port = ...
+local loggerData, channel, address, port = ...
 
 local socket = require("socket")
+love.filesystem.load("utils/loader.lua")()
+Loader.LoadModule("utils")
+logger = Logger(loggerData, "connection-dispatcher")
 
-local server = socket.bind(address, tonumber(port))
+local server, error = socket.bind(address, tonumber(port))
+assert(not error, error)
+logger:Log("Connection dispatcher started working")
+
 while true do
+    logger:Log("Waiting for connection...")
+
     local client = server:accept()
+    logger:Log("New client found")
 
     local dispatcherChannel = love.thread.newChannel()
-    love.thread.newThread("networking/impl/server-in.lua"):start(address, dispatcherChannel, channel)
+    local inThread = love.thread.newThread("networking/impl/server-in.lua")
+    inThread:start(loggerData, address, dispatcherChannel, channel, inThread)
 
     local inPort = dispatcherChannel:demand()
-    client:send(tostring(inPort) .. "\n")
+    if inPort then
+        local inPortString = tostring(inPort)
+        logger:Log("Received receiver port " .. inPortString)
+        client:send(inPortString .. "\n")
+    else
+        logger:Log("Server input port not received")
+        inThread:release()
+    end
+    dispatcherChannel:release()
 
     client:close()
+    logger:Log("Dispatcher connection closed for client with port " .. inPort)
 end

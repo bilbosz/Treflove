@@ -85,5 +85,5 @@ function World:WheelMoved(x, y)
     Control.WheelMoved(self, x, y)
 end
 
-Loader:LoadClass("controls/clipping-rectangle.lua")
+Loader.LoadFile("controls/clipping-rectangle.lua")
 MakeModelOf(World, ClippingRectangle)

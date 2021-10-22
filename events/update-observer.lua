@@ -5,10 +5,6 @@ setmetatable(subscribedObjects, {
     __mode = "k"
 })
 
-setmetatable(UpdateObserver, { __add = function(self, other)
-    subscribedObjects[other] = true
-end })
-
 function UpdateObserver.Notify(dt)
     for obj in pairs(subscribedObjects) do
         obj:Update(dt)
@@ -21,6 +17,10 @@ end
 
 function UpdateObserver:Init()
     subscribedObjects[self] = true
+end
+
+function UpdateObserver:Release()
+    subscribedObjects[self] = nil
 end
 
 MakeClassOf(UpdateObserver)

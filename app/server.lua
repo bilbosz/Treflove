@@ -19,28 +19,27 @@ function Server:Init(params)
     if config.window then
         self.screenSaver = ScreenSaver()
     end
-    self.connector = Connector(params.address, params.port)
-    self.connections = {}
+    self.connectionManager = ConnectionManager(params.address, params.port)
 end
 
 function Server:Load()
     self:LoadData(self.DATA_FILE)
-    self.connector:Start(function(connection)
-        self.connections[connection] = true
+    self.connectionManager:Start(function(connection)
         connection:Start(function(msg)
-            self.data = table.fromstring(msg)
+            self.data = msg
             self:SaveData(self.DATA_FILE)
-            for c in pairs(self.connections) do
+            for c in pairs(self.connectionManager:GetConnections()) do
                 if c ~= connection then
-                    c:SendRequest(table.tostring(self.data), function()
-                        print("Received game data")
+                    c:SendRequest(self.data, function()
+                        app.logger:Log("Received game data")
                     end)
                 end
             end
         end)
-        connection:SendRequest(table.tostring(self.data), function()
-            print("Received game data")
+        connection:SendRequest(self.data, function()
+            app.logger:Log("Received game data")
         end)
+    end, function(connection)
     end)
 end
 
@@ -61,5 +60,5 @@ if config.window then
     end
 end
 
-Loader:LoadClass("app/app.lua")
+Loader.LoadFile("app/app.lua")
 MakeClassOf(Server, App)
