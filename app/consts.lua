@@ -1,3 +1,4 @@
 Consts = {
-    DISPATCHER_TIMEOUT = 2
+    DISPATCHER_TIMEOUT = 2,
+    NETWORK_COMPRESSION = "lz4"
 }

@@ -13,7 +13,8 @@ function Connection:Start(requestHandler)
 end
 
 function Connection:SendRequest(request, responseHandler)
-    self.outChannel:push(table.tostring(request))
+    local compressed = love.data.compress("string", Consts.NETWORK_COMPRESSION, table.tostring(request))
+    self.outChannel:push(compressed)
 end
 
 function Connection:GetInChannel()
@@ -30,7 +31,8 @@ function Connection:Update()
         if not msg then
             break
         end
-        self.requestHandler(table.fromstring(msg))
+        msg = table.fromstring(love.data.decompress("string", Consts.NETWORK_COMPRESSION, msg))
+        self.requestHandler(msg)
     end
 end
 
