@@ -56,7 +56,9 @@ function Token:MouseReleased(x, y, button)
     if button == self.dragMouseButton and self.prevDragMouseX then
         self.prevDragMouseX, self.prevDragMouseY = nil, nil
         self.data.position = {self:GetPosition()}
-        next(app.connectionManager:GetConnections()):SendRequest(app.data)
+        app.connection:SendRequest(app.data, function(response)
+            return {}
+        end)
     end
     Control.MouseReleased(self, x, y, button)
 end

@@ -31,13 +31,16 @@ function Server:Load()
             for c in pairs(self.connectionManager:GetConnections()) do
                 if c ~= connection then
                     c:SendRequest(self.data, function()
-                        app.logger:Log("Received game data")
+                        app.logger:Log("Received game data from other clients")
+                        return {}
                     end)
                 end
             end
+            return {}
         end)
         connection:SendRequest(self.data, function()
-            app.logger:Log("Received game data")
+            app.logger:Log("Received game data fist time")
+            return {}
         end)
     end, function(connection)
     end)

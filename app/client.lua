@@ -9,11 +9,14 @@ end
 
 function Client:Load()
     self.connectionManager:Start(function(connection)
+        self.connection = connection
         connection:Start(function(msg)
             self.data = msg
             self.screen = Game(app.data.game)
+            return {}
         end)
     end, function(connection)
+        self.connection = nil
         self.data = nil
         self.screen = nil
     end)
