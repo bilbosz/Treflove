@@ -1,4 +1,5 @@
 love.filesystem.load("utils/loader.lua")()
+Loader.LoadFile("utils/utils.lua")
 if debug then
     Loader.LoadFile("utils/dump.lua")
 end
