@@ -1,5 +1,9 @@
 Model = {}
 
+function Model:GetData()
+    return self.data
+end
+
 if debug then
     function MakeModelOf(self, ...)
         local objMt = {
