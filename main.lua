@@ -1,16 +1,8 @@
 love.filesystem.load("utils/loader.lua")()
-if debug then
-    Loader:LoadFile("utils/dump.lua")
-end
-Loader:LoadFile("utils/utils.lua")
-Loader:LoadFile("utils/table.lua")
-Loader:LoadFile("utils/class.lua")
-Loader:LoadClass("app/arg-parser.lua")
-Loader:LoadModule("controls")
-Loader:LoadModule("login")
-Loader:LoadModule("game")
+Loader.LoadModule(".")
 
-local params = ArgParser():Parse(arg)
+local parser = ArgParser()
+local params = parser:Parse(arg)
 
 if not params then
     print("Usage:\n    treflun <app_type> <address> <port>")
@@ -19,11 +11,11 @@ if not params then
 end
 
 if params.appType == "client" then
-    Loader:LoadClass("app/client.lua")
-    app = Client(params)
+    Loader.LoadFile("app/client.lua")
+    Client(params)
 elseif params.appType == "server" then
-    Loader:LoadClass("app/server.lua")
-    app = Server(params)
+    Loader.LoadFile("app/server.lua")
+    Server(params)
 else
     assert(false)
 end

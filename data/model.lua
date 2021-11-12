@@ -1,15 +1,21 @@
+Model = {}
+
+function Model:GetData()
+    return self.data
+end
+
 if debug then
-    function MakeClassOf(self, ...)
-        local name = GetGlobalName(self)
-        assert(name)
+    function MakeModelOf(self, ...)
         local objMt = {
-            __index = CreateIndex(self, ...),
+            __index = CreateIndex(self, Model, ...),
             class = self
         }
         local mt = {
             __index = objMt.__index,
-            __call = function(self, ...)
-                local obj = {}
+            __call = function(self, data, ...)
+                local obj = {
+                    data = data
+                }
                 setmetatable(obj, objMt)
                 if obj.Init then
                     obj:Init(...)
@@ -24,14 +30,16 @@ if debug then
         end
     end
 else
-    function MakeClassOf(self, ...)
+    function MakeModelOf(self, ...)
         local objMt = {
-            __index = CreateIndex(self, ...)
+            __index = CreateIndex(self, Model, ...)
         }
         local mt = {
             __index = objMt.__index,
-            __call = function(self, ...)
-                local obj = {}
+            __call = function(self, data, ...)
+                local obj = {
+                    data = data
+                }
                 setmetatable(obj, objMt)
                 if obj.Init then
                     obj:Init(...)
@@ -45,3 +53,5 @@ else
         end
     end
 end
+
+MakeClassOf(Model)

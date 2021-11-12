@@ -1,69 +1,62 @@
 Client = {}
 
-local function TryCreateDataDirectory(self)
-    local info = love.filesystem.getInfo(love.filesystem.getSaveDirectory() .. "/" .. self.DATA_DIR)
-    assert(not info or info.type == "directory")
-    if not info then
-        return love.filesystem.createDirectory(self.DATA_DIR)
-    end
-    return true
-end
-
 function Client:Init(params)
     App.Init(self, params)
-    self.DATA_DIR = "save"
-    self.DATA_FILE = "game-01.lua"
-    assert(TryCreateDataDirectory(self))
+    self.isClient = true
+    self.channel = love.thread.newChannel()
+    self.connectionManager = ConnectionManager(params.address, params.port)
 end
 
 function Client:Load()
-    self:LoadData(self.DATA_FILE)
+    self.connectionManager:Start(function(connection)
+        self.connection = connection
+        connection:Start(function(msg)
+            self.data = msg
+            self.screen = Game(app.data.game)
+            return {}
+        end)
+    end, function(connection)
+        self.connection = nil
+        self.data = nil
+        self.screen = nil
+    end)
 end
 
 function Client:Draw()
-    self.screen:Draw()
-end
-
-function Client:Update(dt)
-    self.screen:Update(dt)
+    if self.screen then
+        self.screen:Draw()
+    end
 end
 
 function Client:KeyPressed(key)
-    if key == "f9" then
-        self:LoadData(self.DATA_FILE)
-    elseif key == "f5" then
-        self:SaveData(self.DATA_FILE)
+    if self.screen then
+        self.screen:KeyPressed(key)
     end
-    self.screen:KeyPressed(key)
 end
 
 function Client:WheelMoved(x, y)
-    self.screen:WheelMoved(x, y)
+    if self.screen then
+        self.screen:WheelMoved(x, y)
+    end
 end
 
 function Client:MousePressed(x, y, button)
-    self.screen:MousePressed(x, y, button)
+    if self.screen then
+        self.screen:MousePressed(x, y, button)
+    end
 end
 
 function Client:MouseReleased(x, y, button)
-    self.screen:MouseReleased(x, y, button)
+    if self.screen then
+        self.screen:MouseReleased(x, y, button)
+    end
 end
 
 function Client:MouseMoved(x, y)
-    self.screen:MouseMoved(x, y)
+    if self.screen then
+        self.screen:MouseMoved(x, y)
+    end
 end
 
-function Client:LoadData(file)
-    local content = love.filesystem.read(self.DATA_DIR .. "/" .. file)
-    self.data = table.fromstring(content)
-    self.screen = Game(app.data.game)
-end
-
-function Client:SaveData(file)
-    local content = table.tostring(self.data)
-    local success, message = love.filesystem.write(self.DATA_DIR .. "/" .. file, content)
-    assert(success, message)
-end
-
-Loader:LoadClass("app/app.lua")
+Loader.LoadFile("app/app.lua")
 MakeClassOf(Client, App)

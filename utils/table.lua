@@ -71,7 +71,11 @@ function table.tostring(self)
         local prefix = string.rep("    ", depth)
         local result = "{"
         local last = 0
-        for _, group in ipairs({nums, strings, others}) do
+        for _, group in ipairs({
+            nums,
+            strings,
+            others
+        }) do
             for _, k in ipairs(group) do
                 local v = self[k]
                 local kType = type(k)

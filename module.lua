@@ -1,0 +1,7 @@
+Loader.LoadModule("utils")
+Loader.LoadModule("app")
+Loader.LoadModule("controls")
+Loader.LoadModule("game")
+Loader.LoadModule("login")
+Loader.LoadModule("screens")
+Loader.LoadModule("networking")

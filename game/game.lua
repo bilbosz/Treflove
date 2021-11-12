@@ -23,12 +23,8 @@ function Game:Draw()
     love.graphics.reset()
 end
 
-function Game:Update(dt)
-    self.root:Update(dt)
-end
-
 function Game:KeyPressed(code)
-    
+
 end
 
 function Game:MousePressed(x, y, button)

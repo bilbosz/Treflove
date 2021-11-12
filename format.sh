@@ -1,0 +1,1 @@
+find -iname '*.lua' | xargs -n1 lua-format -i -c lua-format.config

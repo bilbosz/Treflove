@@ -11,8 +11,7 @@ Control = {}
 ]]
 
 function Control:UpdateLocalTransform()
-    self.localTransform = self.localTransform:setTransformation(self.position[1], self.position[2], self.rotation,
-        self.scale[1], self.scale[2], self.origin[1], self.origin[2])
+    self.localTransform = self.localTransform:setTransformation(self.position[1], self.position[2], self.rotation, self.scale[1], self.scale[2], self.origin[1], self.origin[2])
 end
 
 function Control:UpdateGlobalTransform()
@@ -199,12 +198,6 @@ function Control:WheelMoved(x, y)
     end
 end
 
-function Control:Update(dt)
-    for _, child in ipairs(table.copy(self.children)) do
-        child:Update(dt)
-    end
-end
-
 function Control:Draw()
     for _, child in ipairs(table.copy(self.children)) do
         child:Draw()
@@ -217,13 +210,25 @@ function Control:Init(parent, width, height)
         self:SetParent(parent)
     end
     self.children = {}
-    self.position = {0, 0}
-    self.scale = {1, 1}
+    self.position = {
+        0,
+        0
+    }
+    self.scale = {
+        1,
+        1
+    }
     self.rotation = 0
-    self.origin = {0, 0}
+    self.origin = {
+        0,
+        0
+    }
     self.localTransform = love.math.newTransform()
     self.globalTransform = love.math.newTransform()
-    self.size = {width or 0, height or 0}
+    self.size = {
+        width or 0,
+        height or 0
+    }
 
     self:UpdateGlobalTransform()
 end
