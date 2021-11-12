@@ -3,7 +3,7 @@ local loggerData, channel, address, getPortChannel, inChannel, outChannel = ...
 local socket = require("socket")
 love.filesystem.load("utils/loader.lua")()
 Loader.LoadModule("utils")
-logger = Logger(loggerData, "client-in")
+logger = Logger(loggerData, "client-in-?????")
 
 local inServer, error = socket.bind(address, 0)
 if error then
@@ -11,6 +11,7 @@ if error then
     return
 end
 local inPort = select(2, inServer:getsockname())
+logger:SetName(string.format("client-in-%05i", inPort))
 getPortChannel:push(inPort)
 local inClient, error = inServer:accept()
 if error then

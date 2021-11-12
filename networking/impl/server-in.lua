@@ -3,7 +3,7 @@ local loggerData, address, dispatcherChannel, channel, inThread = ...
 local socket = require("socket")
 love.filesystem.load("utils/loader.lua")()
 Loader.LoadModule("utils")
-logger = Logger(loggerData, "server-in")
+logger = Logger(loggerData, "server-in-?????")
 
 local inServer, error = socket.bind(address, 0)
 if error then
@@ -13,6 +13,7 @@ if error then
 end
 
 local inPort = select(2, inServer:getsockname())
+logger:SetName(string.format("server-in-%05i", inPort))
 logger:Log("Bound port " .. inPort .. " for receiver")
 dispatcherChannel:push(inPort)
 

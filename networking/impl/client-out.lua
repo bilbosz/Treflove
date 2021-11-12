@@ -3,7 +3,7 @@ local loggerData, channel, address, port, outThread = ...
 local socket = require("socket")
 love.filesystem.load("utils/loader.lua")()
 Loader.LoadModule("utils")
-logger = Logger(loggerData, "client-out")
+logger = Logger(loggerData, "client-out-?????")
 
 local outPort
 do
@@ -14,6 +14,7 @@ do
         return
     end
     outPort, error = client:receive("*l")
+    logger:SetName(string.format("client-out-%05i", outPort))
     if error or not tonumber(outPort) then
         client:close()
         logger:Log("Could not receive client sender port")

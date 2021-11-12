@@ -11,6 +11,11 @@ function Logger:Init(threadName)
     self.enabled = true
 end
 
+function Logger:SetName(threadName)
+    assert(type(threadName) == "string")
+    self.threadName = threadName
+end
+
 function Logger:Log(...)
     if not self.enabled then
         return
