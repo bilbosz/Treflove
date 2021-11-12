@@ -11,7 +11,13 @@ if error then
     return
 end
 logger:Log("Connected to client receiver on port " .. outPort)
-mainChannel:push({"a", inChannel, inThread, outChannel, outThread})
+mainChannel:push({
+    "a",
+    inChannel,
+    inThread,
+    outChannel,
+    outThread
+})
 
 local msg = outChannel:demand()
 while msg ~= false do
@@ -30,4 +36,7 @@ while msg ~= false do
     logger:Log("Send data with size of " .. n)
     msg = outChannel:demand()
 end
-mainChannel:push({"o", outChannel})
+mainChannel:push({
+    "o",
+    outChannel
+})

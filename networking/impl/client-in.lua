@@ -43,4 +43,7 @@ while true do
     logger:Log("Received data with size of " .. n)
     inChannel:push(data)
 end
-channel:push({"i", inChannel})
+channel:push({
+    "i",
+    inChannel
+})

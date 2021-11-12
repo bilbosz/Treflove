@@ -40,7 +40,13 @@ do
         logger:Log("Could not send receiver port")
         return
     end
-    channel:push({"a", inChannel, inThread, outChannel, outThread})
+    channel:push({
+        "a",
+        inChannel,
+        inThread,
+        outChannel,
+        outThread
+    })
     logger:Log("Established output connection with host")
 
     local msg = outChannel:demand()
@@ -68,5 +74,8 @@ do
         logger:Log("Send data with size of " .. n)
         msg = outChannel:demand()
     end
-    channel:push({"o", outChannel})
+    channel:push({
+        "o",
+        outChannel
+    })
 end

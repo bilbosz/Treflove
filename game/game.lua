@@ -24,7 +24,7 @@ function Game:Draw()
 end
 
 function Game:KeyPressed(code)
-    
+
 end
 
 function Game:MousePressed(x, y, button)

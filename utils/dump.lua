@@ -88,8 +88,7 @@ local function DumpGenerator(config)
             end
             local content
 
-            if type_ == "table" and (config.tableUnfoldRepeated or not recursionCheck[val]) and node == nodeTypes.Value and
-                level < config.tableMaxLevel then
+            if type_ == "table" and (config.tableUnfoldRepeated or not recursionCheck[val]) and node == nodeTypes.Value and level < config.tableMaxLevel then
                 recursionCheck[val] = true
                 content = valueIndention .. "{" .. config.tableNewline
                 local lastIndex = 0
@@ -101,10 +100,9 @@ local function DumpGenerator(config)
                     else
                         content = content .. dump(key, level + 1, nodeTypes.Key)
                     end
-                    content = content .. dump(curVal, level + 1, nodeTypes.Value, recursionCheck) .. "," ..
-                                  config.tableNewline
+                    content = content .. dump(curVal, level + 1, nodeTypes.Value, recursionCheck) .. "," .. config.tableNewline
                 end
-                content = content .. indention .. '}'
+                content = content .. indention .. "}"
             end
             return valueIndention .. nodeDisplays[node](val, type_, varName, content)
         end
@@ -128,7 +126,9 @@ local function DumpGenerator(config)
         end
 
         if config.dump then
-            local args = {...}
+            local args = {
+                ...
+            }
             local n = select("#", ...)
             result = result .. createDump(config.dump, args, n)
         end

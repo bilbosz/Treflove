@@ -15,7 +15,12 @@ end
 function Rectangle:Init(parent, width, height, color)
     assert(width and height)
     Control.Init(self, parent, width, height)
-    self.color = color or {255, 255, 255, 255}
+    self.color = color or {
+        255,
+        255,
+        255,
+        255
+    }
 end
 
 Loader.LoadFile("controls/control.lua")

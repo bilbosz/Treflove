@@ -2,8 +2,7 @@
 Example:
 love . server 0.0.0.0 8080
 love . client 192.0.0.1 8080
-]]
-ArgParser = {}
+]] ArgParser = {}
 
 local function parseAppType(str)
     return str == "server" and str or str == "client" and str or false
@@ -14,7 +13,9 @@ local function parseAddress(str)
         return str
     else
         local pattern = "(%d+)%.(%d+)%.(%d+)%.(%d+)"
-        local findings = {string.find(str, pattern)}
+        local findings = {
+            string.find(str, pattern)
+        }
         if #findings ~= 6 then
             return false
         end

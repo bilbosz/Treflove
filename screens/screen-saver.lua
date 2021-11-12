@@ -9,7 +9,12 @@ local function CreateLogo(self)
     local imgW, imgH = image:getDimensions()
 
     local circle = DrawableControl(logo, imgW, imgH, function()
-        love.graphics.setColor({0.9, 0.9, 0.9, 1})
+        love.graphics.setColor({
+            0.9,
+            0.9,
+            0.9,
+            1
+        })
         love.graphics.circle("fill", 0, 0, imgW * 0.5)
     end)
 
@@ -30,7 +35,12 @@ local function CreateLogo(self)
     mask:SetScale(0.7)
     self.mask = mask
 
-    self.color = {0, 0, 0, 255}
+    self.color = {
+        0,
+        0,
+        0,
+        255
+    }
     local background = DrawableControl(mask, imgW, imgW, function()
         love.graphics.setColor(self.color)
         love.graphics.rectangle("fill", 0, 0, imgW, imgW)
@@ -89,7 +99,12 @@ function ScreenSaver:Init()
     Control.Init(self, nil, w, h)
     UpdateObserver.Init(self)
 
-    self.screen = Rectangle(self, w, h, {255, 255, 255, 255})
+    self.screen = Rectangle(self, w, h, {
+        255,
+        255,
+        255,
+        255
+    })
     CreateLogo(self)
 
     self.dirRot = 1

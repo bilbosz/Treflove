@@ -9,7 +9,12 @@ return {
         ["Old Town"] = {
             width = 175.61,
             image = "game/world/world.jpg",
-            tokens = {"Bilbosz", "Gaben", "Bilbosza", "Anonim"}
+            tokens = {
+                "Bilbosz",
+                "Gaben",
+                "Bilbosza",
+                "Anonim"
+            }
         }
     },
     tokens = {
@@ -17,25 +22,37 @@ return {
             name = "Bilbosz",
             radius = 3,
             avatar = "game/token/bilbosz.png",
-            position = {90, 60}
+            position = {
+                90,
+                60
+            }
         },
         ["Gaben"] = {
             name = "Gaben",
             radius = 3,
             avatar = "game/token/gaben.png",
-            position = {85, 60}
+            position = {
+                85,
+                60
+            }
         },
         ["Bilbosza"] = {
             name = "Bilbosza Wielka",
             radius = 3,
             avatar = "game/token/bilbosza.png",
-            position = {87.5, 62.5}
+            position = {
+                87.5,
+                62.5
+            }
         },
         ["Anonim"] = {
             name = "Anonim",
             radius = 2,
             avatar = "game/token/default.png",
-            position = {81.83, 61.10}
+            position = {
+                81.83,
+                61.10
+            }
         }
     }
 }
