@@ -1,51 +1,49 @@
 App = {}
 
-function App:RegistryLoveCallbacks()
+local socket = require("socket")
+
+local function CreateRoot(self)
+    local realW, realH = love.graphics.getDimensions()
+    assert(realW >= realH)
+    local scale = realW / Consts.MODEL_WIDTH
+    self.width, self.height = Consts.MODEL_WIDTH, realH / scale
+    self.root = Control()
+    self.root:SetScale(scale)
+end
+
+local function RegistryLoveCallbacks(self)
     if self.Load then
         function love.load()
             self:Load()
         end
     end
-    if self.Draw then
+    if config.window then
+        CreateRoot(self)
         function love.draw()
-            self:Draw()
+            self.root:Draw()
+            love.graphics.reset()
         end
-    end
-    if self.KeyPressed then
         function love.keypressed(key)
             if key == "escape" then
                 love.event.quit(0)
                 return
-            elseif debug and key == "f11" then
-                Loader.Reload()
-                ReloadObjects()
-                return
             end
-            self:KeyPressed(key)
         end
-    end
-    if self.WheelMoved then
         function love.wheelmoved(x, y)
-            self:WheelMoved(x, y)
+            self.root:WheelMoved(x, y)
         end
-    end
-    if self.MousePressed then
         function love.mousepressed(x, y, button)
-            self:MousePressed(x, y, button)
+            self.root:MousePressed(x, y, button)
         end
-    end
-    if self.MouseReleased then
         function love.mousereleased(x, y, button)
-            self:MouseReleased(x, y, button)
+            self.root:MouseReleased(x, y, button)
         end
-    end
-    if self.MouseMoved then
         function love.mousemoved(x, y)
-            self:MouseMoved(x, y)
+            self.root:MouseMoved(x, y)
         end
     end
     function love.update(dt)
-        UpdateObserver.Notify(dt)
+        self.updateEventManager:InvokeEvent(UpdateEventListener.OnUpdate, dt)
         collectgarbage("step")
     end
 end
@@ -57,8 +55,12 @@ function App:Init(params)
     self.isServer = false
     self.isClient = false
     self.data = nil
+    self.width = nil
+    self.height = nil
+    self.root = nil
+    self.updateEventManager = UpdateEventManager()
 
-    self:RegistryLoveCallbacks()
+    RegistryLoveCallbacks(self)
 end
 
 MakeClassOf(App)

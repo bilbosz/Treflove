@@ -1,64 +1,35 @@
 ScreenSaver = {}
 
-local function CreateLogo(self)
-    local logo = Control(self.screen)
-    self.logo = logo
-    logo:SetPosition(self.size[1] * 0.5, self.size[2] * 0.5)
+function ScreenSaver:Init()
+    Screen.Init(self)
+end
 
-    local image = love.graphics.newImage("icon.png")
-    local imgW, imgH = image:getDimensions()
+function ScreenSaver:OnPush()
+    Screen.OnPush(self)
+    self.screen:SetSize(app.width, app.height)
 
-    local circle = DrawableControl(logo, imgW, imgH, function()
-        love.graphics.setColor({
-            0.9,
-            0.9,
-            0.9,
-            1
-        })
-        love.graphics.circle("fill", 0, 0, imgW * 0.5)
-    end)
-
-    local shader = love.graphics.newShader([[
-        vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) {
-            if (Texel(texture, texture_coords).a == 0.0) {
-                discard;
-            }
-            return vec4(1.0);
-        }
-    ]])
-    local mask = ClippingMask(logo, imgW, imgH, function()
-        love.graphics.setShader(shader)
-        love.graphics.draw(image)
-        love.graphics.setShader()
-    end)
-    mask:SetOrigin(imgW * 0.5, imgH * 0.5 + 3)
-    mask:SetScale(0.7)
-    self.mask = mask
-
-    self.color = {
-        0,
-        0,
-        0,
+    self.background = Rectangle(self.screen, app.width, app.height, {
+        255,
+        255,
+        255,
         255
-    }
-    local background = DrawableControl(mask, imgW, imgW, function()
-        love.graphics.setColor(self.color)
-        love.graphics.rectangle("fill", 0, 0, imgW, imgW)
-    end)
-    background:SetOrigin(imgW * 0.5, imgW * 0.5)
-    background:SetPosition(imgW * 0.5, imgW * 0.5)
+    })
+
+    self.logo = Logo(self.screen)
+
+    self.dirRot = 1
+    self.dirX, self.dirY = 1, 1
+
+    app.updateEventManager:RegisterListener(self)
 end
 
-function ScreenSaver:Draw()
-    self.screen:Draw()
-end
+function ScreenSaver:OnUpdate(dt)
+    local logo = self.logo
+    logo:SetRotation(logo:GetRotation() + dt * self.dirRot)
 
-function ScreenSaver:Update(dt)
-    self.logo:SetRotation(self.logo:GetRotation() + dt * self.dirRot)
-
-    local x, y = self.logo:GetPosition()
-    local r = self.mask:GetSize() * 0.5
-    local w, h = self:GetSize()
+    local x, y = logo:GetPosition()
+    local r = logo:GetSize() * 0.5
+    local w, h = self.screen:GetSize()
     local move = 60 * dt
 
     local newX, newY = x + self.dirX * move, y + self.dirY * move
@@ -86,31 +57,12 @@ function ScreenSaver:Update(dt)
     end
     if collided then
         for k = 1, 3 do
-            self.color[k] = math.random()
+            self.logo.color[k] = math.random()
         end
         self.dirRot = -self.dirRot
     end
 
-    self.logo:SetPosition(newX, newY)
+    logo:SetPosition(newX, newY)
 end
 
-function ScreenSaver:Init()
-    local w, h = love.graphics.getDimensions()
-    Control.Init(self, nil, w, h)
-    UpdateObserver.Init(self)
-
-    self.screen = Rectangle(self, w, h, {
-        255,
-        255,
-        255,
-        255
-    })
-    CreateLogo(self)
-
-    self.dirRot = 1
-    self.dirX, self.dirY = 1, 1
-end
-
-Loader.LoadFile("controls/control.lua")
-Loader.LoadFile("events/update-observer.lua")
-MakeClassOf(ScreenSaver, Control, UpdateObserver)
+MakeClassOf(ScreenSaver, Screen, UpdateEventListener)

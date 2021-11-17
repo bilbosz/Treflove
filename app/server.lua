@@ -16,8 +16,9 @@ function Server:Init(params)
     self.DATA_FILE = "game-01.lua"
     assert(TryCreateDataDirectory(self))
 
-    if config.window then
-        self.screenSaver = ScreenSaver()
+    if self.root then
+        self.screenManager = ScreenManager()
+        self.screenManager:Push(ScreenSaver())
     end
     self.connectionManager = ConnectionManager(params.address, params.port)
 end
@@ -42,7 +43,7 @@ function Server:Load()
             app.logger:Log("Received game data fist time")
             return {}
         end)
-    end, function(connection)
+    end, function()
     end)
 end
 
@@ -57,11 +58,4 @@ function Server:SaveData(file)
     assert(success, message)
 end
 
-if config.window then
-    function Server:Draw()
-        self.screenSaver:Draw()
-    end
-end
-
-Loader.LoadFile("app/app.lua")
 MakeClassOf(Server, App)

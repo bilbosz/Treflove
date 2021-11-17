@@ -23,5 +23,4 @@ function Rectangle:Init(parent, width, height, color)
     }
 end
 
-Loader.LoadFile("controls/control.lua")
 MakeClassOf(Rectangle, Control)

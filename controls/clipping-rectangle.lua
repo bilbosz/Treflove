@@ -12,5 +12,4 @@ function ClippingRectangle:Init(parent, width, height)
     Control.Init(self, parent, width, height)
 end
 
-Loader.LoadFile("controls/control.lua")
 MakeClassOf(ClippingRectangle, Control)

@@ -30,13 +30,15 @@ end
 function Token:Init(parent)
     local data = self.data
     Control.Init(self, parent, data.radius, data.radius)
-    UpdateObserver.Init(self)
+
     self.dragMouseButton = 1
     self.prevDragMouseX, self.prevDragMouseY = nil, nil
 
     self:SetPosition(unpack(data.position))
     self:CreateAvatar(data.avatar)
     self:CreateLabel(data.name)
+
+    app.updateEventManager:RegisterListener(self)
 end
 
 function Token:MousePressed(x, y, button)
@@ -75,11 +77,9 @@ function Token:MouseMoved(x, y)
     Control.MouseMoved(self, x, y)
 end
 
-function Token:Update(dt)
+function Token:OnUpdate(dt)
     self.total = (self.total or 0) + dt
     self.image:SetRotation(self.total)
 end
 
-Loader.LoadFile("controls/control.lua")
-Loader.LoadFile("events/update-observer.lua")
-MakeModelOf(Token, Control, UpdateObserver)
+MakeModelOf(Token, Control)

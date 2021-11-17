@@ -8,5 +8,4 @@ function Image:Init(parent, path)
     end)
 end
 
-Loader.LoadFile("controls/drawable-control.lua")
 MakeClassOf(Image, DrawableControl)

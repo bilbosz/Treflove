@@ -170,6 +170,13 @@ function Control:GetGlobalAabb()
     return math.min(x1, x2), math.min(y1, y2), math.max(x1, x2), math.max(y1, y2)
 end
 
+function Control:SetSize(width, height)
+    self.size = {
+        width,
+        height
+    }
+end
+
 function Control:GetSize()
     return unpack(self.size)
 end
@@ -199,9 +206,16 @@ function Control:WheelMoved(x, y)
 end
 
 function Control:Draw()
+    if not self.enabled then
+        return
+    end
     for _, child in ipairs(table.copy(self.children)) do
         child:Draw()
     end
+end
+
+function Control:SetEnabled(value)
+    self.enabled = value
 end
 
 function Control:Init(parent, width, height)
@@ -209,6 +223,7 @@ function Control:Init(parent, width, height)
     if parent then
         self:SetParent(parent)
     end
+    self.enabled = true
     self.children = {}
     self.position = {
         0,

@@ -1,7 +1,6 @@
 Connector = {}
 
 function Connector:Init(address, port)
-    UpdateObserver.Init(self)
     self.address = address
     self.port = port
     self.channel = love.thread.newChannel()
@@ -13,6 +12,8 @@ end
 function Connector:Start(connectionManager)
     self.connectionManager = connectionManager
     self:TryRestartConnection()
+
+    app.updateEventManager:RegisterListener(self)
 end
 
 function Connector:TryRestartConnection()
@@ -55,10 +56,9 @@ function Connector:RemoveThread()
     self.thread = nil
 end
 
-function Connector:Update()
+function Connector:OnUpdate()
     self:TryRestartConnection()
     self:HandleConnections()
 end
 
-Loader.LoadFile("events/update-observer.lua")
-MakeClassOf(Connector, UpdateObserver)
+MakeClassOf(Connector, UpdateEventListener)

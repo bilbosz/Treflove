@@ -26,13 +26,14 @@ local function SendResponse(self, request)
 end
 
 function Connection:Init(inChannel, inThread, outChannel, outThread)
-    UpdateObserver.Init(self)
     self.inChannel = inChannel
     self.inThread = inThread
     self.outChannel = outChannel
     self.outThread = outThread
     self.queue = {}
     self.source = app.isClient and "c" or "s"
+
+    app.updateEventManager:RegisterListener(self)
 end
 
 function Connection:Start(requestHandler)
@@ -59,7 +60,7 @@ function Connection:GetOutChannel()
     return self.outChannel
 end
 
-function Connection:Update()
+function Connection:OnUpdate()
     while true do
         local load = self.inChannel:pop()
         if not load then
@@ -75,11 +76,11 @@ function Connection:Update()
 end
 
 function Connection:Release()
-    UpdateObserver.Release(self)
+    app.updateEventManager:UnregisterListener(self)
     self.inThread:release()
     self.inChannel:release()
     self.outThread:release()
     self.outChannel:release()
 end
 
-MakeClassOf(Connection, UpdateObserver)
+MakeClassOf(Connection, UpdateEventListener)
