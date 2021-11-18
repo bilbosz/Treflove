@@ -1,7 +1,5 @@
 App = {}
 
-local socket = require("socket")
-
 local function CreateRoot(self)
     local realW, realH = love.graphics.getDimensions()
     assert(realW >= realH)
@@ -20,8 +18,10 @@ local function RegistryLoveCallbacks(self)
     if config.window then
         CreateRoot(self)
         function love.draw()
-            self.root:Draw()
-            love.graphics.reset()
+            if self.root:IsEnabled() then
+                self.root:Draw()
+                love.graphics.reset()
+            end
         end
         function love.keypressed(key)
             if key == "escape" then

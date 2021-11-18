@@ -20,7 +20,7 @@ return {
     tokens = {
         ["Bilbosz"] = {
             name = "Bilbosz",
-            radius = 3,
+            diameter = 3,
             avatar = "game/token/bilbosz.png",
             position = {
                 90,
@@ -29,7 +29,7 @@ return {
         },
         ["Gaben"] = {
             name = "Gaben",
-            radius = 3,
+            diameter = 3,
             avatar = "game/token/gaben.png",
             position = {
                 85,
@@ -38,7 +38,7 @@ return {
         },
         ["Bilbosza"] = {
             name = "Bilbosza Wielka",
-            radius = 3,
+            diameter = 3,
             avatar = "game/token/bilbosza.png",
             position = {
                 87.5,
@@ -47,7 +47,7 @@ return {
         },
         ["Anonim"] = {
             name = "Anonim",
-            radius = 2,
+            diameter = 2,
             avatar = "game/token/default.png",
             position = {
                 81.83,

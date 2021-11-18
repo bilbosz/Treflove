@@ -27,9 +27,26 @@ function Control:UpdateGlobalTransform()
     end
 end
 
-function Control:UpdateGeometry()
+function Control:UpdateTransform()
     self:UpdateLocalTransform()
     self:UpdateGlobalTransform()
+end
+
+function Control:ResetLocalTransform()
+    self.position = {
+        0,
+        0
+    }
+    self.scale = {
+        1,
+        1
+    }
+    self.rotation = 0
+    self.origin = {
+        0,
+        0
+    }
+    self:UpdateLocalTransform()
 end
 
 function Control:TransformToLocal(x, y)
@@ -53,7 +70,7 @@ function Control:SetPosition(x, y)
     if y then
         self.position[2] = y
     end
-    self:UpdateGeometry()
+    self:UpdateTransform()
 end
 
 function Control:GetPosition()
@@ -65,7 +82,7 @@ function Control:SetScale(scaleX, scaleY)
     scaleY = scaleY or scaleX
     self.scale[1] = scaleX
     self.scale[2] = scaleY
-    self:UpdateGeometry()
+    self:UpdateTransform()
 end
 
 function Control:GetScale()
@@ -75,7 +92,7 @@ end
 function Control:SetRotation(rotation)
     assert(rotation)
     self.rotation = rotation
-    self:UpdateGeometry()
+    self:UpdateTransform()
 end
 
 function Control:GetRotation()
@@ -90,7 +107,7 @@ function Control:SetOrigin(x, y)
     if y then
         self.origin[2] = y
     end
-    self:UpdateGeometry()
+    self:UpdateTransform()
 end
 
 function Control:GetOrigin()
@@ -103,6 +120,7 @@ function Control:AddChild(child)
     end
     child.parent = self
     table.insert(self.children, child)
+    child:UpdateGlobalTransform()
 end
 
 function Control:RemoveChild(child)
@@ -141,6 +159,7 @@ end
 
 function Control:Reattach(n)
     local children = self.parent.children
+    n = n or #children
     local found
     for i, v in ipairs(children) do
         if v == self then
@@ -150,31 +169,23 @@ function Control:Reattach(n)
     end
     if found then
         table.remove(children, found)
-        if n then
-            table.insert(children, n, self)
-        else
-            table.insert(children, self)
-        end
+        table.insert(children, n, self)
     else
         assert(false)
     end
 end
 
 function Control:GetAabb()
-    return 0, 0, unpack(self.size)
+    return 0, 0, self:GetSize()
 end
 
 function Control:GetGlobalAabb()
+    local w, h = self:GetSize()
     local x1, y1 = self:TransformToGlobal(0, 0)
-    local x2, y2 = self:TransformToGlobal(self:GetSize())
-    return math.min(x1, x2), math.min(y1, y2), math.max(x1, x2), math.max(y1, y2)
-end
-
-function Control:SetSize(width, height)
-    self.size = {
-        width,
-        height
-    }
+    local x2, y2 = self:TransformToGlobal(w, 0)
+    local x3, y3 = self:TransformToGlobal(w, h)
+    local x4, y4 = self:TransformToGlobal(0, h)
+    return math.min(x1, x2, x3, x4), math.min(y1, y2, y3, y4), math.max(x1, x2, x3, x4), math.max(y1, y2, y3, y4)
 end
 
 function Control:GetSize()
@@ -205,47 +216,43 @@ function Control:WheelMoved(x, y)
     end
 end
 
-function Control:Draw()
-    if not self.enabled then
-        return
-    end
-    for _, child in ipairs(table.copy(self.children)) do
-        child:Draw()
-    end
-end
-
 function Control:SetEnabled(value)
     self.enabled = value
 end
 
-function Control:Init(parent, width, height)
-    self.parent = nil
-    if parent then
-        self:SetParent(parent)
+function Control:IsEnabled()
+    return self.enabled
+end
+
+function Control:Draw()
+    for _, child in ipairs(self.children) do
+        if child.enabled then
+            child:Draw()
+        end
     end
+end
+
+function Control:SetSelectable(value)
+    self.selectable = value
+end
+
+function Control:Init(parent, width, height)
     self.enabled = true
+    self.selectable = false
     self.children = {}
-    self.position = {
-        0,
-        0
-    }
-    self.scale = {
-        1,
-        1
-    }
-    self.rotation = 0
-    self.origin = {
-        0,
-        0
-    }
+
     self.localTransform = love.math.newTransform()
     self.globalTransform = love.math.newTransform()
+    self:ResetLocalTransform()
     self.size = {
         width or 0,
         height or 0
     }
 
-    self:UpdateGlobalTransform()
+    self.parent = nil
+    if parent then
+        self:SetParent(parent)
+    end
 end
 
 MakeClassOf(Control)

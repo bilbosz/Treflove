@@ -24,7 +24,7 @@ function World:Init(parent, width, height)
     self.name = self.data.name
     self.worldDef = app.data.worlds[self.name]
     self.worldWidth = self.worldDef.width
-    self.scaleToPixelsPerMeter = 100
+    self.scaleToPixelsPerMeter = 50
     self.prevDragMouseX, self.prevDragMouseY = nil, nil
     self.dragMouseButton = 2
     self.mouseZoomInc = 1.3

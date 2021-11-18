@@ -20,3 +20,24 @@ function CreateIndex(self, ...)
     table.merge(idx, self)
     return idx
 end
+
+local function DrawAabbsInternal(ctrl)
+    local minX, minY, maxX, maxY = ctrl:GetGlobalAabb()
+    love.graphics.rectangle("fill", minX, minY, maxX - minX, maxY - minY)
+    for _, child in ipairs(ctrl:GetChildren()) do
+        if child:IsEnabled() then
+            DrawAabbs(child)
+        end
+    end
+end
+
+function DrawAabbs(ctrl)
+    love.graphics.setColor({
+        1,
+        0,
+        0,
+        0.1
+    })
+    DrawAabbsInternal(ctrl)
+    love.graphics.reset()
+end
