@@ -1,3 +1,7 @@
 Loader.LoadFile("events/event-manager.lua")
 Loader.LoadFile("events/update-event-listener.lua")
 Loader.LoadFile("events/update-event-manager.lua")
+Loader.LoadFile("events/pointer-event-listener.lua")
+Loader.LoadFile("events/pointer-event-manager.lua")
+Loader.LoadFile("events/wheel-event-listener.lua")
+Loader.LoadFile("events/wheel-event-manager.lua")

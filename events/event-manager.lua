@@ -16,7 +16,6 @@ end
 function EventManager:RegisterListener(listener)
     for methodName, classMethod in pairs(self.listenerIndex) do
         local listenerMethod = listener[methodName]
-        assert(listenerMethod)
         self.methods[classMethod][listener] = listenerMethod
     end
 end
@@ -29,7 +28,9 @@ end
 
 function EventManager:InvokeEvent(method, ...)
     for listener, listenerMethod in pairs(self.methods[method]) do
-        listenerMethod(listener, ...)
+        if listenerMethod then
+            listenerMethod(listener, ...)
+        end
     end
 end
 

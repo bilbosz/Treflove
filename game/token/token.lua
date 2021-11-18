@@ -41,23 +41,23 @@ function Token:Init(parent)
     self:CreateLabel(data.name)
 
     app.updateEventManager:RegisterListener(self)
+    app.pointerEventManager:RegisterListener(self)
 end
 
-function Token:MousePressed(x, y, button)
+function Token:OnPointerDown(x, y, id)
     local tx, ty = self:TransformToLocal(x, y)
     local r = self.d * 0.5
     if tx * tx + ty * ty <= r * r then
-        if button == self.dragMouseButton then
+        if id == self.dragMouseButton then
             local parentX, parentY = self.parent:TransformToLocal(x, y)
             self.prevDragMouseX, self.prevDragMouseY = parentX, parentY
             self:Reattach()
         end
     end
-    Control.MousePressed(self, x, y, button)
 end
 
-function Token:MouseReleased(x, y, button)
-    if button == self.dragMouseButton and self.prevDragMouseX then
+function Token:OnPointerUp(x, y, id)
+    if id == self.dragMouseButton and self.prevDragMouseX then
         self.prevDragMouseX, self.prevDragMouseY = nil, nil
         self.data.position = {
             self:GetPosition()
@@ -66,17 +66,15 @@ function Token:MouseReleased(x, y, button)
             return {}
         end)
     end
-    Control.MouseReleased(self, x, y, button)
 end
 
-function Token:MouseMoved(x, y)
+function Token:OnPointerMove(x, y)
     if self.prevDragMouseX then
         local parentX, parentY = self.parent:TransformToLocal(x, y)
         local selfX, selfY = self:GetPosition()
         self:SetPosition(selfX + (parentX - self.prevDragMouseX), selfY + (parentY - self.prevDragMouseY))
         self.prevDragMouseX, self.prevDragMouseY = parentX, parentY
     end
-    Control.MouseMoved(self, x, y)
 end
 
 function Token:OnUpdate(dt)
@@ -84,4 +82,4 @@ function Token:OnUpdate(dt)
     self.image:SetRotation(self.total)
 end
 
-MakeModelOf(Token, Control)
+MakeModelOf(Token, Control, UpdateEventListener, PointerEventListener)

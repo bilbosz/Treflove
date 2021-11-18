@@ -192,30 +192,6 @@ function Control:GetSize()
     return unpack(self.size)
 end
 
-function Control:MousePressed(x, y, button)
-    for _, child in ipairs(table.copy(self.children)) do
-        child:MousePressed(x, y, button)
-    end
-end
-
-function Control:MouseReleased(x, y, button)
-    for _, child in ipairs(table.copy(self.children)) do
-        child:MouseReleased(x, y, button)
-    end
-end
-
-function Control:MouseMoved(x, y)
-    for _, child in ipairs(table.copy(self.children)) do
-        child:MouseMoved(x, y)
-    end
-end
-
-function Control:WheelMoved(x, y)
-    for _, child in ipairs(table.copy(self.children)) do
-        child:WheelMoved(x, y)
-    end
-end
-
 function Control:SetEnabled(value)
     self.enabled = value
 end
@@ -232,13 +208,8 @@ function Control:Draw()
     end
 end
 
-function Control:SetSelectable(value)
-    self.selectable = value
-end
-
 function Control:Init(parent, width, height)
     self.enabled = true
-    self.selectable = false
     self.children = {}
 
     self.localTransform = love.math.newTransform()

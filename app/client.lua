@@ -5,6 +5,8 @@ function Client:Init(params)
     self.isClient = true
     self.connectionManager = ConnectionManager(params.address, params.port)
     self.screenManager = ScreenManager()
+    self.pointerEventManager = PointerEventManager()
+    self.wheelEventManager = WheelEventManager()
 end
 
 function Client:Load()

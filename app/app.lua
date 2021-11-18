@@ -30,16 +30,25 @@ local function RegistryLoveCallbacks(self)
             end
         end
         function love.wheelmoved(x, y)
-            self.root:WheelMoved(x, y)
+            self.wheelEventManager:InvokeEvent(WheelEventListener.OnWheelMoved, x, y)
         end
         function love.mousepressed(x, y, button)
-            self.root:MousePressed(x, y, button)
+            self.pointerEventManager:PointerDown(x, y, button)
         end
         function love.mousereleased(x, y, button)
-            self.root:MouseReleased(x, y, button)
+            self.pointerEventManager:PointerUp(x, y, button)
         end
         function love.mousemoved(x, y)
-            self.root:MouseMoved(x, y)
+            self.pointerEventManager:PointerMove(x, y, nil)
+        end
+        function love.touchpressed(id, x, y)
+            self.pointerEventManager:PointerDown(x, y, id)
+        end
+        function love.touchreleased(id, x, y)
+            self.pointerEventManager:PointerUp(x, y, id)
+        end
+        function love.touchmoved(id, x, y)
+            self.pointerEventManager:PointerMove(x, y, id)
         end
     end
     function love.update(dt)
