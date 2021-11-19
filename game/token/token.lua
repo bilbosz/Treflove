@@ -40,7 +40,6 @@ function Token:Init(parent)
     self:CreateAvatar(data.avatar)
     self:CreateLabel(data.name)
 
-    app.updateEventManager:RegisterListener(self)
     app.pointerEventManager:RegisterListener(self)
 end
 
@@ -77,9 +76,4 @@ function Token:OnPointerMove(x, y)
     end
 end
 
-function Token:OnUpdate(dt)
-    self.total = (self.total or 0) + dt
-    self.image:SetRotation(self.total)
-end
-
-MakeModelOf(Token, Control, UpdateEventListener, PointerEventListener)
+MakeModelOf(Token, Control, PointerEventListener)
