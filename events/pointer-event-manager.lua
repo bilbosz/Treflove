@@ -1,6 +1,6 @@
 PointerEventManager = {}
 
-local function GetListenerList(ctrl, listeners, x, y, id, list)
+local function GetListenerList(ctrl, listeners, x, y, list)
     local minX, minY, maxX, maxY = ctrl:GetGlobalAabb()
     if x < minX or x > maxX or y < minY or y > maxY then
         return nil
@@ -10,7 +10,7 @@ local function GetListenerList(ctrl, listeners, x, y, id, list)
     end
     for _, child in ipairs(ctrl:GetChildren()) do
         if child:IsEnabled() then
-            GetListenerList(child, listeners, x, y, id, list)
+            GetListenerList(child, listeners, x, y, list)
         end
     end
 end
@@ -37,7 +37,7 @@ end
 function PointerEventManager:InvokeEvent(method, x, y, id)
     local listeners = self.methods[method]
     local list = {}
-    GetListenerList(app.root, listeners, x, y, id, list)
+    GetListenerList(app.root, listeners, x, y, list)
     local topToBeCalled = true
     for i = #list, 1, -1 do
         local ctrl = list[i]

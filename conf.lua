@@ -23,7 +23,6 @@ function love.conf(t)
     elseif params.appType == "client" then
         t.window.title = "Treflove"
         t.window.icon = "icon.png"
-        t.window.display = 2
     else
         assert(false)
     end

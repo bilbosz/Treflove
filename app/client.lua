@@ -7,15 +7,15 @@ function Client:Init(params)
     self.screenManager = ScreenManager()
     self.pointerEventManager = PointerEventManager()
     self.wheelEventManager = WheelEventManager()
+    self.buttonEventManager = ButtonEventManager()
 end
 
 function Client:Load()
     self.screenManager:Push(ConnectionScreen())
     self.connectionManager:Start(function(connection)
         self.connection = connection
-        connection:Start(function(msg)
-            self.data = msg
-            self.screenManager:Push(Game(app.data.game))
+        self.screenManager:Push(LoginScreen())
+        connection:Start(function()
             return {}
         end)
     end, function()
