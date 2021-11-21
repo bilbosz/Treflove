@@ -21,6 +21,7 @@ end
 
 function World:Init(parent, width, height)
     ClippingRectangle.Init(self, parent, width, height)
+    PointerEventListener.Init(self, true)
     self.name = self.data.name
     self.worldDef = app.data.worlds[self.name]
     self.worldWidth = self.worldDef.width

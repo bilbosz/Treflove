@@ -1,7 +1,7 @@
 Loader.LoadModule("utils")
 Loader.LoadModule("app")
-Loader.LoadModule("events")
 Loader.LoadModule("controls")
+Loader.LoadModule("events")
 Loader.LoadModule("login")
 Loader.LoadModule("screens")
 Loader.LoadModule("networking")

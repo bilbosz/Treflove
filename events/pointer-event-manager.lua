@@ -1,5 +1,20 @@
 PointerEventManager = {}
 
+local function GetListenerList(ctrl, listeners, x, y, id, list)
+    local minX, minY, maxX, maxY = ctrl:GetGlobalAabb()
+    if x < minX or x > maxX or y < minY or y > maxY then
+        return nil
+    end
+    if listeners[ctrl] then
+        table.insert(list, ctrl)
+    end
+    for _, child in ipairs(ctrl:GetChildren()) do
+        if child:IsEnabled() then
+            GetListenerList(child, listeners, x, y, id, list)
+        end
+    end
+end
+
 function PointerEventManager:Init()
     EventManager.Init(self, PointerEventListener)
     self.downId = nil
@@ -17,6 +32,25 @@ end
 
 function PointerEventManager:PointerMove(x, y, id)
     self:InvokeEvent(PointerEventListener.OnPointerMove, x, y, id or self.downId)
+end
+
+function PointerEventManager:InvokeEvent(method, x, y, id)
+    local listeners = self.methods[method]
+    local list = {}
+    GetListenerList(app.root, listeners, x, y, id, list)
+    local topToBeCalled = true
+    for i = #list, 1, -1 do
+        local ctrl = list[i]
+        local listener = listeners[ctrl]
+        if topToBeCalled then
+            local passThrough = listener(ctrl, x, y, id)
+            if not passThrough then
+                topToBeCalled = false
+            end
+        elseif ctrl.receiveThrough then
+            listener(ctrl, x, y, id)
+        end
+    end
 end
 
 MakeClassOf(PointerEventManager, EventManager)

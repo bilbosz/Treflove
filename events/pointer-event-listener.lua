@@ -1,5 +1,9 @@
 PointerEventListener = {}
 
+function PointerEventListener:Init(receiveThrough)
+    self.receiveThrough = receiveThrough
+end
+
 function PointerEventListener:OnPointerDown(x, y, id)
 
 end
@@ -20,4 +24,4 @@ function PointerEventListener:OnPointerDoubleClick(x, y, id)
 
 end
 
-MakeClassOf(PointerEventListener)
+MakeClassOf(PointerEventListener, Control)

@@ -180,7 +180,7 @@ function Control:RemoveChild(child)
 end
 
 function Control:GetChildren()
-    return self.children
+    return table.copy(self.children)
 end
 
 function Control:SetParent(parent)
@@ -225,6 +225,10 @@ function Control:GetAabb()
     local x3, y3 = self:TransformToGlobal(w, h)
     local x4, y4 = self:TransformToGlobal(0, h)
     return math.min(x1, x2, x3, x4), math.min(y1, y2, y3, y4), math.max(x1, x2, x3, x4), math.max(y1, y2, y3, y4)
+end
+
+function Control:GetGlobalAabb()
+    return unpack(self.globalAabb)
 end
 
 function Control:GetSize()

@@ -31,6 +31,7 @@ end
 function Token:Init(parent)
     local data = self.data
     Control.Init(self, parent)
+    PointerEventListener.Init(self)
 
     self.dragMouseButton = 1
     self.prevDragMouseX, self.prevDragMouseY = nil, nil
@@ -52,7 +53,9 @@ function Token:OnPointerDown(x, y, id)
             self.prevDragMouseX, self.prevDragMouseY = parentX, parentY
             self:Reattach()
         end
+        return false
     end
+    return true
 end
 
 function Token:OnPointerUp(x, y, id)
@@ -64,7 +67,9 @@ function Token:OnPointerUp(x, y, id)
         app.connection:SendRequest(app.data, function()
             return {}
         end)
+        return false
     end
+    return true
 end
 
 function Token:OnPointerMove(x, y)
@@ -73,7 +78,9 @@ function Token:OnPointerMove(x, y)
         local selfX, selfY = self:GetPosition()
         self:SetPosition(selfX + (parentX - self.prevDragMouseX), selfY + (parentY - self.prevDragMouseY))
         self.prevDragMouseX, self.prevDragMouseY = parentX, parentY
+        return false
     end
+    return true
 end
 
 MakeModelOf(Token, Control, PointerEventListener)

@@ -24,7 +24,7 @@ end
 local function DrawAabbsInternal(ctrl)
     local minX, minY, maxX, maxY = unpack(ctrl.globalAabb)
     love.graphics.rectangle("fill", minX, minY, maxX - minX, maxY - minY)
-    for _, child in ipairs(ctrl:GetChildren()) do
+    for _, child in ipairs(ctrl.children) do
         if child:IsEnabled() then
             DrawAabbs(child)
         end
