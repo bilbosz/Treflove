@@ -29,14 +29,14 @@ local function CreateTitle(self)
     text:SetScale(Consts.MENU_TITLE_SCALE)
 end
 
-local function CreateTextField(self, text, y)
+local function CreateTextField(self, text, y, masked)
     local text = Text(self.layout, text, Consts.TEXT_COLOR)
     local textW, textH = text:GetSize()
     text:SetOrigin(textW, textH * 0.5)
     text:SetPosition(-FIELD_MARGIN, y)
     text:SetScale(Consts.MENU_FIELD_SCALE)
 
-    local input = TextInput(self.layout, INPUT_WIDTH, INPUT_HEIGHT)
+    local input = TextInput(self.layout, INPUT_WIDTH, INPUT_HEIGHT, masked)
     input:SetOrigin(0, INPUT_HEIGHT * 0.5)
     input:SetPosition(FIELD_MARGIN, y)
     return input
@@ -47,7 +47,7 @@ local function CreateLoginField(self)
 end
 
 local function CreatePasswordField(self)
-    self.passwordInput = CreateTextField(self, "Password", 350)
+    self.passwordInput = CreateTextField(self, "Password", 350, true)
 end
 
 local function CreateLoginButton(self)

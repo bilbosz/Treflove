@@ -44,6 +44,7 @@ local function RegistryLoveCallbacks(self)
                 self.drawAabs = not self.drawAabs
             end
             self.textEventManager:KeyPressed(key)
+            self.focusEventManager:KeyPressed(key)
         end
         function love.wheelmoved(x, y)
             self.wheelEventManager:InvokeEvent(WheelEventListener.OnWheelMoved, x, y)

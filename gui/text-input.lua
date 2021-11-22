@@ -1,12 +1,18 @@
 TextInput = {}
 
 local function UpdateView(self)
-    self.background:SetColor(self.focus and Consts.BUTTON_SELECT_COLOR or self:IsHovered() and Consts.BUTTON_HOVER_COLOR or Consts.BUTTON_NORMAL_COLOR)
-    self.caret:SetEnabled(self.focus)
-    if self.focus then
+    self.background:SetColor(self:IsFocused() and Consts.BUTTON_SELECT_COLOR or self:IsHovered() and Consts.BUTTON_HOVER_COLOR or Consts.BUTTON_NORMAL_COLOR)
+    self.caret:SetEnabled(self:IsFocused())
+    if self:IsFocused() then
         local textCtrl = self.textCtrl
-        textCtrl:SetText(self:GetText())
-        self.caret:SetPosition(self.padding + textCtrl:GetSize() * Consts.MENU_FIELD_SCALE)
+        if self.masked then
+            textCtrl:SetText(string.rep("•", #self:GetText()))
+        else
+            textCtrl:SetText(self:GetText())
+        end
+        local w = textCtrl:GetSize()
+        local s = textCtrl:GetScale()
+        self.caret:SetPosition(self.padding + w * s)
         app.textEventManager:RegisterListener(self)
     else
         app.textEventManager:UnregisterListener(self)
@@ -31,25 +37,27 @@ local function CreateText(self)
     text:SetPosition(self.padding, self.height * 0.5)
 end
 
-function TextInput:Init(parent, width, height)
+function TextInput:Init(parent, width, height, masked)
     Control.Init(self, parent)
     ButtonEventListener.Init(self)
     TextEventListener.Init(self)
+    FocusEventListener.Init(self)
     self.width = width
     self.height = height
     self.padding = 10
-    self.focus = false
+    self.masked = masked or false
     CreateBackground(self)
     CreateCaret(self)
     CreateText(self)
     UpdateView(self)
     app.updateEventManager:RegisterListener(self)
     app.buttonEventManager:RegisterListener(self)
+    app.focusEventManager:RegisterListener(self)
 end
 
 function TextInput:OnUpdate(dt)
     self.time = (self.time or 0) + dt
-    self.caret:SetEnabled(self.focus and math.fmod(self.time, 1) >= 0.5)
+    self.caret:SetEnabled(self:IsFocused() and math.fmod(self.time, 1) >= 0.5)
 end
 
 function TextInput:OnPointerEnter()
@@ -64,7 +72,7 @@ end
 
 function TextInput:OnClick()
     ButtonEventListener.OnClick(self)
-    self.focus = true
+    app.focusEventManager:Focus(self)
     UpdateView(self)
 end
 
@@ -78,4 +86,14 @@ function TextInput:OnRemoveCharacter()
     UpdateView(self)
 end
 
-MakeClassOf(TextInput, Control, UpdateEventListener, ButtonEventListener, TextEventListener)
+function TextInput:OnFocus()
+    FocusEventListener.OnFocus(self)
+    UpdateView(self)
+end
+
+function TextInput:OnFocusLost()
+    FocusEventListener.OnFocusLost(self)
+    UpdateView(self)
+end
+
+MakeClassOf(TextInput, Control, UpdateEventListener, ButtonEventListener, TextEventListener, FocusEventListener)
