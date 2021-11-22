@@ -28,4 +28,8 @@ function ScreenManager:Top()
     return self.stack[#self.stack]
 end
 
+function ScreenManager:ScreenCount()
+    return #self.stack
+end
+
 MakeClassOf(ScreenManager)

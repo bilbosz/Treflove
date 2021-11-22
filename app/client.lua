@@ -19,7 +19,9 @@ function Client:Load()
             return {}
         end)
     end, function()
-        self.screenManager:Pop()
+        while self.screenManager:ScreenCount() > 1 do
+            self.screenManager:Pop()
+        end
         self.connection = nil
         self.data = nil
     end)
