@@ -43,6 +43,7 @@ local function RegistryLoveCallbacks(self)
             elseif key == "f2" then
                 self.drawAabs = not self.drawAabs
             end
+            self.textEventManager:KeyPressed(key)
         end
         function love.wheelmoved(x, y)
             self.wheelEventManager:InvokeEvent(WheelEventListener.OnWheelMoved, x, y)
@@ -70,6 +71,9 @@ local function RegistryLoveCallbacks(self)
         function love.touchmoved(id, x, y)
             self.pointerEventManager:PointerMove(x, y, id)
             self.buttonEventManager:PointerMove(x, y, id)
+        end
+        function love.textinput(text)
+            self.textEventManager:TextInput(text)
         end
     end
     function love.update(dt)

@@ -1,5 +1,13 @@
 Rectangle = {}
 
+function Rectangle:SetColor(color)
+    self.color = color
+end
+
+function Rectangle:GetColor()
+    return self.color
+end
+
 function Rectangle:Draw()
     love.graphics.push()
     love.graphics.setColor(unpack(self.color))

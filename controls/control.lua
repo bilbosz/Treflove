@@ -231,6 +231,11 @@ function Control:GetGlobalAabb()
     return unpack(self.globalAabb)
 end
 
+function Control:SetSize(width, height)
+    self.size[1], self.size[2] = width, height
+    self:UpdateTransform()
+end
+
 function Control:GetSize()
     return unpack(self.size)
 end

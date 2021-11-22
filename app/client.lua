@@ -8,6 +8,7 @@ function Client:Init(params)
     self.pointerEventManager = PointerEventManager()
     self.wheelEventManager = WheelEventManager()
     self.buttonEventManager = ButtonEventManager()
+    self.textEventManager = TextEventManager()
 end
 
 function Client:Load()

@@ -37,17 +37,17 @@ local function CreateTextField(self, text, y)
     text:SetScale(Consts.MENU_FIELD_SCALE)
 
     local input = TextInput(self.layout, INPUT_WIDTH, INPUT_HEIGHT)
-    self.loginInput = input
     input:SetOrigin(0, INPUT_HEIGHT * 0.5)
     input:SetPosition(FIELD_MARGIN, y)
+    return input
 end
 
 local function CreateLoginField(self)
-    CreateTextField(self, "Login", 250)
+    self.loginInput = CreateTextField(self, "Login", 250)
 end
 
 local function CreatePasswordField(self)
-    CreateTextField(self, "Password", 350)
+    self.passwordInput = CreateTextField(self, "Password", 350)
 end
 
 local function CreateLoginButton(self)
