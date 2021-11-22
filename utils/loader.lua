@@ -4,7 +4,7 @@ Loader = {
 
 function Loader.LoadFile(path, force)
     local info = love.filesystem.getInfo(path)
-    assert(info)
+    assert(info, string.format("File not found \"%s\"", path))
     assert(info.type == "file")
     local cache = Loader.cache[path]
     if not force and cache and info.modtime <= cache.modtime then
