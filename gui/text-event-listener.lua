@@ -25,4 +25,8 @@ function TextEventListener:SetText(text)
     self.text = text
 end
 
+function TextEventListener:GetTextLength()
+    return utf8.len(self.text)
+end
+
 MakeClassOf(TextEventListener)

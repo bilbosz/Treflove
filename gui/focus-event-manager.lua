@@ -49,7 +49,7 @@ end
 function FocusEventManager:KeyPressed(key)
     if key == "tab" then
         self.prevFocus = self.currentFocus
-        local i = self.currentFocus or 1
+        local i = self.currentFocus or 0
         local n = #self.focusItems
         if n == 0 then
             return

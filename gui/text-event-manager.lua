@@ -2,6 +2,8 @@ TextEventManager = {}
 
 function TextEventManager:Init()
     EventManager.Init(self, TextEventListener)
+    love.keyboard.setKeyRepeat(love.keyboard.hasKeyRepeat())
+    love.keyboard.setTextInput(false)
 end
 
 function TextEventManager:KeyPressed(key)
@@ -12,6 +14,10 @@ end
 
 function TextEventManager:TextInput(text)
     self:InvokeEvent(TextEventListener.OnAppendText, text)
+end
+
+function TextEventManager:SetTextInput(value)
+    love.keyboard.setTextInput(value)
 end
 
 MakeClassOf(TextEventManager, EventManager)

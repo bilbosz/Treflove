@@ -6,7 +6,7 @@ local function UpdateView(self)
     if self:IsFocused() then
         local textCtrl = self.textCtrl
         if self.masked then
-            textCtrl:SetText(string.rep("•", #self:GetText()))
+            textCtrl:SetText(string.rep("•", self:GetTextLength()))
         else
             textCtrl:SetText(self:GetText())
         end
@@ -88,11 +88,13 @@ end
 
 function TextInput:OnFocus()
     FocusEventListener.OnFocus(self)
+    app.textEventManager:SetTextInput(true)
     UpdateView(self)
 end
 
 function TextInput:OnFocusLost()
     FocusEventListener.OnFocusLost(self)
+    app.textEventManager:SetTextInput(false)
     UpdateView(self)
 end
 
