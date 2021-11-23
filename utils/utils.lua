@@ -41,3 +41,7 @@ function DrawAabbs(ctrl)
     DrawAabbsInternal(ctrl)
     love.graphics.reset()
 end
+
+function Mix(a, b, x)
+    return a + x * (b - a)
+end

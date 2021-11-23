@@ -45,7 +45,6 @@ end
 local function UpdateView(self)
     UpdateBackgroundView(self)
     UpdateContentView(self)
-    UpdateCaretView(self)
 
     if self:IsFocused() then
         app.textEventManager:RegisterListener(self)
@@ -74,10 +73,11 @@ local function CreateCaret(self)
 end
 
 local function CreateText(self)
-    local text = Text(self.content, "", Consts.TEXT_INPUT_FOREGROUND_COLOR)
+    local font = Consts.USER_INPUT_FONT
+    local text = Text(self.content, "", Consts.TEXT_INPUT_FOREGROUND_COLOR, font)
     self.textCtrl = text
 
-    text:SetOrigin(0, 11.5)
+    text:SetOrigin(0, font:getHeight() * 0.5)
     text:SetScale(Consts.MENU_FIELD_SCALE)
 end
 

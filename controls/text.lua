@@ -9,8 +9,7 @@ function Text:GetColor()
 end
 
 function Text:SetText(text)
-    local font = love.graphics.newFont(20)
-    local textDrawable = love.graphics.newText(font, text)
+    local textDrawable = love.graphics.newText(self.font, text)
     self.textDrawable = textDrawable
 
     local w, h = textDrawable:getDimensions()
@@ -22,7 +21,8 @@ function Text:GetText()
     return self.text
 end
 
-function Text:Init(parent, text, color)
+function Text:Init(parent, text, color, font)
+    self.font = font or Consts.DISPLAY_FONT
     DrawableControl.Init(self, parent, 0, 0, function()
         love.graphics.setColor(self.color)
         love.graphics.draw(self.textDrawable)

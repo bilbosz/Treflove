@@ -31,10 +31,12 @@ Consts = {
         0.2,
         0.2
     },
-    MENU_TITLE_SCALE = 3,
-    MENU_FIELD_SCALE = 1.5,
-    MENU_BUTTON_SCALE = 2,
+    MENU_TITLE_SCALE = 0.75,
+    MENU_FIELD_SCALE = 0.325,
+    MENU_BUTTON_SCALE = 0.5,
     LEFT_MOUSE_BUTTON = 1,
     CARET_BLINK_INTERVAL = 0.5,
-    CARET_WIDTH = 3
+    CARET_WIDTH = 3,
+    DISPLAY_FONT = love.graphics.newFont("fonts/OpenSans.ttf", 80),
+    USER_INPUT_FONT = love.graphics.newFont("fonts/NotoSansMono.ttf", 80)
 }
