@@ -39,7 +39,7 @@ ButtonEventManager = {}
 
 local function GetListenerInternal(ctrl, listeners, x, y)
     local minX, minY, maxX, maxY = ctrl:GetGlobalAabb()
-    if x < minX or x > maxX or y < minY or y > maxY then
+    if not ctrl:IsVisible() or x < minX or x > maxX or y < minY or y > maxY then
         return nil
     end
     local top
@@ -47,9 +47,7 @@ local function GetListenerInternal(ctrl, listeners, x, y)
         top = ctrl
     end
     for _, child in ipairs(ctrl:GetChildren()) do
-        if child:IsEnabled() then
-            top = top or GetListenerInternal(child, listeners, x, y)
-        end
+        top = top or GetListenerInternal(child, listeners, x, y)
     end
     return top
 end

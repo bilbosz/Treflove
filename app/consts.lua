@@ -7,9 +7,9 @@ Consts = {
         0.61
     },
     TEXT_COLOR = {
-        0.94,
-        0.94,
-        0.94
+        0.8,
+        0.85,
+        0.9
     },
     BUTTON_NORMAL_COLOR = {
         0.8,
@@ -34,5 +34,7 @@ Consts = {
     MENU_TITLE_SCALE = 3,
     MENU_FIELD_SCALE = 1.5,
     MENU_BUTTON_SCALE = 2,
-    LEFT_MOUSE_BUTTON = 1
+    LEFT_MOUSE_BUTTON = 1,
+    CARET_BLINK_INTERVAL = 0.5,
+    CARET_WIDTH = 3
 }

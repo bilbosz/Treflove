@@ -240,26 +240,35 @@ function Control:GetSize()
     return unpack(self.size)
 end
 
-function Control:SetEnabled(value)
-    self.enabled = value
+function Control:SetEnable(value)
+    self.enable = value
 end
 
-function Control:IsEnabled()
-    return self.enabled
+function Control:IsEnable()
+    return self.enable
+end
+
+function Control:SetVisible(value)
+    self.visible = value
+end
+
+function Control:IsVisible()
+    return self.enable and self.visible
 end
 
 function Control:Draw()
     local w, h = love.graphics:getDimensions()
     for _, child in ipairs(self.children) do
         local minX, minY, maxX, maxY = unpack(child.globalAabb)
-        if child.enabled and minX < w and maxX >= 0 and minY < h and maxY >= 0 then
+        if child:IsVisible() and minX < w and maxX >= 0 and minY < h and maxY >= 0 then
             child:Draw()
         end
     end
 end
 
 function Control:Init(parent, width, height)
-    self.enabled = true
+    self.enable = true
+    self.visible = true
     self.children = {}
 
     self.localTransform = love.math.newTransform()

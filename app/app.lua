@@ -19,21 +19,23 @@ local function RegistryLoveCallbacks(self)
         CreateRoot(self)
         if debug then
             function love.draw()
-                if self.root:IsEnabled() then
+                local root = self.root
+                if root:IsVisible() then
                     self.root:Draw()
                     love.graphics.reset()
                     if self.drawAabs then
                         DrawAabbs(self.root)
-                        love.graphics.reset()
                     end
                 end
+                love.graphics.reset()
             end
         else
             function love.draw()
-                if self.root:IsEnabled() then
+                local root = self.root
+                if root:IsVisible() then
                     self.root:Draw()
-                    love.graphics.reset()
                 end
+                love.graphics.reset()
             end
         end
         function love.keypressed(key)

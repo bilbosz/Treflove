@@ -8,7 +8,7 @@ function Logger:Init(threadName)
     self.data.startTime = self.data.startTime or socket.gettime()
     self.startTime = self.data.startTime
     self.separator = " "
-    self.enabled = true
+    self.enable = true
 end
 
 function Logger:SetName(threadName)
@@ -17,7 +17,7 @@ function Logger:SetName(threadName)
 end
 
 function Logger:Log(format, ...)
-    if not self.enabled then
+    if not self.enable then
         return
     end
     local sep = self.separator

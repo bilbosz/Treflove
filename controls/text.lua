@@ -9,7 +9,7 @@ function Text:GetColor()
 end
 
 function Text:SetText(text)
-    local font = love.graphics.newFont(20, "normal", love.graphics.getDPIScale() * 15)
+    local font = love.graphics.newFont(20)
     local textDrawable = love.graphics.newText(font, text)
     self.textDrawable = textDrawable
 

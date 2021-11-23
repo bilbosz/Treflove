@@ -22,16 +22,14 @@ PointerEventManager = {}
 
 local function GetListenerList(ctrl, listeners, x, y, list)
     local minX, minY, maxX, maxY = ctrl:GetGlobalAabb()
-    if x < minX or x > maxX or y < minY or y > maxY then
+    if not ctrl:IsVisible() or x < minX or x > maxX or y < minY or y > maxY then
         return nil
     end
     if listeners[ctrl] then
         table.insert(list, ctrl)
     end
     for _, child in ipairs(ctrl:GetChildren()) do
-        if child:IsEnabled() then
-            GetListenerList(child, listeners, x, y, list)
-        end
+        GetListenerList(child, listeners, x, y, list)
     end
 end
 

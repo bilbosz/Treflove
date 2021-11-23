@@ -6,8 +6,8 @@ function TextEventListener:Init()
     self.text = ""
 end
 
-function TextEventListener:OnRemoveCharacter()
-    local offset = utf8.offset(self.text, -1)
+function TextEventListener:OnRemoveText(characterNumber)
+    local offset = utf8.offset(self.text, -characterNumber)
     if offset then
         self.text = string.sub(self.text, 1, offset - 1)
     end
@@ -35,13 +35,13 @@ TextEventManager = {}
 
 function TextEventManager:Init()
     EventManager.Init(self, TextEventListener)
-    love.keyboard.setKeyRepeat(love.keyboard.hasKeyRepeat())
+    love.keyboard.setKeyRepeat(false)
     love.keyboard.setTextInput(false)
 end
 
 function TextEventManager:KeyPressed(key)
     if key == "backspace" then
-        self:InvokeEvent(TextEventListener.OnRemoveCharacter)
+        self:InvokeEvent(TextEventListener.OnRemoveText, 1)
     end
 end
 
@@ -51,6 +51,7 @@ end
 
 function TextEventManager:SetTextInput(value)
     love.keyboard.setTextInput(value)
+    love.keyboard.setKeyRepeat(value)
 end
 
 MakeClassOf(TextEventManager, EventManager)

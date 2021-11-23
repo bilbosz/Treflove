@@ -14,11 +14,11 @@ function Screen:OnPop()
 end
 
 function Screen:OnBackground()
-    self.screen:SetEnabled(false)
+    self.screen:SetEnable(false)
 end
 
 function Screen:OnForeground()
-    self.screen:SetEnabled(true)
+    self.screen:SetEnable(true)
 end
 
 function Screen:GetControl()
