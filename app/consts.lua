@@ -37,6 +37,6 @@ Consts = {
     LEFT_MOUSE_BUTTON = 1,
     CARET_BLINK_INTERVAL = 0.5,
     CARET_WIDTH = 3,
-    DISPLAY_FONT = love.graphics.newFont("fonts/OpenSans.ttf", 80),
-    USER_INPUT_FONT = love.graphics.newFont("fonts/NotoSansMono.ttf", 80)
+    DISPLAY_FONT = config.window and love.graphics.newFont("fonts/OpenSans.ttf", 80),
+    USER_INPUT_FONT = config.window and love.graphics.newFont("fonts/NotoSansMono.ttf", 80)
 }
