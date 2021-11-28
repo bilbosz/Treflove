@@ -44,4 +44,8 @@ function Server:SaveData(file)
     assert(success, message)
 end
 
+function Server:RegisterLoveCallbacks()
+    App.RegisterLoveCallbacks(self)
+end
+
 MakeClassOf(Server, App)
