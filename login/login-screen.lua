@@ -52,7 +52,7 @@ end
 
 local function CreateLoginButton(self)
     local button = TextButton(self.layout, "Log In", function()
-        app.logger:Log("Log In button clicked")
+        app.login:LogIn(Login.GetLoginId(self.loginInput:GetText(), self.passwordInput:GetText()))
     end)
     self.loginButton = button
 

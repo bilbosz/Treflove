@@ -10,6 +10,7 @@ function Client:Init(params)
     self.buttonEventManager = ButtonEventManager()
     self.textEventManager = TextEventManager()
     self.focusEventManager = FocusEventManager()
+    self.login = Login()
 end
 
 function Client:Load()
