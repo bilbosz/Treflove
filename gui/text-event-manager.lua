@@ -17,6 +17,9 @@ function TextEventListener:OnAppendText(text)
     self.text = self.text .. text
 end
 
+function TextEventListener:OnEnter()
+end
+
 function TextEventListener:GetText()
     return self.text
 end
@@ -42,6 +45,8 @@ end
 function TextEventManager:KeyPressed(key)
     if key == "backspace" then
         self:InvokeEvent(TextEventListener.OnRemoveText, 1)
+    elseif key == "return" then
+        self:InvokeEvent(TextEventListener.OnEnter)
     end
 end
 

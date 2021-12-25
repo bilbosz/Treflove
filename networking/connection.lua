@@ -15,11 +15,13 @@ end
 local function SendResponse(self, request)
     assert(type(request) == "table")
     assert(type(request.body) == "table")
+    assert(type(request.id) == "string")
 
-    local body = self.requestHandler(request.body)
+    local body = self.requestHandlers[request.id](request.body)
     assert(type(body) == "table")
     local response = {
         source = request.source,
+        id = request.id,
         body = body
     }
     self.outChannel:push(Compress(response))
@@ -32,24 +34,31 @@ function Connection:Init(inChannel, inThread, outChannel, outThread)
     self.outThread = outThread
     self.queue = {}
     self.source = app.isClient and "c" or "s"
+    self.requestHandlers = {}
 
     app.updateEventManager:RegisterListener(self)
 end
 
-function Connection:Start(requestHandler)
-    self.requestHandler = requestHandler
-end
-
-function Connection:SendRequest(body, responseHandler)
+function Connection:SendRequest(id, body, responseHandler)
     assert(type(body) == "table")
     assert(type(responseHandler) == "function")
 
     local request = {
         source = self.source,
+        id = id,
         body = body
     }
     table.insert(self.queue, responseHandler)
     self.outChannel:push(Compress(request))
+end
+
+function Connection:RegisterRequestHandler(id, responseHandler)
+    assert(not self.requestHandlers[id])
+    self.requestHandlers[id] = responseHandler
+end
+
+function Connection:UnregisterRequestHandler(id)
+    self.requestHandlers[id] = nil
 end
 
 function Connection:GetInChannel()

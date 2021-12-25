@@ -11,6 +11,7 @@ end
 
 function Server:Init(params)
     App.Init(self, params)
+    self.logger:SetName("server-main")
     self.isServer = true
     self.SAVE_DIR = "save"
     self.GAME_FILE = "game-01.lua"
@@ -20,16 +21,18 @@ function Server:Init(params)
         self.screenManager = ScreenManager()
         self.screenManager:Push(ScreenSaver())
     end
+    self.sessions = {}
     self.connectionManager = ConnectionManager(params.address, params.port)
 end
 
 function Server:Load()
     self:LoadData(self.GAME_FILE)
     self.connectionManager:Start(function(connection)
-        connection:Start(function(msg)
-            return {}
-        end)
-    end, function()
+        self.sessions[connection] = Session(connection)
+    end, function(connection)
+        local session = self.sessions[connection]
+        session:Release()
+        self.sessions[connection] = nil
     end)
 end
 

@@ -4,6 +4,10 @@ local INPUT_WIDTH = 200
 local INPUT_HEIGHT = 50
 local FIELD_MARGIN = 25
 
+function LogIn(self)
+    self.login:LogIn(self.loginInput:GetText(), self.passwordInput:GetText())
+end
+
 local function CreateBackground(self)
     self.background = Rectangle(self.screen, app.width, app.height, Consts.BACKGROUND_COLOR)
 end
@@ -36,7 +40,9 @@ local function CreateTextField(self, text, y, masked)
     text:SetPosition(-FIELD_MARGIN, y)
     text:SetScale(Consts.MENU_FIELD_SCALE)
 
-    local input = TextInput(self.layout, INPUT_WIDTH, INPUT_HEIGHT, masked)
+    local input = TextInput(self.layout, INPUT_WIDTH, INPUT_HEIGHT, masked, function()
+        LogIn(self)
+    end)
     input:SetOrigin(0, INPUT_HEIGHT * 0.5)
     input:SetPosition(FIELD_MARGIN, y)
     return input
@@ -52,7 +58,7 @@ end
 
 local function CreateLoginButton(self)
     local button = TextButton(self.layout, "Log In", function()
-        app.login:LogIn(Login.GetLoginId(self.loginInput:GetText(), self.passwordInput:GetText()))
+        LogIn(self)
     end)
     self.loginButton = button
 
@@ -82,8 +88,13 @@ local function CenterLayout(self)
     layout:SetOrigin(0, h * 0.5 / s)
 end
 
-function LoginScreen:Init()
+function LoginScreen:OnFail()
+
+end
+
+function LoginScreen:Init(login)
     Screen.Init(self)
+    self.login = login
 end
 
 function LoginScreen:OnPush()

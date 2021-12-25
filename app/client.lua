@@ -2,6 +2,7 @@ Client = {}
 
 function Client:Init(params)
     App.Init(self, params)
+    self.logger:SetName("client-main")
     self.isClient = true
     self.connectionManager = ConnectionManager(params.address, params.port)
     self.screenManager = ScreenManager()
@@ -10,22 +11,19 @@ function Client:Init(params)
     self.buttonEventManager = ButtonEventManager()
     self.textEventManager = TextEventManager()
     self.focusEventManager = FocusEventManager()
-    self.login = Login()
+    self.session = nil
 end
 
 function Client:Load()
     self.screenManager:Push(ConnectionScreen())
     self.connectionManager:Start(function(connection)
-        self.connection = connection
-        self.screenManager:Push(LoginScreen())
-        connection:Start(function()
-            return {}
-        end)
+        self.session = Session(connection)
     end, function()
         while self.screenManager:ScreenCount() > 1 do
             self.screenManager:Pop()
         end
-        self.connection = nil
+        self.session:Release()
+        self.session = nil
         self.data = nil
     end)
 end

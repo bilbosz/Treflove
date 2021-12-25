@@ -2,18 +2,30 @@ Logger = {}
 
 local socket = require("socket")
 
-function Logger:Init(threadName)
-    assert(type(threadName) == "string")
-    self.threadName = threadName
+local function IsEnabled(name)
+    local n = #name
+    for _, pattern in ipairs(Consts.LOGGER_NAME_BLACKLIST) do
+        local start, stop = string.find(name, pattern)
+        if start == 1 and stop == n then
+            return false
+        end
+    end
+    return true
+end
+
+function Logger:Init(name)
+    assert(type(name) == "string")
+    self.name = name
     self.data.startTime = self.data.startTime or socket.gettime()
     self.startTime = self.data.startTime
     self.separator = " "
-    self.enable = true
+    self.enable = IsEnabled(name)
 end
 
-function Logger:SetName(threadName)
-    assert(type(threadName) == "string")
-    self.threadName = threadName
+function Logger:SetName(name)
+    assert(type(name) == "string")
+    self.name = name
+    self.enable = IsEnabled(name)
 end
 
 function Logger:Log(format, ...)
@@ -22,10 +34,11 @@ function Logger:Log(format, ...)
     end
     local sep = self.separator
     local timeDiff = socket.gettime() - self.startTime
-    local result = string.format("%8.3f%s%21s", timeDiff, sep, self.threadName)
+    local result = string.format("%8.3f%s%21s", timeDiff, sep, self.name)
     if debug then
         local info = debug.getinfo(2, "Sl")
-        result = result .. string.format("%s%41s:%i", sep, info.short_src, info.currentline)
+        local location = string.format("%s:%i", info.short_src, info.currentline)
+        result = result .. string.format("%s%44s", sep, location)
     end
     result = result .. string.format("%s>%s" .. format, sep, sep, ...)
     print(result)

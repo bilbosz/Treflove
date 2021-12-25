@@ -40,6 +40,13 @@ Consts = {
     LEFT_MOUSE_BUTTON = 1,
     CARET_BLINK_INTERVAL = 0.5,
     CARET_WIDTH = 3,
-    DISPLAY_FONT = config.window and love.graphics.newFont("fonts/OpenSans.ttf", 80),
-    USER_INPUT_FONT = config.window and love.graphics.newFont("fonts/NotoSansMono.ttf", 80)
+    DISPLAY_FONT = config and config.window and love.graphics.newFont("fonts/OpenSans.ttf", 80) or nil,
+    USER_INPUT_FONT = config and config.window and love.graphics.newFont("fonts/NotoSansMono.ttf", 80) or nil,
+    LOGGER_NAME_BLACKLIST = {
+        "client%-in%-[%p%d]+",
+        "client%-out%-[%p%d]+",
+        "connection%-dispatcher",
+        "server%-in%-[%p%d]+",
+        "server%-out%-[%p%d]+"
+    }
 }

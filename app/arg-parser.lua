@@ -36,7 +36,7 @@ local function parsePort(str)
 end
 
 function ArgParser:Parse(args)
-    if #args ~= 4 then
+    if #args < 4 then
         return nil
     else
         local appType, address, port = parseAppType(args[2]), parseAddress(args[3]), parsePort(args[4])

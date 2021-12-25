@@ -58,13 +58,15 @@ return {
     players = {
         ["adam"] = {
             name = "Adam",
-            password = "hash(env[TREFLUN_LOVE_SALT] .. name .. createTime .. inappsalt .. (to co wysłał klient -> hash(inappsalt .. haslo_adam)))",
-            createTime = "timestamp"
+            -- login: adam
+            -- password: krause
+            auth = "XyKeQ5OJSYgSjmsJhL4fK3pbT4bSSl+TenkDlwgpSY8="
         },
         ["piotr"] = {
-            login = "Piotrek",
-            password = "env[TREFLUN_LOVE_SALT] .. name .. createTime .. inappsalt .. (to co wysłał klient -> hash(inappsalt .. haslo_piotr)))",
-            createTime = "timestamp"
+            name = "Piotrek",
+            -- login: piotr
+            -- password: stępczyński
+            auth = "deQBx+//Zt17STnCjN/oKlQf93o6MRhCcOSZdSe/31w="
         }
     }
 }
