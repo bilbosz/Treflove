@@ -11,6 +11,7 @@ function Client:Init(params)
     self.buttonEventManager = ButtonEventManager()
     self.textEventManager = TextEventManager()
     self.focusEventManager = FocusEventManager()
+    self.notificationManager = NotificationManager()
     self.session = nil
 end
 

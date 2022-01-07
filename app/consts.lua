@@ -48,5 +48,16 @@ Consts = {
         "connection%-dispatcher",
         "server%-in%-[%p%d]+",
         "server%-out%-[%p%d]+"
-    }
+    },
+    NOTIFICATION_DURATION = 2,
+    NOTIFICATION_COLOR = {
+        0.89,
+        0.78,
+        0.78
+    },
+    NOTIFICATION_PANEL_WIDTH = 1,
+    NOTIFICATION_PANEL_HEIGHT = 1,
+    NOTIFICATION_TEXT_SCALE = 0.5,
+    NOTIFICATION_VSPACE = 30,
+    NOTIFICATION_PADDING = 30
 }

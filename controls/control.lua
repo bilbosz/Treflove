@@ -30,9 +30,11 @@ end
 local function UpdateGlobalAabbChildren(self)
     local minX, minY, maxX, maxY = self:GetAabb()
     for _, child in ipairs(self.children) do
-        UpdateGlobalAabbChildren(child)
-        local childMinX, childMinY, childMaxX, childMaxY = unpack(child.globalAabb)
-        minX, minY, maxX, maxY = math.min(minX, childMinX), math.min(minY, childMinY), math.max(maxX, childMaxX), math.max(maxY, childMaxY)
+        if child:IsEnable() then
+            UpdateGlobalAabbChildren(child)
+            local childMinX, childMinY, childMaxX, childMaxY = unpack(child.globalAabb)
+            minX, minY, maxX, maxY = math.min(minX, childMinX), math.min(minY, childMinY), math.max(maxX, childMaxX), math.max(maxY, childMaxY)
+        end
     end
     self.globalAabb = {
         minX,
@@ -47,14 +49,16 @@ local function UpdateGlobalAabbParent(self)
     while parent do
         local minX, minY, maxX, maxY = parent:GetAabb()
         for _, child in ipairs(parent.children) do
-            local childMinX, childMinY, childMaxX, childMaxY = unpack(child.globalAabb)
-            minX, minY, maxX, maxY = math.min(minX, childMinX), math.min(minY, childMinY), math.max(maxX, childMaxX), math.max(maxY, childMaxY)
-            parent.globalAabb = {
-                minX,
-                minY,
-                maxX,
-                maxY
-            }
+            if child:IsEnable() then
+                local childMinX, childMinY, childMaxX, childMaxY = unpack(child.globalAabb)
+                minX, minY, maxX, maxY = math.min(minX, childMinX), math.min(minY, childMinY), math.max(maxX, childMaxX), math.max(maxY, childMaxY)
+                parent.globalAabb = {
+                    minX,
+                    minY,
+                    maxX,
+                    maxY
+                }
+            end
         end
         parent = parent:GetParent()
     end
@@ -200,6 +204,9 @@ end
 function Control:Reattach(n)
     local children = self.parent.children
     n = n or #children
+    if children[n] == self then
+        return
+    end
     local found
     for i, v in ipairs(children) do
         if v == self then
@@ -241,6 +248,9 @@ function Control:GetSize()
 end
 
 function Control:SetEnable(value)
+    if self.parent then
+        UpdateGlobalAabb(self.parent)
+    end
     self.enable = value
 end
 

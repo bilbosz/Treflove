@@ -57,8 +57,7 @@ function PointerEventManager:InvokeEvent(method, x, y, id)
     local list = {}
     GetListenerList(app.root, listeners, x, y, list)
     local topToBeCalled = true
-    for i = #list, 1, -1 do
-        local ctrl = list[i]
+    for _, ctrl in ripairs(list) do
         local listener = listeners[ctrl]
         if topToBeCalled then
             local passThrough = listener(ctrl, x, y, id)

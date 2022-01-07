@@ -41,6 +41,8 @@ local function CreateTextField(self, text, y, masked)
     text:SetScale(Consts.MENU_FIELD_SCALE)
 
     local input = TextInput(self.layout, INPUT_WIDTH, INPUT_HEIGHT, masked, function()
+        self:OnInput()
+    end, function()
         LogIn(self)
     end)
     input:SetOrigin(0, INPUT_HEIGHT * 0.5)
@@ -89,6 +91,10 @@ local function CenterLayout(self)
 end
 
 function LoginScreen:OnFail()
+    app.notificationManager:Notify("Wrong login or password")
+end
+
+function LoginScreen:OnInput()
 
 end
 

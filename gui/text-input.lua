@@ -91,7 +91,7 @@ local function CreateContent(self)
     CreateText(self)
 end
 
-function TextInput:Init(parent, width, height, masked, onEnter)
+function TextInput:Init(parent, width, height, masked, onInput, onEnter)
     Control.Init(self, parent)
     ButtonEventListener.Init(self)
     TextEventListener.Init(self)
@@ -100,6 +100,7 @@ function TextInput:Init(parent, width, height, masked, onEnter)
     self.height = height
     self.padding = 10
     self.masked = masked or false
+    self.onInput = onInput
     self.onEnter = onEnter
     self.caretTime = nil
     CreateBackground(self)
@@ -141,11 +142,17 @@ end
 function TextInput:OnAppendText(...)
     TextEventListener.OnAppendText(self, ...)
     UpdateView(self)
+    if self.onInput then
+        self.onInput()
+    end
 end
 
 function TextInput:OnRemoveText(...)
     TextEventListener.OnRemoveText(self, ...)
     UpdateView(self)
+    if self.onInput then
+        self.onInput()
+    end
 end
 
 function TextInput:OnEnter()
