@@ -59,5 +59,17 @@ Consts = {
     NOTIFICATION_PANEL_HEIGHT = 1,
     NOTIFICATION_TEXT_SCALE = 0.5,
     NOTIFICATION_VSPACE = 30,
-    NOTIFICATION_PADDING = 30
+    NOTIFICATION_PADDING = 30,
+    LOGO_COLOR_FG = {
+        0.56,
+        0.24,
+        0.21,
+        1.0
+    },
+    LOGO_COLOR_BG = {
+        0.83,
+        0.85,
+        0.88,
+        1.0
+    }
 }

@@ -6,12 +6,7 @@ function Logo:Init(parent)
     local r = imgW * 0.5
 
     DrawableControl.Init(self, parent, imgW, imgW, function()
-        love.graphics.setColor({
-            0.9,
-            0.9,
-            0.9,
-            1
-        })
+        love.graphics.setColor(Consts.LOGO_COLOR_BG)
         love.graphics.circle("fill", r, r, r)
     end)
     self:SetOrigin(r, r)
@@ -19,7 +14,7 @@ function Logo:Init(parent)
 
     local shader = love.graphics.newShader([[
         vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) {
-            if (Texel(texture, texture_coords).a == 0.0) {
+            if (Texel(texture, texture_coords).a <= 0.35) {
                 discard;
             }
             return vec4(1.0);
@@ -30,17 +25,12 @@ function Logo:Init(parent)
         love.graphics.draw(image)
         love.graphics.setShader()
     end)
-    mask:SetOrigin(r, imgH * 0.5 + 3)
+    mask:SetOrigin(r, imgH * 0.5 - 11)
     mask:SetPosition(r, r)
-    mask:SetScale(0.7)
+    mask:SetScale(0.94)
     self.mask = mask
 
-    self.color = {
-        0,
-        0,
-        0,
-        255
-    }
+    self.color = Consts.LOGO_COLOR_FG
     local background = DrawableControl(mask, imgW, imgW, function()
         love.graphics.setColor(self.color)
         love.graphics.rectangle("fill", 0, 0, imgW, imgW)
