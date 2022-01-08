@@ -14,5 +14,4 @@ function DrawableControl:Init(parent, width, height, drawCb)
     self.drawCb = drawCb
 end
 
-Loader.LoadFile("controls/control.lua")
 MakeClassOf(DrawableControl, Control)

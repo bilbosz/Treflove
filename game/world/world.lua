@@ -21,10 +21,11 @@ end
 
 function World:Init(parent, width, height)
     ClippingRectangle.Init(self, parent, width, height)
+    PointerEventListener.Init(self, true)
     self.name = self.data.name
     self.worldDef = app.data.worlds[self.name]
     self.worldWidth = self.worldDef.width
-    self.scaleToPixelsPerMeter = 100
+    self.scaleToPixelsPerMeter = 50
     self.prevDragMouseX, self.prevDragMouseY = nil, nil
     self.dragMouseButton = 2
     self.mouseZoomInc = 1.3
@@ -37,26 +38,27 @@ function World:Init(parent, width, height)
         local data = app.data.tokens[name]
         table.insert(self.tokens, Token(data, self.worldCoordinates))
     end
+
+    app.pointerEventManager:RegisterListener(self)
+    app.wheelEventManager:RegisterListener(self)
 end
 
-function World:MousePressed(x, y, button)
+function World:OnPointerDown(x, y, button)
     local tx, ty = self:TransformToLocal(x, y)
     if tx >= 0 and tx < self.size[1] and ty >= 0 and ty < self.size[2] then
         if button == self.dragMouseButton then
             self.prevDragMouseX, self.prevDragMouseY = tx, ty
         end
     end
-    Control.MousePressed(self, x, y, button)
 end
 
-function World:MouseReleased(x, y, button)
+function World:OnPointerUp(x, y, button)
     if button == self.dragMouseButton then
         self.prevDragMouseX, self.prevDragMouseY = nil, nil
     end
-    Control.MouseReleased(self, x, y, button)
 end
 
-function World:MouseMoved(x, y)
+function World:OnPointerMove(x, y)
     if self.prevDragMouseX then
         local tx, ty = self:TransformToLocal(x, y)
         local bg = self.background
@@ -64,10 +66,9 @@ function World:MouseMoved(x, y)
         bg:SetPosition(bgX + tx - self.prevDragMouseX, bgY + ty - self.prevDragMouseY)
         self.prevDragMouseX, self.prevDragMouseY = tx, ty
     end
-    Control.MouseMoved(self, x, y)
 end
 
-function World:WheelMoved(x, y)
+function World:OnWheelMoved(x, y)
     local realMouseX, realMouseY = love.mouse.getPosition()
     local selfMouseX, selfMouseY = self:TransformToLocal(realMouseX, realMouseY)
     if selfMouseX >= 0 and selfMouseX < self.size[1] and selfMouseY >= 0 and selfMouseY < self.size[2] then
@@ -82,8 +83,6 @@ function World:WheelMoved(x, y)
         local scale = bg:GetScale() * zoomInc
         bg:SetScale(scale)
     end
-    Control.WheelMoved(self, x, y)
 end
 
-Loader.LoadFile("controls/clipping-rectangle.lua")
-MakeModelOf(World, ClippingRectangle)
+MakeModelOf(World, ClippingRectangle, PointerEventListener, WheelEventListener)

@@ -113,3 +113,15 @@ function table.fromstring(s)
     end
     return result
 end
+
+local function prev(t, i)
+    if i <= 1 then
+        return nil, nil
+    else
+        return i - 1, t[i - 1]
+    end
+end
+
+function ripairs(t)
+    return prev, t, #t + 1
+end

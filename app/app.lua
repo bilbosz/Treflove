@@ -1,64 +1,91 @@
 App = {}
 
-function App:RegistryLoveCallbacks()
+local socket = require("socket")
+
+local function CreateRoot(self)
+    local realW, realH = love.graphics.getDimensions()
+    assert(realW >= realH)
+    local scale = realW / Consts.MODEL_WIDTH
+    self.width, self.height = Consts.MODEL_WIDTH, realH / scale
+    self.root = Control()
+    self.root:SetScale(scale)
+end
+
+function App:RegisterLoveCallbacks()
     if self.Load then
         function love.load()
             self:Load()
         end
     end
-    if self.Draw then
-        function love.draw()
-            self:Draw()
+
+    if config.window then
+        CreateRoot(self)
+        if debug then
+            function love.draw()
+                local root = self.root
+                if root:IsVisible() then
+                    self.root:Draw()
+                    love.graphics.reset()
+                    if self.drawAabs then
+                        DrawAabbs(self.root)
+                    end
+                end
+                love.graphics.reset()
+            end
+        else
+            function love.draw()
+                local root = self.root
+                if root:IsVisible() then
+                    self.root:Draw()
+                end
+                love.graphics.reset()
+            end
         end
-    end
-    if self.KeyPressed then
         function love.keypressed(key)
             if key == "escape" then
-                love.event.quit(0)
+                self.markForQuit = true
                 return
-            elseif debug and key == "f11" then
-                Loader.Reload()
-                ReloadObjects()
-                return
+            elseif key == "f2" then
+                self.drawAabs = not self.drawAabs
             end
-            self:KeyPressed(key)
         end
     end
-    if self.WheelMoved then
-        function love.wheelmoved(x, y)
-            self:WheelMoved(x, y)
-        end
-    end
-    if self.MousePressed then
-        function love.mousepressed(x, y, button)
-            self:MousePressed(x, y, button)
-        end
-    end
-    if self.MouseReleased then
-        function love.mousereleased(x, y, button)
-            self:MouseReleased(x, y, button)
-        end
-    end
-    if self.MouseMoved then
-        function love.mousemoved(x, y)
-            self:MouseMoved(x, y)
-        end
-    end
+
     function love.update(dt)
-        UpdateObserver.Notify(dt)
+        if self.markForQuit then
+            love.event.quit(0)
+        end
+        self.time = socket.gettime() - self.startTime
+        self.updateEventManager:InvokeEvent(UpdateEventListener.OnUpdate, dt)
         collectgarbage("step")
     end
 end
 
+function App:GetTime()
+    return self.time
+end
+
+function App:Quit()
+    self.markForQuit = true
+end
+
 function App:Init(params)
     app = self
-    self.logger = Logger({}, "main")
+    self.startTime = socket.gettime()
+    self.logger = Logger({
+        startTime = self.startTime
+    }, "main")
     self.params = params
     self.isServer = false
     self.isClient = false
     self.data = nil
+    self.width = nil
+    self.height = nil
+    self.root = nil
+    self.time = 0
+    self.updateEventManager = UpdateEventManager()
 
-    self:RegistryLoveCallbacks()
+    self:RegisterLoveCallbacks()
 end
 
 MakeClassOf(App)

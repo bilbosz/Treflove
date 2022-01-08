@@ -3,6 +3,7 @@ local loggerData, channel, address, getPortChannel, inChannel, outChannel = ...
 local socket = require("socket")
 love.filesystem.load("utils/loader.lua")()
 Loader.LoadModule("utils")
+Loader.LoadFile("app/consts.lua")
 logger = Logger(loggerData, "client-in-?????")
 
 local inServer, error = socket.bind(address, 0)

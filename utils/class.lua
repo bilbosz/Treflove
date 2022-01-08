@@ -2,6 +2,9 @@ if debug then
     function MakeClassOf(self, ...)
         local name = GetGlobalName(self)
         assert(name)
+        for i = 1, select("#", ...) do
+            assert(select(i, ...), string.format("Inherited class no. %i of %s is not initialized yet", i, name))
+        end
         local objMt = {
             __index = CreateIndex(self, ...),
             class = self
@@ -16,7 +19,7 @@ if debug then
                 end
                 return obj
             end,
-            name = GetGlobalName(self)
+            name = name
         }
         setmetatable(self, mt)
         if self.ClassInit then
@@ -26,7 +29,8 @@ if debug then
 else
     function MakeClassOf(self, ...)
         local objMt = {
-            __index = CreateIndex(self, ...)
+            __index = CreateIndex(self, ...),
+            class = self
         }
         local mt = {
             __index = objMt.__index,

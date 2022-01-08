@@ -10,11 +10,11 @@ Control = {}
             Position
 ]]
 
-function Control:UpdateLocalTransform()
+function UpdateLocalTransform(self)
     self.localTransform = self.localTransform:setTransformation(self.position[1], self.position[2], self.rotation, self.scale[1], self.scale[2], self.origin[1], self.origin[2])
 end
 
-function Control:UpdateGlobalTransform()
+local function UpdateGlobalTransform(self)
     if self.parent then
         self.globalTransform:setMatrix(self.parent.globalTransform:getMatrix())
     else
@@ -23,13 +23,73 @@ function Control:UpdateGlobalTransform()
     self.globalTransform:apply(self.localTransform)
 
     for _, child in ipairs(self.children) do
-        child:UpdateGlobalTransform()
+        UpdateGlobalTransform(child)
     end
 end
 
-function Control:UpdateGeometry()
-    self:UpdateLocalTransform()
-    self:UpdateGlobalTransform()
+local function UpdateGlobalAabbChildren(self)
+    local minX, minY, maxX, maxY = self:GetAabb()
+    for _, child in ipairs(self.children) do
+        if child:IsEnable() then
+            UpdateGlobalAabbChildren(child)
+            local childMinX, childMinY, childMaxX, childMaxY = unpack(child.globalAabb)
+            minX, minY, maxX, maxY = math.min(minX, childMinX), math.min(minY, childMinY), math.max(maxX, childMaxX), math.max(maxY, childMaxY)
+        end
+    end
+    self.globalAabb = {
+        minX,
+        minY,
+        maxX,
+        maxY
+    }
+end
+
+local function UpdateGlobalAabbParent(self)
+    local parent = self:GetParent()
+    while parent do
+        local minX, minY, maxX, maxY = parent:GetAabb()
+        for _, child in ipairs(parent.children) do
+            if child:IsEnable() then
+                local childMinX, childMinY, childMaxX, childMaxY = unpack(child.globalAabb)
+                minX, minY, maxX, maxY = math.min(minX, childMinX), math.min(minY, childMinY), math.max(maxX, childMaxX), math.max(maxY, childMaxY)
+                parent.globalAabb = {
+                    minX,
+                    minY,
+                    maxX,
+                    maxY
+                }
+            end
+        end
+        parent = parent:GetParent()
+    end
+end
+
+local function UpdateGlobalAabb(self)
+    UpdateGlobalAabbChildren(self)
+    UpdateGlobalAabbParent(self)
+end
+
+function Control:UpdateTransform()
+    UpdateLocalTransform(self)
+    UpdateGlobalTransform(self)
+    UpdateGlobalAabb(self)
+end
+
+function Control:ResetLocalTransform()
+    self.position = {
+        0,
+        0
+    }
+    self.scale = {
+        1,
+        1
+    }
+    self.rotation = 0
+    self.origin = {
+        0,
+        0
+    }
+    UpdateLocalTransform(self)
 end
 
 function Control:TransformToLocal(x, y)
@@ -53,7 +113,7 @@ function Control:SetPosition(x, y)
     if y then
         self.position[2] = y
     end
-    self:UpdateGeometry()
+    self:UpdateTransform()
 end
 
 function Control:GetPosition()
@@ -65,7 +125,7 @@ function Control:SetScale(scaleX, scaleY)
     scaleY = scaleY or scaleX
     self.scale[1] = scaleX
     self.scale[2] = scaleY
-    self:UpdateGeometry()
+    self:UpdateTransform()
 end
 
 function Control:GetScale()
@@ -75,7 +135,7 @@ end
 function Control:SetRotation(rotation)
     assert(rotation)
     self.rotation = rotation
-    self:UpdateGeometry()
+    self:UpdateTransform()
 end
 
 function Control:GetRotation()
@@ -90,7 +150,7 @@ function Control:SetOrigin(x, y)
     if y then
         self.origin[2] = y
     end
-    self:UpdateGeometry()
+    self:UpdateTransform()
 end
 
 function Control:GetOrigin()
@@ -103,6 +163,8 @@ function Control:AddChild(child)
     end
     child.parent = self
     table.insert(self.children, child)
+    UpdateGlobalTransform(child)
+    UpdateGlobalAabb(child)
 end
 
 function Control:RemoveChild(child)
@@ -122,7 +184,7 @@ function Control:RemoveChild(child)
 end
 
 function Control:GetChildren()
-    return self.children
+    return table.copy(self.children)
 end
 
 function Control:SetParent(parent)
@@ -141,6 +203,10 @@ end
 
 function Control:Reattach(n)
     local children = self.parent.children
+    n = n or #children
+    if children[n] == self then
+        return
+    end
     local found
     for i, v in ipairs(children) do
         if v == self then
@@ -150,87 +216,89 @@ function Control:Reattach(n)
     end
     if found then
         table.remove(children, found)
-        if n then
-            table.insert(children, n, self)
-        else
-            table.insert(children, self)
-        end
+        table.insert(children, n, self)
     else
         assert(false)
     end
 end
 
 function Control:GetAabb()
-    return 0, 0, unpack(self.size)
+    local w, h = self:GetSize()
+    if w == 0 and h == 0 then
+        return math.huge, math.huge, -math.huge, -math.huge
+    end
+    local x1, y1 = self:TransformToGlobal(0, 0)
+    local x2, y2 = self:TransformToGlobal(w, 0)
+    local x3, y3 = self:TransformToGlobal(w, h)
+    local x4, y4 = self:TransformToGlobal(0, h)
+    return math.min(x1, x2, x3, x4), math.min(y1, y2, y3, y4), math.max(x1, x2, x3, x4), math.max(y1, y2, y3, y4)
 end
 
 function Control:GetGlobalAabb()
-    local x1, y1 = self:TransformToGlobal(0, 0)
-    local x2, y2 = self:TransformToGlobal(self:GetSize())
-    return math.min(x1, x2), math.min(y1, y2), math.max(x1, x2), math.max(y1, y2)
+    return unpack(self.globalAabb)
+end
+
+function Control:SetSize(width, height)
+    self.size[1], self.size[2] = width, height
+    self:UpdateTransform()
 end
 
 function Control:GetSize()
     return unpack(self.size)
 end
 
-function Control:MousePressed(x, y, button)
-    for _, child in ipairs(table.copy(self.children)) do
-        child:MousePressed(x, y, button)
+function Control:SetEnable(value)
+    if self.parent then
+        UpdateGlobalAabb(self.parent)
     end
+    self.enable = value
 end
 
-function Control:MouseReleased(x, y, button)
-    for _, child in ipairs(table.copy(self.children)) do
-        child:MouseReleased(x, y, button)
-    end
+function Control:IsEnable()
+    return self.enable
 end
 
-function Control:MouseMoved(x, y)
-    for _, child in ipairs(table.copy(self.children)) do
-        child:MouseMoved(x, y)
-    end
+function Control:SetVisible(value)
+    self.visible = value
 end
 
-function Control:WheelMoved(x, y)
-    for _, child in ipairs(table.copy(self.children)) do
-        child:WheelMoved(x, y)
-    end
+function Control:IsVisible()
+    return self.enable and self.visible
 end
 
 function Control:Draw()
-    for _, child in ipairs(table.copy(self.children)) do
-        child:Draw()
+    local w, h = love.graphics:getDimensions()
+    for _, child in ipairs(self.children) do
+        local minX, minY, maxX, maxY = unpack(child.globalAabb)
+        if child:IsVisible() and minX < w and maxX >= 0 and minY < h and maxY >= 0 then
+            child:Draw()
+        end
     end
 end
 
 function Control:Init(parent, width, height)
-    self.parent = nil
-    if parent then
-        self:SetParent(parent)
-    end
+    self.enable = true
+    self.visible = true
     self.children = {}
-    self.position = {
-        0,
-        0
-    }
-    self.scale = {
-        1,
-        1
-    }
-    self.rotation = 0
-    self.origin = {
-        0,
-        0
-    }
+
     self.localTransform = love.math.newTransform()
     self.globalTransform = love.math.newTransform()
+    self:ResetLocalTransform()
     self.size = {
         width or 0,
         height or 0
     }
+    self.globalAabb = {
+        math.huge,
+        math.huge,
+        -math.huge,
+        -math.huge
+    }
 
-    self:UpdateGlobalTransform()
+    self.parent = nil
+    if parent then
+        self:SetParent(parent)
+    end
 end
 
 MakeClassOf(Control)

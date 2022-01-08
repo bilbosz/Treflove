@@ -1,7 +1,7 @@
 ClippingRectangle = {}
 
 function ClippingRectangle:Draw()
-    local minX, minY, maxX, maxY = self:GetGlobalAabb()
+    local minX, minY, maxX, maxY = self:GetAabb()
     love.graphics.setScissor(minX, minY, maxX - minX, maxY - minY)
     Control.Draw(self)
     love.graphics.setScissor()
@@ -12,5 +12,4 @@ function ClippingRectangle:Init(parent, width, height)
     Control.Init(self, parent, width, height)
 end
 
-Loader.LoadFile("controls/control.lua")
 MakeClassOf(ClippingRectangle, Control)
