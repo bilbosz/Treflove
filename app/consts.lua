@@ -51,9 +51,9 @@ Consts = {
     },
     NOTIFICATION_DURATION = 2,
     NOTIFICATION_COLOR = {
-        0.89,
-        0.78,
-        0.78
+        0.97,
+        0.6,
+        0.6
     },
     NOTIFICATION_PANEL_WIDTH = 1,
     NOTIFICATION_PANEL_HEIGHT = 1,
