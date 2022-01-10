@@ -4,8 +4,8 @@ local INPUT_WIDTH = 200
 local INPUT_HEIGHT = 50
 local FIELD_MARGIN = 25
 
-function LogIn(self)
-    self.login:LogIn(self.loginInput:GetText(), self.passwordInput:GetText())
+local function Login(self)
+    self.login:Login(self.loginInput:GetText(), self.passwordInput:GetText())
 end
 
 local function CreateBackground(self)
@@ -40,10 +40,8 @@ local function CreateTextField(self, text, y, masked)
     text:SetPosition(-FIELD_MARGIN, y)
     text:SetScale(Consts.MENU_FIELD_SCALE)
 
-    local input = TextInput(self.layout, INPUT_WIDTH, INPUT_HEIGHT, masked, function()
-        self:OnInput()
-    end, function()
-        LogIn(self)
+    local input = TextInput(self.layout, INPUT_WIDTH, INPUT_HEIGHT, masked, nil, function()
+        Login(self)
     end)
     input:SetOrigin(0, INPUT_HEIGHT * 0.5)
     input:SetPosition(FIELD_MARGIN, y)
@@ -59,8 +57,8 @@ local function CreatePasswordField(self)
 end
 
 local function CreateLoginButton(self)
-    local button = TextButton(self.layout, "Log In", function()
-        LogIn(self)
+    local button = TextButton(self.layout, "Sign In", function()
+        Login(self)
     end)
     self.loginButton = button
 
@@ -88,14 +86,6 @@ local function CenterLayout(self)
     local h = maxY - minY
     local s = app.root:GetScale()
     layout:SetOrigin(0, h * 0.5 / s)
-end
-
-function LoginScreen:OnFail()
-    app.notificationManager:Notify("Wrong login or password")
-end
-
-function LoginScreen:OnInput()
-
 end
 
 function LoginScreen:Init(login)
