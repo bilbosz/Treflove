@@ -38,8 +38,7 @@ MakeClassOf(ButtonEventListener, Control)
 ButtonEventManager = {}
 
 local function GetListenerInternal(ctrl, listeners, x, y)
-    local minX, minY, maxX, maxY = ctrl:GetGlobalAabb()
-    if not ctrl:IsVisible() or x < minX or x > maxX or y < minY or y > maxY then
+    if not ctrl:IsVisible() or not ctrl:GetGlobalAabb():IsPointInside(x, y) then
         return nil
     end
     local top

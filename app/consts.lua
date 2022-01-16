@@ -72,5 +72,8 @@ Consts = {
         0.9,
         1.0
     },
-    MENU_BUTTON_PADDING = 20
+    MENU_ENTRY_VSPACING = 20,
+    MENU_TEXT_INPUT_WIDTH = 200,
+    MENU_TEXT_INPUT_HEIGHT = 50,
+    MENU_TEXT_INPUT_FIELD_MARGIN = 25
 }

@@ -10,7 +10,7 @@ Control = {}
             Position
 ]]
 
-function UpdateLocalTransform(self)
+local function UpdateLocalTransform(self)
     self.localTransform = self.localTransform:setTransformation(self.position[1], self.position[2], self.rotation, self.scale[1], self.scale[2], self.origin[1], self.origin[2])
 end
 
@@ -28,36 +28,24 @@ local function UpdateGlobalTransform(self)
 end
 
 local function UpdateGlobalAabbChildren(self)
-    local minX, minY, maxX, maxY = self:GetAabb()
+    self.globalAabb:Set(self:GetAabb())
+    local aabb = self.globalAabb
     for _, child in ipairs(self.children) do
         if child:IsEnable() then
             UpdateGlobalAabbChildren(child)
-            local childMinX, childMinY, childMaxX, childMaxY = unpack(child.globalAabb)
-            minX, minY, maxX, maxY = math.min(minX, childMinX), math.min(minY, childMinY), math.max(maxX, childMaxX), math.max(maxY, childMaxY)
+            aabb:AddAabb(child.globalAabb)
         end
     end
-    self.globalAabb = {
-        minX,
-        minY,
-        maxX,
-        maxY
-    }
 end
 
 local function UpdateGlobalAabbParent(self)
     local parent = self:GetParent()
     while parent do
-        local minX, minY, maxX, maxY = parent:GetAabb()
+        parent.globalAabb:Set(parent:GetAabb())
+        local aabb = parent.globalAabb
         for _, child in ipairs(parent.children) do
             if child:IsEnable() then
-                local childMinX, childMinY, childMaxX, childMaxY = unpack(child.globalAabb)
-                minX, minY, maxX, maxY = math.min(minX, childMinX), math.min(minY, childMinY), math.max(maxX, childMaxX), math.max(maxY, childMaxY)
-                parent.globalAabb = {
-                    minX,
-                    minY,
-                    maxX,
-                    maxY
-                }
+                aabb:AddAabb(child.globalAabb)
             end
         end
         parent = parent:GetParent()
@@ -69,13 +57,13 @@ local function UpdateGlobalAabb(self)
     UpdateGlobalAabbParent(self)
 end
 
-function Control:UpdateTransform()
+local function UpdateTransform(self)
     UpdateLocalTransform(self)
     UpdateGlobalTransform(self)
     UpdateGlobalAabb(self)
 end
 
-function Control:ResetLocalTransform()
+local function ResetLocalTransform(self)
     self.position = {
         0,
         0
@@ -100,11 +88,6 @@ function Control:TransformToGlobal(x, y)
     return self.globalTransform:transformPoint(x, y)
 end
 
-function Control:GetGlobalScale()
-    local scaleX, _, _, _, _, scaleY = self.globalTransform:getMatrix()
-    return scaleX, scaleY
-end
-
 function Control:SetPosition(x, y)
     assert(x or y)
     if x then
@@ -113,7 +96,7 @@ function Control:SetPosition(x, y)
     if y then
         self.position[2] = y
     end
-    self:UpdateTransform()
+    UpdateTransform(self)
 end
 
 function Control:GetPosition()
@@ -125,7 +108,7 @@ function Control:SetScale(scaleX, scaleY)
     scaleY = scaleY or scaleX
     self.scale[1] = scaleX
     self.scale[2] = scaleY
-    self:UpdateTransform()
+    UpdateTransform(self)
 end
 
 function Control:GetScale()
@@ -135,7 +118,7 @@ end
 function Control:SetRotation(rotation)
     assert(rotation)
     self.rotation = rotation
-    self:UpdateTransform()
+    UpdateTransform(self)
 end
 
 function Control:GetRotation()
@@ -150,7 +133,7 @@ function Control:SetOrigin(x, y)
     if y then
         self.origin[2] = y
     end
-    self:UpdateTransform()
+    UpdateTransform(self)
 end
 
 function Control:GetOrigin()
@@ -224,23 +207,41 @@ end
 
 function Control:GetAabb()
     local w, h = self:GetSize()
-    if w == 0 and h == 0 then
-        return math.huge, math.huge, -math.huge, -math.huge
+    local aabb = Aabb()
+    aabb:AddPoint(self:TransformToGlobal(0, 0))
+    aabb:AddPoint(self:TransformToGlobal(w, 0))
+    aabb:AddPoint(self:TransformToGlobal(w, h))
+    aabb:AddPoint(self:TransformToGlobal(0, h))
+    return aabb
+end
+
+local function GetRecursiveAabb(self, referenceTransform)
+    local aabb = Aabb()
+    local diff = referenceTransform:inverse():apply(self.globalTransform)
+    local w, h = self:GetSize()
+
+    aabb:AddPoint(diff:transformPoint(0, 0))
+    aabb:AddPoint(diff:transformPoint(w, 0))
+    aabb:AddPoint(diff:transformPoint(w, h))
+    aabb:AddPoint(diff:transformPoint(0, h))
+    for _, child in ipairs(self:GetChildren()) do
+        aabb:AddAabb(GetRecursiveAabb(child, referenceTransform))
     end
-    local x1, y1 = self:TransformToGlobal(0, 0)
-    local x2, y2 = self:TransformToGlobal(w, 0)
-    local x3, y3 = self:TransformToGlobal(w, h)
-    local x4, y4 = self:TransformToGlobal(0, h)
-    return math.min(x1, x2, x3, x4), math.min(y1, y2, y3, y4), math.max(x1, x2, x3, x4), math.max(y1, y2, y3, y4)
+    return aabb
+end
+
+function Control:GetRecursiveAabb(ctrl)
+    ctrl = ctrl or self
+    return GetRecursiveAabb(ctrl, self.globalTransform)
 end
 
 function Control:GetGlobalAabb()
-    return unpack(self.globalAabb)
+    return self.globalAabb
 end
 
 function Control:SetSize(width, height)
     self.size[1], self.size[2] = width, height
-    self:UpdateTransform()
+    UpdateTransform(self)
 end
 
 function Control:GetSize()
@@ -269,7 +270,7 @@ end
 function Control:Draw()
     local w, h = love.graphics:getDimensions()
     for _, child in ipairs(self.children) do
-        local minX, minY, maxX, maxY = unpack(child.globalAabb)
+        local minX, minY, maxX, maxY = child.globalAabb:GetBounds()
         if child:IsVisible() and minX < w and maxX >= 0 and minY < h and maxY >= 0 then
             child:Draw()
         end
@@ -283,17 +284,12 @@ function Control:Init(parent, width, height)
 
     self.localTransform = love.math.newTransform()
     self.globalTransform = love.math.newTransform()
-    self:ResetLocalTransform()
+    ResetLocalTransform(self)
     self.size = {
         width or 0,
         height or 0
     }
-    self.globalAabb = {
-        math.huge,
-        math.huge,
-        -math.huge,
-        -math.huge
-    }
+    self.globalAabb = Aabb()
 
     self.parent = nil
     if parent then

@@ -19,16 +19,16 @@ end
 function UserMenuScreen:Init(session)
     self.session = session
     MenuScreen.Init(self, "Menu", {
-        MenuButton("Join Game", function()
+        MenuTextButton("Join Game", function()
             OnJoinGame(self)
         end),
-        MenuButton("Options", function()
+        MenuTextButton("Options", function()
             OnOptions(self)
         end),
-        MenuButton("Log Out", function()
+        MenuTextButton("Log Out", function()
             OnLogout(self)
         end),
-        MenuButton("Quit", function()
+        MenuTextButton("Quit", function()
             OnQuit()
         end)
     })

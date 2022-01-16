@@ -1,8 +1,8 @@
 ClippingRectangle = {}
 
 function ClippingRectangle:Draw()
-    local minX, minY, maxX, maxY = self:GetAabb()
-    love.graphics.setScissor(minX, minY, maxX - minX, maxY - minY)
+    local aabb = self:GetAabb()
+    love.graphics.setScissor(aabb:GetMinX(), aabb:GetMinY(), aabb:GetWidth(), aabb:GetHeight())
     Control.Draw(self)
     love.graphics.setScissor()
 end

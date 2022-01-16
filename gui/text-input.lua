@@ -31,8 +31,7 @@ local function UpdateContentView(self)
     UpdateCaretView(self)
 
     local content = self.content
-    local _, _, maxX, _ = content:GetGlobalAabb()
-    local w = content:TransformToLocal(maxX, 0)
+    local w = content:GetRecursiveAabb():GetWidth()
     if w > self.clip:GetSize() then
         content:SetOrigin(w, nil)
         content:SetPosition(self.clip:GetSize(), nil)

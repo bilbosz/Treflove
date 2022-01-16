@@ -27,26 +27,16 @@ end
 
 local function CenterLayout(self)
     local layout = self.layout
-    local _, minY, _, maxY = layout:GetGlobalAabb()
-    local h = maxY - minY
-    local s = app.root:GetScale()
-    layout:SetOrigin(0, h * 0.5 / s)
-end
-
-local function CreateEntry(self, entryDef, y)
-    local ctrl = entryDef:CreateControl(self.layout)
-    ctrl:SetPosition(nil, y)
-    local w, h = ctrl:GetSize()
-    local s = ctrl:GetScale()
-    ctrl:SetOrigin(w * 0.5, h * 0.5)
-    y = y + s * h
-    return y
+    local aabb = layout:GetRecursiveAabb()
+    layout:SetOrigin(0, aabb:GetHeight() * 0.5)
 end
 
 local function CreateEntries(self)
     local y = 250
     for _, entryDef in ipairs(self.entries) do
-        y = CreateEntry(self, entryDef, y)
+        local ctrl = entryDef:CreateControl(self.layout)
+        ctrl:SetPosition(nil, y)
+        y = self.layout:GetRecursiveAabb(ctrl):GetMaxY() + Consts.MENU_ENTRY_VSPACING
     end
 end
 

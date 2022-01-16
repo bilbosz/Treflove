@@ -21,8 +21,7 @@ MakeClassOf(PointerEventListener, Control)
 PointerEventManager = {}
 
 local function GetListenerList(ctrl, listeners, x, y, list)
-    local minX, minY, maxX, maxY = ctrl:GetGlobalAabb()
-    if not ctrl:IsVisible() or x < minX or x > maxX or y < minY or y > maxY then
+    if not ctrl:IsVisible() or not ctrl:GetGlobalAabb():IsPointInside(x, y) then
         return nil
     end
     if listeners[ctrl] then
