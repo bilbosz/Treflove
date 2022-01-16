@@ -1,7 +1,7 @@
 UserMenuScreen = {}
 
 local function OnJoinGame(self)
-    app.logger:Log("Join game clicked")
+    self.session:JoinGame()
 end
 
 local function OnOptions()
