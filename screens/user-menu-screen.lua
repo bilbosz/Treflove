@@ -4,8 +4,8 @@ local function OnJoinGame(self)
     app.logger:Log("Join game clicked")
 end
 
-local function OnOptions(self)
-    app.logger:Log("Options clicked")
+local function OnOptions()
+    app.screenManager:Push(OptionsMenuScreen())
 end
 
 local function OnLogout(self)
@@ -22,15 +22,11 @@ function UserMenuScreen:Init(session)
         MenuTextButton("Join Game", function()
             OnJoinGame(self)
         end),
-        MenuTextButton("Options", function()
-            OnOptions(self)
-        end),
+        MenuTextButton("Options", OnOptions),
         MenuTextButton("Log Out", function()
             OnLogout(self)
         end),
-        MenuTextButton("Quit", function()
-            OnQuit()
-        end)
+        MenuTextButton("Quit", OnQuit)
     })
 end
 

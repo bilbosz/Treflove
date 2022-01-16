@@ -27,7 +27,7 @@ function Session:Init(connection)
     self.login = login
 
     if app.isClient then
-        login:ShowLoginScreen()
+        login:Login("adam", "krause")
     end
 end
 
