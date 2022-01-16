@@ -61,15 +61,19 @@ Consts = {
     NOTIFICATION_VSPACE = 30,
     NOTIFICATION_PADDING = 30,
     LOGO_COLOR_FG = {
-        0.56,
-        0.24,
-        0.21,
+        0.27,
+        0.27,
+        0.53,
         1.0
     },
     LOGO_COLOR_BG = {
-        0.83,
+        0.8,
         0.85,
-        0.88,
+        0.9,
         1.0
-    }
+    },
+    MENU_ENTRY_VSPACING = 20,
+    MENU_TEXT_INPUT_WIDTH = 200,
+    MENU_TEXT_INPUT_HEIGHT = 50,
+    MENU_TEXT_INPUT_FIELD_MARGIN = 25
 }

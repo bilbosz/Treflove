@@ -28,8 +28,8 @@ end
 
 local function CenterLayout(self)
     local layout = self.layout
-    local _, minY, _, maxY = layout:GetGlobalAabb()
-    local h = maxY - minY
+    local aabb = layout:GetGlobalAabb()
+    local h = aabb:GetMaxY() - aabb:GetMinY()
     local s = app.root:GetScale()
     layout:SetOrigin(0, h * 0.5 / s)
 end

@@ -21,7 +21,7 @@ end
 
 function Token:CreateLabel(label)
     self.label = Text(self, label)
-    local s = 0.03
+    local s = 0.007
     local w, h = self.label:GetSize()
     self.label:SetOrigin(w * 0.5, h * 0.5)
     self.label:SetScale(s)
@@ -64,9 +64,6 @@ function Token:OnPointerUp(x, y, id)
         self.data.position = {
             self:GetPosition()
         }
-        app.connection:SendRequest(app.data, function()
-            return {}
-        end)
         return false
     end
     return true

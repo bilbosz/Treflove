@@ -22,7 +22,7 @@ function CreateIndex(self, ...)
 end
 
 local function DrawAabbsInternal(ctrl)
-    local minX, minY, maxX, maxY = unpack(ctrl.globalAabb)
+    local minX, minY, maxX, maxY = ctrl.globalAabb:GetBounds()
     love.graphics.rectangle("fill", minX, minY, maxX - minX, maxY - minY)
     for _, child in ipairs(ctrl.children) do
         if child:IsEnable() then

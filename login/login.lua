@@ -17,43 +17,73 @@ local function FindUserByClientAuth(clientAuth)
     end
 end
 
-function Login:Init(session, onSuccess)
+local function PopToConnectionScreen()
+    while true do
+        local top = app.screenManager:Top()
+        if not top then
+            break
+        end
+        local mt = getmetatable(top)
+        if mt.class == ConnectionScreen then
+            break
+        end
+        app.screenManager:Pop()
+    end
+end
+
+function Login:Init(session, onLogin, onLogout)
     self.session = session
     self.connection = session:GetConnection()
-    self.onSuccess = onSuccess
-    if app.isClient then
-        local screen = LoginScreen(self)
-        self.screen = screen
-        app.screenManager:Push(screen)
-    else
+    self.onLogin = onLogin
+    self.onLogout = onLogout
+    if app.isServer then
         self.connection:RegisterRequestHandler("login", function(request)
             local user = FindUserByClientAuth(request.auth)
             if user then
-                onSuccess(user)
+                onLogin(user)
             end
             return {
                 user = user
             }
         end)
+        self.connection:RegisterRequestHandler("logout", function()
+            onLogout()
+            return {}
+        end)
     end
 end
 
-function Login:LogIn(user, password)
+function Login:ShowLoginScreen()
+    assert(app.isClient)
+    PopToConnectionScreen()
+    app.screenManager:Push(LoginScreen(self))
+end
+
+function Login:Login(user, password)
     assert(app.isClient)
     local auth = GetClientAuth(user, password)
     self.session:GetConnection():SendRequest("login", {
         auth = auth
     }, function(response)
         if response.user then
-            self.onSuccess(response.user)
+            app.notificationManager:Notify(string.format("Successfully logged in as %s", response.user), 3)
+            self.onLogin(response.user)
         else
-            self.screen:OnFail()
+            app.notificationManager:Notify("Wrong login or password")
         end
+    end)
+end
+
+function Login:Logout()
+    assert(app.isClient)
+    self.session:GetConnection():SendRequest("logout", {}, function()
+        self.onLogout()
     end)
 end
 
 function Login:Release()
     self.connection:UnregisterRequestHandler("login")
+    self.connection:UnregisterRequestHandler("logout")
 end
 
 MakeClassOf(Login)
