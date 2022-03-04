@@ -19,6 +19,7 @@ function love.conf(t)
         if love._os ~= "Windows" then
             t.window = nil
         end
+        t.appendidentity = true
         t.console = true
     elseif params.appType == "client" then
         t.window.title = "Treflove"
