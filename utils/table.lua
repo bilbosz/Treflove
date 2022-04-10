@@ -32,7 +32,7 @@ function table.tostring(self)
         ["boolean"] = tostring,
         ["number"] = tostring,
         ["string"] = function(v)
-            return "\"" .. v .. "\""
+            return "\"" .. string.gsub(v, "\n", "\\n") .. "\""
         end,
         ["function"] = nil,
         ["userdata"] = nil,

@@ -13,6 +13,7 @@ function Client:Init(params)
     self.focusEventManager = FocusEventManager()
     self.notificationManager = NotificationManager()
     self.optionsManager = OptionsManager()
+    self.assetManager = AssetManager()
     self.session = nil
 end
 

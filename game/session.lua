@@ -30,6 +30,7 @@ function Session:Init(connection)
             data = app.data
         }
     end)
+    app.assetManager:RegisterSession(self)
 
     if app.isClient then
         login:Login("adam", "krause")
@@ -73,6 +74,7 @@ function Session:JoinGame()
 end
 
 function Session:Release()
+    app.assetManager:UnregisterSession(self)
     self.login:Release()
     self.login = nil
     self.connection = nil
