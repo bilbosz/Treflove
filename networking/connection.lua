@@ -4,8 +4,8 @@ local function Compress(message)
     return love.data.compress("string", Consts.NETWORK_COMPRESSION, table.tostring(message))
 end
 
-local function Decompress(load)
-    return table.fromstring(love.data.decompress("string", Consts.NETWORK_COMPRESSION, load))
+local function Decompress(payload)
+    return table.fromstring(love.data.decompress("string", Consts.NETWORK_COMPRESSION, payload))
 end
 
 local function HandleResponse(self, message)
@@ -71,11 +71,11 @@ end
 
 function Connection:OnUpdate()
     while true do
-        local load = self.inChannel:pop()
-        if not load then
+        local payload = self.inChannel:pop()
+        if not payload then
             break
         end
-        local message = Decompress(load)
+        local message = Decompress(payload)
         if message.source == self.source then
             HandleResponse(self, message)
         else

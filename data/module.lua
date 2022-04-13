@@ -1,3 +1,6 @@
 Loader.LoadFile("data/model.lua")
 Loader.LoadFile("data/file.lua")
+Loader.LoadFile("networking/remote-procedure.lua")
+Loader.LoadFile("data/upload-asset-rp.lua")
+Loader.LoadFile("data/download-asset-rp.lua")
 Loader.LoadFile("data/asset-manager.lua")

@@ -25,11 +25,7 @@ function Session:Init(connection)
         OnLogout(self)
     end)
     self.login = login
-    self.connection:RegisterRequestHandler("game-data", function()
-        return {
-            data = app.data
-        }
-    end)
+    self.gameDataRp = GameDataRp(self.connection)
     app.assetManager:RegisterSession(self)
 
     if app.isClient then
@@ -58,19 +54,9 @@ function Session:IsLoggedIn()
 end
 
 function Session:JoinGame()
-    if app.isServer then
-        self.connection:RegisterRequestHandler("game-data", function()
-            return {
-                data = app.data
-            }
-        end)
-    else
-        self.connection:SendRequest("game-data", {}, function(response)
-            app.data = response.data
-            app.screenManager:Push(GameScreen(app.data.game))
-            return {}
-        end)
-    end
+    assert(app.isClient)
+
+    self.gameDataRp:SendRequest({})
 end
 
 function Session:Release()
