@@ -22,8 +22,7 @@ function App:RegisterLoveCallbacks()
         CreateRoot(self)
         if debug then
             function love.draw()
-                local root = self.root
-                if root:IsVisible() then
+                if self.root:IsVisible() then
                     self.root:Draw()
                     love.graphics.reset()
                     if self.drawAabs then
@@ -34,8 +33,7 @@ function App:RegisterLoveCallbacks()
             end
         else
             function love.draw()
-                local root = self.root
-                if root:IsVisible() then
+                if self.root:IsVisible() then
                     self.root:Draw()
                 end
                 love.graphics.reset()
