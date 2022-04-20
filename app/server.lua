@@ -4,7 +4,7 @@ function Server:Init(params)
     App.Init(self, params)
     self.logger:SetName("server-main")
     self.isServer = true
-    self.saveFile = File("save.lua")
+    self.saveFile = Asset("save.lua", true)
 
     if self.root then
         self.screenManager = ScreenManager()

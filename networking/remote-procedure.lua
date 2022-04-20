@@ -20,9 +20,12 @@ function RemoteProcedure:Stop()
     self.connection:UnregisterRequestHandler(self.id)
 end
 
-function RemoteProcedure:SendRequest(request)
+function RemoteProcedure:SendRequest(request, cb)
     self.connection:SendRequest(self.id, request, function(response)
         self:ReceiveResponse(response)
+        if cb then
+            cb(response)
+        end
     end)
 end
 

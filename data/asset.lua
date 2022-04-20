@@ -1,8 +1,4 @@
-File = {}
-
-local function GetRealPath(virtualPath)
-    return (app.isServer and "server/" or "client/") .. virtualPath
-end
+Asset = {}
 
 local function CreateIntermediateDirs(path)
     local found = 0
@@ -21,32 +17,45 @@ local function CreateIntermediateDirs(path)
     end
 end
 
-function File:Init(path)
-    assert(string.sub(path, 1, 1) ~= "/")
-    self.path = GetRealPath(path)
+function Asset.GetAssetPath(virtualPath)
+    return (app.isServer and "server/assets/" or "client/assets/") .. virtualPath
 end
 
-function File:Create()
+function Asset.GetRootPath(virtualPath)
+    return (app.isServer and "server/" or "client/") .. virtualPath
+end
+
+function Asset:Init(path, onRoot)
+    assert(string.sub(path, 1, 1) ~= "/")
+    self.path = onRoot and Asset.GetRootPath(path) or Asset.GetAssetPath(path)
+end
+
+function Asset:Create()
     CreateIntermediateDirs(self.path)
     assert(love.filesystem.write(self.path, ""))
 end
 
-function File:Write(content)
+function Asset:Write(content)
     assert(love.filesystem.write(self.path, content))
 end
 
-function File:Read()
+function Asset:Read()
     return love.filesystem.read(self.path)
 end
 
-function File:GetType()
+function Asset:GetType()
     local info = love.filesystem.getInfo(self.path)
     return info and info.type
 end
 
-function File:GetSize()
+function Asset:GetSize()
     local info = love.filesystem.getInfo(self.path)
     return info and info.size
 end
 
-MakeClassOf(File)
+function Asset:GetPath()
+    local info = love.filesystem.getInfo(self.path)
+    return info and self.path
+end
+
+MakeClassOf(Asset)

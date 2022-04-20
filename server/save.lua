@@ -8,7 +8,7 @@ return {
     worlds = {
         ["Old Town"] = {
             width = 175.61,
-            image = "game/world/world.jpg",
+            image = "world/world.jpg",
             tokens = {
                 "Bilbosz",
                 "Gaben",
@@ -21,7 +21,7 @@ return {
         ["Bilbosz"] = {
             name = "Bilbosz",
             diameter = 3,
-            avatar = "game/token/bilbosz.png",
+            avatar = "token/bilbosz.png",
             position = {
                 90,
                 60
@@ -30,7 +30,7 @@ return {
         ["Gaben"] = {
             name = "Gaben",
             diameter = 3,
-            avatar = "game/token/gaben.png",
+            avatar = "token/gaben.png",
             position = {
                 85,
                 60
@@ -39,7 +39,7 @@ return {
         ["Bilbosza"] = {
             name = "Bilbosza Wielka",
             diameter = 3,
-            avatar = "game/token/bilbosza.png",
+            avatar = "token/bilbosza.png",
             position = {
                 87.5,
                 62.5
@@ -48,7 +48,7 @@ return {
         ["Anonim"] = {
             name = "Anonim",
             diameter = 2,
-            avatar = "game/token/default.png",
+            avatar = "token/default.png",
             position = {
                 81.83,
                 61.10
