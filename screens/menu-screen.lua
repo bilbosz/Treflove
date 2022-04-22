@@ -41,12 +41,13 @@ local function CreateEntries(self)
 end
 
 function MenuScreen:Init(title, entries)
+    Screen.Init(self)
     self.title = title
     self.entries = entries
 end
 
-function MenuScreen:OnPush()
-    Screen.OnPush(self)
+function MenuScreen:Show()
+    Screen.Show(self)
     CreateBackground(self)
     CreateLayout(self)
     CreateLogo(self)

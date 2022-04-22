@@ -18,13 +18,11 @@ function Client:Init(params)
 end
 
 function Client:Load()
-    self.screenManager:Push(ConnectionScreen())
+    self.screenManager:Show(ConnectionScreen())
     self.connectionManager:Start(function(connection)
         self.session = Session(connection)
     end, function()
-        while self.screenManager:ScreenCount() > 1 do
-            self.screenManager:Pop()
-        end
+        self.screenManager:Show(ConnectionScreen())
         self.session:Release()
         self.session = nil
         self.data = nil

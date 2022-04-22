@@ -12,7 +12,7 @@ end
 
 function GameDataRp:ReceiveResponse(response)
     app.data = response.data
-    app.screenManager:Push(GameScreen(app.data.game))
+    app.screenManager:Show(GameScreen(app.data.game))
 end
 
 MakeClassOf(GameDataRp, RemoteProcedure)

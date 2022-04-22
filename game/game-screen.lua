@@ -21,8 +21,8 @@ function GameScreen:Init()
     Screen.Init(self)
 end
 
-function GameScreen:OnPush()
-    Screen.OnPush(self)
+function GameScreen:Show()
+    Screen.Show(self)
     if self.data.screen == "World" then
         DownloadAssets(self, function()
             World(self.data.params, self.screen, app.width, app.height)

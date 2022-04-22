@@ -14,6 +14,8 @@ function DeferManager:Init()
 end
 
 function DeferManager:CallDefered(t, f, ...)
+    assert(type(t) == "number")
+    assert(type(f) == "function")
     table.insert(self.toAddDefers, {
         app.time + t,
         f,

@@ -4,20 +4,6 @@ local function GetClientAuth(userName, password)
     return Hash(userName .. string.char(0) .. GenerateSalt(32) .. string.char(0) .. password)
 end
 
-local function PopToConnectionScreen()
-    while true do
-        local top = app.screenManager:Top()
-        if not top then
-            break
-        end
-        local mt = getmetatable(top)
-        if mt.class == ConnectionScreen then
-            break
-        end
-        app.screenManager:Pop()
-    end
-end
-
 function Login:Init(session, onLogin, onLogout)
     self.session = session
     self.connection = session:GetConnection()
@@ -28,8 +14,7 @@ end
 
 function Login:ShowLoginScreen()
     assert(app.isClient)
-    PopToConnectionScreen()
-    app.screenManager:Push(LoginScreen(self))
+    app.screenManager:Show(LoginScreen(self))
 end
 
 function Login:Login(user, password)

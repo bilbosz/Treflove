@@ -4,7 +4,7 @@ local function OnLogin(self, user)
     assert(not self.user)
     self.user = user
     if app.isClient then
-        app.screenManager:Push(UserMenuScreen(self))
+        app.screenManager:Show(UserMenuScreen(self))
     end
 end
 

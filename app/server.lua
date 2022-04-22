@@ -8,7 +8,7 @@ function Server:Init(params)
 
     if self.root then
         self.screenManager = ScreenManager()
-        self.screenManager:Push(ScreenSaver())
+        self.screenManager:Show(ScreenSaver())
     end
     self.sessions = {}
     self.connectionManager = ConnectionManager(params.address, params.port)

@@ -4,21 +4,13 @@ function Screen:Init()
     self.screen = nil
 end
 
-function Screen:OnPush(...)
+function Screen:Show(...)
     self.screen = Control(app.root)
 end
 
-function Screen:OnPop()
+function Screen:Release()
     self.screen:SetParent(nil)
     self.screen = nil
-end
-
-function Screen:OnBackground()
-    self.screen:SetEnable(false)
-end
-
-function Screen:OnForeground()
-    self.screen:SetEnable(true)
 end
 
 function Screen:GetControl()
