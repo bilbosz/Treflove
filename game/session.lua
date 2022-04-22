@@ -55,7 +55,7 @@ end
 
 function Session:JoinGame()
     assert(app.isClient)
-
+    app.screenManager:Show(WaitingScreen("Loading..."))
     self.gameDataRp:SendRequest({})
 end
 
