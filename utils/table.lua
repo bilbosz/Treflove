@@ -5,6 +5,13 @@ function table.merge(self, other)
     return self
 end
 
+function table.mergearray(self, other)
+    for _, v in ipairs(other) do
+        table.insert(self, v)
+    end
+    return self
+end
+
 function table.copy(self)
     local result = {}
     for k, v in pairs(self) do

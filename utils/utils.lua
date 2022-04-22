@@ -1,3 +1,5 @@
+local socket = require("socket")
+
 function IsIdentifier(str)
     local l = #str
     local b, e = string.find(str, "[%a_][%w_]*")
@@ -58,4 +60,8 @@ end
 
 function Hash(str)
     return love.data.encode("string", "base64", love.data.hash(Consts.HASH_ALGORITHM, str))
+end
+
+function GetTime()
+    return socket.gettime()
 end

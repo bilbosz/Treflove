@@ -1,7 +1,5 @@
 App = {}
 
-local socket = require("socket")
-
 local function CreateRoot(self)
     local realW, realH = love.graphics.getDimensions()
     assert(realW >= realH)
@@ -50,10 +48,11 @@ function App:RegisterLoveCallbacks()
     end
 
     function love.update(dt)
+        self.deferManager:Update()
         if self.markForQuit then
             love.event.quit(0)
         end
-        self.time = socket.gettime() - self.startTime
+        self.time = GetTime() - self.startTime
         self.updateEventManager:InvokeEvent(UpdateEventListener.OnUpdate, dt)
         collectgarbage("step")
     end
@@ -69,7 +68,7 @@ end
 
 function App:Init(params)
     app = self
-    self.startTime = socket.gettime()
+    self.startTime = GetTime()
     self.logger = Logger({
         startTime = self.startTime
     }, "main")
@@ -82,6 +81,7 @@ function App:Init(params)
     self.root = nil
     self.time = 0
     self.updateEventManager = UpdateEventManager()
+    self.deferManager = DeferManager()
 
     self:RegisterLoveCallbacks()
 end
