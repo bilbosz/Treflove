@@ -5,7 +5,10 @@ local function OnJoinGame(self)
 end
 
 local function OnOptions(self)
-    app.screenManager:Show(OptionsMenuScreen(self.session))
+    app.backstackManager:Push(function()
+        app.screenManager:Show(self, self.session)
+    end)
+    app.screenManager:Show(OptionsMenuScreen())
 end
 
 local function OnLogout(self)
@@ -17,6 +20,7 @@ local function OnQuit()
 end
 
 function UserMenuScreen:Init(session)
+    assert(session)
     self.session = session
     MenuScreen.Init(self, "Menu", {
         MenuTextButton("Join Game", function()

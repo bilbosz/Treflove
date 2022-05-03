@@ -9,20 +9,26 @@ function Client:Init(params)
     self.pointerEventManager = PointerEventManager()
     self.wheelEventManager = WheelEventManager()
     self.buttonEventManager = ButtonEventManager()
+    self.keyboardManager = KeyboardManager()
     self.textEventManager = TextEventManager()
     self.focusEventManager = FocusEventManager()
     self.notificationManager = NotificationManager()
     self.optionsManager = OptionsManager()
     self.assetManager = AssetManager()
+    self.backstackManager = BackstackManager()
     self.session = nil
 end
 
 function Client:Load()
-    self.screenManager:Show(ConnectionScreen())
+    self.backstackManager:Push(function()
+        app:Quit()
+    end)
+    local connectionScreen = ConnectionScreen()
+    self.screenManager:Show(connectionScreen)
     self.connectionManager:Start(function(connection)
         self.session = Session(connection)
     end, function()
-        self.screenManager:Show(ConnectionScreen())
+        self.screenManager:Show(connectionScreen)
         self.session:Release()
         self.session = nil
         self.data = nil
@@ -34,8 +40,12 @@ function Client:RegisterLoveCallbacks()
     local appKeyPressed = love.keypressed
     function love.keypressed(key)
         appKeyPressed(key)
+        self.keyboardManager:KeyPressed(key)
         self.textEventManager:KeyPressed(key)
         self.focusEventManager:KeyPressed(key)
+    end
+    function love.keyreleased(key)
+        self.keyboardManager:KeyReleased(key)
     end
     function love.wheelmoved(x, y)
         self.wheelEventManager:InvokeEvent(WheelEventListener.OnWheelMoved, x, y)

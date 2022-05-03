@@ -5,6 +5,10 @@ local function OnLogin(self, user)
     self.user = user
     if app.isClient then
         app.screenManager:Show(UserMenuScreen(self))
+        self.backstackCb = function()
+            self:Logout()
+        end
+        app.backstackManager:Push(self.backstackCb)
     end
 end
 
@@ -12,7 +16,9 @@ local function OnLogout(self)
     assert(self.user)
     self.user = nil
     if app.isClient then
-        self.login:ShowLoginScreen()
+        app.backstackManager:Pop(self.backstackCb)
+        self.backstackCb = nil
+        app.screenManager:Show(LoginScreen(self.login))
     end
 end
 

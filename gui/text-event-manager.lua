@@ -38,8 +38,7 @@ TextEventManager = {}
 
 function TextEventManager:Init()
     EventManager.Init(self, TextEventListener)
-    love.keyboard.setKeyRepeat(false)
-    love.keyboard.setTextInput(false)
+    self:SetTextInput(false)
 end
 
 function TextEventManager:KeyPressed(key)
@@ -57,6 +56,10 @@ end
 function TextEventManager:SetTextInput(value)
     love.keyboard.setTextInput(value)
     love.keyboard.setKeyRepeat(value)
+end
+
+function TextEventManager:IsTextInput()
+    return love.keyboard.hasTextInput()
 end
 
 MakeClassOf(TextEventManager, EventManager)

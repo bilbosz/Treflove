@@ -12,11 +12,6 @@ function Login:Init(session, onLogin, onLogout)
     self.logoutRp = LogoutRp(self.connection, onLogout)
 end
 
-function Login:ShowLoginScreen()
-    assert(app.isClient)
-    app.screenManager:Show(LoginScreen(self))
-end
-
 function Login:Login(user, password)
     assert(app.isClient)
     self.loginRp:SendRequest({

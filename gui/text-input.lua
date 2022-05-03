@@ -156,6 +156,7 @@ end
 
 function TextInput:OnEnter()
     TextEventListener.OnEnter(self)
+    app.textEventManager:SetTextInput(false)
     if self.onEnter then
         self.onEnter()
     end

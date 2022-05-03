@@ -38,10 +38,7 @@ function App:RegisterLoveCallbacks()
             end
         end
         function love.keypressed(key)
-            if key == "escape" then
-                self.markForQuit = true
-                return
-            elseif key == "f2" then
+            if key == "f2" then
                 self.drawAabs = not self.drawAabs
             end
         end
