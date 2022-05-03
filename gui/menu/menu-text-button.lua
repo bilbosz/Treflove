@@ -1,9 +1,9 @@
 MenuTextButton = {}
 
-function MenuTextButton:Init(label, callback)
+function MenuTextButton:Init(label, cb)
     MenuEntry.Init(self)
     self.label = label
-    self.callback = callback
+    self.cb = cb
 end
 
 function MenuTextButton:CreateControl(parent)
@@ -11,7 +11,7 @@ function MenuTextButton:CreateControl(parent)
     self.control = ctrl
     ctrl:SetScale(Consts.MENU_BUTTON_SCALE)
 
-    local text = TextButton(ctrl, self.label, self.callback)
+    local text = TextButton(ctrl, self.label, self.cb)
     local w = text:GetSize()
     text:SetOrigin(w * 0.5, 0)
 

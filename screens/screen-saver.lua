@@ -4,8 +4,8 @@ function ScreenSaver:Init()
     Screen.Init(self)
 end
 
-function ScreenSaver:OnPush()
-    Screen.OnPush(self)
+function ScreenSaver:Show()
+    Screen.Show(self)
     self.screen:SetSize(app.width, app.height)
 
     self.background = Rectangle(self.screen, app.width, app.height, {

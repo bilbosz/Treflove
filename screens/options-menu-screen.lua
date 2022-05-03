@@ -6,7 +6,7 @@ function OptionsMenuScreen:Init()
             app.optionsManager:ToggleFullscreen()
         end),
         MenuTextButton("Back", function()
-            app.screenManager:Pop()
+            app.backstackManager:Back()
         end)
     })
 end

@@ -10,10 +10,8 @@ local function DumpGenerator(config)
     local function createStacktrace(config)
         local result = "\n[STACKTRACE]\n"
         local trace = debug.traceback()
-        local current = 1
         local lineNo = 1
         local ignoreHead = 3
-        local lines = select(2, string.gsub(trace, "\n", "\n"))
         local found = 0
         while found do
             local prev = found

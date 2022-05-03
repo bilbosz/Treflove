@@ -1,7 +1,5 @@
 App = {}
 
-local socket = require("socket")
-
 local function CreateRoot(self)
     local realW, realH = love.graphics.getDimensions()
     assert(realW >= realH)
@@ -22,8 +20,7 @@ function App:RegisterLoveCallbacks()
         CreateRoot(self)
         if debug then
             function love.draw()
-                local root = self.root
-                if root:IsVisible() then
+                if self.root:IsVisible() then
                     self.root:Draw()
                     love.graphics.reset()
                     if self.drawAabs then
@@ -34,28 +31,25 @@ function App:RegisterLoveCallbacks()
             end
         else
             function love.draw()
-                local root = self.root
-                if root:IsVisible() then
+                if self.root:IsVisible() then
                     self.root:Draw()
                 end
                 love.graphics.reset()
             end
         end
         function love.keypressed(key)
-            if key == "escape" then
-                self.markForQuit = true
-                return
-            elseif key == "f2" then
+            if key == "f2" then
                 self.drawAabs = not self.drawAabs
             end
         end
     end
 
     function love.update(dt)
+        self.deferManager:Update()
         if self.markForQuit then
             love.event.quit(0)
         end
-        self.time = socket.gettime() - self.startTime
+        self.time = GetTime() - self.startTime
         self.updateEventManager:InvokeEvent(UpdateEventListener.OnUpdate, dt)
         collectgarbage("step")
     end
@@ -71,7 +65,7 @@ end
 
 function App:Init(params)
     app = self
-    self.startTime = socket.gettime()
+    self.startTime = GetTime()
     self.logger = Logger({
         startTime = self.startTime
     }, "main")
@@ -84,6 +78,7 @@ function App:Init(params)
     self.root = nil
     self.time = 0
     self.updateEventManager = UpdateEventManager()
+    self.deferManager = DeferManager()
 
     self:RegisterLoveCallbacks()
 end

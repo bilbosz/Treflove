@@ -4,7 +4,11 @@ local function OnLogin(self, user)
     assert(not self.user)
     self.user = user
     if app.isClient then
-        app.screenManager:Push(UserMenuScreen(self))
+        app.screenManager:Show(UserMenuScreen(self))
+        self.backstackCb = function()
+            self:Logout()
+        end
+        app.backstackManager:Push(self.backstackCb)
     end
 end
 
@@ -12,7 +16,9 @@ local function OnLogout(self)
     assert(self.user)
     self.user = nil
     if app.isClient then
-        self.login:ShowLoginScreen()
+        app.backstackManager:Pop(self.backstackCb)
+        self.backstackCb = nil
+        app.screenManager:Show(LoginScreen(self.login))
     end
 end
 
@@ -25,11 +31,8 @@ function Session:Init(connection)
         OnLogout(self)
     end)
     self.login = login
-    self.connection:RegisterRequestHandler("game-data", function()
-        return {
-            data = app.data
-        }
-    end)
+    self.gameDataRp = GameDataRp(self.connection)
+    app.assetManager:RegisterSession(self)
 
     if app.isClient then
         login:Login("adam", "krause")
@@ -57,22 +60,13 @@ function Session:IsLoggedIn()
 end
 
 function Session:JoinGame()
-    if app.isServer then
-        self.connection:RegisterRequestHandler("game-data", function()
-            return {
-                data = app.data
-            }
-        end)
-    else
-        self.connection:SendRequest("game-data", {}, function(response)
-            app.data = response.data
-            app.screenManager:Push(GameScreen(app.data.game))
-            return {}
-        end)
-    end
+    assert(app.isClient)
+    app.screenManager:Show(WaitingScreen("Loading..."))
+    self.gameDataRp:SendRequest({})
 end
 
 function Session:Release()
+    app.assetManager:UnregisterSession(self)
     self.login:Release()
     self.login = nil
     self.connection = nil

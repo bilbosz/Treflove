@@ -40,26 +40,14 @@ function WaitingScreen:Init(message)
     app.updateEventManager:RegisterListener(self)
 end
 
-function WaitingScreen:OnPush()
-    Screen.OnPush(self)
+function WaitingScreen:Show()
+    Screen.Show(self)
 
     CreateBackground(self)
     CreateLayout(self)
     CreateLogo(self)
     CreateText(self)
     CenterLayout(self)
-end
-
-function WaitingScreen:OnPop()
-    Screen.OnPop(self)
-end
-
-function WaitingScreen:OnBackground()
-    Screen.OnBackground(self)
-end
-
-function WaitingScreen:OnForeground()
-    Screen.OnForeground(self)
 end
 
 function WaitingScreen:OnUpdate(dt)
