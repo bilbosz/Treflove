@@ -8,7 +8,7 @@ function Screen:Show(...)
     self.screen = Control(app.root)
 end
 
-function Screen:Release()
+function Screen:Hide()
     self.screen:SetParent(nil)
     self.screen = nil
 end

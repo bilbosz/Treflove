@@ -6,7 +6,7 @@ end
 
 function ScreenManager:Show(screen, ...)
     if self.screen then
-        self.screen:Release()
+        self.screen:Hide()
     end
     self.screen = screen
     screen:Show(...)
