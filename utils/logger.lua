@@ -11,8 +11,9 @@ local function IsEnabled(name)
     return true
 end
 
-function Logger:Init(name)
+function Logger:Init(data, name)
     assert(type(name) == "string")
+    Model.Init(self, data)
     self.name = name
     self.data.startTime = self.data.startTime or GetTime()
     self.startTime = self.data.startTime
@@ -42,4 +43,4 @@ function Logger:Log(format, ...)
     print(result)
 end
 
-MakeModelOf(Logger)
+MakeClassOf(Logger, Model)

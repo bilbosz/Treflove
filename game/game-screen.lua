@@ -1,6 +1,7 @@
 GameScreen = {}
 
-function GameScreen:Init()
+function GameScreen:Init(data)
+    Model.Init(self, data)
     Screen.Init(self)
 end
 
@@ -14,4 +15,4 @@ function GameScreen:Show()
     end
 end
 
-MakeModelOf(GameScreen, Screen)
+MakeClassOf(GameScreen, Model, Screen)
