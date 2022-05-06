@@ -141,68 +141,9 @@ function Control:GetOrigin()
 end
 
 function Control:AddChild(child)
-    if child.parent then
-        child.parent:RemoveChild(child)
-    end
-    child.parent = self
-    table.insert(self.children, child)
+    Tree.AddChild(self, child)
     UpdateGlobalTransform(child)
     UpdateGlobalAabb(child)
-end
-
-function Control:RemoveChild(child)
-    local found
-    for i, v in ipairs(self.children) do
-        if v == child then
-            found = i
-            break
-        end
-    end
-    if found then
-        table.remove(self.children, found)
-        child.parent = nil
-    else
-        assert(false)
-    end
-end
-
-function Control:GetChildren()
-    return table.copy(self.children)
-end
-
-function Control:SetParent(parent)
-    if parent then
-        parent:AddChild(self)
-    else
-        if self.parent then
-            self.parent:RemoveChild(self)
-        end
-    end
-end
-
-function Control:GetParent()
-    return self.parent
-end
-
-function Control:Reattach(n)
-    local children = self.parent.children
-    n = n or #children
-    if children[n] == self then
-        return
-    end
-    local found
-    for i, v in ipairs(children) do
-        if v == self then
-            found = i
-            break
-        end
-    end
-    if found then
-        table.remove(children, found)
-        table.insert(children, n, self)
-    else
-        assert(false)
-    end
 end
 
 function Control:GetAabb()
@@ -280,7 +221,6 @@ end
 function Control:Init(parent, width, height)
     self.enable = true
     self.visible = true
-    self.children = {}
 
     self.localTransform = love.math.newTransform()
     self.globalTransform = love.math.newTransform()
@@ -291,10 +231,7 @@ function Control:Init(parent, width, height)
     }
     self.globalAabb = Aabb()
 
-    self.parent = nil
-    if parent then
-        self:SetParent(parent)
-    end
+    Tree.Init(self, parent)
 end
 
-MakeClassOf(Control)
+MakeClassOf(Control, Tree)
