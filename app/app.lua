@@ -63,6 +63,10 @@ function App:Quit()
     self.markForQuit = true
 end
 
+function App:Log(...)
+    self.logger:Log(...)
+end
+
 function App:Init(params)
     app = self
     self.startTime = GetTime()
