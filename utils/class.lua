@@ -1,3 +1,12 @@
+local function CreateIndex(self, ...)
+    local idx = {}
+    for i = select("#", ...), 1, -1 do
+        table.merge(idx, getmetatable(select(i, ...)).__index)
+    end
+    table.merge(idx, self)
+    return idx
+end
+
 function MakeClassOf(self, ...)
     local name = GetGlobalName(self)
     assert(name)
@@ -18,10 +27,37 @@ function MakeClassOf(self, ...)
             end
             return obj
         end,
-        name = name
+        name = name,
+        bases = {
+            ...
+        }
     }
     setmetatable(self, mt)
     if self.ClassInit then
         self:ClassInit(...)
     end
+end
+
+function GetClassOf(obj)
+    return getmetatable(obj).class
+end
+
+function GetClassNameOf(obj)
+    return getmetatable(GetClassOf(obj)).name
+end
+
+local function IsClassInstanceOf(cls, base)
+    if cls == base then
+        return true
+    end
+    for _, v in ipairs(getmetatable(cls).bases) do
+        if IsClassInstanceOf(v, base) then
+            return true
+        end
+    end
+    return false
+end
+
+function IsInstanceOf(obj, cls)
+    return IsClassInstanceOf(GetClassOf(obj), cls)
 end

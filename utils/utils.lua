@@ -14,15 +14,6 @@ function GetGlobalName(obj)
     end
 end
 
-function CreateIndex(self, ...)
-    local idx = {}
-    for i = select("#", ...), 1, -1 do
-        table.merge(idx, getmetatable(select(i, ...)).__index)
-    end
-    table.merge(idx, self)
-    return idx
-end
-
 local function DrawAabbsInternal(ctrl)
     local minX, minY, maxX, maxY = ctrl.globalAabb:GetBounds()
     love.graphics.rectangle("fill", minX, minY, maxX - minX, maxY - minY)
