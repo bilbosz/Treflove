@@ -2,6 +2,7 @@ ScreenManager = {}
 
 function ScreenManager:Init()
     self.screen = nil
+    app.resizeManager:RegisterListener(self)
 end
 
 function ScreenManager:Show(screen, ...)
@@ -13,6 +14,9 @@ function ScreenManager:Show(screen, ...)
 end
 
 function ScreenManager:OnResize()
+    if not self.screen then
+        return
+    end
     self.screen:Hide()
     self.screen:Show()
 end
@@ -21,4 +25,4 @@ function ScreenManager:GetScreen()
     return self.screen
 end
 
-MakeClassOf(ScreenManager)
+MakeClassOf(ScreenManager, ResizeEventListener)

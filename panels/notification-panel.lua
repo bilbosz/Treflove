@@ -38,6 +38,7 @@ function NotificationPanel:Init()
     CreateAnchor(self)
     self:OnResize()
     app.updateEventManager:RegisterListener(self)
+    app.resizeManager:RegisterListener(self)
 end
 
 function NotificationPanel:UpdateNotifications()
@@ -58,4 +59,4 @@ function NotificationPanel:OnResize()
     self.anchor:SetPosition(app.width, app.height)
 end
 
-MakeClassOf(NotificationPanel, UpdateEventListener)
+MakeClassOf(NotificationPanel, UpdateEventListener, ResizeEventListener)

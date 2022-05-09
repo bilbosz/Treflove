@@ -55,13 +55,12 @@ function App:Quit()
     self.markForQuit = true
 end
 
-function App:Log(...)
-    self.logger:Log(...)
+function App:Log(format, ...)
+    self.logger:LogUp(format, 1, ...)
 end
 
 function App:RescaleRoot()
     local realW, realH = love.graphics.getDimensions()
-    assert(realW >= realH)
     local scale = realW / Consts.MODEL_WIDTH
     self.width, self.height = Consts.MODEL_WIDTH, realH / scale
     self.root:SetScale(scale)

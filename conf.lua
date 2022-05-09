@@ -29,6 +29,8 @@ function love.conf(t)
     end
     if t.window then
         t.window.width, t.window.height = 800, 600
+        t.window.minwidth, t.window.minheight = 600, 600
+        t.window.resizable = true
     end
     config = t
 end

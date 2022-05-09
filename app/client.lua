@@ -5,6 +5,7 @@ function Client:Init(params)
     self.logger:SetName("client-main")
     self.isClient = true
     self.connectionManager = ConnectionManager(params.address, params.port)
+    self.resizeManager = ResizeManager()
     self.screenManager = ScreenManager()
     self.pointerEventManager = PointerEventManager()
     self.wheelEventManager = WheelEventManager()
@@ -76,6 +77,9 @@ function Client:RegisterLoveCallbacks()
     end
     function love.textinput(text)
         self.textEventManager:TextInput(text)
+    end
+    function love.resize()
+        self.resizeManager:Resize()
     end
 end
 
