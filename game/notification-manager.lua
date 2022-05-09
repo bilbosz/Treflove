@@ -41,4 +41,8 @@ function NotificationManager:OnUpdate()
     end
 end
 
+function NotificationManager:OnResize()
+    self.panel:OnResize()
+end
+
 MakeClassOf(NotificationManager, UpdateEventListener)

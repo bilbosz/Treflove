@@ -77,3 +77,7 @@ Consts = {
     MENU_TEXT_INPUT_HEIGHT = 50,
     MENU_TEXT_INPUT_FIELD_MARGIN = 25
 }
+if config and config.window then
+    Consts.DISPLAY_FONT = love.graphics.newFont("fonts/OpenSans.ttf", 80)
+    Consts.USER_INPUT_FONT = love.graphics.newFont("fonts/NotoSansMono.ttf", 80)
+end

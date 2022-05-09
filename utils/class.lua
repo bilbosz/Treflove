@@ -33,9 +33,6 @@ function MakeClassOf(self, ...)
         }
     }
     setmetatable(self, mt)
-    if self.ClassInit then
-        self:ClassInit(...)
-    end
 end
 
 function GetClassOf(obj)

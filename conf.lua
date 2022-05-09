@@ -27,5 +27,8 @@ function love.conf(t)
     else
         assert(false)
     end
+    if t.window then
+        t.window.width, t.window.height = 800, 600
+    end
     config = t
 end

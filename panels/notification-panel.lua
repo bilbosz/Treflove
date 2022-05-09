@@ -6,7 +6,6 @@ local function CreateAnchor(self)
     local anchor = ClippingRectangle(app.root, w, h)
     self.anchor = anchor
     anchor:SetOrigin(w, h)
-    anchor:SetPosition(app.width, app.height)
 end
 
 local function AddLine(self, line, y)
@@ -37,6 +36,7 @@ end
 
 function NotificationPanel:Init()
     CreateAnchor(self)
+    self:OnResize()
     app.updateEventManager:RegisterListener(self)
 end
 
@@ -52,6 +52,10 @@ end
 
 function NotificationPanel:OnUpdate()
     self.anchor:Reattach()
+end
+
+function NotificationPanel:OnResize()
+    self.anchor:SetPosition(app.width, app.height)
 end
 
 MakeClassOf(NotificationPanel, UpdateEventListener)
