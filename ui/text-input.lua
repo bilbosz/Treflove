@@ -138,16 +138,7 @@ function TextInput:OnClick()
     UpdateView(self)
 end
 
-function TextInput:OnAppendText(...)
-    TextEventListener.OnAppendText(self, ...)
-    UpdateView(self)
-    if self.onInput then
-        self.onInput()
-    end
-end
-
-function TextInput:OnRemoveText(...)
-    TextEventListener.OnRemoveText(self, ...)
+function TextInput:OnEdit(...)
     UpdateView(self)
     if self.onInput then
         self.onInput()
@@ -155,8 +146,6 @@ function TextInput:OnRemoveText(...)
 end
 
 function TextInput:OnEnter()
-    TextEventListener.OnEnter(self)
-    app.textEventManager:SetTextInput(false)
     if self.onEnter then
         self.onEnter()
     end

@@ -6,18 +6,25 @@ function TextEventListener:Init()
     self.text = ""
 end
 
-function TextEventListener:OnRemoveText(characterNumber)
-    local offset = utf8.offset(self.text, -characterNumber)
-    if offset then
-        self.text = string.sub(self.text, 1, offset - 1)
-    end
-end
+function TextEventListener:OnEdit(text)
 
-function TextEventListener:OnAppendText(text)
-    self.text = self.text .. text
 end
 
 function TextEventListener:OnEnter()
+
+end
+
+function TextEventListener:RemoveText(characterNumber)
+    local offset = utf8.offset(self.text, -characterNumber)
+    if offset then
+        self.text = string.sub(self.text, 1, offset - 1)
+        self:OnEdit(self.text)
+    end
+end
+
+function TextEventListener:AppendText(text)
+    self.text = self.text .. text
+    self:OnEdit(self.text)
 end
 
 function TextEventListener:GetText()
@@ -41,16 +48,19 @@ function TextEventManager:Init()
     self:SetTextInput(false)
 end
 
+function TextEventManager:TextInput(text)
+    self:InvokeEvent(TextEventListener.AppendText, text)
+end
+
 function TextEventManager:KeyPressed(key)
+    if not self:IsTextInput() then
+        return
+    end
     if key == "backspace" then
-        self:InvokeEvent(TextEventListener.OnRemoveText, 1)
+        self:InvokeEvent(TextEventListener.RemoveText, 1)
     elseif key == "return" then
         self:InvokeEvent(TextEventListener.OnEnter)
     end
-end
-
-function TextEventManager:TextInput(text)
-    self:InvokeEvent(TextEventListener.OnAppendText, text)
 end
 
 function TextEventManager:SetTextInput(value)

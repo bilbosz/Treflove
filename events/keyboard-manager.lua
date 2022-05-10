@@ -17,14 +17,14 @@ function KeyboardManager:Init()
 end
 
 function KeyboardManager:KeyPressed(key)
-    if app.textEventManager:IsTextInput() then
+    if app.textEventManager:IsTextInput() and key ~= Consts.BACKSTACK_KEY then
         return
     end
     self:InvokeEvent(KeyboardEventListener.OnKeyPressed, key)
 end
 
 function KeyboardManager:KeyReleased(key)
-    if app.textEventManager:IsTextInput() then
+    if app.textEventManager:IsTextInput() and key ~= Consts.BACKSTACK_KEY then
         return
     end
     self:InvokeEvent(KeyboardEventListener.OnKeyReleased, key)
