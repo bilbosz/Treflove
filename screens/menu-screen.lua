@@ -5,9 +5,7 @@ local function CreateBackground(self)
 end
 
 local function CreateLayout(self)
-    local layout = Control(self.screen)
-    self.layout = layout
-    layout:SetPosition(app.width * 0.5, app.height * 0.5)
+    self.layout = Control(self.screen)
 end
 
 local function CreateLogo(self)
@@ -28,6 +26,7 @@ local function CenterLayout(self)
     local layout = self.layout
     local aabb = layout:GetRecursiveAabb()
     layout:SetOrigin(0, aabb:GetHeight() * 0.5)
+    layout:SetPosition(app.width * 0.5, app.height * 0.5)
 end
 
 local function CreateEntries(self)
@@ -43,15 +42,21 @@ function MenuScreen:Init(title, entries)
     Screen.Init(self)
     self.title = title
     self.entries = entries
-end
 
-function MenuScreen:Show()
-    Screen.Show(self)
     CreateBackground(self)
     CreateLayout(self)
     CreateLogo(self)
     CreateTitle(self)
     CreateEntries(self)
+end
+
+function MenuScreen:Show()
+    Screen.Show(self)
+    self:OnResize(app.width, app.height)
+end
+
+function MenuScreen:OnResize(w, h)
+    self.background:SetSize(w, h)
     CenterLayout(self)
 end
 

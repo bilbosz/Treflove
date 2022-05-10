@@ -24,13 +24,13 @@ function love.conf(t)
     elseif params.appType == "client" then
         t.window.title = "Treflove"
         t.window.icon = "icon.png"
+        t.window.resizable = true
     else
         assert(false)
     end
     if t.window then
         t.window.width, t.window.height = 800, 600
         t.window.minwidth, t.window.minheight = 600, 600
-        t.window.resizable = true
     end
     config = t
 end

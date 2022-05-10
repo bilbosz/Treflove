@@ -13,12 +13,11 @@ function ScreenManager:Show(screen, ...)
     screen:Show(...)
 end
 
-function ScreenManager:OnResize()
+function ScreenManager:OnResize(...)
     if not self.screen then
         return
     end
-    self.screen:Hide()
-    self.screen:Show()
+    self.screen:OnResize(...)
 end
 
 function ScreenManager:GetScreen()

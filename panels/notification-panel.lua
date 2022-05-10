@@ -1,11 +1,7 @@
 NotificationPanel = {}
 
 local function CreateAnchor(self)
-    local w, h = Consts.NOTIFICATION_PANEL_WIDTH * app.width, Consts.NOTIFICATION_PANEL_HEIGHT * app.height
-    self.width, self.height = w, h
-    local anchor = ClippingRectangle(app.root, w, h)
-    self.anchor = anchor
-    anchor:SetOrigin(w, h)
+    self.anchor = ClippingRectangle(app.root, 0, 0)
 end
 
 local function AddLine(self, line, y)
@@ -34,9 +30,17 @@ local function AddNotification(self, notification, y)
     return y - Consts.NOTIFICATION_VSPACE
 end
 
+local function PositionAnchor(self)
+    self.anchor:SetPosition(app.width, app.height)
+    local w, h = Consts.NOTIFICATION_PANEL_WIDTH * app.width, Consts.NOTIFICATION_PANEL_HEIGHT * app.height
+    self.width, self.height = w, h
+    self.anchor:SetSize(w, h)
+    self.anchor:SetOrigin(w, h)
+end
+
 function NotificationPanel:Init()
     CreateAnchor(self)
-    self:OnResize()
+    PositionAnchor(self)
     app.updateEventManager:RegisterListener(self)
     app.resizeManager:RegisterListener(self)
 end
@@ -56,7 +60,8 @@ function NotificationPanel:OnUpdate()
 end
 
 function NotificationPanel:OnResize()
-    self.anchor:SetPosition(app.width, app.height)
+    PositionAnchor(self)
+    self:UpdateNotifications()
 end
 
 MakeClassOf(NotificationPanel, UpdateEventListener, ResizeEventListener)
