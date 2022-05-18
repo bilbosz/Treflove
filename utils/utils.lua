@@ -56,3 +56,21 @@ end
 function GetTime()
     return socket.gettime()
 end
+
+function GetStacktrace()
+    local result = ""
+    local trace = debug.traceback()
+    local lineNo = 1
+    local ignoreHead = 3
+    local found = 0
+    while found do
+        local prev = found
+        found = string.find(trace, "\n", found + 1)
+        local line = string.sub(trace, prev + 1, found)
+        if lineNo > ignoreHead and not string.find(line, "boot%.lua") and not string.find(line, "%[.+%]") and not string.find(line, "utils/class.lua") then
+            result = result .. line
+        end
+        lineNo = lineNo + 1
+    end
+    return result
+end

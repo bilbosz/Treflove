@@ -60,13 +60,71 @@ return {
             name = "Adam",
             -- login: adam
             -- password: krause
-            auth = "XyKeQ5OJSYgSjmsJhL4fK3pbT4bSSl+TenkDlwgpSY8="
+            auth = "XyKeQ5OJSYgSjmsJhL4fK3pbT4bSSl+TenkDlwgpSY8=",
+            group = "master"
         },
         ["piotr"] = {
             name = "Piotrek",
             -- login: piotr
             -- password: stępczyński
-            auth = "deQBx+//Zt17STnCjN/oKlQf93o6MRhCcOSZdSe/31w="
+            auth = "deQBx+//Zt17STnCjN/oKlQf93o6MRhCcOSZdSe/31w=",
+            group = "player"
+        }
+    },
+    user_data_access = {
+        ["master"] = {
+            {
+                path = {
+                    {
+                        all = true
+                    }
+                },
+                access = {
+                    delete = true,
+                    insert = true,
+                    select = true,
+                    update = true
+                }
+            },
+            {
+                path = {
+                    "players",
+                    {
+                        all = true
+                    },
+                    "auth"
+                },
+                access = {}
+            },
+            {
+                path = {
+                    "groups",
+                    {
+                        var = "group"
+                    },
+                    {
+                        all = true
+                    }
+                },
+                access = {}
+            }
+        },
+        ["player"] = {
+            {
+                path = {
+                    "tokens",
+                    {
+                        all = true
+                    },
+                    "owner",
+                    {
+                        var = "player"
+                    }
+                },
+                access = {
+                    read = true
+                }
+            }
         }
     }
 }

@@ -121,6 +121,14 @@ function table.fromstring(s)
     return result
 end
 
+function table.findkey(self, value)
+    for k, v in pairs(self) do
+        if v == value then
+            return k
+        end
+    end
+end
+
 local function prev(t, i)
     if i <= 1 then
         return nil, nil

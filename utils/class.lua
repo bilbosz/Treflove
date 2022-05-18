@@ -7,6 +7,16 @@ local function CreateIndex(self, ...)
     return idx
 end
 
+local function CreateBases(self, ...)
+    local bases = {
+        self
+    }
+    for i = 1, select("#", ...) do
+        table.mergearray(bases, getmetatable(select(i, ...)).bases)
+    end
+    return bases
+end
+
 function MakeClassOf(self, ...)
     local name = GetGlobalName(self)
     assert(name)
@@ -28,9 +38,7 @@ function MakeClassOf(self, ...)
             return obj
         end,
         name = name,
-        bases = {
-            ...
-        }
+        bases = CreateBases(self, ...)
     }
     setmetatable(self, mt)
 end
@@ -44,15 +52,7 @@ function GetClassNameOf(obj)
 end
 
 local function IsClassInstanceOf(cls, base)
-    if cls == base then
-        return true
-    end
-    for _, v in ipairs(getmetatable(cls).bases) do
-        if IsClassInstanceOf(v, base) then
-            return true
-        end
-    end
-    return false
+    return table.findkey(getmetatable(cls).bases, base) ~= nil
 end
 
 function IsInstanceOf(obj, cls)
