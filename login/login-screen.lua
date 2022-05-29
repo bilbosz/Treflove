@@ -6,10 +6,10 @@ end
 
 function LoginScreen:Init(login)
     self.login = login
-    self.loginInput = MenuTextInput("Login", false, function()
+    self.loginInput = MenuTextInput(self, "Login", false, function()
         Login(self)
     end)
-    self.passwordInput = MenuTextInput("Password", true, function()
+    self.passwordInput = MenuTextInput(self, "Password", true, function()
         Login(self)
     end)
     MenuScreen.Init(self, "Welcome", {

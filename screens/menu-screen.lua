@@ -39,7 +39,7 @@ local function CreateEntries(self)
 end
 
 function MenuScreen:Init(title, entries)
-    Screen.Init(self)
+    FormScreen.Init(self)
     self.title = title
     self.entries = entries
 
@@ -51,7 +51,7 @@ function MenuScreen:Init(title, entries)
 end
 
 function MenuScreen:Show()
-    Screen.Show(self)
+    FormScreen.Show(self)
     self:OnResize(app.width, app.height)
 end
 
@@ -60,4 +60,4 @@ function MenuScreen:OnResize(w, h)
     CenterLayout(self)
 end
 
-MakeClassOf(MenuScreen, Screen)
+MakeClassOf(MenuScreen, FormScreen)

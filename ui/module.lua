@@ -1,5 +1,5 @@
 Loader.LoadFile("ui/button-event-manager.lua")
 Loader.LoadFile("ui/text-event-manager.lua")
-Loader.LoadFile("ui/focus-event-manager.lua")
+Loader.LoadFile("screens/screen.lua")
 Loader.LoadDirectory("ui")
 Loader.LoadModule("ui/menu")

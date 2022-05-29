@@ -90,11 +90,12 @@ local function CreateContent(self)
     CreateText(self)
 end
 
-function TextInput:Init(parent, width, height, masked, onInput, onEnter)
+function TextInput:Init(parent, screen, width, height, masked, onInput, onEnter)
     Control.Init(self, parent)
     ButtonEventListener.Init(self)
     TextEventListener.Init(self)
-    FocusEventListener.Init(self)
+    Input.Init(self, screen)
+    self.screen = screen
     self.width = width
     self.height = height
     self.padding = 10
@@ -106,9 +107,17 @@ function TextInput:Init(parent, width, height, masked, onInput, onEnter)
     CreateClip(self)
     CreateContent(self)
     UpdateView(self)
+end
+
+function TextInput:OnScreenShow()
     app.updateEventManager:RegisterListener(self)
     app.buttonEventManager:RegisterListener(self)
-    app.focusEventManager:RegisterListener(self)
+end
+
+function TextInput:OnScreenHide()
+    app.updateEventManager:UnregisterListener(self)
+    app.buttonEventManager:UnregisterListener(self)
+    app.textEventManager:UnregisterListener(self)
 end
 
 function TextInput:OnUpdate(dt)
@@ -134,7 +143,7 @@ end
 
 function TextInput:OnClick()
     ButtonEventListener.OnClick(self)
-    app.focusEventManager:Focus(self)
+    self.screen:Focus(self)
     UpdateView(self)
 end
 
@@ -153,15 +162,15 @@ function TextInput:OnEnter()
 end
 
 function TextInput:OnFocus()
-    FocusEventListener.OnFocus(self)
+    Input.OnFocus(self)
     app.textEventManager:SetTextInput(true)
     UpdateView(self)
 end
 
 function TextInput:OnFocusLost()
-    FocusEventListener.OnFocusLost(self)
+    Input.OnFocusLost(self)
     app.textEventManager:SetTextInput(false)
     UpdateView(self)
 end
 
-MakeClassOf(TextInput, Control, UpdateEventListener, ButtonEventListener, TextEventListener, FocusEventListener)
+MakeClassOf(TextInput, Control, UpdateEventListener, ButtonEventListener, TextEventListener, Input)

@@ -2,6 +2,7 @@ BackstackManager = {}
 
 function BackstackManager:Init()
     self.stack = {}
+    KeyboardEventListener.Init(self, true)
     app.keyboardManager:RegisterListener(self)
 end
 
