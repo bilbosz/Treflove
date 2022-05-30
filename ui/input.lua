@@ -1,9 +1,7 @@
 Input = {}
 
-function Input:Init(screen)
-    IsInstanceOf(screen, FormScreen)
+function Input:Init()
     self.isFocused = false
-    screen:AddInput(self)
 end
 
 function Input:OnScreenShow()

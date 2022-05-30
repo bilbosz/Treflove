@@ -20,16 +20,14 @@ function EventManager:RegisterListener(listener)
 end
 
 function EventManager:UnregisterListener(listener)
-    for _, method in pairs(self.listenerClass) do
-        self.methods[method][listener] = nil
+    for _, classMethod in pairs(self.listenerClass) do
+        self.methods[classMethod][listener] = nil
     end
 end
 
 function EventManager:InvokeEvent(method, ...)
-    for listener, listenerMethod in pairs(self.methods[method]) do
-        if listenerMethod then
-            listenerMethod(listener, ...)
-        end
+    for listener, listenerMethod in cpairs(self.methods[method]) do
+        listenerMethod(listener, ...)
     end
 end
 

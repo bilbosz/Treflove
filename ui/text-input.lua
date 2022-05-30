@@ -91,10 +91,11 @@ local function CreateContent(self)
 end
 
 function TextInput:Init(parent, screen, width, height, masked, onInput, onEnter)
+    assert(IsInstanceOf(screen, FormScreen))
     Control.Init(self, parent)
     ButtonEventListener.Init(self)
     TextEventListener.Init(self)
-    Input.Init(self, screen)
+    Input.Init(self)
     self.screen = screen
     self.width = width
     self.height = height
@@ -107,6 +108,7 @@ function TextInput:Init(parent, screen, width, height, masked, onInput, onEnter)
     CreateClip(self)
     CreateContent(self)
     UpdateView(self)
+    screen:AddInput(self)
 end
 
 function TextInput:OnScreenShow()

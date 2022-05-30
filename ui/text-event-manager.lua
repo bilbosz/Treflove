@@ -46,6 +46,7 @@ TextEventManager = {}
 function TextEventManager:Init()
     EventManager.Init(self, TextEventListener)
     self:SetTextInput(false)
+    love.keyboard.setKeyRepeat(true)
 end
 
 function TextEventManager:TextInput(text)
@@ -65,7 +66,6 @@ end
 
 function TextEventManager:SetTextInput(value)
     love.keyboard.setTextInput(value)
-    love.keyboard.setKeyRepeat(value)
 end
 
 function TextEventManager:IsTextInput()

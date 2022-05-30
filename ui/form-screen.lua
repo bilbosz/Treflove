@@ -58,7 +58,7 @@ function FormScreen:OnKeyPressed(key)
 end
 
 function FormScreen:AddInput(input)
-    assert(IsInstanceOf(input, Input))
+    assert(IsInstanceOf(input, Input), string.format("Input expected. Got %s", GetClassNameOf(input)))
     table.insert(self.inputs, input)
 end
 

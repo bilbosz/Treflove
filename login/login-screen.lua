@@ -15,10 +15,10 @@ function LoginScreen:Init(login)
     MenuScreen.Init(self, "Welcome", {
         self.loginInput,
         self.passwordInput,
-        MenuTextButton("Sign In", function()
+        MenuTextButton(self, "Sign In", function()
             Login(self)
         end),
-        MenuTextButton("Quit", function()
+        MenuTextButton(self, "Quit", function()
             app:Quit()
         end)
     })

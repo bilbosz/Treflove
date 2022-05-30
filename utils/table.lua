@@ -140,3 +140,15 @@ end
 function ripairs(t)
     return prev, t, #t + 1
 end
+
+function cpairs(t)
+    return pairs(table.copy(t))
+end
+
+function cipairs(t)
+    return ipairs(table.copy(t))
+end
+
+function cripairs(t)
+    return ripairs(table.copy(t))
+end
