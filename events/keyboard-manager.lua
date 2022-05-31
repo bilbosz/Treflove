@@ -33,11 +33,15 @@ function KeyboardManager:KeyReleased(key)
 end
 
 function KeyboardManager:InvokeEvent(method, ...)
-    for listener, listenerMethod in cpairs(self.methods[method]) do
-        if listener:IgnoreTextEvents() or not app.textEventManager:IsTextInput() then
+    assert(not self.lock)
+    self.lock = true
+    for listener, listenerMethod in pairs(self.methods[method]) do
+        if not self.toRemove[listener] and (listener:IgnoreTextEvents() or not app.textEventManager:IsTextInput()) then
             listenerMethod(listener, ...)
         end
     end
+    self.lock = false
+    self:HandlePostponed()
 end
 
 function KeyboardManager:IsKeyDown(key)
