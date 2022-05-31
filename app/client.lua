@@ -5,13 +5,13 @@ function Client:Init(params)
     self.logger:SetName("client-main")
     self.isClient = true
     self.connectionManager = ConnectionManager(params.address, params.port)
+    self.resizeManager = ResizeManager()
     self.screenManager = ScreenManager()
     self.pointerEventManager = PointerEventManager()
     self.wheelEventManager = WheelEventManager()
     self.buttonEventManager = ButtonEventManager()
     self.keyboardManager = KeyboardManager()
     self.textEventManager = TextEventManager()
-    self.focusEventManager = FocusEventManager()
     self.notificationManager = NotificationManager()
     self.optionsManager = OptionsManager()
     self.assetManager = AssetManager()
@@ -42,7 +42,6 @@ function Client:RegisterLoveCallbacks()
         appKeyPressed(key)
         self.keyboardManager:KeyPressed(key)
         self.textEventManager:KeyPressed(key)
-        self.focusEventManager:KeyPressed(key)
     end
     function love.keyreleased(key)
         self.keyboardManager:KeyReleased(key)
@@ -76,6 +75,9 @@ function Client:RegisterLoveCallbacks()
     end
     function love.textinput(text)
         self.textEventManager:TextInput(text)
+    end
+    function love.resize()
+        self.resizeManager:Resize()
     end
 end
 

@@ -1,7 +1,8 @@
 MenuTextInput = {}
 
-function MenuTextInput:Init(fieldName, masked, onEnter)
+function MenuTextInput:Init(screen, fieldName, masked, onEnter)
     MenuEntry.Init(self)
+    self.screen = screen
     self.fieldName = fieldName
     self.masked = masked
     self.onEnter = onEnter
@@ -11,7 +12,7 @@ function MenuTextInput:CreateControl(parent)
     local ctrl = Control(parent)
     self.control = ctrl
 
-    local input = TextInput(ctrl, Consts.MENU_TEXT_INPUT_WIDTH, Consts.MENU_TEXT_INPUT_HEIGHT, self.masked, nil, self.onEnter)
+    local input = TextInput(ctrl, self.screen, Consts.MENU_TEXT_INPUT_WIDTH, Consts.MENU_TEXT_INPUT_HEIGHT, self.masked, nil, self.onEnter)
     self.input = input
     input:SetPosition(Consts.MENU_TEXT_INPUT_FIELD_MARGIN, nil)
     local inputH = ctrl:GetRecursiveAabb(input):GetHeight()

@@ -47,8 +47,7 @@ function Loader.LoadModule(path, force)
 end
 
 function Loader.Reload(force)
-    local files = table.copy(Loader.cache)
-    for k in pairs(files) do
+    for k in cpairs(Loader.cache) do
         Loader.LoadFile(k, force)
     end
 end

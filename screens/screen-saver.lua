@@ -5,6 +5,7 @@ function ScreenSaver:Init()
 end
 
 function ScreenSaver:Show()
+    assert(not config.window.resizable)
     Screen.Show(self)
     self.screen:SetSize(app.width, app.height)
 

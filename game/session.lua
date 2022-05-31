@@ -4,6 +4,7 @@ local function OnLogin(self, user)
     assert(not self.user)
     self.user = user
     if app.isClient then
+        app.textEventManager:SetTextInput(false)
         app.screenManager:Show(UserMenuScreen(self))
         self.backstackCb = function()
             self:Logout()

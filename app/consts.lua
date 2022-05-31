@@ -75,5 +75,10 @@ Consts = {
     MENU_ENTRY_VSPACING = 20,
     MENU_TEXT_INPUT_WIDTH = 200,
     MENU_TEXT_INPUT_HEIGHT = 50,
-    MENU_TEXT_INPUT_FIELD_MARGIN = 25
+    MENU_TEXT_INPUT_FIELD_MARGIN = 25,
+    BACKSTACK_KEY = "escape"
 }
+if config and config.window then
+    Consts.DISPLAY_FONT = love.graphics.newFont("fonts/OpenSans.ttf", 80)
+    Consts.USER_INPUT_FONT = love.graphics.newFont("fonts/NotoSansMono.ttf", 80)
+end

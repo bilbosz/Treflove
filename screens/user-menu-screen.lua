@@ -23,16 +23,16 @@ function UserMenuScreen:Init(session)
     assert(session)
     self.session = session
     MenuScreen.Init(self, "Menu", {
-        MenuTextButton("Join Game", function()
+        MenuTextButton(self, "Join Game", function()
             OnJoinGame(self)
         end),
-        MenuTextButton("Options", function()
+        MenuTextButton(self, "Options", function()
             OnOptions(self)
         end),
-        MenuTextButton("Log Out", function()
+        MenuTextButton(self, "Log Out", function()
             OnLogout(self)
         end),
-        MenuTextButton("Quit", OnQuit)
+        MenuTextButton(self, "Quit", OnQuit)
     })
 end
 

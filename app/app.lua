@@ -1,14 +1,5 @@
 App = {}
 
-local function CreateRoot(self)
-    local realW, realH = love.graphics.getDimensions()
-    assert(realW >= realH)
-    local scale = realW / Consts.MODEL_WIDTH
-    self.width, self.height = Consts.MODEL_WIDTH, realH / scale
-    self.root = Control()
-    self.root:SetScale(scale)
-end
-
 function App:RegisterLoveCallbacks()
     if self.Load then
         function love.load()
@@ -17,7 +8,8 @@ function App:RegisterLoveCallbacks()
     end
 
     if config.window then
-        CreateRoot(self)
+        self.root = Control()
+        self:RescaleRoot()
         if debug then
             function love.draw()
                 if self.root:IsVisible() then
@@ -61,6 +53,17 @@ end
 
 function App:Quit()
     self.markForQuit = true
+end
+
+function App:Log(format, ...)
+    self.logger:LogUp(format, 1, ...)
+end
+
+function App:RescaleRoot()
+    local realW, realH = love.graphics.getDimensions()
+    local scale = realW / Consts.MODEL_WIDTH
+    self.width, self.height = Consts.MODEL_WIDTH, realH / scale
+    self.root:SetScale(scale)
 end
 
 function App:Init(params)

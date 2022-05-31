@@ -28,8 +28,8 @@ function Token:CreateLabel(label)
     self.label:SetPosition(0, self.d * 0.6)
 end
 
-function Token:Init(parent)
-    local data = self.data
+function Token:Init(data, parent)
+    Model.Init(self, data)
     Control.Init(self, parent)
     PointerEventListener.Init(self)
 
@@ -80,4 +80,4 @@ function Token:OnPointerMove(x, y)
     return true
 end
 
-MakeModelOf(Token, Control, PointerEventListener)
+MakeClassOf(Token, Model, Control, PointerEventListener)

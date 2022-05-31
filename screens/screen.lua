@@ -1,16 +1,21 @@
 Screen = {}
 
 function Screen:Init()
-    self.screen = nil
+    self.screen = Control()
 end
 
 function Screen:Show(...)
-    self.screen = Control(app.root)
+    assert(not self.screen:GetParent())
+    self.screen:SetParent(app.root)
 end
 
-function Screen:Release()
+function Screen:Hide()
+    assert(self.screen:GetParent())
     self.screen:SetParent(nil)
-    self.screen = nil
+end
+
+function Screen:OnResize(w, h)
+
 end
 
 function Screen:GetControl()

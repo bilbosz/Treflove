@@ -19,10 +19,11 @@ function World:CreateWorldCoordinates()
     self.worldCoordinates:SetScale(bgW / self.worldWidth)
 end
 
-function World:Init(parent, width, height)
+function World:Init(data, parent, width, height)
+    Model.Init(self, data)
     ClippingRectangle.Init(self, parent, width, height)
     PointerEventListener.Init(self, true)
-    self.name = self.data.name
+    self.name = data.name
     self.worldDef = app.data.worlds[self.name]
     self.worldWidth = self.worldDef.width
     self.scaleToPixelsPerMeter = 50
@@ -35,8 +36,7 @@ function World:Init(parent, width, height)
 
     self.tokens = {}
     for _, name in ipairs(self.worldDef.tokens) do
-        local data = app.data.tokens[name]
-        table.insert(self.tokens, Token(data, self.worldCoordinates))
+        table.insert(self.tokens, Token(app.data.tokens[name], self.worldCoordinates))
     end
 
     app.pointerEventManager:RegisterListener(self)
@@ -85,4 +85,4 @@ function World:OnWheelMoved(x, y)
     end
 end
 
-MakeModelOf(World, ClippingRectangle, PointerEventListener, WheelEventListener)
+MakeClassOf(World, Model, ClippingRectangle, PointerEventListener, WheelEventListener)

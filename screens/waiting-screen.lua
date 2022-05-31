@@ -1,14 +1,11 @@
 WaitingScreen = {}
 
 local function CreateBackground(self)
-    Rectangle(self.screen, app.width, app.height, Consts.BACKGROUND_COLOR)
+    self.background = Rectangle(self.screen, app.width, app.height, Consts.BACKGROUND_COLOR)
 end
 
 local function CreateLayout(self)
-    local layout = Control(self.screen)
-    self.layout = layout
-
-    layout:SetPosition(app.width * 0.5, app.height * 0.5)
+    self.layout = Control(self.screen)
 end
 
 local function CreateLogo(self)
@@ -31,22 +28,28 @@ local function CenterLayout(self)
     local aabb = layout:GetGlobalAabb()
     local h = aabb:GetMaxY() - aabb:GetMinY()
     local s = app.root:GetScale()
+    layout:SetPosition(app.width * 0.5, app.height * 0.5)
     layout:SetOrigin(0, h * 0.5 / s)
 end
 
 function WaitingScreen:Init(message)
     Screen.Init(self)
     self.message = message
-    app.updateEventManager:RegisterListener(self)
-end
-
-function WaitingScreen:Show()
-    Screen.Show(self)
 
     CreateBackground(self)
     CreateLayout(self)
     CreateLogo(self)
     CreateText(self)
+    app.updateEventManager:RegisterListener(self)
+end
+
+function WaitingScreen:Show()
+    Screen.Show(self)
+    self:OnResize(app.width, app.height)
+end
+
+function WaitingScreen:OnResize(w, h)
+    self.background:SetSize(w, h)
     CenterLayout(self)
 end
 

@@ -2,6 +2,7 @@ BackstackManager = {}
 
 function BackstackManager:Init()
     self.stack = {}
+    KeyboardEventListener.Init(self, true)
     app.keyboardManager:RegisterListener(self)
 end
 
@@ -30,7 +31,7 @@ function BackstackManager:Back()
 end
 
 function BackstackManager:OnKeyPressed(key)
-    if key == "escape" then
+    if key == Consts.BACKSTACK_KEY then
         self:Back()
     end
 end

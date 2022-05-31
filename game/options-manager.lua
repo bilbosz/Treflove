@@ -1,11 +1,7 @@
 OptionsManager = {}
 
-function OptionsManager:Init()
-
-end
-
 function OptionsManager:ToggleFullscreen()
-    love.window.setFullscreen(not love.window.getFullscreen())
+    app.resizeManager:ToggleFullscreen()
 end
 
 MakeClassOf(OptionsManager)

@@ -2,10 +2,10 @@ OptionsMenuScreen = {}
 
 function OptionsMenuScreen:Init()
     MenuScreen.Init(self, "Options", {
-        MenuTextButton("Toggle Fullscreen", function()
+        MenuTextButton(self, "Toggle Fullscreen", function()
             app.optionsManager:ToggleFullscreen()
         end),
-        MenuTextButton("Back", function()
+        MenuTextButton(self, "Back", function()
             app.backstackManager:Back()
         end)
     })
