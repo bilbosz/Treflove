@@ -7,7 +7,7 @@ function BackstackManager:Init()
 end
 
 function BackstackManager:Push(cb)
-    assert(type(cb) == "function")
+    assert_type(cb, "function")
     table.insert(self.stack, cb)
 end
 

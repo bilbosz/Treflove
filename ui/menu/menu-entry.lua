@@ -5,7 +5,7 @@ function MenuEntry:Init()
 end
 
 function MenuEntry:CreateControl(parent)
-    assert(false, "Abstract")
+    abstract()
 end
 
 function MenuEntry:GetControl()

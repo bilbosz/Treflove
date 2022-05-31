@@ -13,12 +13,12 @@ local function HandleResponse(self, message)
 end
 
 local function SendResponse(self, request)
-    assert(type(request) == "table")
-    assert(type(request.body) == "table")
-    assert(type(request.id) == "string")
+    assert_type(request, "table")
+    assert_type(request.body, "table")
+    assert_type(request.id, "string")
 
     local body = self.requestHandlers[request.id](request.body)
-    assert(type(body) == "table")
+    assert_type(body, "table")
     local response = {
         source = request.source,
         id = request.id,
@@ -40,8 +40,8 @@ function Connection:Init(inChannel, inThread, outChannel, outThread)
 end
 
 function Connection:SendRequest(id, body, responseHandler)
-    assert(type(body) == "table")
-    assert(type(responseHandler) == "function")
+    assert_type(body, "table")
+    assert_type(responseHandler, "function")
 
     local request = {
         source = self.source,

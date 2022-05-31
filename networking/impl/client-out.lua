@@ -53,7 +53,7 @@ do
 
     local msg = outChannel:demand()
     while msg ~= false do
-        assert(type(msg) == "string")
+        assert_type(msg, "string")
         local n = #msg
         local error = select(2, outClient:send(tostring(n) .. "\n"))
         if error then

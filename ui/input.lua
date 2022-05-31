@@ -5,11 +5,11 @@ function Input:Init()
 end
 
 function Input:OnScreenShow()
-    assert(false)
+    abstract()
 end
 
 function Input:OnScreenHide()
-    assert(false)
+    abstract()
 end
 
 function Input:OnFocus()

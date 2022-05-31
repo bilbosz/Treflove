@@ -32,7 +32,7 @@ while true do
         break
     end
     local n = tonumber(msg)
-    assert(type(n) == "number")
+    assert_type(n, "number")
     local data, error = inClient:receive(n)
     if error then
         if error == "closed" then

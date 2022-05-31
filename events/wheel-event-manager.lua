@@ -1,7 +1,7 @@
 WheelEventListener = {}
 
 function WheelEventListener:OnWheelMoved(x, y)
-    assert(false, "Abstract")
+    abstract()
 end
 
 MakeClassOf(WheelEventListener)

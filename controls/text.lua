@@ -9,7 +9,7 @@ function Text:GetColor()
 end
 
 function Text:SetText(text)
-    assert(type(text) == "string")
+    assert_type(text, "string")
     local textDrawable = love.graphics.newText(self.font, text)
     self.textDrawable = textDrawable
 

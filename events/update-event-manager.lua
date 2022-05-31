@@ -1,7 +1,7 @@
 UpdateEventListener = {}
 
 function UpdateEventListener:OnUpdate(dt)
-    assert(false, "Abstract")
+    abstract()
 end
 
 MakeClassOf(UpdateEventListener)

@@ -74,3 +74,7 @@ function GetStacktrace()
     end
     return result
 end
+
+function abstract()
+    assert(false, "Method marked as abstract has no implementation")
+end

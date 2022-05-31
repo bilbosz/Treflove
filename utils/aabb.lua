@@ -40,7 +40,7 @@ function Aabb:AddPoint(x, y)
 end
 
 function Aabb:AddAabb(other)
-    assert(IsInstanceOf(other, Aabb))
+    assert_type(other, Aabb)
     local minX, minY, maxX, maxY = unpack(self.data)
     self.data = {
         math.min(minX, other.data[1]),
@@ -68,7 +68,7 @@ function Aabb:GetHeight()
 end
 
 function Aabb:Intersects(other)
-    assert(IsInstanceOf(other, Aabb))
+    assert_type(other, Aabb)
     local aMinX, aMinY, aMaxX, aMaxY = unpack(self.data)
     local bMinX, bMinY, bMaxX, bMaxY = unpack(other.data)
     return aMinX <= bMaxX and aMinY <= bMaxY or aMaxX >= bMinX and aMaxY >= bMinY

@@ -58,12 +58,12 @@ function FormScreen:OnKeyPressed(key)
 end
 
 function FormScreen:AddInput(input)
-    assert(IsInstanceOf(input, Input), string.format("Input expected. Got %s", GetClassNameOf(input)))
+    assert_type(input, Input)
     table.insert(self.inputs, input)
 end
 
 function FormScreen:RemoveInput(input)
-    assert(IsInstanceOf(input, Input))
+    assert_type(input, Input)
     local found
     for i, v in ipairs(self.inputs) do
         if v == input then
@@ -82,7 +82,7 @@ function FormScreen:RemoveInput(input)
 end
 
 function FormScreen:Focus(input)
-    assert(IsInstanceOf(input, Input))
+    assert_type(input, Input)
     local found
     for i, v in ipairs(self.inputs) do
         if v == input then

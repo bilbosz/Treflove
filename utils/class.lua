@@ -58,3 +58,22 @@ end
 function IsInstanceOf(obj, cls)
     return IsClassInstanceOf(GetClassOf(obj), cls)
 end
+
+function assert_type(obj, typ)
+    local msg = "Expected %s got %s"
+    if type(typ) == "string" then
+        assert(type(obj) == typ, string.format(msg, typ, type(obj)))
+    elseif type(typ) == "table" then
+        local classMt = getmetatable(typ)
+        assert(classMt)
+        local className = classMt.name
+        assert(className)
+        if GetClassOf(obj) then
+            assert(IsInstanceOf(obj, typ), string.format(msg, className, GetClassNameOf(obj)))
+        else
+            assert(false, string.format(msg, className, type(obj)))
+        end
+    else
+        assert(false)
+    end
+end

@@ -28,7 +28,7 @@ local function LogImpl(self, format, level, ...)
 end
 
 function Logger:Init(data, name)
-    assert(type(name) == "string")
+    assert_type(name, "string")
     Model.Init(self, data)
     self.name = name
     self.data.startTime = self.data.startTime or GetTime()
@@ -38,7 +38,7 @@ function Logger:Init(data, name)
 end
 
 function Logger:SetName(name)
-    assert(type(name) == "string")
+    assert_type(name, "string")
     self.name = name
     self.enable = IsEnabled(name)
 end

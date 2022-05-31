@@ -91,7 +91,7 @@ local function CreateContent(self)
 end
 
 function TextInput:Init(parent, screen, width, height, masked, onInput, onEnter)
-    assert(IsInstanceOf(screen, FormScreen))
+    assert_type(screen, FormScreen)
     Control.Init(self, parent)
     ButtonEventListener.Init(self)
     TextEventListener.Init(self)

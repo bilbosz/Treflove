@@ -30,11 +30,11 @@ function RemoteProcedure:SendRequest(request, cb)
 end
 
 function RemoteProcedure:SendResponse(request)
-    assert(false)
+    abstract()
 end
 
 function RemoteProcedure:ReceiveResponse(response)
-    assert(false)
+    abstract()
 end
 
 function RemoteProcedure:Release()
