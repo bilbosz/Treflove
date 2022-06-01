@@ -68,6 +68,10 @@ end
 
 function Session:Release()
     app.assetManager:UnregisterSession(self)
+    if app.isClient then
+        app.backstackManager:Pop(self.backstackCb)
+        self.backstackCb = nil
+    end
     self.login:Release()
     self.login = nil
     self.connection = nil

@@ -2,7 +2,9 @@ ScreenManager = {}
 
 function ScreenManager:Init()
     self.screen = nil
-    app.resizeManager:RegisterListener(self)
+    if app.resizeManager then
+        app.resizeManager:RegisterListener(self)
+    end
 end
 
 function ScreenManager:Show(screen, ...)
