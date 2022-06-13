@@ -21,7 +21,7 @@ MakeClassOf(PointerEventListener, Control)
 PointerEventManager = {}
 
 local function GetListenerList(ctrl, listeners, x, y, list)
-    if not ctrl:IsVisible() or not ctrl:GetGlobalAabb():IsPointInside(x, y) then
+    if not ctrl:IsVisible() or not ctrl:GetGlobalRecursiveAabb():IsPointInside(x, y) then
         return nil
     end
     if listeners[ctrl] then

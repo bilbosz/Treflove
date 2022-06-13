@@ -38,7 +38,7 @@ MakeClassOf(ButtonEventListener, Control)
 ButtonEventManager = {}
 
 local function GetListenerInternal(ctrl, listeners, x, y)
-    if not ctrl:IsVisible() or not ctrl:GetGlobalAabb():IsPointInside(x, y) then
+    if not ctrl:IsVisible() or not ctrl:GetGlobalRecursiveAabb():IsPointInside(x, y) then
         return nil
     end
     local top

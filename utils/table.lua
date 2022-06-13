@@ -62,9 +62,8 @@ function table.tostring(self)
         local nums = {}
         local strings = {}
         local others = {}
-        for k, v in pairs(self) do
+        for k in pairs(self) do
             local kType = type(k)
-            local vType = type(v)
             if kType == "number" then
                 table.insert(nums, k)
             elseif kType == "string" then

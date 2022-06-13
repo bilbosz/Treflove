@@ -15,8 +15,7 @@ function GetGlobalName(obj)
 end
 
 local function DrawAabbsInternal(ctrl)
-    local minX, minY, maxX, maxY = ctrl.globalAabb:GetBounds()
-    love.graphics.rectangle("fill", minX, minY, maxX - minX, maxY - minY)
+    love.graphics.rectangle("fill", ctrl.globalAabb:GetPositionAndSize())
     for _, child in ipairs(ctrl.children) do
         if child:IsEnable() then
             DrawAabbs(child)
@@ -37,6 +36,10 @@ end
 
 function Mix(a, b, x)
     return a + x * (b - a)
+end
+
+function Clamp(min, max, x)
+    return math.min(math.max(min, x), max)
 end
 
 function GenerateSalt(length)

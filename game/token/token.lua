@@ -28,6 +28,17 @@ function Token:CreateLabel(label)
     self.label:SetPosition(0, self.d * 0.6)
 end
 
+local function CreateSelectionEffect(self)
+    local rect = Rectangle(self, 0.5, 0.5, {
+        1,
+        0,
+        0,
+        0.5
+    })
+    self.selection = rect
+    self.selection:SetEnable(false)
+end
+
 function Token:Init(data, parent)
     Model.Init(self, data)
     Control.Init(self, parent)
@@ -40,44 +51,24 @@ function Token:Init(data, parent)
     self:SetPosition(unpack(data.position))
     self:CreateAvatar(data.avatar)
     self:CreateLabel(data.name)
+    CreateSelectionEffect(self)
+
+    self.isSelected = false
 
     app.pointerEventManager:RegisterListener(self)
 end
 
-function Token:OnPointerDown(x, y, id)
-    local tx, ty = self:TransformToLocal(x, y)
-    local r = self.d * 0.5
-    if tx * tx + ty * ty <= r * r then
-        if id == self.dragMouseButton then
-            local parentX, parentY = self.parent:TransformToLocal(x, y)
-            self.prevDragMouseX, self.prevDragMouseY = parentX, parentY
-            self:Reattach()
-        end
-        return false
-    end
-    return true
+function Token:GetRadius()
+    return self.data.diameter * 0.5
 end
 
-function Token:OnPointerUp(x, y, id)
-    if id == self.dragMouseButton and self.prevDragMouseX then
-        self.prevDragMouseX, self.prevDragMouseY = nil, nil
-        self.data.position = {
-            self:GetPosition()
-        }
-        return false
-    end
-    return true
+function Token:SetSelect(value)
+    self.isSelected = value
+    self.selection:SetEnable(value)
 end
 
-function Token:OnPointerMove(x, y)
-    if self.prevDragMouseX then
-        local parentX, parentY = self.parent:TransformToLocal(x, y)
-        local selfX, selfY = self:GetPosition()
-        self:SetPosition(selfX + (parentX - self.prevDragMouseX), selfY + (parentY - self.prevDragMouseY))
-        self.prevDragMouseX, self.prevDragMouseY = parentX, parentY
-        return false
-    end
-    return true
+function Token:GetSelect()
+    return self.isSelected
 end
 
 MakeClassOf(Token, Model, Control, PointerEventListener)

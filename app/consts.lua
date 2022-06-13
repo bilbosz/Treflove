@@ -76,7 +76,18 @@ Consts = {
     MENU_TEXT_INPUT_WIDTH = 200,
     MENU_TEXT_INPUT_HEIGHT = 50,
     MENU_TEXT_INPUT_FIELD_MARGIN = 25,
-    BACKSTACK_KEY = "escape"
+    BACKSTACK_KEY = "escape",
+    WORLD_SELECT_BUTTON = 1,
+    WORLD_MOVE_BUTTON = 2,
+    WORLD_DRAG_BUTTON = 3,
+    WORLD_ZOOM_INCREASE = 1.3,
+    WORLD_PIXEL_PER_METER = 50,
+    WORLD_SELECTION_COLOR = {
+        0,
+        0.3,
+        0.5,
+        0.2
+    }
 }
 if config and config.window then
     Consts.DISPLAY_FONT = love.graphics.newFont("fonts/OpenSans.ttf", 80)

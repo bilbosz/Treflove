@@ -22,6 +22,9 @@ return {
             name = "Bilbosz",
             diameter = 3,
             avatar = "token/bilbosz.png",
+            owners = {
+                "adam"
+            },
             position = {
                 90,
                 60
@@ -31,6 +34,9 @@ return {
             name = "Gaben",
             diameter = 3,
             avatar = "token/gaben.png",
+            owners = {
+                "piotr"
+            },
             position = {
                 85,
                 60
@@ -40,6 +46,9 @@ return {
             name = "Bilbosza Wielka",
             diameter = 3,
             avatar = "token/bilbosza.png",
+            owners = {
+                "adam"
+            },
             position = {
                 87.5,
                 62.5
@@ -69,62 +78,6 @@ return {
             -- password: stępczyński
             auth = "deQBx+//Zt17STnCjN/oKlQf93o6MRhCcOSZdSe/31w=",
             group = "player"
-        }
-    },
-    user_data_access = {
-        ["master"] = {
-            {
-                path = {
-                    {
-                        all = true
-                    }
-                },
-                access = {
-                    delete = true,
-                    insert = true,
-                    select = true,
-                    update = true
-                }
-            },
-            {
-                path = {
-                    "players",
-                    {
-                        all = true
-                    },
-                    "auth"
-                },
-                access = {}
-            },
-            {
-                path = {
-                    "groups",
-                    {
-                        var = "group"
-                    },
-                    {
-                        all = true
-                    }
-                },
-                access = {}
-            }
-        },
-        ["player"] = {
-            {
-                path = {
-                    "tokens",
-                    {
-                        all = true
-                    },
-                    "owner",
-                    {
-                        var = "player"
-                    }
-                },
-                access = {
-                    read = true
-                }
-            }
         }
     }
 }

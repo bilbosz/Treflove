@@ -28,7 +28,7 @@ local function UpdateGlobalTransform(self)
 end
 
 local function UpdateGlobalAabbChildren(self)
-    self.globalAabb:Set(self:GetAabb())
+    self.globalAabb:Set(self:GetGlobalAabb())
     local aabb = self.globalAabb
     for _, child in ipairs(self.children) do
         if child:IsEnable() then
@@ -41,7 +41,7 @@ end
 local function UpdateGlobalAabbParent(self)
     local parent = self:GetParent()
     while parent do
-        parent.globalAabb:Set(parent:GetAabb())
+        parent.globalAabb:Set(parent:GetGlobalAabb())
         local aabb = parent.globalAabb
         for _, child in ipairs(parent.children) do
             if child:IsEnable() then
@@ -146,7 +146,17 @@ function Control:AddChild(child)
     UpdateGlobalAabb(child)
 end
 
+function Control:GetPositionAndSize()
+    return self.position[1], self.position[2], self.size[1], self.size[2]
+end
+
 function Control:GetAabb()
+    local aabb = Aabb()
+    aabb:SetPositionAndSize(self:GetPositionAndSize())
+    return aabb
+end
+
+function Control:GetGlobalAabb()
     local w, h = self:GetSize()
     local aabb = Aabb()
     aabb:AddPoint(self:TransformToGlobal(0, 0))
@@ -176,11 +186,12 @@ function Control:GetRecursiveAabb(ctrl)
     return GetRecursiveAabb(ctrl, self.globalTransform)
 end
 
-function Control:GetGlobalAabb()
+function Control:GetGlobalRecursiveAabb()
     return self.globalAabb
 end
 
 function Control:SetSize(width, height)
+    assert(math.min(0, width, height) >= 0)
     self.size[1], self.size[2] = width, height
     UpdateTransform(self)
 end
