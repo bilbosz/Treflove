@@ -45,12 +45,8 @@ function World:GetWorldCoordinates()
     return self.worldCoordinates
 end
 
-function World:SelectAabb(aabb)
-    for _, token in ipairs(self.tokens) do
-        local x, y = token:GetPosition()
-        local r = token:GetRadius()
-        token:SetSelect(aabb:DoesCircleIntersect(x, y, r))
-    end
+function World:GetTokens()
+    return self.tokens
 end
 
 function World:OnPointerDown(x, y, button)
@@ -70,8 +66,16 @@ end
 function World:OnPointerUp(x, y, button)
     self.pointerDownPos[button] = nil
     if button == Consts.WORLD_SELECT_BUTTON then
-        self:SelectAabb(self.selection:GetAabb())
-        self.selection:Reset()
+        local shift = app.keyboardManager:IsKeyDown("lshift")
+        local ctrl = app.keyboardManager:IsKeyDown("lctrl")
+        if shift then
+            self.selection:AddApply()
+        elseif ctrl then
+            self.selection:ToggleApply()
+        else
+            self.selection:Apply()
+        end
+        self.selection:Hide()
     end
 end
 

@@ -20,16 +20,21 @@ function Selection:Init(world)
         0,
         0
     }
+    self.selectSet = {}
     app.updateEventManager:RegisterListener(self)
 end
 
-function Selection:Reset()
+function Selection:Show()
+    self:SetEnable(true)
+end
+
+function Selection:Hide()
     self:SetEnable(false)
 end
 
 function Selection:SetStartPoint(x, y)
     assert(not self:IsEnable())
-    self:SetEnable(true)
+    self:Show()
     self.startPoint[1], self.startPoint[2] = x, y
     self.endPoint[1], self.endPoint[2] = x, y
     UpdateRectangle(self)
@@ -39,6 +44,49 @@ function Selection:SetEndPoint(x, y)
     assert(self:IsEnable())
     self.endPoint[1], self.endPoint[2] = x, y
     UpdateRectangle(self)
+end
+
+function Selection:Apply()
+    self.selectSet = {}
+    local aabb = self:GetAabb()
+    for _, token in ipairs(self.world:GetTokens()) do
+        local x, y = token:GetPosition()
+        local r = token:GetRadius()
+        local intersects = aabb:DoesCircleIntersect(x, y, r)
+        self.selectSet[token] = intersects or nil
+        token:SetSelect(intersects)
+    end
+end
+
+function Selection:AddApply()
+    local aabb = self:GetAabb()
+    for _, token in ipairs(self.world:GetTokens()) do
+        local x, y = token:GetPosition()
+        local r = token:GetRadius()
+        local intersects = aabb:DoesCircleIntersect(x, y, r)
+        if intersects then
+            self.selectSet[token] = true
+            token:SetSelect(true)
+        end
+    end
+end
+
+function Selection:ToggleApply()
+    local aabb = self:GetAabb()
+    for _, token in ipairs(self.world:GetTokens()) do
+        local x, y = token:GetPosition()
+        local r = token:GetRadius()
+        local intersects = aabb:DoesCircleIntersect(x, y, r)
+        if intersects then
+            local newSelect = not token:GetSelect()
+            self.selectSet[token] = newSelect or nil
+            token:SetSelect(newSelect)
+        end
+    end
+end
+
+function Selection:GetSelectSet()
+    return table.copy(self.selectSet)
 end
 
 function Selection:OnUpdate()
