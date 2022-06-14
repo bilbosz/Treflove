@@ -2,7 +2,7 @@ Token = {}
 
 function Token:CreateAvatar(path)
     local d = self.d
-    local r = self.d * 0.5
+    local r = d * 0.5
     local clip = ClippingMask(self, d, d, function()
         love.graphics.circle("fill", r, r, r)
     end)
@@ -25,17 +25,15 @@ function Token:CreateLabel(label)
     local w, h = self.label:GetSize()
     self.label:SetOrigin(w * 0.5, h * 0.5)
     self.label:SetScale(s)
-    self.label:SetPosition(0, self.d * 0.6)
+    self.label:SetPosition(0, self.d * 0.5 + Consts.TOKEN_SELECTION_THICKNESS + h * s * 0.5)
 end
 
 local function CreateSelectionEffect(self)
-    local rect = Rectangle(self, 0.5, 0.5, {
-        1,
-        0,
-        0,
-        0.5
-    })
-    self.selection = rect
+    local r = self.d * 0.5 + Consts.TOKEN_SELECTION_THICKNESS * 0.5
+    local circle = Circle(self, r, Consts.TOKEN_SELECTION_COLOR, Consts.TOKEN_SELECTION_THICKNESS)
+    circle:SetPosition(-r, -r)
+
+    self.selection = circle
     self.selection:SetEnable(false)
 end
 
@@ -65,6 +63,9 @@ end
 function Token:SetSelect(value)
     self.isSelected = value
     self.selection:SetEnable(value)
+    if value then
+        self:Reattach()
+    end
 end
 
 function Token:GetSelect()

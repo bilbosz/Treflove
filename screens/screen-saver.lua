@@ -10,10 +10,10 @@ function ScreenSaver:Show()
     self.screen:SetSize(app.width, app.height)
 
     self.background = Rectangle(self.screen, app.width, app.height, {
-        255,
-        255,
-        255,
-        255
+        1,
+        1,
+        1,
+        1
     })
 
     self.logo = Logo(self.screen)

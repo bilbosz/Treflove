@@ -87,7 +87,14 @@ Consts = {
         0.3,
         0.5,
         0.2
-    }
+    },
+    TOKEN_SELECTION_COLOR = {
+        0,
+        0.3,
+        0.5,
+        0.7
+    },
+    TOKEN_SELECTION_THICKNESS = 0.2
 }
 if config and config.window then
     Consts.DISPLAY_FONT = love.graphics.newFont("fonts/OpenSans.ttf", 80)

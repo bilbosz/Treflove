@@ -3,6 +3,7 @@ DrawableControl = {}
 function DrawableControl:Draw()
     love.graphics.push()
     love.graphics.replaceTransform(self.globalTransform)
+    love.graphics.setColor(1, 1, 1, 1)
     self.drawCb()
     love.graphics.pop()
     Control.Draw(self)
