@@ -51,21 +51,42 @@ end
 
 function World:OnPointerDown(x, y, button)
     local tx, ty = self:TransformToLocal(x, y)
-    if tx >= 0 and tx < self.size[1] and ty >= 0 and ty < self.size[2] then
+    if tx < 0 or tx >= self.size[1] or ty < 0 or ty >= self.size[2] then
+        return
+    end
+    if button == Consts.WORLD_SELECT_BUTTON and not self.pointerDownPos[Consts.WORLD_DRAG_OBJECT_BUTTON] then
+        local wx, wy = self.worldCoordinates:TransformToLocal(x, y)
+        self.selection:SetStartPoint(wx, wy)
         self.pointerDownPos[button] = {
             tx,
             ty
         }
-        if button == Consts.WORLD_SELECT_BUTTON then
-            local wx, wy = self.worldCoordinates:TransformToLocal(x, y)
-            self.selection:SetStartPoint(wx, wy)
+    end
+    if button == Consts.WORLD_DRAG_VIEW_BUTTON then
+        self.pointerDownPos[button] = {
+            tx,
+            ty
+        }
+    end
+    if button == Consts.WORLD_DRAG_OBJECT_BUTTON and not self.pointerDownPos[Consts.WORLD_SELECT_BUTTON] then
+        self.pointerDownPos[button] = {
+            self.worldCoordinates:TransformToLocal(x, y)
+        }
+        self.selectSetStartPos = {}
+        local set = self.selection:GetSelectSet()
+        for token in pairs(set) do
+            self.selectSetStartPos[token] = {
+                token:GetPosition()
+            }
         end
     end
 end
 
 function World:OnPointerUp(x, y, button)
-    self.pointerDownPos[button] = nil
-    if button == Consts.WORLD_SELECT_BUTTON then
+    if self.pointerDownPos[Consts.WORLD_SELECT_BUTTON] and button == Consts.WORLD_SELECT_BUTTON then
+        local wx, wy = self.worldCoordinates:TransformToLocal(x, y)
+        self.selection:SetEndPoint(wx, wy)
+
         local shift = app.keyboardManager:IsKeyDown("lshift")
         local ctrl = app.keyboardManager:IsKeyDown("lctrl")
         if shift then
@@ -77,20 +98,31 @@ function World:OnPointerUp(x, y, button)
         end
         self.selection:Hide()
     end
+    self.pointerDownPos[button] = nil
 end
 
 function World:OnPointerMove(x, y)
-    if self.pointerDownPos[Consts.WORLD_DRAG_BUTTON] then
-        local px, py = unpack(self.pointerDownPos[Consts.WORLD_DRAG_BUTTON])
+    if self.pointerDownPos[Consts.WORLD_DRAG_VIEW_BUTTON] then
+        local px, py = unpack(self.pointerDownPos[Consts.WORLD_DRAG_VIEW_BUTTON])
         local tx, ty = self:TransformToLocal(x, y)
         local bg = self.background
         local bgX, bgY = bg:GetPosition()
         bg:SetPosition(bgX + tx - px, bgY + ty - py)
-        self.pointerDownPos[Consts.WORLD_DRAG_BUTTON][1], self.pointerDownPos[Consts.WORLD_DRAG_BUTTON][2] = tx, ty
+        self.pointerDownPos[Consts.WORLD_DRAG_VIEW_BUTTON][1], self.pointerDownPos[Consts.WORLD_DRAG_VIEW_BUTTON][2] = tx, ty
     end
     if self.pointerDownPos[Consts.WORLD_SELECT_BUTTON] then
         local wx, wy = self.worldCoordinates:TransformToLocal(x, y)
         self.selection:SetEndPoint(wx, wy)
+    end
+    if self.pointerDownPos[Consts.WORLD_DRAG_OBJECT_BUTTON] then
+        local sx, sy = unpack(self.pointerDownPos[Consts.WORLD_DRAG_OBJECT_BUTTON])
+        local wx, wy = self.worldCoordinates:TransformToLocal(x, y)
+        local ox, oy = wx - sx, wy - sy
+        local set = self.selection:GetSelectSet()
+        for token in pairs(set) do
+            local startPosX, startPosY = unpack(self.selectSetStartPos[token])
+            token:SetPosition(startPosX + ox, startPosY + oy)
+        end
     end
 end
 
