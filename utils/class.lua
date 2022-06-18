@@ -68,7 +68,7 @@ function assert_type(obj, typ)
         assert(classMt)
         local className = classMt.name
         assert(className)
-        if GetClassOf(obj) then
+        if getmetatable(obj) and GetClassOf(obj) then
             assert(IsInstanceOf(obj, typ), string.format(msg, className, GetClassNameOf(obj)))
         else
             assert(false, string.format(msg, className, type(obj)))
