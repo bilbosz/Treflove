@@ -36,6 +36,17 @@ function App:RegisterLoveCallbacks()
         end
     end
 
+    if debug then
+        function love.errorhandler(msg)
+            print(string.format("%s error: \"%s\"", app.isClient and "Client" or "Server", msg))
+            print(GetStacktrace())
+        end
+    else
+        function love.errorhandler()
+
+        end
+    end
+
     function love.update(dt)
         self.deferManager:Update()
         if self.markForQuit then
