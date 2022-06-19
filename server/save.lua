@@ -1,13 +1,14 @@
 return {
     game = {
-        screen = "World", -- "World", "Athmosphere", "Map", "Shop", "Equipment", "Skills"
+        page = "World", -- "World", "Athmosphere", "Map", "Shop", "Equipment", "Skills"
         params = {
             name = "Old Town"
         }
     },
-    worlds = {
+    pages = {
         ["Old Town"] = {
             width = 175.61,
+            pixel_per_meter = 50,
             image = "world/world.jpg",
             tokens = {
                 "Bilbosz",

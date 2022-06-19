@@ -8,9 +8,10 @@ local function UpdateRectangle(self)
     self:SetSize(aabb:GetSize())
 end
 
-function Selection:Init(world)
-    self.world = world
-    Rectangle.Init(self, self.world:GetWorldCoordinates(), 0, 0, Consts.WORLD_SELECTION_COLOR)
+function Selection:Init(page)
+    assert_type(page, Page)
+    self.page = page
+    Rectangle.Init(self, self.page:GetPageCoordinates(), 0, 0, Consts.PAGE_SELECTION_COLOR)
     self:SetEnable(false)
     self.startPoint = {
         0,
@@ -49,7 +50,7 @@ end
 function Selection:Apply()
     self.selectSet = {}
     local aabb = self:GetAabb()
-    for _, token in ipairs(self.world:GetTokens()) do
+    for _, token in ipairs(self.page:GetTokens()) do
         local x, y = token:GetPosition()
         local r = token:GetRadius()
         local intersects = aabb:DoesCircleIntersect(x, y, r)
@@ -60,7 +61,7 @@ end
 
 function Selection:AddApply()
     local aabb = self:GetAabb()
-    for _, token in ipairs(self.world:GetTokens()) do
+    for _, token in ipairs(self.page:GetTokens()) do
         local x, y = token:GetPosition()
         local r = token:GetRadius()
         local intersects = aabb:DoesCircleIntersect(x, y, r)
@@ -73,7 +74,7 @@ end
 
 function Selection:ToggleApply()
     local aabb = self:GetAabb()
-    for _, token in ipairs(self.world:GetTokens()) do
+    for _, token in ipairs(self.page:GetTokens()) do
         local x, y = token:GetPosition()
         local r = token:GetRadius()
         local intersects = aabb:DoesCircleIntersect(x, y, r)

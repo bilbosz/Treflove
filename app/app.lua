@@ -55,7 +55,11 @@ function App:Quit()
     self.markForQuit = true
 end
 
-function App:Log(format, ...)
+function App:Log(...)
+    local format = ""
+    for _ = 1, select("#", ...) do
+        format = format .. "%s "
+    end
     self.logger:LogUp(format, 1, ...)
 end
 
