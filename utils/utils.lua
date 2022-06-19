@@ -60,22 +60,32 @@ function GetTime()
     return socket.gettime()
 end
 
-function GetStacktrace()
-    local result = ""
-    local trace = debug.traceback()
-    local lineNo = 1
-    local ignoreHead = 3
-    local found = 0
-    while found do
-        local prev = found
-        found = string.find(trace, "\n", found + 1)
-        local line = string.sub(trace, prev + 1, found)
-        if lineNo > ignoreHead and not string.find(line, "boot%.lua") and not string.find(line, "%[.+%]") and not string.find(line, "utils/class.lua") then
-            result = result .. line
+function GetStacktrace(minLevel)
+    minLevel = minLevel or 1
+    local trace = ""
+    local up = 1
+    local level = 1
+    while true do
+        local info = debug.getinfo(up, "nSl")
+        if not info then
+            break
         end
-        lineNo = lineNo + 1
+        if string.sub(info.source, 1, 1) == "@" then
+            if level >= minLevel + 1 then
+                local location = string.format("%s:%i", info.short_src, info.currentline)
+                if info.short_src ~= "utils/class.lua" then
+                    if info.name then
+                        trace = trace .. string.format("%44s in %s %s", location, info.namewhat, info.name) .. "\n"
+                    else
+                        trace = trace .. string.format("%44s", location) .. "\n"
+                    end
+                end
+            end
+            level = level + 1
+        end
+        up = up + 1
     end
-    return result
+    return trace
 end
 
 function abstract()

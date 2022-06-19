@@ -39,7 +39,7 @@ function App:RegisterLoveCallbacks()
     if debug then
         function love.errorhandler(msg)
             print(string.format("%s error: \"%s\"", app.isClient and "Client" or "Server", msg))
-            print(GetStacktrace())
+            print(GetStacktrace(2))
         end
     else
         function love.errorhandler()
@@ -67,10 +67,7 @@ function App:Quit()
 end
 
 function App:Log(...)
-    local format = ""
-    for _ = 1, select("#", ...) do
-        format = format .. "%s "
-    end
+    local format = string.rep("%s", select("#", ...), " ")
     self.logger:LogUp(format, 1, ...)
 end
 
