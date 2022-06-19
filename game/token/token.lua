@@ -29,7 +29,7 @@ function Token:CreateLabel(label)
 end
 
 local function CreateSelectionEffect(self)
-    local r = self.d * 0.5 + Consts.TOKEN_SELECTION_THICKNESS * 0.5
+    local r = self.d * 0.5 - Consts.TOKEN_SELECTION_THICKNESS * 0.5
     local circle = Circle(self, r, Consts.TOKEN_SELECTION_COLOR, Consts.TOKEN_SELECTION_THICKNESS)
     circle:SetPosition(-r, -r)
 
