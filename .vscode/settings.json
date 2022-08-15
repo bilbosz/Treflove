@@ -1,0 +1,9 @@
+{
+    "vscode-lua-format.configPath": "lua-format.config",
+    "vscode-lua-format.binaryPath": "/usr/local/bin/lua-format",
+    "Lua.workspace.checkThirdParty": false,
+    "Lua.diagnostics.globals": [
+        "love"
+    ],
+    "Lua.runtime.version": "LuaJIT"
+}
