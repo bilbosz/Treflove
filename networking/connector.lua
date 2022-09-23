@@ -4,7 +4,7 @@ function Connector:Init(address, port)
     self.address = address
     self.port = port
     self.channel = love.thread.newChannel()
-    self.retryTime = 5
+    self.retryTime = 1
     self.thread = nil
     self.connectionManager = nil
 end
