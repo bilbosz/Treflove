@@ -5,7 +5,8 @@ local function OnLogin(self, user)
     self.user = user
     if app.isClient then
         app.textEventManager:SetTextInput(false)
-        app.screenManager:Show(UserMenuScreen(self))
+        self.userMenuScreen = UserMenuScreen(self)
+        app.screenManager:Show(self.userMenuScreen)
         self.backstackCb = function()
             self:Logout()
         end
@@ -19,6 +20,7 @@ local function OnLogout(self)
     if app.isClient then
         app.backstackManager:Pop(self.backstackCb)
         self.backstackCb = nil
+        self.userMenuScreen = nil
         app.screenManager:Show(LoginScreen(self.login))
     end
 end
@@ -28,6 +30,9 @@ function Session:Init(connection)
     self.user = nil
     local login = Login(self, function(user)
         OnLogin(self, user)
+        if app.isClient then
+            self.userMenuScreen:JoinGame()
+        end
     end, function()
         OnLogout(self)
     end)

@@ -1,39 +1,41 @@
 UserMenuScreen = {}
 
-local function OnJoinGame(self)
+function UserMenuScreen:Init(session)
+    assert(session)
+    self.session = session
+    MenuScreen.Init(self, "Menu", {
+        MenuTextButton(self, "Join Game", function()
+            self:JoinGame()
+        end),
+        MenuTextButton(self, "Options", function()
+            self:Options()
+        end),
+        MenuTextButton(self, "Log Out", function()
+            self:Logout()
+        end),
+        MenuTextButton(self, "Quit", function()
+            self:Quit()
+        end)
+    })
+end
+
+function UserMenuScreen:JoinGame()
     self.session:JoinGame()
 end
 
-local function OnOptions(self)
+function UserMenuScreen:Options()
     app.backstackManager:Push(function()
         app.screenManager:Show(self, self.session)
     end)
     app.screenManager:Show(OptionsMenuScreen())
 end
 
-local function OnLogout(self)
+function UserMenuScreen:Logout()
     self.session:Logout()
 end
 
-local function OnQuit()
+function UserMenuScreen:Quit()
     app:Quit()
-end
-
-function UserMenuScreen:Init(session)
-    assert(session)
-    self.session = session
-    MenuScreen.Init(self, "Menu", {
-        MenuTextButton(self, "Join Game", function()
-            OnJoinGame(self)
-        end),
-        MenuTextButton(self, "Options", function()
-            OnOptions(self)
-        end),
-        MenuTextButton(self, "Log Out", function()
-            OnLogout(self)
-        end),
-        MenuTextButton(self, "Quit", OnQuit)
-    })
 end
 
 MakeClassOf(UserMenuScreen, MenuScreen)

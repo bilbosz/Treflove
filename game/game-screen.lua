@@ -5,7 +5,7 @@ function GameScreen:Init(data)
     Screen.Init(self)
     if self.data.page == "World" then
         self.page = Page(self.data.params, self.screen, app.width * 0.8, app.height)
-        self.panel = Panel(self.screen, app.width * 0.2, app.height)
+        self.panel = TokenPanel(self.screen, app.width * 0.2, app.height)
     end
 end
 
