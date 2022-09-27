@@ -5,9 +5,9 @@ Consts = {
     SERVER_SEED = 6931810848561579,
     MODEL_WIDTH = 2000,
     BACKGROUND_COLOR = {
-        0.39,
-        0.51,
-        0.61
+        0.45,
+        0.5,
+        0.5
     },
     TEXT_COLOR = {
         0.8,
@@ -93,7 +93,9 @@ Consts = {
         0.5,
         0.7
     },
-    TOKEN_SELECTION_THICKNESS = 0.2
+    TOKEN_SELECTION_THICKNESS = 0.2,
+    TOKEN_PANEL_PROPERTY_SCALE = 0.5,
+    TOKEN_PANEL_PROPERTY_MARGIN = 20
 }
 if config and config.window then
     Consts.DISPLAY_FONT = love.graphics.newFont("fonts/OpenSans.ttf", 80)

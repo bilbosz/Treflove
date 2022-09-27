@@ -20,6 +20,7 @@ function FormScreen:Init()
     self.inputs = {}
     self.prevFocus = nil
     self.currentFocus = nil
+    self.isShowed = false
 end
 
 function FormScreen:Show(...)
@@ -28,14 +29,20 @@ function FormScreen:Show(...)
         input:OnScreenShow()
     end
     app.keyboardManager:RegisterListener(self)
+    self.isShowed = true
 end
 
 function FormScreen:Hide()
+    self.isShowed = false
     app.keyboardManager:UnregisterListener(self)
     for _, input in ipairs(self.inputs) do
         input:OnScreenHide()
     end
     Screen.Hide(self)
+end
+
+function FormScreen:IsShowed()
+    return self.isShowed
 end
 
 function FormScreen:OnKeyPressed(key)
@@ -60,6 +67,7 @@ end
 function FormScreen:AddInput(input)
     assert_type(input, Input)
     table.insert(self.inputs, input)
+    self.currentFocus = nil
 end
 
 function FormScreen:RemoveInput(input)
@@ -94,6 +102,12 @@ function FormScreen:Focus(input)
     self.prevFocus = self.currentFocus
     self.currentFocus = found
     NotifyListeners(self)
+end
+
+function FormScreen:RemoveAllInputs()
+    self.inputs = {}
+    self.prevFocus = nil
+    self.currentFocus = nil
 end
 
 MakeClassOf(FormScreen, Screen, KeyboardEventListener)

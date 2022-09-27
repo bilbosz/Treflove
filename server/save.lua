@@ -1,12 +1,10 @@
 return {
     game = {
-        page = "World", -- "World", "Athmosphere", "Map", "Shop", "Equipment", "Skills"
-        params = {
-            name = "Old Town"
-        }
+        page = "Old Town"
     },
     pages = {
         ["Old Town"] = {
+            name = "Old Town",
             width = 175.61,
             pixel_per_meter = 50,
             image = "world/world.jpg",
@@ -16,6 +14,28 @@ return {
                 "Bilbosza",
                 "Anonim"
             }
+        }
+    },
+    token_properties = {
+        name = {
+            title = "Name",
+            type = "string"
+        },
+        diameter = {
+            title = "Diameter",
+            type = "number"
+        },
+        avatar = {
+            title = "Avatar",
+            type = "file"
+        },
+        owners = {
+            title = "Owners",
+            type = "array"
+        },
+        position = {
+            title = "Position",
+            type = "array"
         }
     },
     tokens = {

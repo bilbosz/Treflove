@@ -2,19 +2,21 @@ GameScreen = {}
 
 function GameScreen:Init(data)
     Model.Init(self, data)
-    Screen.Init(self)
-    if self.data.page == "World" then
-        self.page = Page(self.data.params, self.screen, app.width * 0.8, app.height)
-        self.panel = TokenPanel(self.screen, app.width * 0.2, app.height)
-    end
+    FormScreen.Init(self)
+    self.page = Page(app.data.pages[data.page], self, app.width * 0.8, app.height, self.panel)
+    self.panel = TokenPanel(self, app.width * 0.2, app.height)
 end
 
 function GameScreen:Show()
-    Screen.Show(self)
     self:OnResize(app.width, app.height)
+    FormScreen.Show(self)
     app.backstackManager:Push(function()
         app.screenManager:Show(UserMenuScreen(app.session))
     end)
+end
+
+function GameScreen:UpdateSelection(selection)
+    self.panel:UpdateSelection(selection)
 end
 
 function GameScreen:OnResize(w, h)
@@ -23,4 +25,4 @@ function GameScreen:OnResize(w, h)
     self.panel:SetPosition(w * 0.8, 0)
 end
 
-MakeClassOf(GameScreen, Model, Screen)
+MakeClassOf(GameScreen, Model, FormScreen)

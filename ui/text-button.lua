@@ -12,6 +12,9 @@ function TextButton:Init(parent, screen, text, action)
     self.action = action
     self.isHover = false
     screen:AddInput(self)
+    if screen:IsShowed() then
+        self:OnScreenShow()
+    end
 end
 
 function TextButton:OnScreenShow()

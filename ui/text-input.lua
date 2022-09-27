@@ -109,6 +109,9 @@ function TextInput:Init(parent, screen, width, height, masked, onInput, onEnter)
     CreateContent(self)
     UpdateView(self)
     screen:AddInput(self)
+    if screen:IsShowed() then
+        self:OnScreenShow()
+    end
 end
 
 function TextInput:OnScreenShow()
@@ -172,6 +175,11 @@ end
 function TextInput:OnFocusLost()
     Input.OnFocusLost(self)
     app.textEventManager:SetTextInput(false)
+    UpdateView(self)
+end
+
+function TextInput:SetText(text)
+    TextEventListener.SetText(self, text)
     UpdateView(self)
 end
 

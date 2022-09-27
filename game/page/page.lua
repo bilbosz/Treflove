@@ -19,22 +19,23 @@ function Page:CreatePageCoordinates()
     self.pageCoordinates:SetScale(bgW / self.pageWidth)
 end
 
-function Page:Init(data, parent, width, height)
+function Page:Init(data, gameScreen, width, height, tokenPanel)
     Model.Init(self, data)
-    ClippingRectangle.Init(self, parent, width, height)
+    ClippingRectangle.Init(self, gameScreen:GetControl(), width, height)
     PointerEventListener.Init(self, true)
     self.name = data.name
-    self.pageDef = app.data.pages[self.name]
-    self.pixelPerMeter = self.pageDef.pixel_per_meter
-    self.pageWidth = self.pageDef.width
+    self.pixelPerMeter = data.pixel_per_meter
+    self.pageWidth = data.width
     self.pointerDownPos = {}
+    self.gameScreen = gameScreen
 
-    self:CreateBackground(self.pageDef.image)
+    self:CreateBackground(data.image)
     self:CreatePageCoordinates()
     self.selection = Selection(self)
+    self.tokenPanel = tokenPanel
 
     self.tokens = {}
-    for _, name in ipairs(self.pageDef.tokens) do
+    for _, name in ipairs(data.tokens) do
         table.insert(self.tokens, Token(app.data.tokens[name], self.pageCoordinates))
     end
 
@@ -86,18 +87,20 @@ end
 function Page:OnPointerUp(x, y, button)
     if self.pointerDownPos[Consts.PAGE_SELECT_BUTTON] and button == Consts.PAGE_SELECT_BUTTON then
         local wx, wy = self.pageCoordinates:TransformToLocal(x, y)
-        self.selection:SetEndPoint(wx, wy)
+        local selection = self.selection
+        selection:SetEndPoint(wx, wy)
 
         local shift = app.keyboardManager:IsKeyDown("lshift")
         local ctrl = app.keyboardManager:IsKeyDown("lctrl")
         if shift then
-            self.selection:AddApply()
+            selection:AddApply()
         elseif ctrl then
-            self.selection:ToggleApply()
+            selection:ToggleApply()
         else
-            self.selection:Apply()
+            selection:Apply()
         end
-        self.selection:Hide()
+        selection:Hide()
+        self.gameScreen:UpdateSelection(selection)
     end
     self.pointerDownPos[button] = nil
 end

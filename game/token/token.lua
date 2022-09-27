@@ -72,4 +72,10 @@ function Token:GetSelect()
     return self.isSelected
 end
 
+function Token:SetPosition(x, y)
+    local pos = self.data.position
+    pos[1], pos[2] = x, y
+    Control.SetPosition(self, x, y)
+end
+
 MakeClassOf(Token, Model, Control, PointerEventListener)
