@@ -1,7 +1,27 @@
 TextInput = {}
 
 local function UpdateBackgroundView(self)
-    local color = self:IsFocused() and Consts.BUTTON_SELECT_COLOR or self:IsHovered() and Consts.BUTTON_HOVER_COLOR or self:IsMultivalue() and Consts.BUTTON_MULTIVALUE_COLOR or Consts.BUTTON_NORMAL_COLOR
+    local color
+    if self:IsFocused() then
+        if self:IsMultivalueDefault() then
+            color = Consts.BUTTON_MULTIVALUE_SELECT_COLOR
+        else
+            color = Consts.BUTTON_SELECT_COLOR
+        end
+    elseif self:IsHovered() then
+        if self:IsMultivalueDefault() then
+            color = Consts.BUTTON_MULTIVALUE_HOVER_COLOR
+        else
+            color = Consts.BUTTON_HOVER_COLOR
+        end
+    else
+        if self:IsMultivalueDefault() then
+            color = Consts.BUTTON_MULTIVALUE_NORMAL_COLOR
+        else
+            color = Consts.BUTTON_NORMAL_COLOR
+        end
+    end
+    assert(color ~= nil)
     self.background:SetColor(color)
 end
 
@@ -105,7 +125,8 @@ function TextInput:Init(parent, screen, width, height, masked, onInput, onEnter)
     self.onInput = onInput
     self.onEnter = onEnter
     self.caretTime = nil
-    self.multivalue = false
+    self.isMultivalue = false
+    self.hasNewValue = false
     CreateBackground(self)
     CreateClip(self)
     CreateContent(self)
@@ -155,6 +176,9 @@ function TextInput:OnClick()
 end
 
 function TextInput:OnEdit(...)
+    if self.isMultivalue then
+        self.hasNewValue = true
+    end
     UpdateView(self)
     if self.onInput then
         self.onInput()
@@ -164,6 +188,13 @@ end
 function TextInput:OnEnter()
     if self.onEnter then
         self.onEnter()
+    end
+    UpdateView(self)
+end
+
+function TextInput:OnRemoveEmpty()
+    if self.isMultivalue then
+        self.hasNewValue = not self.hasNewValue
     end
     UpdateView(self)
 end
@@ -189,12 +220,17 @@ function TextInput:SetMultivalue(value)
     if value then
         TextEventListener.SetText(self, "")
     end
-    self.multivalue = value
+    self.isMultivalue = value
+    self.hasNewValue = false
     UpdateView(self)
 end
 
 function TextInput:IsMultivalue()
-    return self.multivalue
+    return self.isMultivalue
+end
+
+function TextInput:IsMultivalueDefault()
+    return self.isMultivalue and not self.hasNewValue
 end
 
 MakeClassOf(TextInput, Control, UpdateEventListener, ButtonEventListener, TextEventListener, Input)

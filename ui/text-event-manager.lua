@@ -14,9 +14,15 @@ function TextEventListener:OnEnter()
 
 end
 
+function TextEventListener:OnRemoveEmpty()
+
+end
+
 function TextEventListener:RemoveText(characterNumber)
     local offset = utf8.offset(self.text, -characterNumber)
-    if offset then
+    if self.text == "" and characterNumber > 0 then
+        self:OnRemoveEmpty()
+    elseif offset then
         self.text = string.sub(self.text, 1, offset - 1)
         self:OnEdit(self.text)
     end

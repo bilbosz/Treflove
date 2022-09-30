@@ -19,20 +19,30 @@ Consts = {
         0.8,
         0.8
     },
+    BUTTON_MULTIVALUE_NORMAL_COLOR = {
+        0.8,
+        0.8,
+        0.7
+    },
     BUTTON_HOVER_COLOR = {
         0.9,
         0.9,
         0.9
+    },
+    BUTTON_MULTIVALUE_HOVER_COLOR = {
+        0.9,
+        0.9,
+        0.8
     },
     BUTTON_SELECT_COLOR = {
         1,
         1,
         1
     },
-    BUTTON_MULTIVALUE_COLOR = {
-        0.8,
-        0.8,
-        0.7
+    BUTTON_MULTIVALUE_SELECT_COLOR = {
+        1,
+        1,
+        0.9
     },
     TEXT_INPUT_FOREGROUND_COLOR = {
         0.2,
