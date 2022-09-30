@@ -21,11 +21,16 @@ end
 
 function Token:CreateLabel(label)
     self.label = Text(self, label)
+    self:CenterLabel()
+end
+
+function Token:CenterLabel()
+    local label = self.label
     local s = 0.007
-    local w, h = self.label:GetSize()
-    self.label:SetOrigin(w * 0.5, h * 0.5)
-    self.label:SetScale(s)
-    self.label:SetPosition(0, self.d * 0.5 + Consts.TOKEN_SELECTION_THICKNESS + h * s * 0.5)
+    local w, h = label:GetSize()
+    label:SetOrigin(w * 0.5, h * 0.5)
+    label:SetScale(s)
+    label:SetPosition(0, self.d * 0.5 + Consts.TOKEN_SELECTION_THICKNESS + h * s * 0.5)
 end
 
 local function CreateSelectionEffect(self)
@@ -76,6 +81,13 @@ function Token:SetPosition(x, y)
     local pos = self.data.position
     pos[1], pos[2] = x, y
     Control.SetPosition(self, x, y)
+end
+
+function Token:OnDataChange(key)
+    if key == "name" then
+        self.label:SetText(self.data.name)
+        self:CenterLabel()
+    end
 end
 
 MakeClassOf(Token, Model, Control, PointerEventListener)

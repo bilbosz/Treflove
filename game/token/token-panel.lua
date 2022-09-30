@@ -4,6 +4,7 @@ function TokenPanel:Init(gameScreen, width, height)
     Panel.Init(self, gameScreen:GetControl(), width, height)
     self.gameScreen = gameScreen
     self.properties = {}
+    self.keys = nil
     self.selectionSet = gameScreen:GetSelection():GetSelectSet()
     self.cancelButton = nil
     self.applyButton = nil
@@ -41,7 +42,7 @@ end
 
 function TokenPanel:FillInProperties()
     local y = 0
-    for _, k in pairs(self.keys) do
+    for _, k in ipairs(self.keys) do
         if app.data.token_properties[k] then
             local propertyDef = app.data.token_properties[k]
             local property = {
@@ -159,7 +160,15 @@ function TokenPanel:ReleaseProperties()
 end
 
 function TokenPanel:Apply()
-    app:Log("Apply")
+    for _, property in ipairs(self.properties) do
+        if not property.input:IsMultivalueDefault() then
+            local key, value = property.key, property.input:GetText()
+            for token in pairs(self.selectionSet) do
+                token:GetData()[key] = value
+                token:OnDataChange(key)
+            end
+        end
+    end
 end
 
 function TokenPanel:Cancel()
