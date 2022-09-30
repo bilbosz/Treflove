@@ -57,6 +57,7 @@ function Selection:Apply()
         self.selectSet[token] = intersects or nil
         token:SetSelect(intersects)
     end
+    self:OnSelectionChange()
 end
 
 function Selection:AddApply()
@@ -70,6 +71,7 @@ function Selection:AddApply()
             token:SetSelect(true)
         end
     end
+    self:OnSelectionChange()
 end
 
 function Selection:ToggleApply()
@@ -84,10 +86,23 @@ function Selection:ToggleApply()
             token:SetSelect(newSelect)
         end
     end
+    self:OnSelectionChange()
+end
+
+function Selection:Unselect()
+    for _, token in ipairs(self.page:GetTokens()) do
+        self.selectSet[token] = nil
+        token:SetSelect(false)
+    end
+    self:OnSelectionChange()
 end
 
 function Selection:GetSelectSet()
-    return table.copy(self.selectSet)
+    return self.selectSet
+end
+
+function Selection:OnSelectionChange()
+    self.page:GetGameScreen():OnSelectionChange()
 end
 
 function Selection:OnUpdate()

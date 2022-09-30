@@ -15,14 +15,27 @@ function GameScreen:Show()
     end)
 end
 
-function GameScreen:UpdateSelection(selection)
-    self.panel:UpdateSelection(selection)
+function GameScreen:OnSelectionChange()
+    self.panel:OnSelectionChange()
 end
 
 function GameScreen:OnResize(w, h)
     self.page:SetSize(w * 0.8, h)
     self.panel:SetSize(w * 0.2, h)
     self.panel:SetPosition(w * 0.8, 0)
+    self.panel:UpdateView()
+end
+
+function GameScreen:GetPage()
+    return self.page
+end
+
+function GameScreen:GetSelection()
+    return self.page:GetSelection()
+end
+
+function GameScreen:GetTokenPanel()
+    return self.panel
 end
 
 MakeClassOf(GameScreen, Model, FormScreen)

@@ -29,6 +29,11 @@ Consts = {
         1,
         1
     },
+    BUTTON_MULTIVALUE_COLOR = {
+        0.8,
+        0.8,
+        0.7
+    },
     TEXT_INPUT_FOREGROUND_COLOR = {
         0.2,
         0.2,
@@ -95,7 +100,7 @@ Consts = {
     },
     TOKEN_SELECTION_THICKNESS = 0.2,
     TOKEN_PANEL_PROPERTY_SCALE = 0.5,
-    TOKEN_PANEL_PROPERTY_MARGIN = 20
+    PADDING = 20
 }
 if config and config.window then
     Consts.DISPLAY_FONT = love.graphics.newFont("fonts/OpenSans.ttf", 80)

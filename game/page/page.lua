@@ -100,7 +100,6 @@ function Page:OnPointerUp(x, y, button)
             selection:Apply()
         end
         selection:Hide()
-        self.gameScreen:UpdateSelection(selection)
     end
     self.pointerDownPos[button] = nil
 end
@@ -145,6 +144,14 @@ function Page:OnWheelMoved(x, y)
         local scale = bg:GetScale() * zoomInc
         bg:SetScale(scale)
     end
+end
+
+function Page:GetGameScreen()
+    return self.gameScreen
+end
+
+function Page:GetSelection()
+    return self.selection
 end
 
 MakeClassOf(Page, Model, ClippingRectangle, PointerEventListener, WheelEventListener)

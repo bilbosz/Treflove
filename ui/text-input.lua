@@ -1,7 +1,8 @@
 TextInput = {}
 
 local function UpdateBackgroundView(self)
-    self.background:SetColor(self:IsFocused() and Consts.BUTTON_SELECT_COLOR or self:IsHovered() and Consts.BUTTON_HOVER_COLOR or Consts.BUTTON_NORMAL_COLOR)
+    local color = self:IsFocused() and Consts.BUTTON_SELECT_COLOR or self:IsHovered() and Consts.BUTTON_HOVER_COLOR or self:IsMultivalue() and Consts.BUTTON_MULTIVALUE_COLOR or Consts.BUTTON_NORMAL_COLOR
+    self.background:SetColor(color)
 end
 
 local function UpdateTextView(self)
@@ -104,6 +105,7 @@ function TextInput:Init(parent, screen, width, height, masked, onInput, onEnter)
     self.onInput = onInput
     self.onEnter = onEnter
     self.caretTime = nil
+    self.multivalue = false
     CreateBackground(self)
     CreateClip(self)
     CreateContent(self)
@@ -181,6 +183,18 @@ end
 function TextInput:SetText(text)
     TextEventListener.SetText(self, text)
     UpdateView(self)
+end
+
+function TextInput:SetMultivalue(value)
+    if value then
+        TextEventListener.SetText(self, "")
+    end
+    self.multivalue = value
+    UpdateView(self)
+end
+
+function TextInput:IsMultivalue()
+    return self.multivalue
 end
 
 MakeClassOf(TextInput, Control, UpdateEventListener, ButtonEventListener, TextEventListener, Input)
