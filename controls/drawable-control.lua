@@ -15,4 +15,8 @@ function DrawableControl:Init(parent, width, height, drawCb)
     self.drawCb = drawCb
 end
 
+function DrawableControl:SetDrawCb(drawCb)
+    self.drawCb = drawCb
+end
+
 MakeClassOf(DrawableControl, Control)

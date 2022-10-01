@@ -113,7 +113,7 @@ end
 
 function TextInput:Init(parent, screen, width, height, masked, onInput, onEnter)
     assert_type(screen, FormScreen)
-    Control.Init(self, parent)
+    Control.Init(self, parent, width, height)
     ButtonEventListener.Init(self)
     TextEventListener.Init(self)
     Input.Init(self)
@@ -197,6 +197,14 @@ function TextInput:OnRemoveEmpty()
         self.hasNewValue = not self.hasNewValue
     end
     UpdateView(self)
+end
+
+function TextInput:RemoveWord()
+    if self.masked then
+        self:SetText("")
+    else
+        TextEventListener.RemoveWord(self)
+    end
 end
 
 function TextInput:OnFocus()

@@ -10,6 +10,10 @@ end
 function ClippingMask:Init(parent, width, height, drawMaskCb)
     assert(width and height and drawMaskCb)
     Control.Init(self, parent, width, height)
+    self:SetDrawMaskCb(drawMaskCb)
+end
+
+function ClippingMask:SetDrawMaskCb(drawMaskCb)
     self.stencilCb = function()
         love.graphics.push()
         love.graphics.replaceTransform(self.globalTransform)

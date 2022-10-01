@@ -32,7 +32,8 @@ function TokenPanel:UpdatePropertyKeys()
     end
     local keys = {}
     for k in pairs(uniqueKeys) do
-        if app.data.token_properties[k].type == "string" then
+        local t = app.data.token_properties[k].type
+        if t == "string" or t == "number" then
             table.insert(keys, k)
         end
     end
@@ -44,15 +45,15 @@ function TokenPanel:FillInProperties()
     local y = 0
     for _, k in ipairs(self.keys) do
         if app.data.token_properties[k] then
-            local propertyDef = app.data.token_properties[k]
             local property = {
                 key = k,
+                def = app.data.token_properties[k],
                 title = nil,
                 input = nil
             }
 
             do
-                local title = self:CreatePropertyTitle(propertyDef)
+                local title = self:CreatePropertyTitle(property)
                 property.title = title
                 title:SetPosition(Consts.PADDING, y)
                 local h = select(2, title:GetSize())
@@ -60,7 +61,7 @@ function TokenPanel:FillInProperties()
             end
 
             do
-                local input = self:CreatePropertyInput(propertyDef)
+                local input = self:CreatePropertyInput(property)
                 property.input = input
                 input:SetPosition(Consts.PADDING, y)
                 local h = select(2, input:GetSize())
@@ -68,7 +69,12 @@ function TokenPanel:FillInProperties()
 
                 local isSingleValue, value = self:GetValueByKey(k)
                 if isSingleValue then
-                    input:SetText(value)
+                    local t = property.def.type
+                    if t == "string" then
+                        input:SetText(value)
+                    elseif t == "number" then
+                        input:SetNumber(value)
+                    end
                 else
                     input:SetMultivalue(true)
                 end
@@ -81,17 +87,27 @@ function TokenPanel:FillInProperties()
     end
 end
 
-function TokenPanel:CreatePropertyTitle(propertyDef)
-    local title = Text(self, propertyDef.title, Consts.TEXT_COLOR)
+function TokenPanel:CreatePropertyTitle(property)
+    local title = Text(self, property.def.title, Consts.TEXT_COLOR)
     title:SetScale(Consts.MENU_FIELD_SCALE)
     return title
 end
 
-function TokenPanel:CreatePropertyInput(propertyDef)
+function TokenPanel:CreatePropertyInput(property)
     local panelW = self:GetSize()
-    local input = TextInput(self, self.gameScreen, panelW - 2 * Consts.PADDING, Consts.MENU_TEXT_INPUT_HEIGHT, false, nil, function()
+
+    local t = property.def.type
+    local apply = function()
         self:Apply()
-    end)
+    end
+    local input
+    if t == "string" then
+        input = TextInput(self, self.gameScreen, panelW - 2 * Consts.PADDING, Consts.MENU_TEXT_INPUT_HEIGHT, false, nil, apply)
+    elseif t == "number" then
+        input = NumberInput(self, self.gameScreen, panelW - 2 * Consts.PADDING, Consts.MENU_TEXT_INPUT_HEIGHT, nil, apply)
+    else
+        assert(false)
+    end
     return input
 end
 
@@ -164,8 +180,7 @@ function TokenPanel:Apply()
         if not property.input:IsMultivalueDefault() then
             local key, value = property.key, property.input:GetText()
             for token in pairs(self.selectionSet) do
-                token:GetData()[key] = value
-                token:OnDataChange(key)
+                token:SetData(key, value)
             end
         end
     end
