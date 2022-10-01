@@ -27,7 +27,7 @@ return {
         },
         avatar = {
             title = "Avatar",
-            type = "file"
+            type = "image"
         },
         owners = {
             title = "Owners",

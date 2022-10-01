@@ -178,9 +178,25 @@ end
 function TokenPanel:Apply()
     for _, property in ipairs(self.properties) do
         if not property.input:IsMultivalueDefault() then
-            local key, value = property.key, property.input:GetText()
-            for token in pairs(self.selectionSet) do
-                token:SetData(key, value)
+            local t = property.def.type
+            if t == "string" then
+                local key, value = property.key, property.input:GetText()
+                for token in pairs(self.selectionSet) do
+                    local old = token:GetData()[key]
+                    if old ~= value then
+                        token:SetData(key, value)
+                    end
+                end
+            elseif t == "number" then
+                local key, value = property.key, property.input:GetNumber()
+                for token in pairs(self.selectionSet) do
+                    local old = token:GetData()[key]
+                    if old ~= value then
+                        token:SetData(key, value)
+                    end
+                end
+            else
+                assert(false)
             end
         end
     end
