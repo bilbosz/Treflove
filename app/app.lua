@@ -71,6 +71,16 @@ function App:Log(...)
     self.logger:LogUp(format, 1, ...)
 end
 
+function App:LogFun(...)
+    local format = ""
+    if debug then
+        local info = debug.getinfo(2, "n")
+        format = string.format("%s ", info.name)
+    end
+    format = format .. string.rep("%s ", select("#", ...), " ")
+    self.logger:LogUp(format, 1, ...)
+end
+
 function App:RescaleRoot()
     local realW, realH = love.graphics.getDimensions()
     local scale = realW / Consts.MODEL_WIDTH

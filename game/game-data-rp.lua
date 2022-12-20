@@ -3,12 +3,10 @@ GameDataRp = {}
 local function ListRequiredAssets()
     local list = {}
     local data = app.data
-    if data.game.page == "World" then
-        local page = data.pages[data.game.params.name]
-        table.insert(list, page.image)
-        for _, v in ipairs(page.tokens) do
-            table.insert(list, data.tokens[v].avatar)
-        end
+    local page = data.pages[data.game.page]
+    table.insert(list, page.image)
+    for _, v in ipairs(page.tokens) do
+        table.insert(list, data.tokens[v].avatar)
     end
     return list
 end
