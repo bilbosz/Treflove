@@ -8,7 +8,8 @@
             "type": "f5anything",
             "request": "launch",
             "name": "Launch",
-            "command": "./run.sh"
+            "command": "./run.sh",
+            "terminalIndex": -1
         }
     ]
 }
