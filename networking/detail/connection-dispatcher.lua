@@ -17,7 +17,7 @@ while true do
     logger:Log("New client found")
 
     local dispatcherChannel = love.thread.newChannel()
-    local inThread = love.thread.newThread("networking/impl/server-in.lua")
+    local inThread = love.thread.newThread("networking/detail/server-in.lua")
     inThread:start(loggerData, address, dispatcherChannel, channel, inThread)
 
     local inPort = dispatcherChannel:demand()

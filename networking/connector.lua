@@ -22,9 +22,9 @@ function Connector:TryRestartConnection()
         self.lastStart = love.timer.getTime()
         if not self.thread then
             if app.isServer then
-                self.thread = love.thread.newThread("networking/impl/connection-dispatcher.lua")
+                self.thread = love.thread.newThread("networking/detail/connection-dispatcher.lua")
             else
-                self.thread = love.thread.newThread("networking/impl/client-out.lua")
+                self.thread = love.thread.newThread("networking/detail/client-out.lua")
             end
         end
         if app.isServer then

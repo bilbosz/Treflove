@@ -30,7 +30,7 @@ end
 logger:Log("Received client receiver port " .. outPort)
 
 local inChannel, outChannel = love.thread.newChannel(), love.thread.newChannel()
-local outThread = love.thread.newThread("networking/impl/server-out.lua")
+local outThread = love.thread.newThread("networking/detail/server-out.lua")
 outThread:start(loggerData, address, outPort, inChannel, outChannel, channel, outThread, inThread)
 
 while true do

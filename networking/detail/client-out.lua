@@ -33,7 +33,7 @@ do
         logger:Log("Could not connect to server on port " .. outPort)
         return
     end
-    local inThread = love.thread.newThread("networking/impl/client-in.lua")
+    local inThread = love.thread.newThread("networking/detail/client-in.lua")
     inThread:start(loggerData, channel, address, getPortChannel, inChannel, outChannel)
 
     local inPort = getPortChannel:demand()
