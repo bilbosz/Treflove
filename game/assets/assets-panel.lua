@@ -1,5 +1,17 @@
 AssetsPanel = {}
 
+DropArea = {}
+
+function DropArea:Init(parent)
+    app.fileDropEventManager:Register(self)
+end
+
+function DropArea:Release()
+    app.fileDropEventManager:Unregister(self)
+end
+
+MakeClassOf(DropArea, Rectangle, FileDropEventListener)
+
 local function CreateDropArea(self)
     local areaW = self:GetSize() - 2 * Consts.PADDING
     local area = Rectangle(self, areaW, areaW, Consts.FOREGROUND_COLOR, true)

@@ -16,6 +16,7 @@ function Client:Init(params)
     self.optionsManager = OptionsManager()
     self.assetManager = AssetManager()
     self.backstackManager = BackstackManager()
+    self.fileDragManager = FileDropEventManager()
     self.session = nil
 end
 
@@ -76,6 +77,14 @@ function Client:RegisterLoveCallbacks()
     function love.touchmoved(id, x, y)
         self.pointerEventManager:PointerMove(x, y, id)
         self.buttonEventManager:PointerMove(x, y, id)
+    end
+    function love.filedropped(file)
+        local x, y = self.pointerEventManager:GetPosition()
+        self.fileDragManager:FileDrop(x, y, file)
+    end
+    function love.directorydropped(path)
+        local x, y = self.pointerEventManager:GetPosition()
+        self.fileDragManager:DirectoryDrop(x, y, path)
     end
     function love.textinput(text)
         self.textEventManager:TextInput(text)
