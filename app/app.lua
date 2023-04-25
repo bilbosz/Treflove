@@ -30,8 +30,10 @@ function App:RegisterLoveCallbacks()
             end
         end
         function love.keypressed(key)
-            if key == "f2" then
+            if key == Consts.DRAW_AABBS_KEY then
                 self.drawAabs = not self.drawAabs
+            elseif key == Consts.QUIT_KEY then
+                self:Quit()
             end
         end
     end

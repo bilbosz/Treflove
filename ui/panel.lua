@@ -15,4 +15,8 @@ function Panel:Init(parent, width, height)
     CreateBackground(self)
 end
 
+function Panel:OnResize(w, h)
+    self:SetSize(w, h)
+end
+
 MakeClassOf(Panel, ClippingRectangle)

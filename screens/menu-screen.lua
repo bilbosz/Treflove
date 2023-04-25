@@ -14,7 +14,7 @@ local function CreateLogo(self)
 end
 
 local function CreateTitle(self)
-    local text = Text(self.layout, self.title, Consts.TEXT_COLOR)
+    local text = Text(self.layout, self.title, Consts.FOREGROUND_COLOR)
 
     local w, h = text:GetSize()
     text:SetOrigin(w * 0.5, h * 0.5)

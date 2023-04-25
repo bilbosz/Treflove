@@ -40,6 +40,10 @@ function Client:RegisterLoveCallbacks()
     local appKeyPressed = love.keypressed
     function love.keypressed(key)
         appKeyPressed(key)
+        if key == Consts.TOGGLE_FULLSCREEN_KEY then
+            self.resizeManager:ToggleFullscreen()
+            return
+        end
         self.keyboardManager:KeyPressed(key)
         self.textEventManager:KeyPressed(key)
     end

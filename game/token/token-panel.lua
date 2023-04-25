@@ -10,6 +10,11 @@ function TokenPanel:Init(gameScreen, width, height)
     self.applyButton = nil
 end
 
+function TokenPanel:OnResize(w, h)
+    Panel.OnResize(self, w, h)
+    self:UpdateView()
+end
+
 function TokenPanel:OnSelectionChange()
     self.selectionSet = self.gameScreen:GetSelection():GetSelectSet()
     self:UpdateView()
@@ -88,7 +93,7 @@ function TokenPanel:FillInProperties()
 end
 
 function TokenPanel:CreatePropertyTitle(property)
-    local title = Text(self, property.def.title, Consts.TEXT_COLOR)
+    local title = Text(self, property.def.title, Consts.FOREGROUND_COLOR)
     title:SetScale(Consts.MENU_FIELD_SCALE)
     return title
 end

@@ -9,7 +9,7 @@ Consts = {
         0.5,
         0.5
     },
-    TEXT_COLOR = {
+    FOREGROUND_COLOR = {
         0.8,
         0.85,
         0.9
@@ -91,6 +91,9 @@ Consts = {
     MENU_TEXT_INPUT_WIDTH = 200,
     MENU_TEXT_INPUT_HEIGHT = 50,
     MENU_TEXT_INPUT_FIELD_MARGIN = 25,
+    QUIT_KEY = "f1",
+    DRAW_AABBS_KEY = "f2",
+    TOGGLE_FULLSCREEN_KEY = "f11",
     BACKSTACK_KEY = "escape",
     PAGE_SELECT_BUTTON = 1,
     PAGE_DRAG_TOKEN_BUTTON = 2,
