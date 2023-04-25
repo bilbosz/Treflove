@@ -6,10 +6,5 @@
         "love"
     ],
     "Lua.runtime.version": "LuaJIT",
-    "Lua.diagnostics.disable": [
-        "need-check-nil",
-        "duplicate-set-field",
-        "lowercase-global",
-        "param-type-mismatch"
-    ]
+    "Lua.diagnostics.enable": false
 }

@@ -1,29 +1,38 @@
-AssetsPanel = {}
-
 DropArea = {}
 
-function DropArea:Init(parent)
-    app.fileDropEventManager:Register(self)
-end
+local function CreateDropAreaText(self)
+    local areaW, areaH = self:GetSize()
 
-function DropArea:Release()
-    app.fileDropEventManager:Unregister(self)
-end
-
-MakeClassOf(DropArea, Rectangle, FileDropEventListener)
-
-local function CreateDropArea(self)
-    local areaW = self:GetSize() - 2 * Consts.PADDING
-    local area = Rectangle(self, areaW, areaW, Consts.FOREGROUND_COLOR, true)
-    self.dropArea = area
-
-    area:SetPosition(Consts.PADDING, Consts.PADDING)
-
-    local text = Text(area, "Drop File Here")
+    local text = Text(self, "Drop file here", Consts.FOREGROUND_COLOR)
     local textW, textH = text:GetSize()
     local textS = (areaW - 2 * Consts.PADDING) / textW
     text:SetScale(textS)
-    text:SetPosition(areaW * 0.5 - textW * textS * 0.5, areaW * 0.5 - textH * textS * 0.5)
+    text:SetPosition(areaW * 0.5 - textW * textS * 0.5, areaH * 0.5 - textH * textS * 0.5)
+end
+
+function DropArea:Init(parent, width, height)
+    Rectangle.Init(self, parent, width, height, Consts.FOREGROUND_COLOR, true)
+    FileSystemDropEventListener.Init(self, true)
+    CreateDropAreaText(self)
+    app.fileSystemDropEventManager:RegisterListener(self)
+end
+
+function DropArea:OnFileSystemDrop(_, _, path, isDir)
+    app:Log(path)
+end
+
+function DropArea:Release()
+    app.fileSystemDropEventManager:UnregisterListener(self)
+end
+
+MakeClassOf(DropArea, Rectangle, FileSystemDropEventListener)
+
+AssetsPanel = {}
+
+local function CreateDropArea(self)
+    local w = self:GetSize() - 2 * Consts.PADDING
+    self.dropArea = DropArea(self, w, w)
+    self.dropArea:SetPosition(Consts.PADDING, Consts.PADDING)
 end
 
 function AssetsPanel:Init(gameScreen, width, height)
@@ -33,6 +42,10 @@ end
 
 function AssetsPanel:OnResize(w, h)
     Panel.OnResize(self, w, h)
+end
+
+function AssetsPanel:Release()
+    self.dropArea:Release()
 end
 
 MakeClassOf(AssetsPanel, Panel)

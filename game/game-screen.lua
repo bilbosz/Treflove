@@ -11,10 +11,15 @@ function GameScreen:Init(data)
     self.assetsPanel:SetEnable(true)
 end
 
+function GameScreen:Release()
+    self.assetsPanel:Release()
+end
+
 function GameScreen:Show()
     self:OnResize(app.width, app.height)
     FormScreen.Show(self)
     app.backstackManager:Push(function()
+        self:Release()
         app.screenManager:Show(UserMenuScreen(app.session))
     end)
 end

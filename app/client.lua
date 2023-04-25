@@ -16,7 +16,7 @@ function Client:Init(params)
     self.optionsManager = OptionsManager()
     self.assetManager = AssetManager()
     self.backstackManager = BackstackManager()
-    self.fileDragManager = FileDropEventManager()
+    self.fileSystemDropEventManager = FileSystemDropEventManager()
     self.session = nil
 end
 
@@ -80,11 +80,11 @@ function Client:RegisterLoveCallbacks()
     end
     function love.filedropped(file)
         local x, y = self.pointerEventManager:GetPosition()
-        self.fileDragManager:FileDrop(x, y, file)
+        self.fileSystemDropEventManager:FileDrop(x, y, file:getFilename())
     end
     function love.directorydropped(path)
         local x, y = self.pointerEventManager:GetPosition()
-        self.fileDragManager:DirectoryDrop(x, y, path)
+        self.fileSystemDropEventManager:DirectoryDrop(x, y, path)
     end
     function love.textinput(text)
         self.textEventManager:TextInput(text)

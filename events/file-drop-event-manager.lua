@@ -1,16 +1,16 @@
-FileDropEventListener = {}
+FileSystemDropEventListener = {}
 
-function FileDropEventListener:Init(receiveThrough)
+function FileSystemDropEventListener:Init(receiveThrough)
     self.receiveThrough = receiveThrough
 end
 
-function FileDropEventListener:OnFileDrop(x, y, path, isDir)
+function FileSystemDropEventListener:OnFileSystemDrop(x, y, path, isDir)
 
 end
 
-MakeClassOf(FileDropEventListener, Control)
+MakeClassOf(FileSystemDropEventListener, Control)
 
-FileDropEventManager = {}
+FileSystemDropEventManager = {}
 
 local function GetListenerList(ctrl, listeners, x, y, list)
     if not ctrl:IsVisible() or not ctrl:GetGlobalRecursiveAabb():IsPointInside(x, y) then
@@ -24,19 +24,19 @@ local function GetListenerList(ctrl, listeners, x, y, list)
     end
 end
 
-function FileDropEventManager:Init()
-    EventManager.Init(self, FileDropEventListener)
+function FileSystemDropEventManager:Init()
+    EventManager.Init(self, FileSystemDropEventListener)
 end
 
-function FileDropEventManager:FileDrop(x, y, path)
-    self:InvokeEvent(FileDropEventListener.OnFileDrop, x, y, path, false)
+function FileSystemDropEventManager:FileDrop(x, y, path)
+    self:InvokeEvent(FileSystemDropEventListener.OnFileSystemDrop, x, y, path, false)
 end
 
-function FileDropEventManager:DirectoryDrop(x, y, path)
-    self:InvokeEvent(FileDropEventListener.OnFileDrop, x, y, path, true)
+function FileSystemDropEventManager:DirectoryDrop(x, y, path)
+    self:InvokeEvent(FileSystemDropEventListener.OnFileSystemDrop, x, y, path, true)
 end
 
-function FileDropEventManager:InvokeEvent(method, x, y, path, isDir)
+function FileSystemDropEventManager:InvokeEvent(method, x, y, path, isDir)
     local listeners = self.methods[method]
     local list = {}
     GetListenerList(app.root, listeners, x, y, list)
@@ -54,4 +54,4 @@ function FileDropEventManager:InvokeEvent(method, x, y, path, isDir)
     end
 end
 
-MakeClassOf(FileDropEventManager, EventManager)
+MakeClassOf(FileSystemDropEventManager, EventManager)
