@@ -30,7 +30,7 @@ function EventManager:Init(listenerClass)
         __mode = "k"
     }
     for methodName, method in pairs(self.listenerClass) do
-        if IsListenerMethodName(methodName) then 
+        if IsListenerMethodName(methodName) then
             self.methods[method] = {}
             setmetatable(self.methods[method], mt)
         end

@@ -20,12 +20,13 @@ local function TryCreateVideoFile(filePath)
 end
 
 local MatchFile = {
-    TryCreateImageFile = Media.Type.TEXT,
-
+    TryCreateImageFile = Media.Type.TEXT
 }
 
 function Media.GetType(filePath)
     local isOk, content
-    isOk, content = pcall(function() TryCreateImageFile(filePath) end)
+    isOk, content = pcall(function()
+        TryCreateImageFile(filePath)
+    end)
     return isOk
 end

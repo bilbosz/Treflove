@@ -5,7 +5,7 @@ function FileSystemDropEventListener:Init(receiveThrough)
 end
 
 function FileSystemDropEventListener:OnFileSystemDrop(x, y, file)
-    
+
 end
 
 MakeClassOf(FileSystemDropEventListener, Control)
