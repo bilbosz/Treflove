@@ -4,8 +4,8 @@ function FileSystemDropEventListener:Init(receiveThrough)
     self.receiveThrough = receiveThrough
 end
 
-function FileSystemDropEventListener:OnFileSystemDrop(x, y, path, isDir)
-
+function FileSystemDropEventListener:OnFileSystemDrop(x, y, file)
+    
 end
 
 MakeClassOf(FileSystemDropEventListener, Control)
@@ -28,15 +28,12 @@ function FileSystemDropEventManager:Init()
     EventManager.Init(self, FileSystemDropEventListener)
 end
 
-function FileSystemDropEventManager:FileDrop(x, y, path)
-    self:InvokeEvent(FileSystemDropEventListener.OnFileSystemDrop, x, y, path, false)
+function FileSystemDropEventManager:FileDrop(file)
+    local x, y = app.pointerEventManager:GetPosition()
+    self:InvokeEvent(FileSystemDropEventListener.OnFileSystemDrop, x, y, file)
 end
 
-function FileSystemDropEventManager:DirectoryDrop(x, y, path)
-    self:InvokeEvent(FileSystemDropEventListener.OnFileSystemDrop, x, y, path, true)
-end
-
-function FileSystemDropEventManager:InvokeEvent(method, x, y, path, isDir)
+function FileSystemDropEventManager:InvokeEvent(method, x, y, file)
     local listeners = self.methods[method]
     local list = {}
     GetListenerList(app.root, listeners, x, y, list)
@@ -44,12 +41,12 @@ function FileSystemDropEventManager:InvokeEvent(method, x, y, path, isDir)
     for _, ctrl in ripairs(list) do
         local listener = listeners[ctrl]
         if topToBeCalled then
-            local passThrough = listener(ctrl, x, y, path, isDir)
+            local passThrough = listener(ctrl, x, y, file)
             if not passThrough then
                 topToBeCalled = false
             end
         elseif ctrl.receiveThrough then
-            listener(ctrl, x, y, path, isDir)
+            listener(ctrl, x, y, file)
         end
     end
 end

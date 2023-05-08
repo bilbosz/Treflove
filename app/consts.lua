@@ -115,6 +115,8 @@ Consts = {
     TOKEN_PANEL_PROPERTY_SCALE = 0.5,
     PADDING = 20
 }
+Consts.PANEL_FIELD_SCALE = Consts.MENU_FIELD_SCALE
+Consts.PANEL_TEXT_INPUT_HEIGHT = Consts.MENU_TEXT_INPUT_HEIGHT
 if config and config.window then
     Consts.DISPLAY_FONT = love.graphics.newFont("fonts/OpenSans.ttf", 80)
     Consts.USER_INPUT_FONT = love.graphics.newFont("fonts/NotoSansMono.ttf", 80)

@@ -7,7 +7,12 @@ function GameScreen:Init(data)
     self.tokenPanel = TokenPanel(self, app.width * 0.2, app.height)
     self.assetsPanel = AssetsPanel(self, app.width * 0.2, app.height)
 
-    self.tokenPanel:SetEnable(false)
+    for _, panel in ipairs({
+        self.tokenPanel,
+        self.assetsPanel
+    }) do
+        panel:SetEnable(false)
+    end
     self.assetsPanel:SetEnable(true)
 end
 

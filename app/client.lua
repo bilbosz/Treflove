@@ -79,12 +79,7 @@ function Client:RegisterLoveCallbacks()
         self.buttonEventManager:PointerMove(x, y, id)
     end
     function love.filedropped(file)
-        local x, y = self.pointerEventManager:GetPosition()
-        self.fileSystemDropEventManager:FileDrop(x, y, file:getFilename())
-    end
-    function love.directorydropped(path)
-        local x, y = self.pointerEventManager:GetPosition()
-        self.fileSystemDropEventManager:DirectoryDrop(x, y, path)
+        self.fileSystemDropEventManager:FileDrop(file)
     end
     function love.textinput(text)
         self.textEventManager:TextInput(text)

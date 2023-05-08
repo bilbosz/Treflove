@@ -94,7 +94,7 @@ end
 
 function TokenPanel:CreatePropertyTitle(property)
     local title = Text(self, property.def.title, Consts.FOREGROUND_COLOR)
-    title:SetScale(Consts.MENU_FIELD_SCALE)
+    title:SetScale(Consts.PANEL_FIELD_SCALE)
     return title
 end
 
@@ -107,9 +107,9 @@ function TokenPanel:CreatePropertyInput(property)
     end
     local input
     if t == "string" then
-        input = TextInput(self, self.gameScreen, panelW - 2 * Consts.PADDING, Consts.MENU_TEXT_INPUT_HEIGHT, false, nil, apply)
+        input = TextInput(self, self.gameScreen, panelW - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT, false, nil, apply)
     elseif t == "number" then
-        input = NumberInput(self, self.gameScreen, panelW - 2 * Consts.PADDING, Consts.MENU_TEXT_INPUT_HEIGHT, nil, apply)
+        input = NumberInput(self, self.gameScreen, panelW - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT, nil, apply)
     else
         assert(false)
     end

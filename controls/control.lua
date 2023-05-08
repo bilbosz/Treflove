@@ -150,6 +150,10 @@ function Control:GetPositionAndSize()
     return self.position[1], self.position[2], self.size[1], self.size[2]
 end
 
+function Control:GetPositionAndOuterSize()
+    return self.position[1], self.position[2], self.size[1] * self.scale[1], self.size[2] * self.scale[2]
+end
+
 function Control:GetAabb()
     local aabb = Aabb()
     aabb:SetPositionAndSize(self:GetPositionAndSize())
@@ -198,6 +202,10 @@ end
 
 function Control:GetSize()
     return unpack(self.size)
+end
+
+function Control:GetOuterSize()
+    return self.size[1] * self.scale[1], self.size[2] * self.scale[2]
 end
 
 function Control:SetEnable(value)
