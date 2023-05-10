@@ -78,8 +78,8 @@ function Client:RegisterLoveCallbacks()
         self.pointerEventManager:PointerMove(x, y, id)
         self.buttonEventManager:PointerMove(x, y, id)
     end
-    function love.filedropped(file)
-        self.fileSystemDropEventManager:FileDrop(file)
+    function love.filedropped(droppedFile)
+        self.fileSystemDropEventManager:FileDrop(droppedFile)
     end
     function love.textinput(text)
         self.textEventManager:TextInput(text)

@@ -4,7 +4,7 @@ function FileSystemDropEventListener:Init(receiveThrough)
     self.receiveThrough = receiveThrough
 end
 
-function FileSystemDropEventListener:OnFileSystemDrop(x, y, file)
+function FileSystemDropEventListener:OnFileSystemDrop(x, y, droppedFile)
 
 end
 
@@ -28,12 +28,12 @@ function FileSystemDropEventManager:Init()
     EventManager.Init(self, FileSystemDropEventListener)
 end
 
-function FileSystemDropEventManager:FileDrop(file)
+function FileSystemDropEventManager:FileDrop(droppedFile)
     local x, y = app.pointerEventManager:GetPosition()
-    self:InvokeEvent(FileSystemDropEventListener.OnFileSystemDrop, x, y, file)
+    self:InvokeEvent(FileSystemDropEventListener.OnFileSystemDrop, x, y, droppedFile)
 end
 
-function FileSystemDropEventManager:InvokeEvent(method, x, y, file)
+function FileSystemDropEventManager:InvokeEvent(method, x, y, droppedFile)
     local listeners = self.methods[method]
     local list = {}
     GetListenerList(app.root, listeners, x, y, list)
@@ -41,12 +41,12 @@ function FileSystemDropEventManager:InvokeEvent(method, x, y, file)
     for _, ctrl in ripairs(list) do
         local listener = listeners[ctrl]
         if topToBeCalled then
-            local passThrough = listener(ctrl, x, y, file)
+            local passThrough = listener(ctrl, x, y, droppedFile)
             if not passThrough then
                 topToBeCalled = false
             end
         elseif ctrl.receiveThrough then
-            listener(ctrl, x, y, file)
+            listener(ctrl, x, y, droppedFile)
         end
     end
 end

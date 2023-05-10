@@ -1,14 +1,14 @@
 AssetsPanel = {}
 
-local function CreateDropArea(self)
+local function CreatePreviewArea(self)
     local w = self:GetSize() - 2 * Consts.PADDING
-    self.dropArea = PreviewArea(self, w, w)
-    self.dropArea:SetPosition(Consts.PADDING, Consts.PADDING)
+    self.previewArea = PreviewArea(self, w, w)
+    self.previewArea:SetPosition(Consts.PADDING, Consts.PADDING)
 end
 
 local function CreateLocationLabel(self)
     local text = Text(self, "Local path", Consts.FOREGROUND_COLOR)
-    local areaX, areaY, areaW, areaH = self.dropArea:GetPositionAndSize()
+    local areaX, areaY, areaW, areaH = self.previewArea:GetPositionAndSize()
 
     text:SetPosition(Consts.PADDING, areaY + areaH + Consts.PADDING)
     text:SetScale(Consts.PANEL_FIELD_SCALE)
@@ -57,7 +57,7 @@ end
 function AssetsPanel:Init(gameScreen, width, height)
     Panel.Init(self, gameScreen:GetControl(), width, height)
     self.gameScreen = gameScreen
-    CreateDropArea(self)
+    CreatePreviewArea(self)
     CreateLocationField(self)
     CreateFileTypeField(self)
 end
@@ -66,9 +66,11 @@ function AssetsPanel:SetFile(file)
     self.locationInput:SetText(file:getFilename())
 end
 
-function AssetsPanel:SetFileType(file)
-    local mediaType = Media.GetType(file)
-
+function AssetsPanel:SetFileType(droppedFile)
+    local mediaType, medium = Media.GetTypeAndMedium(droppedFile)
+    if mediaType == Media.Type.IMAGE then
+        self.previewArea:SetImage(medium)
+    end
     self.fileTypeInput:SetText(tostring(mediaType))
 end
 
@@ -77,7 +79,7 @@ function AssetsPanel:OnResize(w, h)
 end
 
 function AssetsPanel:Release()
-    self.dropArea:Release()
+    self.previewArea:Release()
 end
 
 MakeClassOf(AssetsPanel, Panel)
