@@ -1,12 +1,12 @@
 PreviewArea = {}
 
-local LABEL_STRING = "Preview"
+local PREVIEW_STRING = "Preview"
+local DROP_FILE_STRING = "Drop File Here"
 
-local function CreateBackgroundLabels(self)
+local function CreateBackgroundLabels(self, str)
     local labels = Control(self)
-    self.labels = labels
 
-    local label = Text(nil, LABEL_STRING)
+    local label = Text(nil, str)
     label:SetScale(Consts.PANEL_FIELD_SCALE)
     local w, h = label:GetOuterSize()
 
@@ -19,7 +19,7 @@ local function CreateBackgroundLabels(self)
     local x, y, w, h = 0, 0, nil, nil
     for i = 1, ver do
         for j = 1, hor do
-            local label = Text(labels, LABEL_STRING, Consts.BACKGROUND_COLOR)
+            local label = Text(labels, str, Consts.BACKGROUND_COLOR)
             label:SetScale(Consts.PANEL_FIELD_SCALE)
             label:SetPosition(x, y)
             w, h = label:GetOuterSize()
@@ -32,13 +32,27 @@ local function CreateBackgroundLabels(self)
     labels:SetPosition(areaW * 0.5, areaH * 0.5)
     labels:SetOrigin(labelsW * 0.5, labelsH * 0.5)
     labels:SetRotation(math.pi * 0.25)
+
+    return labels
+end
+
+local function SetLabels(self, labels)
+    for _, v in ipairs({
+        self.previewLabels,
+        self.dropFileLabels
+    }) do
+        v:SetEnable(false)
+    end
+    labels:SetEnable(true)
 end
 
 local function CreateBackground(self)
     local w, h = self:GetSize()
     local background = Rectangle(self, w, h, Consts.BUTTON_NORMAL_COLOR)
+    self.previewLabels = CreateBackgroundLabels(self, PREVIEW_STRING)
+    self.dropFileLabels = CreateBackgroundLabels(self, DROP_FILE_STRING)
 
-    CreateBackgroundLabels(self)
+    SetLabels(self, self.dropFileLabels)
 end
 
 local function CreateContentParent(self)
@@ -67,6 +81,7 @@ end
 
 function PreviewArea:SetImage(loveImage)
     self:Reset()
+    SetLabels(self, self.previewLabels)
 
     local areaW, areaH = self:GetSize()
     local image = Image(self.contentParent, loveImage)
@@ -81,6 +96,7 @@ function PreviewArea:SetImage(loveImage)
 end
 
 function PreviewArea:Reset()
+    SetLabels(self, self.dropFileLabels)
     local preview = self.contentParent:GetChildren()[1]
     if preview then
         preview:SetParent(nil)
