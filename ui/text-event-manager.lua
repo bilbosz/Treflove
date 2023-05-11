@@ -32,7 +32,7 @@ function TextEventListener:OnRemoveEmpty()
 
 end
 
-function TextEventListener:RemoveCharacters(characterNumber)
+function TextEventListener:OnRemoveCharacters(characterNumber)
     local offset = utf8.offset(self.text, -characterNumber)
     if self.text == "" and characterNumber > 0 then
         self:OnRemoveEmpty()
@@ -42,7 +42,7 @@ function TextEventListener:RemoveCharacters(characterNumber)
     end
 end
 
-function TextEventListener:RemoveWord()
+function TextEventListener:OnRemoveWord()
     if self.text == "" then
         self:OnRemoveEmpty()
     else
@@ -63,7 +63,7 @@ function TextEventListener:RemoveWord()
     end
 end
 
-function TextEventListener:AppendText(text)
+function TextEventListener:OnAppendText(text)
     self.text = self.text .. text
     self:OnEdit(self.text)
 end
@@ -91,7 +91,7 @@ function TextEventManager:Init()
 end
 
 function TextEventManager:TextInput(text)
-    self:InvokeEvent(TextEventListener.AppendText, text)
+    self:InvokeEvent(TextEventListener.OnAppendText, text)
 end
 
 function TextEventManager:KeyPressed(key)
@@ -100,9 +100,9 @@ function TextEventManager:KeyPressed(key)
     end
     if key == "backspace" then
         if love.keyboard.isDown("lctrl", "rctrl") then
-            self:InvokeEvent(TextEventListener.RemoveWord)
+            self:InvokeEvent(TextEventListener.OnRemoveWord)
         else
-            self:InvokeEvent(TextEventListener.RemoveCharacters, 1)
+            self:InvokeEvent(TextEventListener.OnRemoveCharacters, 1)
         end
     elseif key == "return" then
         self:InvokeEvent(TextEventListener.OnEnter)

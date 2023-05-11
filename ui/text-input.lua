@@ -199,11 +199,11 @@ function TextInput:OnRemoveEmpty()
     UpdateView(self)
 end
 
-function TextInput:RemoveWord()
+function TextInput:OnRemoveWord()
     if self.masked then
         self:SetText("")
     else
-        TextEventListener.RemoveWord(self)
+        TextEventListener.OnRemoveWord(self)
     end
 end
 

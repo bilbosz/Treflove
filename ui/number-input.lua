@@ -14,16 +14,16 @@ function NumberInput:GetNumber()
     return self.number
 end
 
-function NumberInput:AppendText(text)
+function NumberInput:OnAppendText(text)
     if self.text == "" and text == "-" then
         self.number = 0
-        TextEventListener.AppendText(self, text)
+        TextEventListener.OnAppendText(self, text)
         return
     end
     local n = tonumber(self.text .. text)
     if n then
         self.number = n
-        TextEventListener.AppendText(self, text)
+        TextEventListener.OnAppendText(self, text)
     end
 end
 
