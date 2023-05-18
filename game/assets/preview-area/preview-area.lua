@@ -68,6 +68,9 @@ function PreviewArea:Init(parent, width, height)
     FileSystemDropEventListener.Init(self, true)
     CreateBackground(self)
     CreateContentParent(self)
+
+    self.preview = nil
+
     app.fileSystemDropEventManager:RegisterListener(self)
 end
 
@@ -79,27 +82,16 @@ function PreviewArea:OnFileSystemDrop(x, y, droppedFile)
     droppedFile:close()
 end
 
-function PreviewArea:SetImage(loveImage)
+function PreviewArea:SetContent(loveContent, Preview)
     self:Reset()
     SetLabels(self, self.previewLabels)
-
-    local areaW, areaH = self:GetSize()
-    local image = Image(self.contentParent, loveImage)
-
-    local w, h = image:GetSize()
-    local scaleW, scaleH = (areaW - 2 * Consts.PADDING) / w, (areaH - 2 * Consts.PADDING) / h
-    local scale = math.min(scaleW, scaleH)
-    image:SetScale(scale)
-    local outerW, outerH = image:GetOuterSize()
-
-    self.contentParent:SetPosition(areaW * 0.5 - outerW * 0.5, areaH * 0.5 - outerH * 0.5)
+    self.preview = Preview(self, loveContent)
 end
 
 function PreviewArea:Reset()
     SetLabels(self, self.dropFileLabels)
-    local preview = self.contentParent:GetChildren()[1]
-    if preview then
-        preview:SetParent(nil)
+    if self.preview then
+        self.preview:SetParent(nil)
     end
 end
 

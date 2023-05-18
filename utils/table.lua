@@ -126,6 +126,7 @@ function table.findkey(self, value)
             return k
         end
     end
+    return nil
 end
 
 local function prev(t, i)

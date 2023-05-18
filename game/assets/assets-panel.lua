@@ -54,12 +54,44 @@ local function CreateFileTypeField(self)
     input:SetPosition(textX, textY + textH + Consts.PADDING)
 end
 
+local function CreateUploadButton(self)
+    local w, h = self:GetSize()
+
+    local button = TextButton(self, self.gameScreen, "Upload", function()
+        self:Upload()
+    end)
+    self.applyButton = button
+
+    local s = 0.3
+    button:SetScale(s)
+
+    local buttonW, buttonH = button:GetSize()
+    button:SetPosition(w - buttonW * s - Consts.PADDING, h - buttonH * s - Consts.PADDING)
+end
+
+local function CreateCancelButton(self)
+    local h = select(2, self:GetSize())
+
+    local button = TextButton(self, self.gameScreen, "Cancel", function()
+        self:Cancel()
+    end)
+    self.cancelButton = button
+
+    local s = 0.3
+    button:SetScale(s)
+
+    local buttonH = select(2, button:GetSize())
+    button:SetPosition(Consts.PADDING, h - buttonH * s - Consts.PADDING)
+end
+
 function AssetsPanel:Init(gameScreen, width, height)
     Panel.Init(self, gameScreen:GetControl(), width, height)
     self.gameScreen = gameScreen
     CreatePreviewArea(self)
     CreateLocationField(self)
     CreateFileTypeField(self)
+    CreateUploadButton(self)
+    CreateCancelButton(self)
 end
 
 function AssetsPanel:SetFile(file)
@@ -69,13 +101,36 @@ end
 function AssetsPanel:SetFileType(droppedFile)
     local mediaType, medium = Media.GetTypeAndMedium(droppedFile)
     if mediaType == Media.Type.IMAGE then
-        self.previewArea:SetImage(medium)
+        self.previewArea:SetContent(medium, PreviewImageArea)
+    elseif mediaType == Media.Type.AUDIO then
+        self.previewArea:SetContent(medium, PreviewAudioArea)
+    elseif mediaType == Media.Type.VIDEO then
+        self.previewArea:SetContent(medium, PreviewVideoArea)
+    elseif mediaType == Media.Type.TEXT then
+        self.previewArea:SetContent(medium, PreviewTextArea)
+    elseif mediaType == Media.Type.FONT then
+        self.previewArea:SetContent(medium, PreviewFontArea)
     end
-    self.fileTypeInput:SetText(tostring(mediaType))
+    self.fileTypeInput:SetText(tostring(table.findkey(Media.Type, mediaType)))
 end
 
 function AssetsPanel:OnResize(w, h)
     Panel.OnResize(self, w, h)
+end
+
+function AssetsPanel:Reset()
+    self.previewArea:Reset()
+    self.locationInput:SetText("")
+    self.fileTypeInput:SetText("")
+end
+
+function AssetsPanel:Upload()
+    app:Log("TODO: Asset To Be Uploaded...")
+end
+
+function AssetsPanel:Cancel()
+    self:Reset()
+    app:Log("TODO: Canceled")
 end
 
 function AssetsPanel:Release()

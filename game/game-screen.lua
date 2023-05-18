@@ -4,11 +4,11 @@ function GameScreen:Init(data)
     Model.Init(self, data)
     FormScreen.Init(self)
     self.page = Page(app.data.pages[data.page], self, app.width * 0.8, app.height, self.tokenPanel)
-    self.tokenPanel = TokenPanel(self, app.width * 0.2, app.height)
+    -- self.tokenPanel = TokenPanel(self, app.width * 0.2, app.height)
     self.assetsPanel = AssetsPanel(self, app.width * 0.2, app.height)
 
     for _, panel in ipairs({
-        self.tokenPanel,
+        -- self.tokenPanel,
         self.assetsPanel
     }) do
         panel:SetEnable(false)
@@ -30,14 +30,14 @@ function GameScreen:Show()
 end
 
 function GameScreen:OnSelectionChange()
-    self.tokenPanel:OnSelectionChange()
+    -- self.tokenPanel:OnSelectionChange()
 end
 
 function GameScreen:OnResize(w, h)
     self.page:SetSize(w * 0.8, h)
 
-    self.tokenPanel:SetPosition(w * 0.8, 0)
-    self.tokenPanel:OnResize(w * 0.2, h)
+    -- self.tokenPanel:SetPosition(w * 0.8, 0)
+    -- self.tokenPanel:OnResize(w * 0.2, h)
 
     self.assetsPanel:SetPosition(w * 0.8, 0)
     self.assetsPanel:OnResize(w * 0.2, h)
@@ -52,7 +52,7 @@ function GameScreen:GetSelection()
 end
 
 function GameScreen:GetTokenPanel()
-    return self.tokenPanel
+    -- return self.tokenPanel
 end
 
 MakeClassOf(GameScreen, Model, FormScreen)
