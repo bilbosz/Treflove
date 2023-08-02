@@ -1,3 +1,5 @@
+local select = select
+
 local function CreateIndex(self, ...)
     local idx = {}
     for i = select("#", ...), 1, -1 do
