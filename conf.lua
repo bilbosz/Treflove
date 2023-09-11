@@ -25,7 +25,7 @@ function love.conf(t)
         t.window.title = "Treflove"
         t.window.icon = "icon.png"
         t.window.resizable = true
-        t.window.fullscreen = true
+        t.window.fullscreen = false
         t.window.display = 2
     else
         assert(false)

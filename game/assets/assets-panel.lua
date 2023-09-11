@@ -1,5 +1,13 @@
 AssetsPanel = {}
 
+local FILE_TYPE_PREVIEW = {
+    [Media.Type.IMAGE] = PreviewImageArea,
+    [Media.Type.AUDIO] = PreviewAudioArea,
+    [Media.Type.VIDEO] = PreviewVideoArea,
+    [Media.Type.TEXT] = PreviewTextArea,
+    [Media.Type.FONT] = PreviewFontArea
+}
+
 local function CreatePreviewArea(self)
     local w = self:GetSize() - 2 * Consts.PADDING
     self.previewArea = PreviewArea(self, w, w)
@@ -100,16 +108,9 @@ end
 
 function AssetsPanel:SetFileType(droppedFile)
     local mediaType, medium = Media.GetTypeAndMedium(droppedFile)
-    if mediaType == Media.Type.IMAGE then
-        self.previewArea:SetContent(medium, PreviewImageArea)
-    elseif mediaType == Media.Type.AUDIO then
-        self.previewArea:SetContent(medium, PreviewAudioArea)
-    elseif mediaType == Media.Type.VIDEO then
-        self.previewArea:SetContent(medium, PreviewVideoArea)
-    elseif mediaType == Media.Type.TEXT then
-        self.previewArea:SetContent(medium, PreviewTextArea)
-    elseif mediaType == Media.Type.FONT then
-        self.previewArea:SetContent(medium, PreviewFontArea)
+    local fileTypePreview = FILE_TYPE_PREVIEW[mediaType]
+    if fileTypePreview then
+        self.previewArea:SetContent(medium, fileTypePreview)
     end
     self.fileTypeInput:SetText(tostring(table.findkey(Media.Type, mediaType)))
 end

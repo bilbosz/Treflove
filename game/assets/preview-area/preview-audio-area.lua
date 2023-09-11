@@ -1,12 +1,9 @@
 PreviewAudioArea = {}
 
 local MUSIC_NOTE_IMAGE_PATH = "game/assets/eighthnote.png"
-local MUSIC_NOTE_SYMBOL = "𝅘𝅥𝅮"
-local PLAY_SYMBOL = "⏵"
-local PAUSE_SYMBOL = "⏸"
 
 local function CreatePreview(self, loveContent)
-    local symbol = Text(self, "MUSIC_NOTE_SYMBOL")
+    local symbol = Image(self, MUSIC_NOTE_IMAGE_PATH)
 
     local areaW, areaH = self.previewArea:GetSize()
     local w, h = symbol:GetSize()
