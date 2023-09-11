@@ -14,6 +14,12 @@ local function UpdateBackgroundView(self)
         else
             color = Consts.BUTTON_HOVER_COLOR
         end
+    elseif self:IsReadOnly() then
+        if self:IsMultivalueDefault() then
+            color = Consts.BUTTON_MULTIVALUE_READ_ONLY_COLOR
+        else
+            color = Consts.BUTTON_READ_ONLY_COLOR
+        end   
     else
         if self:IsMultivalueDefault() then
             color = Consts.BUTTON_MULTIVALUE_NORMAL_COLOR
@@ -238,6 +244,11 @@ end
 
 function TextInput:IsMultivalueDefault()
     return self.isMultivalue and not self.hasNewValue
+end
+
+function TextInput:OnReadOnlyChange()
+    Input.OnReadOnlyChange(self)
+    UpdateView(self)
 end
 
 MakeClassOf(TextInput, Control, UpdateEventListener, ButtonEventListener, TextEventListener, Input)

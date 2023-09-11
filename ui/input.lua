@@ -14,16 +14,20 @@ end
 function Input:SetReadOnly(value)
     if self.isReadOnly ~= value then
         self.isReadOnly = value
-        if value then
-            self.formScreen:RemoveInput(self)
-        else
-            self.formScreen:AddInput(self)
-        end
+        self:OnReadOnlyChange()
     end
 end
 
 function Input:IsReadOnly()
     return self.isReadOnly
+end
+
+function Input:OnReadOnlyChange()
+    if self.isReadOnly then
+        self.formScreen:RemoveInput(self)
+    else
+        self.formScreen:AddInput(self)
+    end
 end
 
 function Input:OnScreenShow()

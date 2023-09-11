@@ -44,6 +44,16 @@ Consts = {
         1,
         0.9
     },
+    BUTTON_READ_ONLY_COLOR = {
+        0.6,
+        0.6,
+        0.6
+    },
+    BUTTON_MULTIVALUE_READ_ONLY_COLOR = {
+        0.6,
+        0.6,
+        0.5
+    },
     TEXT_INPUT_FOREGROUND_COLOR = {
         0.2,
         0.2,
