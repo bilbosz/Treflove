@@ -27,6 +27,7 @@ local function CreateLocationInput(self)
     local panelW = self:GetSize()
     local input = TextInput(self, self.gameScreen, panelW - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT)
     self.locationInput = input
+    input:SetReadOnly(true)
     return input
 end
 
@@ -35,7 +36,6 @@ local function CreateLocationField(self)
     local textX, textY, textW, textH = text:GetPositionAndOuterSize()
 
     local input = CreateLocationInput(self)
-    self.locationInput = input
     input:SetPosition(textX, textY + textH + Consts.PADDING)
 end
 
@@ -52,6 +52,7 @@ local function CreateFileTypeInput(self)
     local panelW = self:GetSize()
     local input = TextInput(self, self.gameScreen, panelW - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT)
     self.fileTypeInput = input
+    input:SetReadOnly(true)
     return input
 end
 

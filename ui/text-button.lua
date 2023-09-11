@@ -4,15 +4,15 @@ local function UpdateTextColor(self)
     self:SetColor((self:IsFocused() or self:IsSelected()) and Consts.BUTTON_SELECT_COLOR or self:IsHovered() and Consts.BUTTON_HOVER_COLOR or Consts.BUTTON_NORMAL_COLOR)
 end
 
-function TextButton:Init(parent, screen, text, action)
+function TextButton:Init(parent, formScreen, text, action)
     Text.Init(self, parent, text, Consts.BUTTON_NORMAL_COLOR)
     ButtonEventListener.Init(self)
+    Input.Init(self, formScreen)
     KeyboardEventListener.Init(self, true)
-    self.screen = screen
     self.action = action
     self.isHover = false
-    screen:AddInput(self)
-    if screen:IsShowed() then
+    formScreen:AddInput(self)
+    if formScreen:IsShowed() then
         self:OnScreenShow()
     end
 end

@@ -1,7 +1,7 @@
 NumberInput = {}
 
-function NumberInput:Init(parent, screen, width, height, onInput, onEnter)
-    TextInput.Init(self, parent, screen, width, height, false, onInput, onEnter)
+function NumberInput:Init(parent, formScreen, width, height, onInput, onEnter)
+    TextInput.Init(self, parent, formScreen, width, height, false, onInput, onEnter)
     self.number = 0
 end
 

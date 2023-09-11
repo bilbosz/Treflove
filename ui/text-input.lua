@@ -111,13 +111,12 @@ local function CreateContent(self)
     CreateText(self)
 end
 
-function TextInput:Init(parent, screen, width, height, masked, onInput, onEnter)
-    assert_type(screen, FormScreen)
+function TextInput:Init(parent, formScreen, width, height, masked, onInput, onEnter)
+    assert_type(formScreen, FormScreen)
     Control.Init(self, parent, width, height)
     ButtonEventListener.Init(self)
     TextEventListener.Init(self)
-    Input.Init(self)
-    self.screen = screen
+    Input.Init(self, formScreen)
     self.width = width
     self.height = height
     self.padding = 10
@@ -131,8 +130,8 @@ function TextInput:Init(parent, screen, width, height, masked, onInput, onEnter)
     CreateClip(self)
     CreateContent(self)
     UpdateView(self)
-    screen:AddInput(self)
-    if screen:IsShowed() then
+    formScreen:AddInput(self)
+    if formScreen:IsShowed() then
         self:OnScreenShow()
     end
 end
@@ -171,7 +170,7 @@ end
 
 function TextInput:OnClick()
     ButtonEventListener.OnClick(self)
-    self.screen:Focus(self)
+    self:GetFormScreen():Focus(self)
     UpdateView(self)
 end
 
