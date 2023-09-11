@@ -27,6 +27,7 @@ local function CreateLocationInput(self)
     local panelW = self:GetSize()
     local input = TextInput(self, self.gameScreen, panelW - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT)
     self.locationInput = input
+
     input:SetReadOnly(true)
     return input
 end
@@ -52,6 +53,7 @@ local function CreateFileTypeInput(self)
     local panelW = self:GetSize()
     local input = TextInput(self, self.gameScreen, panelW - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT)
     self.fileTypeInput = input
+
     input:SetReadOnly(true)
     return input
 end
@@ -60,6 +62,31 @@ local function CreateFileTypeField(self)
     local text = CreateFileTypeLabel(self)
     local textX, textY, textW, textH = text:GetPositionAndOuterSize()
     local input = CreateFileTypeInput(self)
+    input:SetPosition(textX, textY + textH + Consts.PADDING)
+end
+
+local function CreateRemoteLocationLabel(self)
+    local text = Text(self, "Remote location", Consts.FOREGROUND_COLOR)
+    local inputX, inputY, inputW, inputH = self.fileTypeInput:GetPositionAndSize()
+
+    text:SetPosition(Consts.PADDING, inputY + inputH + Consts.PADDING)
+    text:SetScale(Consts.PANEL_FIELD_SCALE)
+    return text
+end
+
+local function CreateRemoteLocationInput(self)
+    local panelW = self:GetSize()
+    local input = TextInput(self, self.gameScreen, panelW - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT)
+    self.remoteLocationInput = input
+
+    input:SetReadOnly(true)
+    return input
+end
+
+local function CreateRemoteLocationField(self)
+    local text = CreateRemoteLocationLabel(self)
+    local textX, textY, textW, textH = text:GetPositionAndOuterSize()
+    local input = CreateRemoteLocationInput(self)
     input:SetPosition(textX, textY + textH + Consts.PADDING)
 end
 
@@ -99,12 +126,19 @@ function AssetsPanel:Init(gameScreen, width, height)
     CreatePreviewArea(self)
     CreateLocationField(self)
     CreateFileTypeField(self)
+    CreateRemoteLocationField(self)
     CreateUploadButton(self)
     CreateCancelButton(self)
 end
 
 function AssetsPanel:SetFile(file)
-    self.locationInput:SetText(file:getFilename())
+    local path = file:getFilename()
+    self.locationInput:SetText(path)
+    local splitPath = SplitPath(path)
+
+    local fileName = splitPath[#splitPath]
+    self.remoteLocationInput:SetText(fileName)
+    self.remoteLocationInput:SetReadOnly(false)
 end
 
 function AssetsPanel:SetFileType(droppedFile)
@@ -124,6 +158,8 @@ function AssetsPanel:Reset()
     self.previewArea:Reset()
     self.locationInput:SetText("")
     self.fileTypeInput:SetText("")
+    self.remoteLocationInput:SetReadOnly(true)
+    self.remoteLocationInput:SetText("")
 end
 
 function AssetsPanel:Upload()

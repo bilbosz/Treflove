@@ -88,6 +88,27 @@ function GetStacktrace(minLevel)
     return trace
 end
 
+function SplitPath(path)
+    local result = {}
+    local lastFound, found = 1, 0
+    while true do
+        found = string.find(path, "/", found + 1)
+        if not found then
+            break
+        end
+        
+        local split = string.sub(path, lastFound + 1, found - 1)
+        table.insert(result, split)
+        
+        lastFound = found
+    end
+
+    local split = string.sub(path, lastFound + 1, #path)
+    table.insert(result, split)
+    
+    return result
+end
+
 function abstract()
     assert(false, "Method marked as abstract has no implementation")
 end
