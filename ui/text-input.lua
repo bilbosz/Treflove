@@ -136,21 +136,17 @@ function TextInput:Init(parent, formScreen, width, height, masked, onInput, onEn
     CreateClip(self)
     CreateContent(self)
     UpdateView(self)
-    formScreen:AddInput(self)
-    if formScreen:IsShowed() then
-        self:OnScreenShow()
-    end
 end
 
 function TextInput:OnScreenShow()
+    Input.OnScreenShow(self)
     app.updateEventManager:RegisterListener(self)
-    app.buttonEventManager:RegisterListener(self)
 end
 
 function TextInput:OnScreenHide()
     app.updateEventManager:UnregisterListener(self)
-    app.buttonEventManager:UnregisterListener(self)
     app.textEventManager:UnregisterListener(self)
+    Input.OnScreenHide(self)
 end
 
 function TextInput:OnUpdate(dt)

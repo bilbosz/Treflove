@@ -11,21 +11,17 @@ function TextButton:Init(parent, formScreen, text, action)
     KeyboardEventListener.Init(self, true)
     self.action = action
     self.isHover = false
-    formScreen:AddInput(self)
-    if formScreen:IsShowed() then
-        self:OnScreenShow()
-    end
 end
 
 function TextButton:OnScreenShow()
-    app.buttonEventManager:RegisterListener(self)
+    Input.OnScreenShow(self)
     if self:IsFocused() then
         app.keyboardManager:RegisterListener(self)
     end
 end
 
 function TextButton:OnScreenHide()
-    app.buttonEventManager:UnregisterListener(self)
+    Input.OnScreenHide(self)
     app.keyboardManager:UnregisterListener(self)
 end
 

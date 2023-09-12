@@ -137,7 +137,7 @@ function AssetsPanel:SetFile(file)
     local splitPath = SplitPath(path)
 
     local fileName = splitPath[#splitPath]
-    self.remoteLocationInput:SetText(fileName)
+    self.remoteLocationInput:SetText("/" .. fileName)
     self.remoteLocationInput:SetReadOnly(false)
 end
 

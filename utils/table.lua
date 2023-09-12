@@ -129,6 +129,15 @@ function table.findkey(self, value)
     return nil
 end
 
+function table.findidx(self, value)
+    for i, v in ipairs(self) do
+        if v == value then
+            return i
+        end
+    end
+    return nil
+end
+
 local function prev(t, i)
     if i <= 1 then
         return nil, nil

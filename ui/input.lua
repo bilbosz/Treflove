@@ -5,6 +5,10 @@ function Input:Init(formScreen)
     self.formScreen = formScreen
     self.isFocused = false
     self.isReadOnly = false
+    formScreen:AddInput(self)
+    if formScreen:IsShowed() then
+        self:OnScreenShow()
+    end
 end
 
 function Input:GetFormScreen()
@@ -23,19 +27,15 @@ function Input:IsReadOnly()
 end
 
 function Input:OnReadOnlyChange()
-    if self.isReadOnly then
-        self.formScreen:RemoveInput(self)
-    else
-        self.formScreen:AddInput(self)
-    end
+    self.formScreen:ReadOnlyChange(self)
 end
 
 function Input:OnScreenShow()
-    abstract()
+    app.buttonEventManager:RegisterListener(self)
 end
 
 function Input:OnScreenHide()
-    abstract()
+    app.buttonEventManager:UnregisterListener(self)
 end
 
 function Input:OnFocus()
