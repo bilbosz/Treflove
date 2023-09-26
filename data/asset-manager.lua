@@ -51,7 +51,7 @@ function AssetManager:Init()
     if app.isServer then
         RemoveServerMount("s")
         MountServerAssets("server", "s")
-    end``
+    end
     self.uploadAssetRp = {}
     self.downloadAssetRp = {}
     self.downloadMissingAssetsRp = {}
