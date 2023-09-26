@@ -17,7 +17,7 @@ function MenuTextInput:CreateControl(parent)
     input:SetPosition(Consts.MENU_TEXT_INPUT_FIELD_MARGIN, nil)
     local inputH = ctrl:GetRecursiveAabb(input):GetHeight()
 
-    local text = Text(ctrl, self.fieldName, Consts.TEXT_COLOR)
+    local text = Text(ctrl, self.fieldName, Consts.FOREGROUND_COLOR)
     local textW, textH = text:GetSize()
     text:SetOrigin(textW, textH * 0.5)
     text:SetPosition(-Consts.MENU_TEXT_INPUT_FIELD_MARGIN, inputH * 0.5)

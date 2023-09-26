@@ -14,6 +14,12 @@ local function UpdateBackgroundView(self)
         else
             color = Consts.BUTTON_HOVER_COLOR
         end
+    elseif self:IsReadOnly() then
+        if self:IsMultivalueDefault() then
+            color = Consts.BUTTON_MULTIVALUE_READ_ONLY_COLOR
+        else
+            color = Consts.BUTTON_READ_ONLY_COLOR
+        end
     else
         if self:IsMultivalueDefault() then
             color = Consts.BUTTON_MULTIVALUE_NORMAL_COLOR
@@ -37,7 +43,7 @@ end
 local function UpdateCaretView(self)
     local caret = self.caret
     local isFocused = self:IsFocused()
-    caret:SetEnable(isFocused)
+    caret:SetEnabled(isFocused)
     if isFocused then
         self.caretTime = 0
     end
@@ -111,13 +117,12 @@ local function CreateContent(self)
     CreateText(self)
 end
 
-function TextInput:Init(parent, screen, width, height, masked, onInput, onEnter)
-    assert_type(screen, FormScreen)
+function TextInput:Init(parent, formScreen, width, height, masked, onInput, onEnter)
+    assert_type(formScreen, FormScreen)
     Control.Init(self, parent, width, height)
     ButtonEventListener.Init(self)
     TextEventListener.Init(self)
-    Input.Init(self)
-    self.screen = screen
+    Input.Init(self, formScreen)
     self.width = width
     self.height = height
     self.padding = 10
@@ -131,21 +136,17 @@ function TextInput:Init(parent, screen, width, height, masked, onInput, onEnter)
     CreateClip(self)
     CreateContent(self)
     UpdateView(self)
-    screen:AddInput(self)
-    if screen:IsShowed() then
-        self:OnScreenShow()
-    end
 end
 
 function TextInput:OnScreenShow()
+    Input.OnScreenShow(self)
     app.updateEventManager:RegisterListener(self)
-    app.buttonEventManager:RegisterListener(self)
 end
 
 function TextInput:OnScreenHide()
     app.updateEventManager:UnregisterListener(self)
-    app.buttonEventManager:UnregisterListener(self)
     app.textEventManager:UnregisterListener(self)
+    Input.OnScreenHide(self)
 end
 
 function TextInput:OnUpdate(dt)
@@ -153,9 +154,7 @@ function TextInput:OnUpdate(dt)
     if self:IsFocused() then
         local time = self.caretTime + dt
         self.caretTime = time
-        caret:SetEnable(math.fmod(time, Consts.CARET_BLINK_INTERVAL * 2) <= Consts.CARET_BLINK_INTERVAL)
-    else
-        caret:SetEnable(false)
+        caret:SetEnabled(math.fmod(time, Consts.CARET_BLINK_INTERVAL * 2) <= Consts.CARET_BLINK_INTERVAL)
     end
 end
 
@@ -171,7 +170,7 @@ end
 
 function TextInput:OnClick()
     ButtonEventListener.OnClick(self)
-    self.screen:Focus(self)
+    self:GetFormScreen():Focus(self)
     UpdateView(self)
 end
 
@@ -199,11 +198,11 @@ function TextInput:OnRemoveEmpty()
     UpdateView(self)
 end
 
-function TextInput:RemoveWord()
+function TextInput:OnRemoveWord()
     if self.masked then
         self:SetText("")
     else
-        TextEventListener.RemoveWord(self)
+        TextEventListener.OnRemoveWord(self)
     end
 end
 
@@ -216,6 +215,7 @@ end
 function TextInput:OnFocusLost()
     Input.OnFocusLost(self)
     app.textEventManager:SetTextInput(false)
+    self.caret:SetEnabled(false)
     UpdateView(self)
 end
 
@@ -239,6 +239,11 @@ end
 
 function TextInput:IsMultivalueDefault()
     return self.isMultivalue and not self.hasNewValue
+end
+
+function TextInput:OnReadOnlyChange()
+    Input.OnReadOnlyChange(self)
+    UpdateView(self)
 end
 
 MakeClassOf(TextInput, Control, UpdateEventListener, ButtonEventListener, TextEventListener, Input)

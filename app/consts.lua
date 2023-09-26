@@ -1,6 +1,8 @@
 Consts = {
     NETWORK_COMPRESSION = "lz4",
     HASH_ALGORITHM = "sha256",
+    ASSETS_SERVER_ROOT = "s",
+    ASSETS_CLIENT_ROOT = "c",
     CLIENT_SEED = 6280149384430876,
     SERVER_SEED = 6931810848561579,
     MODEL_WIDTH = 2000,
@@ -9,7 +11,7 @@ Consts = {
         0.5,
         0.5
     },
-    TEXT_COLOR = {
+    FOREGROUND_COLOR = {
         0.8,
         0.85,
         0.9
@@ -43,6 +45,16 @@ Consts = {
         1,
         1,
         0.9
+    },
+    BUTTON_READ_ONLY_COLOR = {
+        0.6,
+        0.6,
+        0.6
+    },
+    BUTTON_MULTIVALUE_READ_ONLY_COLOR = {
+        0.6,
+        0.6,
+        0.5
     },
     TEXT_INPUT_FOREGROUND_COLOR = {
         0.2,
@@ -91,6 +103,9 @@ Consts = {
     MENU_TEXT_INPUT_WIDTH = 200,
     MENU_TEXT_INPUT_HEIGHT = 50,
     MENU_TEXT_INPUT_FIELD_MARGIN = 25,
+    DRAW_AABBS_KEY = "f2",
+    QUIT_KEY = "f4",
+    TOGGLE_FULLSCREEN_KEY = "f11",
     BACKSTACK_KEY = "escape",
     PAGE_SELECT_BUTTON = 1,
     PAGE_DRAG_TOKEN_BUTTON = 2,
@@ -110,8 +125,11 @@ Consts = {
     },
     TOKEN_SELECTION_THICKNESS = 0.2,
     TOKEN_PANEL_PROPERTY_SCALE = 0.5,
-    PADDING = 20
+    PADDING = 20,
+    QUICK_ACCESS_PANEL_HEIGHT = 75.425
 }
+Consts.PANEL_FIELD_SCALE = Consts.MENU_FIELD_SCALE
+Consts.PANEL_TEXT_INPUT_HEIGHT = Consts.MENU_TEXT_INPUT_HEIGHT
 if config and config.window then
     Consts.DISPLAY_FONT = love.graphics.newFont("fonts/OpenSans.ttf", 80)
     Consts.USER_INPUT_FONT = love.graphics.newFont("fonts/NotoSansMono.ttf", 80)

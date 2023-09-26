@@ -12,7 +12,7 @@ function Selection:Init(page)
     assert_type(page, Page)
     self.page = page
     Rectangle.Init(self, self.page:GetPageCoordinates(), 0, 0, Consts.PAGE_SELECTION_COLOR)
-    self:SetEnable(false)
+    self:SetEnabled(false)
     self.startPoint = {
         0,
         0
@@ -26,15 +26,15 @@ function Selection:Init(page)
 end
 
 function Selection:Show()
-    self:SetEnable(true)
+    self:SetEnabled(true)
 end
 
 function Selection:Hide()
-    self:SetEnable(false)
+    self:SetEnabled(false)
 end
 
 function Selection:SetStartPoint(x, y)
-    assert(not self:IsEnable())
+    assert(not self:IsEnabled())
     self:Show()
     self.startPoint[1], self.startPoint[2] = x, y
     self.endPoint[1], self.endPoint[2] = x, y
@@ -42,7 +42,7 @@ function Selection:SetStartPoint(x, y)
 end
 
 function Selection:SetEndPoint(x, y)
-    assert(self:IsEnable())
+    assert(self:IsEnabled())
     self.endPoint[1], self.endPoint[2] = x, y
     UpdateRectangle(self)
 end

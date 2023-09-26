@@ -31,7 +31,7 @@ local function UpdateGlobalAabbChildren(self)
     self.globalAabb:Set(self:GetGlobalAabb())
     local aabb = self.globalAabb
     for _, child in ipairs(self.children) do
-        if child:IsEnable() then
+        if child:IsEnabled() then
             UpdateGlobalAabbChildren(child)
             aabb:AddAabb(child.globalAabb)
         end
@@ -44,7 +44,7 @@ local function UpdateGlobalAabbParent(self)
         parent.globalAabb:Set(parent:GetGlobalAabb())
         local aabb = parent.globalAabb
         for _, child in ipairs(parent.children) do
-            if child:IsEnable() then
+            if child:IsEnabled() then
                 aabb:AddAabb(child.globalAabb)
             end
         end
@@ -150,6 +150,10 @@ function Control:GetPositionAndSize()
     return self.position[1], self.position[2], self.size[1], self.size[2]
 end
 
+function Control:GetPositionAndOuterSize()
+    return self.position[1], self.position[2], self.size[1] * self.scale[1], self.size[2] * self.scale[2]
+end
+
 function Control:GetAabb()
     local aabb = Aabb()
     aabb:SetPositionAndSize(self:GetPositionAndSize())
@@ -200,23 +204,38 @@ function Control:GetSize()
     return unpack(self.size)
 end
 
-function Control:SetEnable(value)
-    if self.parent then
-        UpdateGlobalAabb(self.parent)
-    end
-    self.enable = value
+function Control:GetOuterSize()
+    return self.size[1] * self.scale[1], self.size[2] * self.scale[2]
 end
 
-function Control:IsEnable()
-    return self.enable
+function Control:SetEnabled(value)
+    self.isEnabled = value
+    if value and self.parent then
+        UpdateGlobalAabb(self.parent)
+    end
+end
+
+function Control:IsEnabled()
+    return self.isEnabled
+end
+
+function Control:AllPredecessorsEnabled()
+    if not self:IsEnabled() then
+        return false
+    end
+    if self.parent then
+        return self.parent:AllPredecessorsEnabled()
+    else
+        return true
+    end
 end
 
 function Control:SetVisible(value)
-    self.visible = value
+    self.isVisible = value
 end
 
 function Control:IsVisible()
-    return self.enable and self.visible
+    return self.isEnabled and self.isVisible
 end
 
 function Control:Draw()
@@ -230,8 +249,8 @@ function Control:Draw()
 end
 
 function Control:Init(parent, width, height)
-    self.enable = true
-    self.visible = true
+    self.isEnabled = true
+    self.isVisible = true
 
     self.localTransform = love.math.newTransform()
     self.globalTransform = love.math.newTransform()

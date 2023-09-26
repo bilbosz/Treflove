@@ -1,15 +1,10 @@
 {
     "vscode-lua-format.configPath": "lua-format.config",
-    "vscode-lua-format.binaryPath": "/usr/bin/lua-format",
+    "vscode-lua-format.binaryPath": "/usr/local/bin/lua-format",
     "Lua.workspace.checkThirdParty": false,
     "Lua.diagnostics.globals": [
         "love"
     ],
     "Lua.runtime.version": "LuaJIT",
-    "Lua.diagnostics.disable": [
-        "need-check-nil",
-        "duplicate-set-field",
-        "lowercase-global",
-        "param-type-mismatch"
-    ]
+    "Lua.diagnostics.enable": false
 }

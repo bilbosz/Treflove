@@ -51,6 +51,10 @@ function PointerEventManager:PointerMove(x, y, id)
     self:InvokeEvent(PointerEventListener.OnPointerMove, x, y, id or self.downId)
 end
 
+function PointerEventManager:GetPosition()
+    return love.mouse.getPosition()
+end
+
 function PointerEventManager:InvokeEvent(method, x, y, id)
     local listeners = self.methods[method]
     local list = {}

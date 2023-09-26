@@ -2,15 +2,25 @@ EventManager = {}
 
 local function HandleRegister(self, listener)
     for methodName, classMethod in pairs(self.listenerClass) do
-        local listenerMethod = listener[methodName]
-        self.methods[classMethod][listener] = listenerMethod
+        if self.methods[classMethod] then
+            local listenerMethod = listener[methodName]
+            self.methods[classMethod][listener] = listenerMethod
+        end
     end
 end
 
 local function HandleUnregister(self, listener)
     for _, classMethod in pairs(self.listenerClass) do
-        self.methods[classMethod][listener] = nil
+        if self.methods[classMethod] then
+            self.methods[classMethod][listener] = nil
+        end
     end
+end
+
+local function IsListenerMethodName(methodName)
+    local prefix = string.sub(methodName, 1, 2)
+    local third = string.sub(methodName, 3, 3)
+    return prefix == "On" and third and third == string.upper(third)
 end
 
 function EventManager:Init(listenerClass)
@@ -19,9 +29,11 @@ function EventManager:Init(listenerClass)
     local mt = {
         __mode = "k"
     }
-    for _, method in pairs(self.listenerClass) do
-        self.methods[method] = {}
-        setmetatable(self.methods[method], mt)
+    for methodName, method in pairs(self.listenerClass) do
+        if IsListenerMethodName(methodName) then
+            self.methods[method] = {}
+            setmetatable(self.methods[method], mt)
+        end
     end
     -- lock is turned on only for invoking
     self.lock = false

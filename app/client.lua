@@ -16,6 +16,7 @@ function Client:Init(params)
     self.optionsManager = OptionsManager()
     self.assetManager = AssetManager()
     self.backstackManager = BackstackManager()
+    self.fileSystemDropEventManager = FileSystemDropEventManager()
     self.session = nil
 end
 
@@ -40,6 +41,10 @@ function Client:RegisterLoveCallbacks()
     local appKeyPressed = love.keypressed
     function love.keypressed(key)
         appKeyPressed(key)
+        if key == Consts.TOGGLE_FULLSCREEN_KEY then
+            self.resizeManager:ToggleFullscreen()
+            return
+        end
         self.keyboardManager:KeyPressed(key)
         self.textEventManager:KeyPressed(key)
     end
@@ -72,6 +77,9 @@ function Client:RegisterLoveCallbacks()
     function love.touchmoved(id, x, y)
         self.pointerEventManager:PointerMove(x, y, id)
         self.buttonEventManager:PointerMove(x, y, id)
+    end
+    function love.filedropped(droppedFile)
+        self.fileSystemDropEventManager:FileDrop(droppedFile)
     end
     function love.textinput(text)
         self.textEventManager:TextInput(text)

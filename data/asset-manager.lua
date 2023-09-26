@@ -12,8 +12,46 @@ local function GetAnyRp(rpList)
     return select(2, next(rpList))
 end
 
+local function RemoveServerMount(path)
+    local info = love.filesystem.getInfo(path)
+    if not info then
+        return
+    end
+    if info.type == "file" then
+        love.filesystem.remove(path)
+    elseif info.type == "directory" then
+        local items = love.filesystem.getDirectoryItems(path)
+        for _, v in ipairs(items) do
+            RemoveServerMount(path .. "/" .. v)
+        end
+        love.filesystem.remove(path)
+    else
+        assert(false)
+    end
+end
+
+local function MountServerAssets(srcPath, dstPath)
+    local srcInfo = love.filesystem.getInfo(srcPath)
+    if srcInfo.type == "file" then
+        local data = love.filesystem.read(srcPath)
+        love.filesystem.write(dstPath, data)
+    elseif srcInfo.type == "directory" then
+        love.filesystem.createDirectory(dstPath)
+        local items = love.filesystem.getDirectoryItems(srcPath)
+        for _, v in ipairs(items) do
+            MountServerAssets(srcPath .. "/" .. v, dstPath .. "/" .. v)
+        end
+    else
+        assert(false)
+    end
+end
+
 function AssetManager:Init()
     -- remote procedures by session
+    if app.isServer then
+        RemoveServerMount("s")
+        MountServerAssets("server", "s")
+    end
     self.uploadAssetRp = {}
     self.downloadAssetRp = {}
     self.downloadMissingAssetsRp = {}
@@ -35,17 +73,14 @@ function AssetManager:GetContent(path)
     return love.data.encode("string", "base64", file:Read(), file:GetSize())
 end
 
-function AssetManager:UploadAsset(path, file)
+function AssetManager:UploadAsset(path, data, dataSize)
     assert(app.isClient)
-    file:open("r")
 
     local rp = GetAnyRp(self.uploadAssetRp)
     rp:SendRequest({
         path = path,
-        content = love.data.encode("string", "base64", file:read(), file:getSize())
+        content = love.data.encode("string", "base64", data, dataSize)
     })
-
-    file:close()
 end
 
 function AssetManager:DownloadAsset(path)

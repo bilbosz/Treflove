@@ -39,7 +39,7 @@ local function CreateSelectionEffect(self)
     circle:SetPosition(-r, -r)
 
     self.selection = circle
-    self.selection:SetEnable(false)
+    self.selection:SetEnabled(false)
 end
 
 function Token:Init(data, parent)
@@ -67,7 +67,7 @@ end
 
 function Token:SetSelect(value)
     self.isSelected = value
-    self.selection:SetEnable(value)
+    self.selection:SetEnabled(value)
     if value then
         self:Reattach()
     end

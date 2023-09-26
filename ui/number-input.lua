@@ -1,7 +1,7 @@
 NumberInput = {}
 
-function NumberInput:Init(parent, screen, width, height, onInput, onEnter)
-    TextInput.Init(self, parent, screen, width, height, false, onInput, onEnter)
+function NumberInput:Init(parent, formScreen, width, height, onInput, onEnter)
+    TextInput.Init(self, parent, formScreen, width, height, false, onInput, onEnter)
     self.number = 0
 end
 
@@ -14,16 +14,16 @@ function NumberInput:GetNumber()
     return self.number
 end
 
-function NumberInput:AppendText(text)
+function NumberInput:OnAppendText(text)
     if self.text == "" and text == "-" then
         self.number = 0
-        TextEventListener.AppendText(self, text)
+        TextEventListener.OnAppendText(self, text)
         return
     end
     local n = tonumber(self.text .. text)
     if n then
         self.number = n
-        TextEventListener.AppendText(self, text)
+        TextEventListener.OnAppendText(self, text)
     end
 end
 

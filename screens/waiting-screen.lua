@@ -15,7 +15,7 @@ local function CreateLogo(self)
 end
 
 local function CreateText(self)
-    local text = Text(self.layout, self.message, Consts.TEXT_COLOR)
+    local text = Text(self.layout, self.message, Consts.FOREGROUND_COLOR)
     self.text = text
     text:SetPosition(0, 100)
     local textW = text:GetSize()

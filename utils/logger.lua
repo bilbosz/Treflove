@@ -12,7 +12,7 @@ local function IsEnabled(name)
 end
 
 local function LogImpl(self, format, level, ...)
-    if not self.enable then
+    if not self.isEnabled then
         return
     end
     local sep = self.separator
@@ -34,13 +34,13 @@ function Logger:Init(data, name)
     self.data.startTime = self.data.startTime or GetTime()
     self.startTime = self.data.startTime
     self.separator = " "
-    self.enable = IsEnabled(name)
+    self.isEnabled = IsEnabled(name)
 end
 
 function Logger:SetName(name)
     assert_type(name, "string")
     self.name = name
-    self.enable = IsEnabled(name)
+    self.isEnabled = IsEnabled(name)
 end
 
 function Logger:Log(string)

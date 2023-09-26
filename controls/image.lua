@@ -1,10 +1,15 @@
 Image = {}
 
-function Image:Init(parent, path)
-    local image = love.graphics.newImage(Asset(path):GetPath() or path)
-    local w, h = image:getDimensions()
+function Image:Init(parent, pathOrLoveImage)
+    local loveImage
+    if type(pathOrLoveImage) == "string" then
+        loveImage = love.graphics.newImage(Asset(pathOrLoveImage):GetPath() or pathOrLoveImage)
+    else
+        loveImage = pathOrLoveImage
+    end
+    local w, h = loveImage:getDimensions()
     DrawableControl.Init(self, parent, w, h, function()
-        love.graphics.draw(image)
+        love.graphics.draw(loveImage)
     end)
 end
 
