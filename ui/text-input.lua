@@ -19,7 +19,7 @@ local function UpdateBackgroundView(self)
             color = Consts.BUTTON_MULTIVALUE_READ_ONLY_COLOR
         else
             color = Consts.BUTTON_READ_ONLY_COLOR
-        end   
+        end
     else
         if self:IsMultivalueDefault() then
             color = Consts.BUTTON_MULTIVALUE_NORMAL_COLOR
@@ -43,7 +43,7 @@ end
 local function UpdateCaretView(self)
     local caret = self.caret
     local isFocused = self:IsFocused()
-    caret:SetEnable(isFocused)
+    caret:SetEnabled(isFocused)
     if isFocused then
         self.caretTime = 0
     end
@@ -154,9 +154,7 @@ function TextInput:OnUpdate(dt)
     if self:IsFocused() then
         local time = self.caretTime + dt
         self.caretTime = time
-        caret:SetEnable(math.fmod(time, Consts.CARET_BLINK_INTERVAL * 2) <= Consts.CARET_BLINK_INTERVAL)
-    else
-        caret:SetEnable(false)
+        caret:SetEnabled(math.fmod(time, Consts.CARET_BLINK_INTERVAL * 2) <= Consts.CARET_BLINK_INTERVAL)
     end
 end
 
@@ -217,6 +215,7 @@ end
 function TextInput:OnFocusLost()
     Input.OnFocusLost(self)
     app.textEventManager:SetTextInput(false)
+    self.caret:SetEnabled(false)
     UpdateView(self)
 end
 

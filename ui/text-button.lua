@@ -11,6 +11,7 @@ function TextButton:Init(parent, formScreen, text, action)
     KeyboardEventListener.Init(self, true)
     self.action = action
     self.isHover = false
+    self.text = text
 end
 
 function TextButton:OnScreenShow()

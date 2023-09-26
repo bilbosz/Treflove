@@ -41,9 +41,9 @@ local function SetLabels(self, labels)
         self.previewLabels,
         self.dropFileLabels
     }) do
-        v:SetEnable(false)
+        v:SetEnabled(false)
     end
-    labels:SetEnable(true)
+    labels:SetEnabled(true)
 end
 
 local function CreateBackground(self)

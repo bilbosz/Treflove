@@ -10,6 +10,7 @@ end
 
 function Text:SetText(text)
     assert_type(text, "string")
+    self.text = text
     local textDrawable = love.graphics.newText(self.font, text)
     self.textDrawable = textDrawable
 

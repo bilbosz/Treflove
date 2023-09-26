@@ -33,11 +33,11 @@ local function AdvanceFocus(self, d)
     if count == 0 then
         return
     end
-    
+
     local i = self.focus or 0
     while true do
         i = (i + d - 1 + n) % n + 1
-        if not inputs[i]:IsReadOnly() then
+        if inputs[i]:AllPredecessorsEnabled() and not inputs[i]:IsReadOnly() then
             break
         end
     end

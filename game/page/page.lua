@@ -19,7 +19,8 @@ function Page:CreatePageCoordinates()
     self.pageCoordinates:SetScale(bgW / self.pageWidth)
 end
 
-function Page:Init(data, gameScreen, width, height, tokenPanel)
+function Page:Init(data, gameScreen, width, height)
+
     Model.Init(self, data)
     ClippingRectangle.Init(self, gameScreen:GetControl(), width, height)
     PointerEventListener.Init(self, true)
@@ -32,7 +33,6 @@ function Page:Init(data, gameScreen, width, height, tokenPanel)
     self:CreateBackground(data.image)
     self:CreatePageCoordinates()
     self.selection = Selection(self)
-    self.tokenPanel = tokenPanel
 
     self.tokens = {}
     for _, name in ipairs(data.tokens) do

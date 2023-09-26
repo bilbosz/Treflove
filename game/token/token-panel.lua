@@ -139,7 +139,7 @@ function TokenPanel:CreateCancelButton()
     end)
     self.cancelButton = button
 
-    local s = 0.3
+    local s = Consts.PANEL_FIELD_SCALE
     button:SetScale(s)
 
     local buttonH = select(2, button:GetSize())
@@ -154,7 +154,7 @@ function TokenPanel:CreateApplyButton()
     end)
     self.applyButton = button
 
-    local s = 0.3
+    local s = Consts.PANEL_FIELD_SCALE
     button:SetScale(s)
 
     local buttonW, buttonH = button:GetSize()
@@ -162,19 +162,22 @@ function TokenPanel:CreateApplyButton()
 end
 
 function TokenPanel:ReleaseProperties()
-    self.gameScreen:RemoveAllInputs()
     for _, v in ipairs(self.properties) do
         v.title:SetParent(nil)
+
+        self.gameScreen:RemoveInput(v.input)
         v.input:SetParent(nil)
     end
     self.properties = {}
 
     if self.cancelButton then
+        self.gameScreen:RemoveInput(self.cancelButton)
         self.cancelButton:SetParent(nil)
         self.cancelButton = nil
     end
 
     if self.applyButton then
+        self.gameScreen:RemoveInput(self.applyButton)
         self.applyButton:SetParent(nil)
         self.applyButton = nil
     end

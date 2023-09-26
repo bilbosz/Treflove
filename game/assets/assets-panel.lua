@@ -90,19 +90,33 @@ local function CreateRemoteLocationField(self)
     input:SetPosition(textX, textY + textH + Consts.PADDING)
 end
 
-local function CreateUploadButton(self)
+local function RefreshUploadButtonGeometry(self)
     local w, h = self:GetSize()
-
-    local button = TextButton(self, self.gameScreen, "Upload", function()
-        self:Upload()
-    end)
-    self.applyButton = button
-
-    local s = 0.3
+    local button = self.uploadButton
+    local s = Consts.PANEL_FIELD_SCALE
     button:SetScale(s)
 
     local buttonW, buttonH = button:GetSize()
     button:SetPosition(w - buttonW * s - Consts.PADDING, h - buttonH * s - Consts.PADDING)
+end
+
+local function RefreshCancelButtonGeometry(self)
+    local w, h = self:GetSize()
+    local button = self.cancelButton
+    local s = Consts.PANEL_FIELD_SCALE
+    button:SetScale(s)
+
+    local buttonH = select(2, button:GetSize())
+    button:SetPosition(Consts.PADDING, h - buttonH * s - Consts.PADDING)
+end
+
+local function CreateUploadButton(self)
+    local button = TextButton(self, self.gameScreen, "Upload", function()
+        self:Upload()
+    end)
+    self.uploadButton = button
+
+    RefreshUploadButtonGeometry(self)
 end
 
 local function CreateCancelButton(self)
@@ -113,11 +127,12 @@ local function CreateCancelButton(self)
     end)
     self.cancelButton = button
 
-    local s = 0.3
-    button:SetScale(s)
+    RefreshCancelButtonGeometry(self)
+end
 
-    local buttonH = select(2, button:GetSize())
-    button:SetPosition(Consts.PADDING, h - buttonH * s - Consts.PADDING)
+local function RefreshActionButtons(self)
+    RefreshUploadButtonGeometry(self)
+    RefreshCancelButtonGeometry(self)
 end
 
 function AssetsPanel:Init(gameScreen, width, height)
@@ -127,8 +142,8 @@ function AssetsPanel:Init(gameScreen, width, height)
     CreateLocationField(self)
     CreateFileTypeField(self)
     CreateRemoteLocationField(self)
-    CreateUploadButton(self)
     CreateCancelButton(self)
+    CreateUploadButton(self)
 end
 
 function AssetsPanel:SetFile(file)
@@ -152,6 +167,7 @@ end
 
 function AssetsPanel:OnResize(w, h)
     Panel.OnResize(self, w, h)
+    RefreshActionButtons(self)
 end
 
 function AssetsPanel:Reset()
