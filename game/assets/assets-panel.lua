@@ -135,9 +135,22 @@ local function RefreshActionButtons(self)
     RefreshCancelButtonGeometry(self)
 end
 
+local function SetFileType(self, data)
+    local mediaType, medium = Media.GetTypeAndMedium(data)
+    self.mediaType = mediaType
+    local fileTypePreview = FILE_TYPE_PREVIEW[mediaType]
+    if fileTypePreview then
+        self.previewArea:SetContent(medium, fileTypePreview)
+    end
+    self.fileTypeInput:SetText(tostring(table.findkey(Media.Type, mediaType)))
+end
+
 function AssetsPanel:Init(gameScreen, width, height)
     Panel.Init(self, gameScreen:GetControl(), width, height)
     self.gameScreen = gameScreen
+    self.mediaType = nil
+    self.data = nil
+    self.dataSize = nil
     CreatePreviewArea(self)
     CreateLocationField(self)
     CreateFileTypeField(self)
@@ -147,22 +160,19 @@ function AssetsPanel:Init(gameScreen, width, height)
 end
 
 function AssetsPanel:SetFile(file)
+    local data = file:read("data")
+    local size = file:getSize()
+    self.data = data
+    self.dataSize = size
+    SetFileType(self, data)
+
     local path = file:getFilename()
     self.locationInput:SetText(path)
     local splitPath = SplitPath(path)
 
     local fileName = splitPath[#splitPath]
-    self.remoteLocationInput:SetText("/" .. fileName)
+    self.remoteLocationInput:SetText(fileName)
     self.remoteLocationInput:SetReadOnly(false)
-end
-
-function AssetsPanel:SetFileType(droppedFile)
-    local mediaType, medium = Media.GetTypeAndMedium(droppedFile)
-    local fileTypePreview = FILE_TYPE_PREVIEW[mediaType]
-    if fileTypePreview then
-        self.previewArea:SetContent(medium, fileTypePreview)
-    end
-    self.fileTypeInput:SetText(tostring(table.findkey(Media.Type, mediaType)))
 end
 
 function AssetsPanel:OnResize(w, h)
@@ -176,15 +186,17 @@ function AssetsPanel:Reset()
     self.fileTypeInput:SetText("")
     self.remoteLocationInput:SetReadOnly(true)
     self.remoteLocationInput:SetText("")
+    self.mediaType = nil
+    self.data = nil
+    self.dataSize = nil
 end
 
 function AssetsPanel:Upload()
-    app:Log("TODO: Asset To Be Uploaded...")
+    app.assetManager:UploadAsset(self.remoteLocationInput:GetText(), self.data)
 end
 
 function AssetsPanel:Cancel()
     self:Reset()
-    app:Log("TODO: Canceled")
 end
 
 function AssetsPanel:Release()

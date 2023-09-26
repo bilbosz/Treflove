@@ -43,8 +43,7 @@ local MATCH_FILE = {
     }
 }
 
-function Media.GetTypeAndMedium(droppedFile)
-    local data = droppedFile:read("data")
+function Media.GetTypeAndMedium(data)
     local isOk, asset
     for _, v in ipairs(MATCH_FILE) do
         local f, t = unpack(v)

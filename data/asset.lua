@@ -18,11 +18,11 @@ local function CreateIntermediateDirs(path)
 end
 
 function Asset.GetAssetPath(virtualPath)
-    return (app.isServer and "server/assets/" or "client/assets/") .. virtualPath
+    return (app.isServer and Consts.ASSETS_SERVER_ROOT or Consts.ASSETS_CLIENT_ROOT) .. "/assets/" .. virtualPath
 end
 
 function Asset.GetRootPath(virtualPath)
-    return (app.isServer and "server/" or "client/") .. virtualPath
+    return (app.isServer and Consts.ASSETS_SERVER_ROOT or Consts.ASSETS_CLIENT_ROOT) .. "/" .. virtualPath
 end
 
 function Asset:Init(path, onRoot)

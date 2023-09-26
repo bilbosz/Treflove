@@ -78,7 +78,6 @@ function PreviewArea:OnFileSystemDrop(x, y, droppedFile)
     local ok, err = droppedFile:open("r")
     assert(ok, err)
     self.parent:SetFile(droppedFile)
-    self.parent:SetFileType(droppedFile)
     droppedFile:close()
 end
 

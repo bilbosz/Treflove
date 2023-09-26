@@ -9,14 +9,16 @@ function GameScreen:Init(data)
     self.tokenPanel = TokenPanel(self, app.width * 0.2, app.height)
     self.assetsPanel = AssetsPanel(self, app.width * 0.2, app.height)
 
-    self.panel = nil
+    self.panel = self.assetsPanel
     local panels = {
         self.tokenPanel,
         self.assetsPanel
     }
     self.panels = panels
     for _, v in ipairs(panels) do
-        v:SetEnabled(false)
+        if v ~= self.panel then
+            v:SetEnabled(false)
+        end
     end
 
     self.quickAccessPanel = QuickAccessPanel(self, app.width * 0.8, Consts.QUICK_ACCESS_PANEL_HEIGHT)
