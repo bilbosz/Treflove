@@ -90,6 +90,28 @@ local function CreateRemoteLocationField(self)
     input:SetPosition(textX, textY + textH + Consts.PADDING)
 end
 
+local function CreateMountPointLabel(self)
+    local text = Text(self, "Mount point", Consts.FOREGROUND_COLOR)
+    local aabb = self.remoteLocationInput:GetOuterAabb()
+    text:SetPosition(Consts.PADDING, aabb:GetMaxY() + Consts.PADDING)
+    text:SetScale(Consts.PANEL_FIELD_SCALE)
+    return text
+end
+
+local function CreateMountPointSelector(self)
+    local w = self:GetSize() - 2 * Consts.PADDING
+    local selector = MountPointSelector(self, w, 800)
+    self.mountPointSelector = selector
+    return selector
+end
+
+local function CreateMountPointField(self)
+    local label = CreateMountPointLabel(self)
+    local aabb = label:GetOuterAabb()
+    local selector = CreateMountPointSelector(self)
+    selector:SetPosition(Consts.PADDING, aabb:GetMaxY() + Consts.PADDING)
+end
+
 local function RefreshUploadButtonGeometry(self)
     local w, h = self:GetSize()
     local button = self.uploadButton
@@ -157,6 +179,7 @@ function AssetsPanel:Init(gameScreen, width, height)
     CreateRemoteLocationField(self)
     CreateCancelButton(self)
     CreateUploadButton(self)
+    CreateMountPointField(self)
 end
 
 function AssetsPanel:SetFile(file)

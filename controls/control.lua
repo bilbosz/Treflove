@@ -160,6 +160,12 @@ function Control:GetAabb()
     return aabb
 end
 
+function Control:GetOuterAabb()
+    local aabb = Aabb()
+    aabb:SetPositionAndSize(self:GetPositionAndOuterSize())
+    return aabb
+end
+
 function Control:GetGlobalAabb()
     local w, h = self:GetSize()
     local aabb = Aabb()
