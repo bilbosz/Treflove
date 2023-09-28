@@ -215,7 +215,9 @@ function AssetsPanel:Reset()
 end
 
 function AssetsPanel:Upload()
-    app.assetManager:UploadAsset(self.remoteLocationInput:GetText(), self.data)
+    if self.data then
+        app.assetManager:UploadAsset(self.remoteLocationInput:GetText(), self.data)
+    end
 end
 
 function AssetsPanel:Cancel()
