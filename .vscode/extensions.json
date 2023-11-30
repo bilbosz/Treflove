@@ -1,8 +1,8 @@
 {
     "recommendations": [
-        // lua linter and intellisense
-        "sumneko.lua",
-        // lua formatter, requires /usr/local/bin/lua-format (via luarocks install  --server=https://luarocks.org/dev luaformatter)
+        // lua linter and intellisense. More on annotations https://luals.github.io/wiki/annotations/
+        "tangzx.emmylua",
+        // lua formatter, requires /usr/local/bin/lua-format (via luarocks install --server=https://luarocks.org/dev luaformatter)
         "koihik.vscode-lua-format",
         // running ./run.sh as launch configuration
         "discretegames.f5anything",

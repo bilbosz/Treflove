@@ -1,34 +1,39 @@
-NotificationManager = {}
+local UpdateEventListener = require("events.update-event").Listener
+local NotificationPanel = require("panels.notification-panel")
+local Consts = require("app.consts")
 
-function NotificationManager:Init()
+---@class NotificationManager: UpdateEventListener
+local NotificationManager = class("NotificationManager", UpdateEventListener)
+
+function NotificationManager:init()
     self.panel = NotificationPanel(self)
     self.notifications = {}
-    app.updateEventManager:RegisterListener(self)
+    app.update_event_manager:register_listener(self)
 end
 
-function NotificationManager:Notify(message, duration)
+function NotificationManager:notify(message, duration)
     table.insert(self.notifications, {
         message = message,
-        startTime = app:GetTime(),
+        start_time = app:get_time(),
         duration = duration or Consts.NOTIFICATION_DURATION
     })
-    self.panel:UpdateNotifications()
+    self.panel:update_notifications()
 end
 
-function NotificationManager:GetNotifications()
+function NotificationManager:get_notifications()
     return self.notifications
 end
 
-function NotificationManager:ClearNotifications()
+function NotificationManager:clear_notifications()
     self.notifications = {}
-    self.panel:UpdateNotifications()
+    self.panel:update_notifications()
 end
 
-function NotificationManager:OnUpdate()
-    local time = app:GetTime()
+function NotificationManager:on_update()
+    local time = app:get_time()
     local toRemove
     for i, notification in ipairs(self.notifications) do
-        if time > notification.startTime + notification.duration then
+        if time > notification.start_time + notification.duration then
             toRemove = toRemove or {}
             table.insert(toRemove, i)
         end
@@ -37,8 +42,8 @@ function NotificationManager:OnUpdate()
         for _, i in ripairs(toRemove) do
             table.remove(self.notifications, i)
         end
-        self.panel:UpdateNotifications()
+        self.panel:update_notifications()
     end
 end
 
-MakeClassOf(NotificationManager, UpdateEventListener)
+return NotificationManager

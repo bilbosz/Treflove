@@ -1,72 +1,79 @@
-TextButton = {}
+local Text = require("controls.text")
+local ButtonEventListener = require("ui.button-event").Listener
+local Input = require("ui.input")
+local KeyboardEventListener = require("events.keyboard").Listener
+local Consts = require("app.consts")
+
+---@class TextButton: Text, ButtonEventListener, Input, KeyboardEventListener
+local TextButton = class("TextButton", Text, ButtonEventListener, Input, KeyboardEventListener)
 
 local function UpdateTextColor(self)
-    self:SetColor((self:IsFocused() or self:IsSelected()) and Consts.BUTTON_SELECT_COLOR or self:IsHovered() and Consts.BUTTON_HOVER_COLOR or Consts.BUTTON_NORMAL_COLOR)
+    self:set_color((self:is_focused() or self:is_selected()) and Consts.BUTTON_SELECT_COLOR or self:is_hovered() and Consts.BUTTON_HOVER_COLOR or Consts.BUTTON_NORMAL_COLOR)
 end
 
-function TextButton:Init(parent, formScreen, text, action)
-    Text.Init(self, parent, text, Consts.BUTTON_NORMAL_COLOR)
-    ButtonEventListener.Init(self)
-    Input.Init(self, formScreen)
-    KeyboardEventListener.Init(self, true)
+function TextButton:init(parent, formScreen, text, action)
+    Text.init(self, parent, text, Consts.BUTTON_NORMAL_COLOR)
+    ButtonEventListener.init(self)
+    Input.init(self, formScreen)
+    KeyboardEventListener.init(self, true)
     self.action = action
     self.isHover = false
     self.text = text
 end
 
-function TextButton:OnScreenShow()
-    Input.OnScreenShow(self)
-    if self:IsFocused() then
-        app.keyboardManager:RegisterListener(self)
+function TextButton:on_screen_show()
+    Input.on_screen_show(self)
+    if self:is_focused() then
+        app.keyboard_manager:register_listener(self)
     end
 end
 
-function TextButton:OnScreenHide()
-    Input.OnScreenHide(self)
-    app.keyboardManager:UnregisterListener(self)
+function TextButton:on_screen_hide()
+    Input.on_screen_hide(self)
+    app.keyboard_manager:unregister_listener(self)
 end
 
-function TextButton:OnFocus()
-    Input.OnFocus(self)
+function TextButton:on_focus()
+    Input.on_focus(self)
     UpdateTextColor(self)
-    app.keyboardManager:RegisterListener(self)
+    app.keyboard_manager:register_listener(self)
 end
 
-function TextButton:OnFocusLost()
-    app.keyboardManager:UnregisterListener(self)
-    Input.OnFocusLost(self)
-    UpdateTextColor(self)
-end
-
-function TextButton:OnSelect()
-    ButtonEventListener.OnSelect(self)
+function TextButton:on_focus_lost()
+    app.keyboard_manager:unregister_listener(self)
+    Input.on_focus_lost(self)
     UpdateTextColor(self)
 end
 
-function TextButton:OnUnselect()
-    ButtonEventListener.OnUnselect(self)
+function TextButton:on_select()
+    ButtonEventListener.on_select(self)
     UpdateTextColor(self)
 end
 
-function TextButton:OnPointerEnter()
-    ButtonEventListener.OnPointerEnter(self)
+function TextButton:on_unselect()
+    ButtonEventListener.on_unselect(self)
     UpdateTextColor(self)
 end
 
-function TextButton:OnPointerLeave()
-    ButtonEventListener.OnPointerLeave(self)
+function TextButton:on_pointer_enter()
+    ButtonEventListener.on_pointer_enter(self)
     UpdateTextColor(self)
 end
 
-function TextButton:OnClick()
-    ButtonEventListener.OnClick(self)
+function TextButton:on_pointer_leave()
+    ButtonEventListener.on_pointer_leave(self)
+    UpdateTextColor(self)
+end
+
+function TextButton:on_click()
+    ButtonEventListener.on_click(self)
     self.action()
 end
 
-function TextButton:OnKeyPressed(key)
+function TextButton:on_key_pressed(key)
     if key == "return" then
         self.action()
     end
 end
 
-MakeClassOf(TextButton, Text, ButtonEventListener, Input, KeyboardEventListener)
+return TextButton

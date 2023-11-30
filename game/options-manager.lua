@@ -1,7 +1,8 @@
-OptionsManager = {}
+---@class OptionsManager
+local OptionsManager = class("OptionsManager")
 
-function OptionsManager:ToggleFullscreen()
-    app.resizeManager:ToggleFullscreen()
+function OptionsManager:toggle_fullscreen()
+    app.resize_manager:toggle_fullscreen()
 end
 
-MakeClassOf(OptionsManager)
+return OptionsManager

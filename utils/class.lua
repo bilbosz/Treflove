@@ -1,6 +1,8 @@
+require("utils.table")
+
 local select = select
 
-local function CreateIndex(self, ...)
+local function _create_index(self, ...)
     local idx = {}
     for i = select("#", ...), 1, -1 do
         table.merge(idx, getmetatable(select(i, ...)).__index)
@@ -9,58 +11,75 @@ local function CreateIndex(self, ...)
     return idx
 end
 
-local function CreateBases(self, ...)
+local function _create_bases(self, ...)
     local bases = {
         self
     }
     for i = 1, select("#", ...) do
-        table.mergearray(bases, getmetatable(select(i, ...)).bases)
+        table.merge_array(bases, getmetatable(select(i, ...)).bases)
     end
     return bases
 end
 
-function MakeClassOf(self, ...)
-    local name = GetGlobalName(self)
+local function _is_instance_of(cls, base)
+    return table.find_table_key(getmetatable(cls).bases, base) ~= nil
+end
+
+---@param name string Class name
+---@param ... table Class bases
+function class(name, ...)
+    local class = {}
     assert(name)
     for i = 1, select("#", ...) do
-        assert(select(i, ...), string.format("Inherited class no. %i of %s is not initialized yet", i, name))
+        assert(select(i, ...), string.format("Inherited class number %i of %s is not initialized yet", i, name))
     end
+
+    local index = _create_index(class, ...)
     local objMt = {
-        __index = CreateIndex(self, ...),
-        class = self
+        __index = index,
+        class = class
     }
-    local mt = {
-        __index = objMt.__index,
-        __call = function(self, ...)
+
+    local class_metatable = {
+        __index = index,
+        __newindex = index,
+        __call = function(_, ...)
             local obj = {}
             setmetatable(obj, objMt)
-            if obj.Init then
-                obj:Init(...)
+            if obj.init then
+                obj:init(...)
             end
             return obj
         end,
         name = name,
-        bases = CreateBases(self, ...)
+        bases = _create_bases(class, ...)
     }
-    setmetatable(self, mt)
+
+    return setmetatable(class, class_metatable)
 end
 
-function GetClassOf(obj)
+---@param obj table
+---@return table
+function get_class_of(obj)
     return getmetatable(obj).class
 end
 
-function GetClassNameOf(obj)
-    return getmetatable(GetClassOf(obj)).name
+---@param obj table
+---@return string
+function get_class_name_of(obj)
+    return getmetatable(get_class_of(obj)).name
 end
 
-local function IsClassInstanceOf(cls, base)
-    return table.findkey(getmetatable(cls).bases, base) ~= nil
+---@param obj table
+---@param cls table
+---@return boolean
+function is_instance_of(obj, cls)
+    return _is_instance_of(get_class_of(obj), cls)
 end
 
-function IsInstanceOf(obj, cls)
-    return IsClassInstanceOf(GetClassOf(obj), cls)
-end
-
+---@param obj any
+---@param typ string|table
+---@return void
 function assert_type(obj, typ)
     local msg = "Expected %s got %s"
     if type(typ) == "string" then
@@ -70,12 +89,13 @@ function assert_type(obj, typ)
         assert(classMt)
         local className = classMt.name
         assert(className)
-        if getmetatable(obj) and GetClassOf(obj) then
-            assert(IsInstanceOf(obj, typ), string.format(msg, className, GetClassNameOf(obj)))
+        if getmetatable(obj) and get_class_of(obj) then
+            assert(is_instance_of(obj, typ), string.format(msg, className, get_class_name_of(obj)))
         else
-            assert(false, string.format(msg, className, type(obj)))
+            assert_unreachable(string.format(msg, className, type(obj)))
         end
     else
-        assert(false)
+        assert_unreachable()
     end
 end
+

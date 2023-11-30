@@ -1,10 +1,10 @@
 {
-    "vscode-lua-format.configPath": "lua-format.config",
+    "vscode-lua-format.configPath": "",
     "vscode-lua-format.binaryPath": "/usr/local/bin/lua-format",
-    "Lua.workspace.checkThirdParty": false,
-    "Lua.diagnostics.globals": [
-        "love"
-    ],
-    "Lua.runtime.version": "LuaJIT",
-    "Lua.diagnostics.enable": false
+    "emmylua.constructorNames": "init",
+    "files.associations": {
+        "*.luacheckrc": "lua"
+    },
+    "emmylua.debugger.defaultProgram": "luajit",
+    "emmylua.typecheck.defineTypeCanReceiveNilType": false
 }

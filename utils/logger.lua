@@ -1,6 +1,11 @@
-Logger = {}
+local Consts = require("app.consts")
+local Model = require("data.model")
+local Utils = require("utils.utils")
 
-local function IsEnabled(name)
+---@class Logger: Model
+local Logger = class("Logger", Model)
+
+local function _is_enabled(name)
     local n = #name
     for _, pattern in ipairs(Consts.LOGGER_NAME_BLACKLIST) do
         local start, stop = string.find(name, pattern)
@@ -12,11 +17,11 @@ local function IsEnabled(name)
 end
 
 local function LogImpl(self, format, level, ...)
-    if not self.isEnabled then
+    if not self._is_enabled then
         return
     end
     local sep = self.separator
-    local timeDiff = GetTime() - self.startTime
+    local timeDiff = Utils.get_time() - self.start_time
     local result = string.format("%8.3f%s%21s", timeDiff, sep, self.name)
     if debug then
         local info = debug.getinfo(level, "Sl")
@@ -27,32 +32,32 @@ local function LogImpl(self, format, level, ...)
     print(result)
 end
 
-function Logger:Init(data, name)
+function Logger:init(data, name)
     assert_type(name, "string")
-    Model.Init(self, data)
+    Model.init(self, data)
     self.name = name
-    self.data.startTime = self.data.startTime or GetTime()
-    self.startTime = self.data.startTime
+    self.data.start_time = self.data.start_time or Utils.get_time()
+    self.start_time = self.data.start_time
     self.separator = " "
-    self.isEnabled = IsEnabled(name)
+    self._is_enabled = _is_enabled(name)
 end
 
-function Logger:SetName(name)
+function Logger:set_name(name)
     assert_type(name, "string")
     self.name = name
-    self.isEnabled = IsEnabled(name)
+    self._is_enabled = _is_enabled(name)
 end
 
-function Logger:Log(string)
+function Logger:log(string)
     LogImpl(self, "%s", 3, string)
 end
 
-function Logger:LogFmt(format, ...)
+function Logger:log_format(format, ...)
     LogImpl(self, format, 3, ...)
 end
 
-function Logger:LogUp(format, up, ...)
+function Logger:log_up(format, up, ...)
     LogImpl(self, format, 3 + up, ...)
 end
 
-MakeClassOf(Logger, Model)
+return Logger

@@ -1,33 +1,30 @@
 local loggerData, channel, address, getPortChannel, inChannel, outChannel = ...
 
-local socket = require("socket")
-love.filesystem.load("utils/loader.lua")()
-Loader.LoadModule("utils")
-Loader.LoadFile("app/consts.lua")
-logger = Logger(loggerData, "client-in-?????")
+local Socket = require("socket")
+local logger = require("utils.logger")(loggerData, "client-in-?????")
 
-local inServer, error = socket.bind(address, 0)
+local inServer, error = Socket.bind(address, 0)
 if error then
-    logger:Log("Could not bind for receiver")
+    logger:log("Could not bind for receiver")
     return
 end
 local inPort = select(2, inServer:getsockname())
-logger:SetName(string.format("client-in-%05i", inPort))
+logger:set_name(string.format("client-in-%05i", inPort))
 getPortChannel:push(inPort)
 local inClient, error = inServer:accept()
 if error then
-    logger:Log("Could not connect to server")
+    logger:log("Could not connect to server")
     return
 end
-logger:Log("Established input connection to server. Waiting for messages...")
+logger:log("Established input connection to server. Waiting for messages...")
 
 while true do
     local msg, error = inClient:receive("*l")
     if error then
         if error == "closed" then
-            logger:Log("Connection closed by host")
+            logger:log("Connection closed by host")
         else
-            logger:Log("Error when receiving data size")
+            logger:log("Error when receiving data size")
         end
         break
     end
@@ -36,13 +33,13 @@ while true do
     local data, error = inClient:receive(n)
     if error then
         if error == "closed" then
-            logger:Log("Connection lost")
+            logger:log("Connection lost")
         else
-            logger:Log("Error when receiving data")
+            logger:log("Error when receiving data")
         end
         break
     end
-    logger:Log("Received data with size of " .. n)
+    logger:log("Received data with size of " .. n)
     inChannel:push(data)
 end
 channel:push({

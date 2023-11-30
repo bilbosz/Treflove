@@ -1,39 +1,43 @@
-BackstackManager = {}
+local KeyboardEventListener = require("events.keyboard").Listener
+local Consts = require("app.consts")
 
-function BackstackManager:Init()
+---@class BackstackManager: KeyboardEventListener
+local BackstackManager = class("BackstackManager", KeyboardEventListener)
+
+function BackstackManager:init()
     self.stack = {}
-    KeyboardEventListener.Init(self, true)
-    app.keyboardManager:RegisterListener(self)
+    KeyboardEventListener.init(self, true)
+    app.keyboard_manager:register_listener(self)
 end
 
-function BackstackManager:Push(cb)
+function BackstackManager:push(cb)
     assert_type(cb, "function")
     table.insert(self.stack, cb)
 end
 
-function BackstackManager:Pop(cb)
+function BackstackManager:pop(cb)
     assert(cb)
-    if cb == self:GetTop() then
+    if cb == self:get_top() then
         table.remove(self.stack)
     end
 end
 
-function BackstackManager:GetTop()
+function BackstackManager:get_top()
     return self.stack[#self.stack]
 end
 
-function BackstackManager:Back()
-    local top = self:GetTop()
+function BackstackManager:back()
+    local top = self:get_top()
     if top then
         table.remove(self.stack)
         top()
     end
 end
 
-function BackstackManager:OnKeyPressed(key)
+function BackstackManager:on_key_pressed(key)
     if key == Consts.BACKSTACK_KEY then
-        self:Back()
+        self:back()
     end
 end
 
-MakeClassOf(BackstackManager, KeyboardEventListener)
+return BackstackManager

@@ -1,32 +1,43 @@
-Tree = {}
+---@class Tree
+---@field public parent Tree|nil
+---@field public children Tree[]
+local Tree = class("Tree")
 
-function Tree:Init(parent)
+---@param parent Tree
+---@return void
+function Tree:init(parent)
     self.children = {}
     self.parent = nil
     if parent then
-        self:SetParent(parent)
+        self:set_parent(parent)
     end
 end
 
-function Tree:SetParent(parent)
+---@param parent Tree
+---@return void
+function Tree:set_parent(parent)
     if parent then
-        parent:AddChild(self)
+        parent:add_child(self)
     else
         if self.parent then
-            self.parent:RemoveChild(self)
+            self.parent:remove_child(self)
         end
     end
 end
 
-function Tree:AddChild(child)
+---@param child Tree
+---@return void
+function Tree:add_child(child)
     if child.parent then
-        child.parent:RemoveChild(child)
+        child.parent:remove_child(child)
     end
     child.parent = self
     table.insert(self.children, child)
 end
 
-function Tree:RemoveChild(child)
+---@param child Tree
+---@return void
+function Tree:remove_child(child)
     local found
     for i, v in ipairs(self.children) do
         if v == child then
@@ -38,19 +49,23 @@ function Tree:RemoveChild(child)
         table.remove(self.children, found)
         child.parent = nil
     else
-        assert(false)
+        assert_unreachable()
     end
 end
 
-function Tree:GetChildren()
+---@return Tree[]
+function Tree:get_children()
     return table.copy(self.children)
 end
 
-function Tree:GetParent()
+---@return Tree|nil
+function Tree:get_parent()
     return self.parent
 end
 
-function Tree:Reattach(n)
+---@param n number
+---@return void
+function Tree:reattach(n)
     local children = self.parent.children
     n = n or #children
     if children[n] == self then
@@ -67,8 +82,8 @@ function Tree:Reattach(n)
         table.remove(children, found)
         table.insert(children, n, self)
     else
-        assert(false)
+        assert_unreachable()
     end
 end
 
-MakeClassOf(Tree)
+return Tree

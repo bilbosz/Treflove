@@ -1,20 +1,23 @@
-UploadAssetRp = {}
+local RemoteProcedure = require("networking.remote-procedure")
 
-function UploadAssetRp:Init(connection)
-    RemoteProcedure.Init(self, connection)
+---@class UploadAssetRp: RemoteProcedure
+local UploadAssetRp = class("UploadAssetRp", RemoteProcedure)
+
+function UploadAssetRp:init(connection)
+    RemoteProcedure.init(self, connection)
 end
 
-function UploadAssetRp:SendResponse(request)
-    assert(app.isServer)
-    app.assetManager:MountFile(request.path, request.content)
+function UploadAssetRp:send_response(request)
+    assert(app.is_server)
+    app.asset_manager:mount_file(request.path, request.content)
     return {
         success = true
     }
 end
 
-function UploadAssetRp:ReceiveResponse(response)
-    assert(app.isClient)
+function UploadAssetRp:receive_response(response)
+    assert(app.is_client)
     assert(response.success)
 end
 
-MakeClassOf(UploadAssetRp, RemoteProcedure)
+return UploadAssetRp

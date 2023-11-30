@@ -1,29 +1,32 @@
-ScreenManager = {}
+local ResizeEventListener = require("events.resize").Listener
 
-function ScreenManager:Init()
+---@class ScreenManager: ResizeEventListener
+local ScreenManager = class("ScreenManager", ResizeEventListener)
+
+function ScreenManager:init()
     self.screen = nil
-    if app.resizeManager then
-        app.resizeManager:RegisterListener(self)
+    if app.resize_manager then
+        app.resize_manager:register_listener(self)
     end
 end
 
-function ScreenManager:Show(screen, ...)
+function ScreenManager:show(screen, ...)
     if self.screen then
-        self.screen:Hide()
+        self.screen:hide()
     end
     self.screen = screen
-    screen:Show(...)
+    screen:show(...)
 end
 
-function ScreenManager:OnResize(...)
+function ScreenManager:on_resize(...)
     if not self.screen then
         return
     end
-    self.screen:OnResize(...)
+    self.screen:on_resize(...)
 end
 
-function ScreenManager:GetScreen()
+function ScreenManager:get_screen()
     return self.screen
 end
 
-MakeClassOf(ScreenManager, ResizeEventListener)
+return ScreenManager

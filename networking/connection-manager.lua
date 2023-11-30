@@ -1,6 +1,10 @@
-ConnectionManager = {}
+local Connector = require("networking.connector")
+local Connection = require("networking.connection")
 
-function ConnectionManager:Init(address, port)
+---@class ConnectionManager
+local ConnectionManager = class("ConnectionManager")
+
+function ConnectionManager:init(address, port)
     self.connections = {}
     self.byInChannel = {}
     self.byOutChannel = {}
@@ -8,13 +12,13 @@ function ConnectionManager:Init(address, port)
     self.connector = Connector(address, port)
 end
 
-function ConnectionManager:Start(onConnect, onDisconnect)
+function ConnectionManager:start(onConnect, onDisconnect)
     self.onConnect = onConnect
     self.onDisconnect = onDisconnect
-    self.connector:Start(self)
+    self.connector:start(self)
 end
 
-function ConnectionManager:AddConnection(inChannel, inThread, outChannel, outThread)
+function ConnectionManager:add_connection(inChannel, inThread, outChannel, outThread)
     local connection = Connection(inChannel, inThread, outChannel, outThread)
     self.connections[connection] = true
     self.byInChannel[inChannel] = connection
@@ -22,27 +26,27 @@ function ConnectionManager:AddConnection(inChannel, inThread, outChannel, outThr
     self.onConnect(connection)
 end
 
-function ConnectionManager:RemoveByInChannel(inChannel)
-    self:Remove(self.byInChannel[inChannel])
+function ConnectionManager:remove_by_in_channel(inChannel)
+    self:remove(self.byInChannel[inChannel])
 end
 
-function ConnectionManager:RemoveByOutChannel(outChannel)
-    self:Remove(self.byOutChannel[outChannel])
+function ConnectionManager:remove_by_out_channel(outChannel)
+    self:remove(self.byOutChannel[outChannel])
 end
 
-function ConnectionManager:Remove(connection)
+function ConnectionManager:remove(connection)
     self.connections[connection] = nil
-    self.byInChannel[connection:GetInChannel()] = nil
-    self.byOutChannel[connection:GetOutChannel()] = nil
+    self.byInChannel[connection:get_in_channel()] = nil
+    self.byOutChannel[connection:get_out_channel()] = nil
     self.onDisconnect(connection)
-    if app.isClient then
-        self.connector:RemoveThread()
+    if app.is_client then
+        self.connector:remove_thread()
     end
-    connection:Release()
+    connection:release()
 end
 
-function ConnectionManager:GetConnections()
+function ConnectionManager:get_connections()
     return self.connections
 end
 
-MakeClassOf(ConnectionManager)
+return ConnectionManager

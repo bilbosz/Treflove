@@ -1,85 +1,109 @@
-Session = {}
+local GameDataRp = require("game.game-data-rp")
+local Login = require("login.login")
+local LoginScreen = require("login.login-screen")
+local UserMenuScreen = require("screens.user-menu-screen")
+local WaitingScreen = require("screens.waiting-screen")
 
-local function OnLogin(self, user)
+---@class Session
+local Session = class("Session")
+
+---@param self Session
+---@param user string
+---@return void
+local function _on_login(self, user)
     assert(not self.user)
     self.user = user
-    if app.isClient then
-        app.textEventManager:SetTextInput(false)
-        self.userMenuScreen = UserMenuScreen(self)
-        app.screenManager:Show(self.userMenuScreen)
-        self.backstackCb = function()
-            self:Logout()
+    if app.is_client then
+        app.text_event_manager:set_text_input(false)
+        self._user_menu_screen = UserMenuScreen(self)
+        app.screen_manager:show(self._user_menu_screen)
+        self._backstack_cb = function()
+            self:logout()
         end
-        app.backstackManager:Push(self.backstackCb)
+
+        app.backstack_manager:push(self._backstack_cb)
     end
 end
 
-local function OnLogout(self)
+---@param self Session
+---@return void
+local function _on_logout(self)
     assert(self.user)
     self.user = nil
-    if app.isClient then
-        app.backstackManager:Pop(self.backstackCb)
-        self.backstackCb = nil
-        self.userMenuScreen = nil
-        app.screenManager:Show(LoginScreen(self.login))
+    if app.is_client then
+        app.backstack_manager:pop(self._backstack_cb)
+        self._backstack_cb = nil
+        self._user_menu_screen = nil
+        app.screen_manager:show(LoginScreen(self.login))
     end
 end
 
-function Session:Init(connection)
+---@param connection Connection
+---@return void
+function Session:init(connection)
     self.connection = connection
     self.user = nil
     local login = Login(self, function(user)
-        OnLogin(self, user)
-        if app.isClient then
-            self.userMenuScreen:JoinGame()
+        _on_login(self, user)
+        if app.is_client then
+            self._user_menu_screen:join_game()
         end
     end, function()
-        OnLogout(self)
+        _on_logout(self)
     end)
     self.login = login
     self.gameDataRp = GameDataRp(self.connection)
-    app.assetManager:RegisterSession(self)
+    app.asset_manager:register_session(self)
 
-    if app.isClient then
-        login:Login("adam", "krause")
+    if app.is_client then
+        login:login("adam", "krause")
     end
 end
 
-function Session:GetUser()
+---@return string
+function Session:get_user()
     return self.user
 end
 
-function Session:GetConnection()
+---@return Connection
+function Session:get_connection()
     return self.connection
 end
 
-function Session:Login(user, password)
-    self.login:Login(user, password)
+---@param user string
+---@param password string
+---@return void
+function Session:login(user, password)
+    self.login:login(user, password)
 end
 
-function Session:Logout()
-    self.login:Logout()
+---@return void
+function Session:logout()
+    self.login:logout()
 end
 
-function Session:IsLoggedIn()
+---@return boolean
+function Session:is_logged_in()
     return not not self.user
 end
 
-function Session:JoinGame()
-    assert(app.isClient)
-    app.screenManager:Show(WaitingScreen("Loading..."))
-    self.gameDataRp:SendRequest({})
+---@return void
+function Session:join_game()
+    assert(app.is_client)
+    app.screen_manager:show(WaitingScreen("Loading..."))
+    self.gameDataRp:send_request({})
 end
 
-function Session:Release()
-    app.assetManager:UnregisterSession(self)
-    if app.isClient then
-        app.backstackManager:Pop(self.backstackCb)
-        self.backstackCb = nil
+---@return void
+function Session:release()
+    app.asset_manager:unregister_session(self)
+    if app.is_client then
+        app.backstack_manager:pop(self._backstack_cb)
+        self._backstack_cb = nil
     end
-    self.login:Release()
+    self.login:release()
     self.login = nil
     self.connection = nil
 end
 
-MakeClassOf(Session)
+return Session

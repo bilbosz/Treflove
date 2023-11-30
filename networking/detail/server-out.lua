@@ -1,17 +1,14 @@
 local loggerData, address, outPort, inChannel, outChannel, mainChannel, outThread, inThread = ...
 
-local socket = require("socket")
-love.filesystem.load("utils/loader.lua")()
-Loader.LoadModule("utils")
-Loader.LoadFile("app/consts.lua")
-logger = Logger(loggerData, string.format("server-out-%05i", outPort))
+local Socket = require("socket")
+local logger = require("utils.logger")(loggerData, string.format("server-out-%05i", outPort))
 
-local outClient, error = socket.connect(address, outPort)
+local outClient, error = Socket.connect(address, outPort)
 if error then
-    logger:Log("Could not connect to client receiver on port " .. outPort)
+    logger:log("Could not connect to client receiver on port " .. outPort)
     return
 end
-logger:Log("Connected to client receiver on port " .. outPort)
+logger:log("Connected to client receiver on port " .. outPort)
 mainChannel:push({
     "a",
     inChannel,
@@ -26,15 +23,15 @@ while msg ~= false do
     local n = #msg
     local error = select(2, outClient:send(tostring(n) .. "\n"))
     if error then
-        logger:Log("Could not send data size")
+        logger:log("Could not send data size")
         break
     end
     local error = select(2, outClient:send(msg))
     if error then
-        logger:Log("Could not send data")
+        logger:log("Could not send data")
         break
     end
-    logger:Log("Send data with size of " .. n)
+    logger:log("Send data with size of " .. n)
     msg = outChannel:demand()
 end
 mainChannel:push({

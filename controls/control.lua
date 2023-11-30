@@ -1,267 +1,345 @@
-Control = {}
+local Aabb = require("utils.aabb")
+local Tree = require("utils.tree")
 
---[[
-    Transformations
-        Link: https://learnopengl.com/Getting-started/Transformations
-        Order:
-            Origin
-            Scaling
-            Rotation
-            Position
-]]
+---@class Control: Tree
+---@field private _global_aabb LoveTransform
+---@field private _is_enabled boolean
+---@field private _is_visable boolean
+---@field private _local_transform LoveTransform
+---@field private _origin number[]
+---@field private _position number[]
+---@field private _rotation number
+---@field private _scale number[]
+---@field protected global_transform LoveTransform
+---@field protected size number[]
+local Control = class("Control", Tree)
 
-local function UpdateLocalTransform(self)
-    self.localTransform = self.localTransform:setTransformation(self.position[1], self.position[2], self.rotation, self.scale[1], self.scale[2], self.origin[1], self.origin[2])
+-- Transformations
+-- * Link: https://learnopengl.com/Getting-started/Transformations
+-- * Order:
+--   * Origin
+--   * Scaling
+--   * Rotation
+--   * Position
+
+---@private
+---@return void
+function Control:_update_local_transform()
+    self._local_transform = self._local_transform:setTransformation(self._position[1], self._position[2], self._rotation, self._scale[1], self._scale[2], self._origin[1], self._origin[2])
 end
 
-local function UpdateGlobalTransform(self)
+---@private
+---@return void
+function Control:_update_global_transform()
     if self.parent then
-        self.globalTransform:setMatrix(self.parent.globalTransform:getMatrix())
+        self.global_transform:setMatrix(self.parent.global_transform:getMatrix())
     else
-        self.globalTransform:setMatrix(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
+        self.global_transform:setMatrix(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
     end
-    self.globalTransform:apply(self.localTransform)
+    self.global_transform:apply(self._local_transform)
 
     for _, child in ipairs(self.children) do
-        UpdateGlobalTransform(child)
+        child:_update_global_transform()
     end
 end
 
-local function UpdateGlobalAabbChildren(self)
-    self.globalAabb:Set(self:GetGlobalAabb())
-    local aabb = self.globalAabb
+---@private
+---@return void
+function Control:_update_global_aabb_children()
+    self._global_aabb:set(self:get_global_aabb())
+    local aabb = self._global_aabb
     for _, child in ipairs(self.children) do
-        if child:IsEnabled() then
-            UpdateGlobalAabbChildren(child)
-            aabb:AddAabb(child.globalAabb)
+        if child:is_enabled() then
+            child:_update_global_aabb_children()
+            aabb:add_aabb(child._global_aabb)
         end
     end
 end
 
-local function UpdateGlobalAabbParent(self)
-    local parent = self:GetParent()
+---@private
+---@return void
+function Control:_update_global_aabb_parent()
+    local parent = self:get_parent()
     while parent do
-        parent.globalAabb:Set(parent:GetGlobalAabb())
-        local aabb = parent.globalAabb
+        parent._global_aabb:set(parent:get_global_aabb())
+        local aabb = parent._global_aabb
         for _, child in ipairs(parent.children) do
-            if child:IsEnabled() then
-                aabb:AddAabb(child.globalAabb)
+            if child:is_enabled() then
+                aabb:add_aabb(child._global_aabb)
             end
         end
-        parent = parent:GetParent()
+        parent = parent:get_parent()
     end
 end
 
-local function UpdateGlobalAabb(self)
-    UpdateGlobalAabbChildren(self)
-    UpdateGlobalAabbParent(self)
+---@private
+---@return void
+function Control:_update_global_aabb()
+    self:_update_global_aabb_children()
+    self:_update_global_aabb_parent()
 end
 
-local function UpdateTransform(self)
-    UpdateLocalTransform(self)
-    UpdateGlobalTransform(self)
-    UpdateGlobalAabb(self)
+---@private
+---@return void
+function Control:_update_transform()
+    self:_update_local_transform()
+    self:_update_global_transform()
+    self:_update_global_aabb()
 end
 
-local function ResetLocalTransform(self)
-    self.position = {
+---@private
+---@return void
+function Control:_reset_local_transform()
+    self._position = {
         0,
         0
     }
-    self.scale = {
+    self._scale = {
         1,
         1
     }
-    self.rotation = 0
-    self.origin = {
+    self._rotation = 0
+    self._origin = {
         0,
         0
     }
-    UpdateLocalTransform(self)
+    self:_update_local_transform()
 end
 
-function Control:TransformToLocal(x, y)
-    return self.globalTransform:inverseTransformPoint(x, y)
+---@param x number
+---@param y number
+---@return number, number
+function Control:transform_to_local(x, y)
+    return self.global_transform:inverseTransformPoint(x, y)
 end
 
-function Control:TransformToGlobal(x, y)
-    return self.globalTransform:transformPoint(x, y)
+---@param x number
+---@param y number
+---@return number, number
+function Control:transform_to_global(x, y)
+    return self.global_transform:transformPoint(x, y)
 end
 
-function Control:SetPosition(x, y)
+---@param x number|nil
+---@param y number|nil
+---@return void
+function Control:set_position(x, y)
     assert(x or y)
     if x then
-        self.position[1] = x
+        self._position[1] = x
     end
     if y then
-        self.position[2] = y
+        self._position[2] = y
     end
-    UpdateTransform(self)
+    self:_update_transform()
 end
 
-function Control:GetPosition()
-    return unpack(self.position)
+---@return number, number
+function Control:get_position()
+    return unpack(self._position)
 end
 
-function Control:SetScale(scaleX, scaleY)
-    assert(scaleX)
-    scaleY = scaleY or scaleX
-    self.scale[1] = scaleX
-    self.scale[2] = scaleY
-    UpdateTransform(self)
+---@param scale_x number
+---@param scale_y number
+---@return void
+function Control:set_scale(scale_x, scale_y)
+    assert(scale_x)
+    scale_y = scale_y or scale_x
+    self._scale[1] = scale_x
+    self._scale[2] = scale_y
+    self:_update_transform()
 end
 
-function Control:GetScale()
-    return unpack(self.scale)
+---@return number, number
+function Control:get_scale()
+    return unpack(self._scale)
 end
 
-function Control:SetRotation(rotation)
+---@param rotation number
+---@return void
+function Control:set_rotation(rotation)
     assert(rotation)
-    self.rotation = rotation
-    UpdateTransform(self)
+    self._rotation = rotation
+    self:_update_transform()
 end
 
-function Control:GetRotation()
-    return self.rotation
+---@return number
+function Control:get_rotation()
+    return self._rotation
 end
 
-function Control:SetOrigin(x, y)
+---@param x number
+---@param y number
+---@return void
+function Control:set_origin(x, y)
     assert(x or y)
     if x then
-        self.origin[1] = x
+        self._origin[1] = x
     end
     if y then
-        self.origin[2] = y
+        self._origin[2] = y
     end
-    UpdateTransform(self)
+    self:_update_transform()
 end
 
-function Control:GetOrigin()
-    return unpack(self.origin)
+---@return number, number
+function Control:get_origin()
+    return unpack(self._origin)
 end
 
-function Control:AddChild(child)
-    Tree.AddChild(self, child)
-    UpdateGlobalTransform(child)
-    UpdateGlobalAabb(child)
+---@param child Tree
+---@return void
+function Control:add_child(child)
+    Tree.add_child(self, child)
+    child:_update_global_transform()
+    child:_update_global_aabb()
 end
 
-function Control:GetPositionAndSize()
-    return self.position[1], self.position[2], self.size[1], self.size[2]
+---@return number, number, number, number
+function Control:get_position_and_size()
+    return self._position[1], self._position[2], self.size[1], self.size[2]
 end
 
-function Control:GetPositionAndOuterSize()
-    return self.position[1], self.position[2], self.size[1] * self.scale[1], self.size[2] * self.scale[2]
+---@return number, number, number, number
+function Control:get_position_and_outer_size()
+    return self._position[1], self._position[2], self.size[1] * self._scale[1], self.size[2] * self._scale[2]
 end
 
-function Control:GetAabb()
+---@return Aabb
+function Control:get_aabb()
     local aabb = Aabb()
-    aabb:SetPositionAndSize(self:GetPositionAndSize())
+    aabb:set_position_and_size(self:get_position_and_size())
     return aabb
 end
 
-function Control:GetGlobalAabb()
-    local w, h = self:GetSize()
+---@return Aabb
+function Control:get_global_aabb()
+    local w, h = self:get_size()
     local aabb = Aabb()
-    aabb:AddPoint(self:TransformToGlobal(0, 0))
-    aabb:AddPoint(self:TransformToGlobal(w, 0))
-    aabb:AddPoint(self:TransformToGlobal(w, h))
-    aabb:AddPoint(self:TransformToGlobal(0, h))
+    aabb:add_point(self:transform_to_global(0, 0))
+    aabb:add_point(self:transform_to_global(w, 0))
+    aabb:add_point(self:transform_to_global(w, h))
+    aabb:add_point(self:transform_to_global(0, h))
     return aabb
 end
 
-local function GetRecursiveAabb(self, referenceTransform)
+---@private
+---@param reference_transform LoveTransform
+---@return Aabb
+function Control:_get_recursive_aabb_detail(reference_transform)
     local aabb = Aabb()
-    local diff = referenceTransform:inverse():apply(self.globalTransform)
-    local w, h = self:GetSize()
+    local diff = reference_transform:inverse():apply(self.global_transform)
+    local w, h = self:get_size()
 
-    aabb:AddPoint(diff:transformPoint(0, 0))
-    aabb:AddPoint(diff:transformPoint(w, 0))
-    aabb:AddPoint(diff:transformPoint(w, h))
-    aabb:AddPoint(diff:transformPoint(0, h))
-    for _, child in ipairs(self:GetChildren()) do
-        aabb:AddAabb(GetRecursiveAabb(child, referenceTransform))
+    aabb:add_point(diff:transformPoint(0, 0))
+    aabb:add_point(diff:transformPoint(w, 0))
+    aabb:add_point(diff:transformPoint(w, h))
+    aabb:add_point(diff:transformPoint(0, h))
+    ---@type Control[]
+    local children = self:get_children()
+    for _, child in ipairs(children) do
+        aabb:add_aabb(child:_get_recursive_aabb_detail(reference_transform))
     end
     return aabb
 end
 
-function Control:GetRecursiveAabb(ctrl)
+---@param ctrl Control
+---@return Aabb
+function Control:get_recursive_aabb(ctrl)
     ctrl = ctrl or self
-    return GetRecursiveAabb(ctrl, self.globalTransform)
+    return ctrl:_get_recursive_aabb_detail(self.global_transform)
 end
 
-function Control:GetGlobalRecursiveAabb()
-    return self.globalAabb
+---@return Aabb
+function Control:get_global_recursive_aabb()
+    return self._global_aabb
 end
 
-function Control:SetSize(width, height)
+---@param width number
+---@param height number
+---@return void
+function Control:set_size(width, height)
     assert(math.min(0, width, height) >= 0)
     self.size[1], self.size[2] = width, height
-    UpdateTransform(self)
+    self:_update_transform()
 end
 
-function Control:GetSize()
+---@return number, number
+function Control:get_size()
     return unpack(self.size)
 end
 
-function Control:GetOuterSize()
-    return self.size[1] * self.scale[1], self.size[2] * self.scale[2]
+---@return number, number
+function Control:get_outer_size()
+    return self.size[1] * self._scale[1], self.size[2] * self._scale[2]
 end
 
-function Control:SetEnabled(value)
-    self.isEnabled = value
+---@param value boolean
+---@return void
+function Control:set_enabled(value)
+    self._is_enabled = value
     if value and self.parent then
-        UpdateGlobalAabb(self.parent)
+        self.parent:_update_global_aabb()
     end
 end
 
-function Control:IsEnabled()
-    return self.isEnabled
+---@return boolean
+function Control:is_enabled()
+    return self._is_enabled
 end
 
-function Control:AllPredecessorsEnabled()
-    if not self:IsEnabled() then
+---@return boolean
+function Control:are_all_predecessors_enabled()
+    if not self:is_enabled() then
         return false
     end
     if self.parent then
-        return self.parent:AllPredecessorsEnabled()
+        return self.parent:are_all_predecessors_enabled()
     else
         return true
     end
 end
 
-function Control:SetVisible(value)
-    self.isVisible = value
+---@param value boolean
+---@return void
+function Control:set_visible(value)
+    self._is_visable = value
 end
 
-function Control:IsVisible()
-    return self.isEnabled and self.isVisible
+---@return boolean
+function Control:is_visible()
+    return self._is_enabled and self._is_visable
 end
 
-function Control:Draw()
+---@return void
+function Control:draw()
     local w, h = love.graphics:getDimensions()
     for _, child in ipairs(self.children) do
-        local minX, minY, maxX, maxY = child.globalAabb:GetBounds()
-        if child:IsVisible() and minX < w and maxX >= 0 and minY < h and maxY >= 0 then
-            child:Draw()
+        local min_x, min_y, max_x, max_y = child._global_aabb:get_bounds()
+        if child:is_visible() and min_x < w and max_x >= 0 and min_y < h and max_y >= 0 then
+            child:draw()
         end
     end
 end
 
-function Control:Init(parent, width, height)
-    self.isEnabled = true
-    self.isVisible = true
+---@param parent Control|nil
+---@param width number|nil
+---@param height number|nil
+function Control:init(parent, width, height)
+    assert(not parent or is_instance_of(self, Control))
+    self._is_enabled = true
+    self._is_visable = true
 
-    self.localTransform = love.math.newTransform()
-    self.globalTransform = love.math.newTransform()
-    ResetLocalTransform(self)
+    self._local_transform = love.math.newTransform()
+    self.global_transform = love.math.newTransform()
+    self:_reset_local_transform()
     self.size = {
         width or 0,
         height or 0
     }
-    self.globalAabb = Aabb()
+    self._global_aabb = Aabb()
 
-    Tree.Init(self, parent)
+    Tree.init(self, parent)
 end
 
-MakeClassOf(Control, Tree)
+return Control

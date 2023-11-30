@@ -1,56 +1,68 @@
-TextInput = {}
+local Control = require("controls.control")
+local UpdateEventListener = require("events.update-event").Listener
+local ButtonEventListener = require("ui.button-event").Listener
+local TextEventListener = require("ui.text-event").Listener
+local Input = require("ui.input")
+local Consts = require("app.consts")
+local Rectangle = require("controls.rectangle")
+local ClippingRectangle = require("controls.clipping-rectangle")
+local Text = require("controls.text")
+local FormScreen = require("ui.form-screen")
+
+---@class TextInput: Control, UpdateEventListener, ButtonEventListener, TextEventListener, Input
+local TextInput = class("TextInput", Control, UpdateEventListener, ButtonEventListener, TextEventListener, Input)
 
 local function UpdateBackgroundView(self)
     local color
-    if self:IsFocused() then
-        if self:IsMultivalueDefault() then
+    if self:is_focused() then
+        if self:is_multivalue_default() then
             color = Consts.BUTTON_MULTIVALUE_SELECT_COLOR
         else
             color = Consts.BUTTON_SELECT_COLOR
         end
-    elseif self:IsHovered() then
-        if self:IsMultivalueDefault() then
+    elseif self:is_hovered() then
+        if self:is_multivalue_default() then
             color = Consts.BUTTON_MULTIVALUE_HOVER_COLOR
         else
             color = Consts.BUTTON_HOVER_COLOR
         end
-    elseif self:IsReadOnly() then
-        if self:IsMultivalueDefault() then
+    elseif self:is_read_only() then
+        if self:is_multivalue_default() then
             color = Consts.BUTTON_MULTIVALUE_READ_ONLY_COLOR
         else
             color = Consts.BUTTON_READ_ONLY_COLOR
         end
     else
-        if self:IsMultivalueDefault() then
+        if self:is_multivalue_default() then
             color = Consts.BUTTON_MULTIVALUE_NORMAL_COLOR
         else
             color = Consts.BUTTON_NORMAL_COLOR
         end
     end
     assert(color ~= nil)
-    self.background:SetColor(color)
+    self.background:set_color(color)
 end
 
 local function UpdateTextView(self)
     local text = self.textCtrl
     if self.masked then
-        text:SetText(string.rep("•", self:GetTextLength()))
+        text:set_text(string.rep("•", self:get_text_length()))
     else
-        text:SetText(self:GetText())
+        text:set_text(self:get_text())
     end
 end
 
 local function UpdateCaretView(self)
     local caret = self.caret
-    local isFocused = self:IsFocused()
-    caret:SetEnabled(isFocused)
+    local isFocused = self:is_focused()
+    caret:set_enabled(isFocused)
     if isFocused then
         self.caretTime = 0
     end
 
     local text = self.textCtrl
-    local w = text:GetSize() * text:GetScale()
-    caret:SetPosition(w)
+    local w = text:get_size() * text:get_scale()
+    caret:set_position(w)
 end
 
 local function UpdateContentView(self)
@@ -58,13 +70,13 @@ local function UpdateContentView(self)
     UpdateCaretView(self)
 
     local content = self.content
-    local w = content:GetRecursiveAabb():GetWidth()
-    if w > self.clip:GetSize() then
-        content:SetOrigin(w, nil)
-        content:SetPosition(self.clip:GetSize(), nil)
+    local w = content:get_recursive_aabb():get_width()
+    if w > self.clip:get_size() then
+        content:set_origin(w, nil)
+        content:set_position(self.clip:get_size(), nil)
     else
-        content:SetOrigin(0, nil)
-        content:SetPosition(0, nil)
+        content:set_origin(0, nil)
+        content:set_position(0, nil)
     end
 end
 
@@ -72,10 +84,10 @@ local function UpdateView(self)
     UpdateBackgroundView(self)
     UpdateContentView(self)
 
-    if self:IsFocused() then
-        app.textEventManager:RegisterListener(self)
+    if self:is_focused() then
+        app.text_event_manager:register_listener(self)
     else
-        app.textEventManager:UnregisterListener(self)
+        app.text_event_manager:unregister_listener(self)
     end
 end
 
@@ -87,7 +99,7 @@ local function CreateClip(self)
     local clip = ClippingRectangle(self, self.width - 2 * self.padding, self.height)
     self.clip = clip
 
-    clip:SetPosition(self.padding, 0)
+    clip:set_position(self.padding, 0)
 end
 
 local function CreateCaret(self)
@@ -95,7 +107,7 @@ local function CreateCaret(self)
     local caret = Rectangle(self.content, Consts.CARET_WIDTH, h, Consts.TEXT_INPUT_FOREGROUND_COLOR)
     self.caret = caret
 
-    caret:SetOrigin(0, h * 0.5)
+    caret:set_origin(0, h * 0.5)
 end
 
 local function CreateText(self)
@@ -103,26 +115,26 @@ local function CreateText(self)
     local text = Text(self.content, "", Consts.TEXT_INPUT_FOREGROUND_COLOR, font)
     self.textCtrl = text
 
-    text:SetOrigin(0, font:getHeight() * 0.5)
-    text:SetScale(Consts.MENU_FIELD_SCALE)
+    text:set_origin(0, font:getHeight() * 0.5)
+    text:set_scale(Consts.MENU_FIELD_SCALE)
 end
 
 local function CreateContent(self)
     local content = Control(self.clip)
     self.content = content
 
-    content:SetPosition(0, self.height * 0.5)
+    content:set_position(0, self.height * 0.5)
 
     CreateCaret(self)
     CreateText(self)
 end
 
-function TextInput:Init(parent, formScreen, width, height, masked, onInput, onEnter)
+function TextInput:init(parent, formScreen, width, height, masked, onInput, onEnter)
     assert_type(formScreen, FormScreen)
-    Control.Init(self, parent, width, height)
-    ButtonEventListener.Init(self)
-    TextEventListener.Init(self)
-    Input.Init(self, formScreen)
+    Control.init(self, parent, width, height)
+    ButtonEventListener.init(self)
+    TextEventListener.init(self)
+    Input.init(self, formScreen)
     self.width = width
     self.height = height
     self.padding = 10
@@ -138,43 +150,43 @@ function TextInput:Init(parent, formScreen, width, height, masked, onInput, onEn
     UpdateView(self)
 end
 
-function TextInput:OnScreenShow()
-    Input.OnScreenShow(self)
-    app.updateEventManager:RegisterListener(self)
+function TextInput:on_screen_show()
+    Input.on_screen_show(self)
+    app.update_event_manager:register_listener(self)
 end
 
-function TextInput:OnScreenHide()
-    app.updateEventManager:UnregisterListener(self)
-    app.textEventManager:UnregisterListener(self)
-    Input.OnScreenHide(self)
+function TextInput:on_screen_hide()
+    app.update_event_manager:unregister_listener(self)
+    app.text_event_manager:unregister_listener(self)
+    Input.on_screen_hide(self)
 end
 
-function TextInput:OnUpdate(dt)
+function TextInput:on_update(dt)
     local caret = self.caret
-    if self:IsFocused() then
+    if self:is_focused() then
         local time = self.caretTime + dt
         self.caretTime = time
-        caret:SetEnabled(math.fmod(time, Consts.CARET_BLINK_INTERVAL * 2) <= Consts.CARET_BLINK_INTERVAL)
+        caret:set_enabled(math.fmod(time, Consts.CARET_BLINK_INTERVAL * 2) <= Consts.CARET_BLINK_INTERVAL)
     end
 end
 
-function TextInput:OnPointerEnter()
-    ButtonEventListener.OnPointerEnter(self)
+function TextInput:on_pointer_enter()
+    ButtonEventListener.on_pointer_enter(self)
     UpdateView(self)
 end
 
-function TextInput:OnPointerLeave()
-    ButtonEventListener.OnPointerLeave(self)
+function TextInput:on_pointer_leave()
+    ButtonEventListener.on_pointer_leave(self)
     UpdateView(self)
 end
 
-function TextInput:OnClick()
-    ButtonEventListener.OnClick(self)
-    self:GetFormScreen():Focus(self)
+function TextInput:on_click()
+    ButtonEventListener.on_click(self)
+    self:get_form_screen():focus(self)
     UpdateView(self)
 end
 
-function TextInput:OnEdit(...)
+function TextInput:on_edit(...)
     if self.isMultivalue then
         self.hasNewValue = true
     end
@@ -184,66 +196,66 @@ function TextInput:OnEdit(...)
     end
 end
 
-function TextInput:OnEnter()
+function TextInput:on_enter()
     if self.onEnter then
         self.onEnter()
     end
     UpdateView(self)
 end
 
-function TextInput:OnRemoveEmpty()
+function TextInput:on_remove_empty()
     if self.isMultivalue then
         self.hasNewValue = not self.hasNewValue
     end
     UpdateView(self)
 end
 
-function TextInput:OnRemoveWord()
+function TextInput:on_remove_word()
     if self.masked then
-        self:SetText("")
+        self:set_text("")
     else
-        TextEventListener.OnRemoveWord(self)
+        TextEventListener.on_remove_word(self)
     end
 end
 
-function TextInput:OnFocus()
-    Input.OnFocus(self)
-    app.textEventManager:SetTextInput(true)
+function TextInput:on_focus()
+    Input.on_focus(self)
+    app.text_event_manager:set_text_input(true)
     UpdateView(self)
 end
 
-function TextInput:OnFocusLost()
-    Input.OnFocusLost(self)
-    app.textEventManager:SetTextInput(false)
-    self.caret:SetEnabled(false)
+function TextInput:on_focus_lost()
+    Input.on_focus_lost(self)
+    app.text_event_manager:set_text_input(false)
+    self.caret:set_enabled(false)
     UpdateView(self)
 end
 
-function TextInput:SetText(text)
-    TextEventListener.SetText(self, text)
+function TextInput:set_text(text)
+    TextEventListener.set_text(self, text)
     UpdateView(self)
 end
 
-function TextInput:SetMultivalue(value)
+function TextInput:set_multivalue(value)
     if value then
-        TextEventListener.SetText(self, "")
+        TextEventListener.set_text(self, "")
     end
     self.isMultivalue = value
     self.hasNewValue = false
     UpdateView(self)
 end
 
-function TextInput:IsMultivalue()
+function TextInput:is_multivalue()
     return self.isMultivalue
 end
 
-function TextInput:IsMultivalueDefault()
+function TextInput:is_multivalue_default()
     return self.isMultivalue and not self.hasNewValue
 end
 
-function TextInput:OnReadOnlyChange()
-    Input.OnReadOnlyChange(self)
+function TextInput:on_read_only_change()
+    Input.on_read_only_change(self)
     UpdateView(self)
 end
 
-MakeClassOf(TextInput, Control, UpdateEventListener, ButtonEventListener, TextEventListener, Input)
+return TextInput

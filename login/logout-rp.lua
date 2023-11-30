@@ -1,19 +1,22 @@
-LogoutRp = {}
+local RemoteProcedure = require("networking.remote-procedure")
 
-function LogoutRp:Init(connection, onLogout)
-    RemoteProcedure.Init(self, connection)
+---@class LogoutRp: RemoteProcedure
+local LogoutRp = class("LogoutRp", RemoteProcedure)
+
+function LogoutRp:init(connection, onLogout)
+    RemoteProcedure.init(self, connection)
     self.onLogout = onLogout
 end
 
-function LogoutRp:SendResponse()
-    assert(app.isServer)
+function LogoutRp:send_response()
+    assert(app.is_server)
     self.onLogout()
     return {}
 end
 
-function LogoutRp:ReceiveResponse()
-    assert(app.isClient)
+function LogoutRp:receive_response()
+    assert(app.is_client)
     self.onLogout()
 end
 
-MakeClassOf(LogoutRp, RemoteProcedure)
+return LogoutRp

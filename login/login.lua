@@ -1,32 +1,51 @@
-Login = {}
+local LoginRp = require("login.login-rp")
+local LogoutRp = require("login.logout-rp")
+local Utils = require("utils.utils")
 
-local function GetClientAuth(userName, password)
-    return Hash(userName .. string.char(0) .. GenerateSalt(32) .. string.char(0) .. password)
+---@class Login
+---@field private _connection Connection
+---@field private _login_rp LoginRp
+---@field private _logout_rp LogoutRp
+local Login = class("Login")
+
+---@param user_name string
+---@param password string
+---@return string
+local function _get_client_auth(user_name, password)
+    local auth = Utils.hash(user_name .. string.char(0) .. Utils.generate_salt(32) .. string.char(0) .. password)
+    return auth
 end
 
-function Login:Init(session, onLogin, onLogout)
-    self.session = session
-    self.connection = session:GetConnection()
-    self.onLogout = onLogout
-    self.loginRp = LoginRp(self.connection, onLogin)
-    self.logoutRp = LogoutRp(self.connection, onLogout)
+---@param session Session
+---@param on_login fun(user:string):void
+---@param on_logout fun():void
+---@return void
+function Login:init(session, on_login, on_logout)
+    self._connection = session:get_connection()
+    self._login_rp = LoginRp(self._connection, on_login)
+    self._logout_rp = LogoutRp(self._connection, on_logout)
 end
 
-function Login:Login(user, password)
-    assert(app.isClient)
-    self.loginRp:SendRequest({
-        auth = GetClientAuth(user, password)
+---@param user string
+---@param password string
+---@return void
+function Login:login(user, password)
+    assert(app.is_client)
+    self._login_rp:send_request({
+        auth = _get_client_auth(user, password)
     })
 end
 
-function Login:Logout()
-    assert(app.isClient)
-    self.logoutRp:SendRequest({})
+---@return void
+function Login:logout()
+    assert(app.is_client)
+    self._logout_rp:send_request({})
 end
 
-function Login:Release()
-    self.loginRp:Release()
-    self.logoutRp:Release()
+---@return void
+function Login:release()
+    self._login_rp:release()
+    self._logout_rp:release()
 end
 
-MakeClassOf(Login)
+return Login

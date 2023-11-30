@@ -1,21 +1,24 @@
-DownloadAssetRp = {}
+local RemoteProcedure = require("networking.remote-procedure")
 
-function DownloadAssetRp:Init(connection)
-    RemoteProcedure.Init(self, connection)
+---@class DownloadAssetRp: RemoteProcedure
+local DownloadAssetRp = class("DownloadAssetRp", RemoteProcedure)
+
+function DownloadAssetRp:init(connection)
+    RemoteProcedure.init(self, connection)
 end
 
-function DownloadAssetRp:SendResponse(request)
-    assert(app.isServer)
+function DownloadAssetRp:send_response(request)
+    assert(app.is_server)
     return {
         path = request.path,
-        content = app.assetManager:GetContent(request.path)
+        content = app.asset_manager:get_content(request.path)
     }
 end
 
-function DownloadAssetRp:ReceiveResponse(response)
-    assert(app.isClient)
+function DownloadAssetRp:receive_response(response)
+    assert(app.is_client)
     assert(response.content)
-    app.assetManager:MountFile(response.path, response.content)
+    app.asset_manager:mount_file(response.path, response.content)
 end
 
-MakeClassOf(DownloadAssetRp, RemoteProcedure)
+return DownloadAssetRp

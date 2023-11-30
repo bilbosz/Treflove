@@ -1,4 +1,11 @@
-NotificationPanel = {}
+local UpdateEventListener = require("events.update-event").Listener
+local ResizeEventListener = require("events.resize").Listener
+local ClippingRectangle = require("controls.clipping-rectangle")
+local Consts = require("app.consts")
+local Text = require("controls.text")
+
+---@class NotificationPanel: UpdateEventListener, ResizeEventListener
+local NotificationPanel = class("NotificationPanel", UpdateEventListener, ResizeEventListener)
 
 local function CreateAnchor(self)
     self.anchor = ClippingRectangle(app.root, 0, 0)
@@ -6,10 +13,10 @@ end
 
 local function AddLine(self, line, y)
     local ctrl = Text(self.anchor, line, Consts.NOTIFICATION_COLOR)
-    local ctrlW, ctrlH = ctrl:GetSize()
-    ctrl:SetScale(Consts.NOTIFICATION_TEXT_SCALE)
-    ctrl:SetOrigin(ctrlW, ctrlH)
-    ctrl:SetPosition(self.width - Consts.NOTIFICATION_PADDING, y)
+    local ctrlW, ctrlH = ctrl:get_size()
+    ctrl:set_scale(Consts.NOTIFICATION_TEXT_SCALE)
+    ctrl:set_origin(ctrlW, ctrlH)
+    ctrl:set_position(self.width - Consts.NOTIFICATION_PADDING, y)
     return ctrl
 end
 
@@ -22,8 +29,8 @@ local function AddNotification(self, notification, y)
 
     for _, line in ripairs(lines) do
         local ctrl = AddLine(self, line, y)
-        local s = ctrl:GetScale()
-        local _, h = ctrl:GetSize()
+        local s = ctrl:get_scale()
+        local _, h = ctrl:get_size()
         y = y - h * s
     end
 
@@ -31,37 +38,37 @@ local function AddNotification(self, notification, y)
 end
 
 local function PositionAnchor(self)
-    self.anchor:SetPosition(app.width, app.height)
+    self.anchor:set_position(app.width, app.height)
     local w, h = Consts.NOTIFICATION_PANEL_WIDTH * app.width, Consts.NOTIFICATION_PANEL_HEIGHT * app.height
     self.width, self.height = w, h
-    self.anchor:SetSize(w, h)
-    self.anchor:SetOrigin(w, h)
+    self.anchor:set_size(w, h)
+    self.anchor:set_origin(w, h)
 end
 
-function NotificationPanel:Init()
+function NotificationPanel:init()
     CreateAnchor(self)
     PositionAnchor(self)
-    app.updateEventManager:RegisterListener(self)
-    app.resizeManager:RegisterListener(self)
+    app.update_event_manager:register_listener(self)
+    app.resize_manager:register_listener(self)
 end
 
-function NotificationPanel:UpdateNotifications()
-    for _, child in ipairs(self.anchor:GetChildren()) do
-        child:SetParent(nil)
+function NotificationPanel:update_notifications()
+    for _, child in ipairs(self.anchor:get_children()) do
+        child:set_parent(nil)
     end
     local y = self.height - Consts.NOTIFICATION_PADDING
-    for _, notification in ipairs(app.notificationManager:GetNotifications()) do
+    for _, notification in ipairs(app.notification_manager:get_notifications()) do
         y = AddNotification(self, notification, y)
     end
 end
 
-function NotificationPanel:OnUpdate()
-    self.anchor:Reattach()
+function NotificationPanel:on_update()
+    self.anchor:reattach()
 end
 
-function NotificationPanel:OnResize()
+function NotificationPanel:on_resize()
     PositionAnchor(self)
-    self:UpdateNotifications()
+    self:update_notifications()
 end
 
-MakeClassOf(NotificationPanel, UpdateEventListener, ResizeEventListener)
+return NotificationPanel

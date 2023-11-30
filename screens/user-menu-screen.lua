@@ -1,41 +1,46 @@
-UserMenuScreen = {}
+local MenuScreen = require("screens.menu-screen")
+local MenuTextButton = require("ui.menu.menu-text-button")
+local OptionsMenuScreen = require("screens.options-menu-screen")
 
-function UserMenuScreen:Init(session)
+---@class UserMenuScreen: MenuScreen
+local UserMenuScreen = class("UserMenuScreen", MenuScreen)
+
+function UserMenuScreen:init(session)
     assert(session)
     self.session = session
-    MenuScreen.Init(self, "Menu", {
+    MenuScreen.init(self, "Menu", {
         MenuTextButton(self, "Join Game", function()
-            self:JoinGame()
+            self:join_game()
         end),
         MenuTextButton(self, "Options", function()
-            self:Options()
+            self:options()
         end),
         MenuTextButton(self, "Log Out", function()
-            self:Logout()
+            self:logout()
         end),
-        MenuTextButton(self, "Quit", function()
-            self:Quit()
+        MenuTextButton(self, "quit", function()
+            self:quit()
         end)
     })
 end
 
-function UserMenuScreen:JoinGame()
-    self.session:JoinGame()
+function UserMenuScreen:join_game()
+    self.session:join_game()
 end
 
-function UserMenuScreen:Options()
-    app.backstackManager:Push(function()
-        app.screenManager:Show(self, self.session)
+function UserMenuScreen:options()
+    app.backstack_manager:push(function()
+        app.screen_manager:show(self, self.session)
     end)
-    app.screenManager:Show(OptionsMenuScreen())
+    app.screen_manager:show(OptionsMenuScreen())
 end
 
-function UserMenuScreen:Logout()
-    self.session:Logout()
+function UserMenuScreen:logout()
+    self.session:logout()
 end
 
-function UserMenuScreen:Quit()
-    app:Quit()
+function UserMenuScreen:quit()
+    app:quit()
 end
 
-MakeClassOf(UserMenuScreen, MenuScreen)
+return UserMenuScreen

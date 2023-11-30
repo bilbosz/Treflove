@@ -1,7 +1,12 @@
-Aabb = {}
+local Utils = require("utils.utils")
 
-function Aabb:Init()
-    self.data = {
+---@class Aabb
+---@field private _data number[]
+local Aabb = class("Aabb")
+
+---@return void
+function Aabb:init()
+    self._data = {
         math.huge,
         math.huge,
         -math.huge,
@@ -9,102 +14,134 @@ function Aabb:Init()
     }
 end
 
-function Aabb:GetBounds()
-    return unpack(self.data)
+---@return number, number, number, number
+function Aabb:get_bounds()
+    return unpack(self._data)
 end
 
-function Aabb:GetPositionAndSize()
-    return self.data[1], self.data[2], self.data[3] - self.data[1], self.data[4] - self.data[2]
+---@return number, number, number, number
+function Aabb:get_position_and_size()
+    return self._data[1], self._data[2], self._data[3] - self._data[1], self._data[4] - self._data[2]
 end
 
-function Aabb:SetPositionAndSize(x, y, w, h)
-    self.data[1], self.data[2], self.data[3], self.data[4] = x, y, x + w, y + h
+---@param x number
+---@param y number
+---@param w number
+---@param h number
+---@return void
+function Aabb:set_position_and_size(x, y, w, h)
+    self._data[1], self._data[2], self._data[3], self._data[4] = x, y, x + w, y + h
 end
 
-function Aabb:GetMinX()
-    return self.data[1]
+---@return number
+function Aabb:get_min_x()
+    return self._data[1]
 end
 
-function Aabb:GetMinY()
-    return self.data[2]
+---@return number
+function Aabb:get_min_y()
+    return self._data[2]
 end
 
-function Aabb:GetMaxX()
-    return self.data[3]
+---@return number
+function Aabb:get_max_x()
+    return self._data[3]
 end
 
-function Aabb:GetMaxY()
-    return self.data[4]
+---@return number
+function Aabb:get_max_y()
+    return self._data[4]
 end
 
-function Aabb:AddPoint(x, y)
-    local minX, minY, maxX, maxY = unpack(self.data)
-    self.data = {
-        math.min(minX, x),
-        math.min(minY, y),
-        math.max(maxX, x),
-        math.max(maxY, y)
+---@param x number
+---@param y number
+---@return void
+function Aabb:add_point(x, y)
+    local min_x, min_y, max_x, max_y = unpack(self._data)
+    self._data = {
+        math.min(min_x, x),
+        math.min(min_y, y),
+        math.max(max_x, x),
+        math.max(max_y, y)
     }
 end
 
-function Aabb:AddAabb(other)
+---@param other Aabb
+---@return void
+function Aabb:add_aabb(other)
     assert_type(other, Aabb)
-    local minX, minY, maxX, maxY = unpack(self.data)
-    self.data = {
-        math.min(minX, other.data[1]),
-        math.min(minY, other.data[2]),
-        math.max(maxX, other.data[3]),
-        math.max(maxY, other.data[4])
+    local min_x, min_y, max_x, max_y = unpack(self._data)
+    self._data = {
+        math.min(min_x, other._data[1]),
+        math.min(min_y, other._data[2]),
+        math.max(max_x, other._data[3]),
+        math.max(max_y, other._data[4])
     }
 end
 
-function Aabb:Set(other)
-    self.data = table.copy(other.data)
+---@param other Aabb
+---@return void
+function Aabb:set(other)
+    self._data = table.copy(other._data)
 end
 
-function Aabb:Reset()
-    self.data[1] = math.huge
-    self.data[2] = math.huge
-    self.data[3] = -math.huge
-    self.data[4] = -math.huge
+---@return void
+function Aabb:reset()
+    self._data[1] = math.huge
+    self._data[2] = math.huge
+    self._data[3] = -math.huge
+    self._data[4] = -math.huge
 end
 
-function Aabb:IsPointInside(x, y)
-    local minX, minY, maxX, maxY = unpack(self.data)
-    return x >= minX and x <= maxX and y >= minY and y <= maxY
+---@param x number
+---@param y number
+---@return boolean
+function Aabb:is_point_inside(x, y)
+    local min_x, min_y, max_x, max_y = unpack(self._data)
+    return x >= min_x and x <= max_x and y >= min_y and y <= max_y
 end
 
-function Aabb:GetWidth()
-    return self.data[3] - self.data[1]
+---@return number
+function Aabb:get_width()
+    return self._data[3] - self._data[1]
 end
 
-function Aabb:GetHeight()
-    return self.data[4] - self.data[2]
+---@return number
+function Aabb:get_height()
+    return self._data[4] - self._data[2]
 end
 
-function Aabb:Intersects(other)
+---@param other Aabb
+---@return boolean
+function Aabb:is_intersecting(other)
     assert_type(other, Aabb)
-    local aMinX, aMinY, aMaxX, aMaxY = unpack(self.data)
-    local bMinX, bMinY, bMaxX, bMaxY = unpack(other.data)
-    return aMinX <= bMaxX and aMinY <= bMaxY or aMaxX >= bMinX and aMaxY >= bMinY
+    local a_min_x, a_min_y, a_max_x, a_max_y = unpack(self._data)
+    local b_min_x, b_min_y, b_max_x, b_max_y = unpack(other._data)
+    return a_min_x <= b_max_x and a_min_y <= b_max_y or a_max_x >= b_min_x and a_max_y >= b_min_y
 end
 
-function Aabb:GetPosition()
-    return self.data[1], self.data[2]
+---@return number, number
+function Aabb:get_position()
+    return self._data[1], self._data[2]
 end
 
-function Aabb:GetSize()
-    return self.data[3] - self.data[1], self.data[4] - self.data[2]
+---@return number, number
+function Aabb:get_size()
+    return self._data[3] - self._data[1], self._data[4] - self._data[2]
 end
 
-function Aabb:DoesCircleIntersect(x, y, r)
-    if self:IsPointInside(x, y) then
+---@param x number
+---@param y number
+---@param r number
+---@return boolean
+function Aabb:is_intersecting_circle(x, y, r)
+    if self:is_point_inside(x, y) then
         return true
     end
-    local minX, minY, maxX, maxY = unpack(self.data)
-    local cx = Clamp(minX, maxX, x)
-    local cy = Clamp(minY, maxY, y)
+    local min_x, min_y, max_x, max_y = unpack(self._data)
+    local cx = Utils.clamp(min_x, max_x, x)
+    local cy = Utils.clamp(min_y, max_y, y)
     return (x - cx) * (x - cx) + (y - cy) * (y - cy) <= r * r
 end
 
-MakeClassOf(Aabb)
+return Aabb

@@ -1,7 +1,0 @@
-Loader.LoadFile("ui/button-event-manager.lua")
-Loader.LoadFile("ui/text-event-manager.lua")
-Loader.LoadFile("screens/screen.lua")
-Loader.LoadFile("ui/input.lua")
-Loader.LoadFile("ui/text-input.lua")
-Loader.LoadDirectory("ui")
-Loader.LoadModule("ui/menu")

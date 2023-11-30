@@ -1,25 +1,28 @@
-Screen = {}
+local Control = require("controls.control")
 
-function Screen:Init()
+---@class Screen
+local Screen = class("Screen")
+
+function Screen:init()
     self.screen = Control()
 end
 
-function Screen:Show(...)
-    assert(not self.screen:GetParent())
-    self.screen:SetParent(app.root)
+function Screen:show(...)
+    assert(not self.screen:get_parent())
+    self.screen:set_parent(app.root)
 end
 
-function Screen:Hide()
-    assert(self.screen:GetParent())
-    self.screen:SetParent(nil)
+function Screen:hide()
+    assert(self.screen:get_parent())
+    self.screen:set_parent(nil)
 end
 
-function Screen:OnResize(w, h)
+function Screen:on_resize(w, h)
 
 end
 
-function Screen:GetControl()
+function Screen:get_control()
     return self.screen
 end
 
-MakeClassOf(Screen)
+return Screen

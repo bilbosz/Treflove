@@ -1,4 +1,8 @@
-Consts = {
+---@class Consts
+local Consts = {
+    APP_USAGE_MESSAGE = [[Usage:
+    treflun <app_type> <address> <port>]],
+    APP_SUCCESS_EXIT_CODE = 0,
     NETWORK_COMPRESSION = "lz4",
     HASH_ALGORITHM = "sha256",
     ASSETS_SERVER_ROOT = "s",
@@ -67,8 +71,8 @@ Consts = {
     LEFT_MOUSE_BUTTON = 1,
     CARET_BLINK_INTERVAL = 0.5,
     CARET_WIDTH = 3,
-    DISPLAY_FONT = config and config.window and love.graphics.newFont("fonts/OpenSans.ttf", 80) or nil,
-    USER_INPUT_FONT = config and config.window and love.graphics.newFont("fonts/NotoSansMono.ttf", 80) or nil,
+    DISPLAY_FONT = nil,
+    USER_INPUT_FONT = nil,
     LOGGER_NAME_BLACKLIST = {
         "client%-in%-[%p%d]+",
         "client%-out%-[%p%d]+",
@@ -128,9 +132,13 @@ Consts = {
     PADDING = 20,
     QUICK_ACCESS_PANEL_HEIGHT = 75.425
 }
+
 Consts.PANEL_FIELD_SCALE = Consts.MENU_FIELD_SCALE
 Consts.PANEL_TEXT_INPUT_HEIGHT = Consts.MENU_TEXT_INPUT_HEIGHT
+
 if config and config.window then
     Consts.DISPLAY_FONT = love.graphics.newFont("fonts/OpenSans.ttf", 80)
     Consts.USER_INPUT_FONT = love.graphics.newFont("fonts/NotoSansMono.ttf", 80)
 end
+
+return Consts

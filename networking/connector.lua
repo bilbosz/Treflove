@@ -1,41 +1,44 @@
-Connector = {}
+local UpdateEventListener = require("events.update-event").Listener
 
-function Connector:Init(address, port)
+---@class Connector: UpdateEventListener
+local Connector = class("Connector", UpdateEventListener)
+
+function Connector:init(address, port)
     self.address = address
     self.port = port
     self.channel = love.thread.newChannel()
     self.retryTime = 1
     self.thread = nil
-    self.connectionManager = nil
+    self.connection_manager = nil
 end
 
-function Connector:Start(connectionManager)
-    self.connectionManager = connectionManager
-    self:TryRestartConnection()
+function Connector:start(connection_manager)
+    self.connection_manager = connection_manager
+    self:try_restart_connection()
 
-    app.updateEventManager:RegisterListener(self)
+    app.update_event_manager:register_listener(self)
 end
 
-function Connector:TryRestartConnection()
+function Connector:try_restart_connection()
     local now = love.timer.getTime()
     if not self.thread or not self.thread:isRunning() and (not self.lastStart or now - self.lastStart >= self.retryTime) then
         self.lastStart = love.timer.getTime()
         if not self.thread then
-            if app.isServer then
+            if app.is_server then
                 self.thread = love.thread.newThread("networking/detail/connection-dispatcher.lua")
             else
                 self.thread = love.thread.newThread("networking/detail/client-out.lua")
             end
         end
-        if app.isServer then
-            self.thread:start(app.logger:GetData(), self.channel, self.address, self.port)
+        if app.is_server then
+            self.thread:start(app.logger:get_data(), self.channel, self.address, self.port)
         else
-            self.thread:start(app.logger:GetData(), self.channel, self.address, self.port, self.thread)
+            self.thread:start(app.logger:get_data(), self.channel, self.address, self.port, self.thread)
         end
     end
 end
 
-function Connector:HandleConnections()
+function Connector:handle_connections()
     while true do
         local msg = self.channel:pop()
         if not msg then
@@ -43,22 +46,22 @@ function Connector:HandleConnections()
         end
         local action, channel1, thread1, channel2, thread2 = unpack(msg)
         if action == "a" then
-            self.connectionManager:AddConnection(channel1, thread1, channel2, thread2)
+            self.connection_manager:add_connection(channel1, thread1, channel2, thread2)
         elseif action == "i" then
-            self.connectionManager:RemoveByInChannel(channel1)
+            self.connection_manager:remove_by_in_channel(channel1)
         elseif action == "o" then
-            self.connectionManager:RemoveByOutChannel(channel1)
+            self.connection_manager:remove_by_out_channel(channel1)
         end
     end
 end
 
-function Connector:RemoveThread()
+function Connector:remove_thread()
     self.thread = nil
 end
 
-function Connector:OnUpdate()
-    self:TryRestartConnection()
-    self:HandleConnections()
+function Connector:on_update()
+    self:try_restart_connection()
+    self:handle_connections()
 end
 
-MakeClassOf(Connector, UpdateEventListener)
+return Connector

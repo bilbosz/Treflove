@@ -1,3 +1,4 @@
+# https://github.com/Koihik/LuaFormatter
 column_limit: 200
 keep_simple_control_block_one_line: false
 keep_simple_function_one_line: false
@@ -5,3 +6,4 @@ chop_down_table: false
 chop_down_kv_table: false
 column_table_limit: 1
 single_quote_to_double_quote: true
+# line_breaks_after_function_body: 1

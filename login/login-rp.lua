@@ -1,25 +1,29 @@
-LoginRp = {}
+local RemoteProcedure = require("networking.remote-procedure")
+local Utils = require("utils.utils")
 
-local function GetServerAuth(userName, clientAuth)
-    return Hash(userName .. string.char(0) .. GenerateSalt(32) .. string.char(0) .. clientAuth)
+---@class LoginRp: RemoteProcedure
+local LoginRp = class("LoginRp", RemoteProcedure)
+
+local function _get_server_auth(userName, clientAuth)
+    return Utils.hash(userName .. string.char(0) .. Utils.generate_salt(32) .. string.char(0) .. clientAuth)
 end
 
 local function FindUserByClientAuth(clientAuth)
     for userName, userData in pairs(app.data.players) do
-        local serverAuth = GetServerAuth(userName, clientAuth)
+        local serverAuth = _get_server_auth(userName, clientAuth)
         if serverAuth == userData.auth then
             return userName
         end
     end
 end
 
-function LoginRp:Init(connection, onLogin)
-    RemoteProcedure.Init(self, connection)
+function LoginRp:init(connection, onLogin)
+    RemoteProcedure.init(self, connection)
     self.onLogin = onLogin
 end
 
-function LoginRp:SendResponse(request)
-    assert(app.isServer)
+function LoginRp:send_response(request)
+    assert(app.is_server)
     local user = FindUserByClientAuth(request.auth)
     if user then
         self.onLogin(user)
@@ -29,14 +33,14 @@ function LoginRp:SendResponse(request)
     }
 end
 
-function LoginRp:ReceiveResponse(response)
-    assert(app.isClient)
+function LoginRp:receive_response(response)
+    assert(app.is_client)
     if response.user then
-        app.notificationManager:Notify(string.format("Successfully logged in as %s", response.user), 3)
+        app.notification_manager:notify(string.format("Successfully logged in as %s", response.user), 3)
         self.onLogin(response.user)
     else
-        app.notificationManager:Notify("Wrong login or password")
+        app.notification_manager:notify("Wrong login or password")
     end
 end
 
-MakeClassOf(LoginRp, RemoteProcedure)
+return LoginRp

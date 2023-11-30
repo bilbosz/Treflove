@@ -137,9 +137,10 @@ local function DumpGenerator(config)
             return result
         end
     end
+
 end
 
-local function IsIdentifier(str)
+local function _is_identifier(str)
     local l = #str
     local b, e = string.find(str, "[%a_][%w_]*")
     return b == 1 and e == l
@@ -169,7 +170,7 @@ local defaultDumpConfig = {
             if type == "table" or type == "userdata" or type == "function" or type == "thread" then
                 return tostring(value)
             elseif type == "string" then
-                if IsIdentifier(value) then
+                if _is_identifier(value) then
                     return value .. " = "
                 else
                     return "[\"" .. value .. "\"] = "

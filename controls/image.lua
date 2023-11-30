@@ -1,16 +1,22 @@
-Image = {}
+local DrawableControl = require("controls.drawable-control")
+local Asset = require("data.asset")
 
-function Image:Init(parent, pathOrLoveImage)
-    local loveImage
-    if type(pathOrLoveImage) == "string" then
-        loveImage = love.graphics.newImage(Asset(pathOrLoveImage):GetPath() or pathOrLoveImage)
+---@class Image: DrawableControl
+local Image = class("Image", DrawableControl)
+
+---@param parent Control
+---@param path_or_love_image string|LoveImage
+function Image:init(parent, path_or_love_image)
+    local love_image
+    if type(path_or_love_image) == "string" then
+        love_image = love.graphics.newImage(Asset(path_or_love_image):get_path() or path_or_love_image)
     else
-        loveImage = pathOrLoveImage
+        love_image = path_or_love_image
     end
-    local w, h = loveImage:getDimensions()
-    DrawableControl.Init(self, parent, w, h, function()
-        love.graphics.draw(loveImage)
+    local w, h = love_image:getDimensions()
+    DrawableControl.init(self, parent, w, h, function()
+        love.graphics.draw(love_image)
     end)
 end
 
-MakeClassOf(Image, DrawableControl)
+return Image

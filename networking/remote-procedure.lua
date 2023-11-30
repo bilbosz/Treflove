@@ -1,45 +1,65 @@
-RemoteProcedure = {}
+---@class RemoteProcedure
+---@field private _id string
+---@field private _connection Connection
+local RemoteProcedure = class("RemoteProcedure")
 
-function RemoteProcedure:Init(connection, dontStart)
+---@param connection Connection
+---@param dontStart boolean
+---@return void
+function RemoteProcedure:init(connection, dontStart)
     assert(connection)
-    self.connection = connection
-    self.id = getmetatable(getmetatable(self).class).name
+    self._connection = connection
+    self._id = get_class_name_of(self)
 
     if not dontStart then
-        self:Start()
+        self:start()
     end
 end
 
-function RemoteProcedure:Start()
-    self.connection:RegisterRequestHandler(self.id, function(request)
-        return self:SendResponse(request)
+---@return void
+function RemoteProcedure:start()
+    self._connection:register_request_handler(self._id, function(request)
+        return self:send_response(request)
     end)
 end
 
-function RemoteProcedure:Stop()
-    self.connection:UnregisterRequestHandler(self.id)
+---@return void
+function RemoteProcedure:stop()
+    self._connection:unregister_request_handler(self._id)
 end
 
-function RemoteProcedure:SendRequest(request, cb)
-    self.connection:SendRequest(self.id, request, function(response)
-        self:ReceiveResponse(response)
+---@param request Request
+---@param cb nil|fun(response:Response):void
+---@return void
+function RemoteProcedure:send_request(request, cb)
+    self._connection:send_request(self._id, request, function(response)
+        self:receive_response(response)
         if cb then
             cb(response)
         end
     end)
 end
 
-function RemoteProcedure:SendResponse(request)
+-- luacheck: push no unused args
+---@param request table
+---@return table
+function RemoteProcedure:send_response(request)
     abstract()
 end
+-- luacheck: pop
 
-function RemoteProcedure:ReceiveResponse(response)
+-- luacheck: push no unused args
+---@param response table
+---@return table
+function RemoteProcedure:receive_response(response)
     abstract()
 end
+-- luacheck: pop
 
-function RemoteProcedure:Release()
-    self:Stop()
-    self.connection = nil
+---@return void
+function RemoteProcedure:release()
+    self:stop()
+    self._connection = nil
 end
 
-MakeClassOf(RemoteProcedure)
+return RemoteProcedure

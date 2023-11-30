@@ -1,53 +1,56 @@
-Input = {}
+local FormScreen = require("ui.form-screen")
 
-function Input:Init(formScreen)
+---@class Input
+local Input = class("Input")
+
+function Input:init(formScreen)
     assert_type(formScreen, FormScreen)
     self.formScreen = formScreen
     self.isFocused = false
     self.isReadOnly = false
-    formScreen:AddInput(self)
-    if formScreen:IsShowed() then
-        self:OnScreenShow()
+    formScreen:add_input(self)
+    if formScreen:is_showed() then
+        self:on_screen_show()
     end
 end
 
-function Input:GetFormScreen()
+function Input:get_form_screen()
     return self.formScreen
 end
 
-function Input:SetReadOnly(value)
+function Input:set_read_only(value)
     if self.isReadOnly ~= value then
         self.isReadOnly = value
-        self:OnReadOnlyChange()
+        self:on_read_only_change()
     end
 end
 
-function Input:IsReadOnly()
+function Input:is_read_only()
     return self.isReadOnly
 end
 
-function Input:OnReadOnlyChange()
-    self.formScreen:ReadOnlyChange(self)
+function Input:on_read_only_change()
+    self.formScreen:read_only_change(self)
 end
 
-function Input:OnScreenShow()
-    app.buttonEventManager:RegisterListener(self)
+function Input:on_screen_show()
+    app.button_event_manager:register_listener(self)
 end
 
-function Input:OnScreenHide()
-    app.buttonEventManager:UnregisterListener(self)
+function Input:on_screen_hide()
+    app.button_event_manager:unregister_listener(self)
 end
 
-function Input:OnFocus()
+function Input:on_focus()
     self.isFocused = true
 end
 
-function Input:OnFocusLost()
+function Input:on_focus_lost()
     self.isFocused = false
 end
 
-function Input:IsFocused()
+function Input:is_focused()
     return self.isFocused
 end
 
-MakeClassOf(Input)
+return Input

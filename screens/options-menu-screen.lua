@@ -1,14 +1,18 @@
-OptionsMenuScreen = {}
+local MenuScreen = require("screens.menu-screen")
+local MenuTextButton = require("ui.menu.menu-text-button")
 
-function OptionsMenuScreen:Init()
-    MenuScreen.Init(self, "Options", {
+---@class OptionsMenuScreen: MenuScreen
+local OptionsMenuScreen = class("OptionsMenuScreen", MenuScreen)
+
+function OptionsMenuScreen:init()
+    MenuScreen.init(self, "Options", {
         MenuTextButton(self, "Toggle Fullscreen", function()
-            app.optionsManager:ToggleFullscreen()
+            app.options_manager:toggle_fullscreen()
         end),
         MenuTextButton(self, "Back", function()
-            app.backstackManager:Back()
+            app.backstack_manager:back()
         end)
     })
 end
 
-MakeClassOf(OptionsMenuScreen, MenuScreen)
+return OptionsMenuScreen

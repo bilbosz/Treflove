@@ -1,22 +1,37 @@
-DrawableControl = {}
+local Control = require("controls.control")
 
-function DrawableControl:Draw()
+---@alias _DrawCb fun():void
+
+---@class DrawableControl: Control
+---@field private _draw_cb _DrawCb
+local DrawableControl = class("DrawableControl", Control)
+
+---@param parent Control
+---@param width number
+---@param height number
+---@param draw_cb _DrawCb
+---@return void
+function DrawableControl:init(parent, width, height, draw_cb)
+    Control.init(self, parent, width, height)
+    assert(draw_cb)
+    self._draw_cb = draw_cb
+end
+
+---@return void
+function DrawableControl:draw()
     love.graphics.push()
-    love.graphics.replaceTransform(self.globalTransform)
+    love.graphics.replaceTransform(self.global_transform)
     love.graphics.setColor(1, 1, 1, 1)
-    self.drawCb()
+    self._draw_cb()
     love.graphics.pop()
-    Control.Draw(self)
+    Control.draw(self)
 end
 
-function DrawableControl:Init(parent, width, height, drawCb)
-    Control.Init(self, parent, width, height)
-    assert(drawCb)
-    self.drawCb = drawCb
+---@protected
+---@param draw_cb _DrawCb
+---@return void
+function DrawableControl:set_draw_callback(draw_cb)
+    self._draw_cb = draw_cb
 end
 
-function DrawableControl:SetDrawCb(drawCb)
-    self.drawCb = drawCb
-end
-
-MakeClassOf(DrawableControl, Control)
+return DrawableControl

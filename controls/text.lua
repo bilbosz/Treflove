@@ -1,41 +1,61 @@
-Text = {}
+local Consts = require("app.consts")
 
-function Text:SetColor(color)
-    self.color = color
-end
+local DrawableControl = require("controls.drawable-control")
 
-function Text:GetColor()
-    return self.color
-end
+---@class Text: DrawableControl
+---@field private _text string
+---@field private _font LoveFont|nil
+---@field private _color number[]
+---@field private _text_drawable LoveText
+local Text = class("Text", DrawableControl)
 
-function Text:SetText(text)
-    assert_type(text, "string")
-    self.text = text
-    local textDrawable = love.graphics.newText(self.font, text)
-    self.textDrawable = textDrawable
-
-    local w, h = textDrawable:getDimensions()
-    w, h = w or 0, h or 0
-    self:SetSize(w, h)
-end
-
-function Text:GetText()
-    return self.text
-end
-
-function Text:Init(parent, text, color, font)
-    self.font = font or Consts.DISPLAY_FONT
-    DrawableControl.Init(self, parent, 0, 0, function()
-        love.graphics.setColor(self.color)
-        love.graphics.draw(self.textDrawable)
+---@param parent Control
+---@param text string
+---@param color number[]
+---@param font LoveFont
+---@return void
+function Text:init(parent, text, color, font)
+    self._font = font or Consts.DISPLAY_FONT
+    DrawableControl.init(self, parent, 0, 0, function()
+        love.graphics.setColor(self._color)
+        love.graphics.draw(self._text_drawable)
     end)
 
-    self.color = color or {
+    self._color = color or {
         1,
         1,
         1
     }
-    self:SetText(text)
+    self:set_text(text)
 end
 
-MakeClassOf(Text, DrawableControl)
+---@param color number[]
+---@return void
+function Text:set_color(color)
+    self._color = color
+end
+
+---@return number[]
+function Text:get_color()
+    return self._color
+end
+
+---@param text string
+---@return void
+function Text:set_text(text)
+    assert_type(text, "string")
+    self._text = text
+    local text_drawable = love.graphics.newText(self._font, text)
+    self._text_drawable = text_drawable
+
+    local w, h = text_drawable:getDimensions()
+    w, h = w or 0, h or 0
+    self:set_size(w, h)
+end
+
+---@return string
+function Text:get_text()
+    return self._text
+end
+
+return Text

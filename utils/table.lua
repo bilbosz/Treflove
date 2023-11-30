@@ -1,40 +1,62 @@
-function table.merge(self, other)
-    for k, v in pairs(other) do
-        self[k] = v
-    end
-    return self
+---@param str string
+---@return boolean
+function table.is_identifier(str)
+    local l = #str
+    local b, e = string.find(str, "[%a_][%w_]*")
+    return b == 1 and e == l
 end
 
-function table.mergearray(self, other)
-    for _, v in ipairs(other) do
-        table.insert(self, v)
+---@generic K, V
+---@param destination table<K, V>
+---@param source table<K, V>
+---@return void
+function table.merge(destination, source)
+    for k, v in pairs(source) do
+        destination[k] = v
     end
-    return self
 end
 
-function table.copy(self)
-    local result = {}
-    for k, v in pairs(self) do
-        result[k] = v
+---@generic V
+---@param destination table<number, V>|V[]
+---@param source V[]
+---@return void
+function table.merge_array(destination, source)
+    for _, v in ipairs(source) do
+        table.insert(destination, v)
     end
-    return result
 end
 
-function table.deepcopy(self)
-    local result = {}
-    for k, v in pairs(self) do
+---@generic K, V
+---@param source table<K, V>
+---@return table<K, V>
+function table.copy(source)
+    local copy = {}
+    for k, v in pairs(source) do
+        copy[k] = v
+    end
+    return copy
+end
+
+---@generic K, V
+---@param source table<K, V>
+---@return table<K, V>
+function table.deep_copy(source)
+    local copy = {}
+    for k, v in pairs(source) do
         if type(v) == "table" then
-            result[k] = table.deepcopy(v)
+            copy[k] = table.deep_copy(v)
         else
-            result[k] = v
+            copy[k] = v
         end
     end
-    return result
+    return copy
 end
 
-function table.tostring(self)
-    local tableDisplay
-    local valueDisplay = {
+---@param source table
+---@return string
+function table.to_string(source)
+    local table_display
+    local value_display = {
         ["nil"] = tostring,
         ["boolean"] = tostring,
         ["number"] = tostring,
@@ -45,28 +67,29 @@ function table.tostring(self)
         ["userdata"] = nil,
         ["thread"] = nil,
         ["table"] = function(v)
-            return tableDisplay(v)
+            return table_display(v)
         end
+
     }
-    local keyDisplay = table.copy(valueDisplay)
-    keyDisplay["nil"] = nil
-    keyDisplay["table"] = nil
+    local key_display = table.copy(value_display)
+    key_display["nil"] = nil
+    key_display["table"] = nil
 
     local depth = 0
     local visited = {}
-    tableDisplay = function(self)
-        assert(type(self) == "table")
-        assert(not visited[self])
-        visited[self] = true
+    table_display = function(t)
+        assert(type(t) == "table")
+        assert(not visited[t])
+        visited[t] = true
         depth = depth + 1
         local nums = {}
         local strings = {}
         local others = {}
-        for k in pairs(self) do
-            local kType = type(k)
-            if kType == "number" then
+        for k in pairs(t) do
+            local k_type = type(k)
+            if k_type == "number" then
                 table.insert(nums, k)
-            elseif kType == "string" then
+            elseif k_type == "string" then
                 table.insert(strings, k)
             else
                 table.insert(others, k)
@@ -83,19 +106,19 @@ function table.tostring(self)
             others
         }) do
             for _, k in ipairs(group) do
-                local v = self[k]
-                local kType = type(k)
-                local vType = type(v)
-                local vDisplay = valueDisplay[vType]
-                if vDisplay then
-                    local kDisplay = keyDisplay[kType]
-                    if kType == "number" and k == last + 1 then
-                        result = result .. "\n" .. prefix .. vDisplay(v) .. ","
+                local v = t[k]
+                local k_type = type(k)
+                local v_type = type(v)
+                local v_display = value_display[v_type]
+                if v_display then
+                    local k_display = key_display[k_type]
+                    if k_type == "number" and k == last + 1 then
+                        result = result .. "\n" .. prefix .. v_display(v) .. ","
                         last = k
-                    elseif kType == "string" and IsIdentifier(k) then
-                        result = result .. "\n" .. prefix .. k .. " = " .. vDisplay(v) .. ","
-                    elseif kDisplay then
-                        result = result .. "\n" .. prefix .. "[" .. kDisplay(k) .. "] = " .. vDisplay(v) .. ","
+                    elseif k_type == "string" and table.is_identifier(k) then
+                        result = result .. "\n" .. prefix .. k .. " = " .. v_display(v) .. ","
+                    elseif k_display then
+                        result = result .. "\n" .. prefix .. "[" .. k_display(k) .. "] = " .. v_display(v) .. ","
                     end
                 end
             end
@@ -105,23 +128,29 @@ function table.tostring(self)
         return result .. "\n" .. prefix .. "}"
     end
 
-    local selfType = type(self)
-    local selfDisplay = valueDisplay[selfType]
-    assert(selfDisplay)
-    return "return " .. selfDisplay(self)
+    local self_type = type(source)
+    local self_display = value_display[self_type]
+    assert(self_display)
+    return "return " .. self_display(source)
 end
 
-function table.fromstring(s)
-    local chunk = loadstring(s)
-    local noError, result = pcall(chunk)
-    if not noError then
+---@param str string
+---@return table
+function table.from_string(str)
+    local chunk = loadstring(str)
+    local no_error, result = pcall(chunk)
+    if not no_error then
         return nil
     end
     return result
 end
 
-function table.findkey(self, value)
-    for k, v in pairs(self) do
+---@generic K, V
+---@param tab table<K, V>
+---@param value V
+---@return K|nil
+function table.find_table_key(tab, value)
+    for k, v in pairs(tab) do
         if v == value then
             return k
         end
@@ -129,8 +158,12 @@ function table.findkey(self, value)
     return nil
 end
 
-function table.findidx(self, value)
-    for i, v in ipairs(self) do
+---@generic V
+---@param array V[]
+---@param value V
+---@return number|nil
+function table.find_array_idx(array, value)
+    for i, v in ipairs(array) do
         if v == value then
             return i
         end
@@ -138,7 +171,17 @@ function table.findidx(self, value)
     return nil
 end
 
-local function prev(t, i)
+---@param tab table
+---@return boolean
+function table.is_empty(tab)
+    return not next(tab)
+end
+
+---@overload fun(table:table):any
+---@param table table
+---@param index any
+---@return any
+function prev(t, i)
     if i <= 1 then
         return nil, nil
     else
@@ -146,18 +189,30 @@ local function prev(t, i)
     end
 end
 
+---@generic V
+---@param t table<number, V>|V[]
+---@return fun(tbl: table<number, V>):number, V
 function ripairs(t)
     return prev, t, #t + 1
 end
 
+---@generic K, V
+---@param t table<K, V>|V[]
+---@return fun(tbl: table<K, V>):K, V
 function cpairs(t)
     return pairs(table.copy(t))
 end
 
+---@generic V
+---@param t table<number, V>|V[]
+---@return fun(tbl: table<number, V>):number, V
 function cipairs(t)
     return ipairs(table.copy(t))
 end
 
+---@generic V
+---@param t table<number, V>|V[]
+---@return fun(tbl: table<number, V>):number, V
 function cripairs(t)
     return ripairs(table.copy(t))
 end

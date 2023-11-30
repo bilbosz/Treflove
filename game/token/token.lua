@@ -1,4 +1,14 @@
-Token = {}
+local Model = require("data.model")
+local Control = require("controls.control")
+local PointerEventListener = require("events.pointer-event").Listener
+local ClippingMask = require("controls.clipping-mask")
+local Image = require("controls.image")
+local Consts = require("app.consts")
+local Circle = require("controls.circle")
+local Text = require("controls.text")
+
+---@class Token: Model, Control, PointerEventListener
+local Token = class("Token", Model, Control, PointerEventListener)
 
 local function CreateAvatar(self, path)
     local d = self.d
@@ -7,25 +17,25 @@ local function CreateAvatar(self, path)
         love.graphics.circle("fill", r, r, r)
     end)
     self.clip = clip
-    clip:SetOrigin(r, r)
+    clip:set_origin(r, r)
 
     local img = Image(clip, path)
     self.image = img
 
-    local imgW, imgH = img:GetSize()
+    local imgW, imgH = img:get_size()
     local scaleW, scaleH = d / imgW, d / imgH
-    img:SetOrigin(imgW * 0.5, imgH * 0.5)
-    img:SetScale(math.max(scaleW, scaleH))
-    img:SetPosition(r, r)
+    img:set_origin(imgW * 0.5, imgH * 0.5)
+    img:set_scale(math.max(scaleW, scaleH))
+    img:set_position(r, r)
 end
 
 local function CenterLabel(self)
     local label = self.label
     local s = 0.007
-    local w, h = label:GetSize()
-    label:SetOrigin(w * 0.5, h * 0.5)
-    label:SetScale(s)
-    label:SetPosition(0, self.d * 0.5 + Consts.TOKEN_SELECTION_THICKNESS + h * s * 0.5)
+    local w, h = label:get_size()
+    label:set_origin(w * 0.5, h * 0.5)
+    label:set_scale(s)
+    label:set_position(0, self.d * 0.5 + Consts.TOKEN_SELECTION_THICKNESS + h * s * 0.5)
 end
 
 local function CreateLabel(self, label)
@@ -36,29 +46,29 @@ end
 local function CreateSelectionEffect(self)
     local r = self.d * 0.5 - Consts.TOKEN_SELECTION_THICKNESS * 0.5
     local circle = Circle(self, r, Consts.TOKEN_SELECTION_COLOR, Consts.TOKEN_SELECTION_THICKNESS)
-    circle:SetPosition(-r, -r)
+    circle:set_position(-r, -r)
 
     self.selection = circle
-    self.selection:SetEnabled(false)
+    self.selection:set_enabled(false)
 end
 
-function Token:Init(data, parent)
-    Model.Init(self, data)
-    Control.Init(self, parent)
-    PointerEventListener.Init(self)
+function Token:init(data, parent)
+    Model.init(self, data)
+    Control.init(self, parent)
+    PointerEventListener.init(self)
 
     self.dragMouseButton = 1
     self.prevDragMouseX, self.prevDragMouseY = nil, nil
 
     self.d = data.diameter
-    self:SetPosition(unpack(data.position))
+    self:set_position(unpack(data.position))
     CreateAvatar(self, data.avatar)
     CreateLabel(self, data.name)
     CreateSelectionEffect(self)
 
     self.isSelected = false
 
-    app.pointerEventManager:RegisterListener(self)
+    app.pointer_event_manager:register_listener(self)
 end
 
 function Token:GetRadius()
@@ -67,9 +77,9 @@ end
 
 function Token:SetSelect(value)
     self.isSelected = value
-    self.selection:SetEnabled(value)
+    self.selection:set_enabled(value)
     if value then
-        self:Reattach()
+        self:reattach()
     end
 end
 
@@ -77,16 +87,16 @@ function Token:GetSelect()
     return self.isSelected
 end
 
-function Token:SetPosition(x, y)
+function Token:set_position(x, y)
     local pos = self.data.position
     pos[1], pos[2] = x, y
-    Control.SetPosition(self, x, y)
+    Control.set_position(self, x, y)
 end
 
-function Token:SetData(key, value)
-    Model.SetData(self, key, value)
+function Token:set_data(key, value)
+    Model.set_data(self, key, value)
     if key == "name" then
-        self.label:SetText(self.data.name)
+        self.label:set_text(self.data.name)
         CenterLabel(self)
     elseif key == "diameter" then
         self.d = self.data.diameter
@@ -94,26 +104,26 @@ function Token:SetData(key, value)
         local r = d * 0.5
 
         local clip = self.clip
-        clip:SetSize(d, d)
-        clip:SetOrigin(r, r)
-        clip:SetDrawMaskCb(function()
+        clip:set_size(d, d)
+        clip:set_origin(r, r)
+        clip:set_draw_mask_callback(function()
             love.graphics.circle("fill", r, r, r)
         end)
 
         local img = self.image
-        local imgW, imgH = img:GetSize()
+        local imgW, imgH = img:get_size()
         local scaleW, scaleH = d / imgW, d / imgH
-        img:SetOrigin(imgW * 0.5, imgH * 0.5)
-        img:SetScale(math.max(scaleW, scaleH))
-        img:SetPosition(r, r)
+        img:set_origin(imgW * 0.5, imgH * 0.5)
+        img:set_scale(math.max(scaleW, scaleH))
+        img:set_position(r, r)
 
         local selectionR = self.d * 0.5 - Consts.TOKEN_SELECTION_THICKNESS * 0.5
         local selection = self.selection
-        selection:SetRadius(selectionR, selectionR)
-        selection:SetPosition(-selectionR, -selectionR)
+        selection:set_radius(selectionR, selectionR)
+        selection:set_position(-selectionR, -selectionR)
 
         CenterLabel(self)
     end
 end
 
-MakeClassOf(Token, Model, Control, PointerEventListener)
+return Token

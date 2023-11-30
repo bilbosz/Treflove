@@ -1,4 +1,12 @@
-MenuScreen = {}
+local FormScreen = require("ui.form-screen")
+local Rectangle = require("controls.rectangle")
+local Control = require("controls.control")
+local Consts = require("app.consts")
+local Logo = require("game.logo")
+local Text = require("controls.text")
+
+---@class MenuScreen: FormScreen
+local MenuScreen = class("MenuScreen", FormScreen)
 
 local function CreateBackground(self)
     self.background = Rectangle(self.screen, app.width, app.height, Consts.BACKGROUND_COLOR)
@@ -10,36 +18,36 @@ end
 
 local function CreateLogo(self)
     local logo = Logo(self.layout)
-    logo:SetPosition(0, 0)
+    logo:set_position(0, 0)
 end
 
 local function CreateTitle(self)
     local text = Text(self.layout, self.title, Consts.FOREGROUND_COLOR)
 
-    local w, h = text:GetSize()
-    text:SetOrigin(w * 0.5, h * 0.5)
-    text:SetPosition(0, 150)
-    text:SetScale(Consts.MENU_TITLE_SCALE)
+    local w, h = text:get_size()
+    text:set_origin(w * 0.5, h * 0.5)
+    text:set_position(0, 150)
+    text:set_scale(Consts.MENU_TITLE_SCALE)
 end
 
 local function CenterLayout(self)
     local layout = self.layout
-    local aabb = layout:GetRecursiveAabb()
-    layout:SetOrigin(0, aabb:GetHeight() * 0.5)
-    layout:SetPosition(app.width * 0.5, app.height * 0.5)
+    local aabb = layout:get_recursive_aabb()
+    layout:set_origin(0, aabb:get_height() * 0.5)
+    layout:set_position(app.width * 0.5, app.height * 0.5)
 end
 
 local function CreateEntries(self)
     local y = 250
     for _, entryDef in ipairs(self.entries) do
-        local ctrl = entryDef:CreateControl(self.layout)
-        ctrl:SetPosition(nil, y)
-        y = self.layout:GetRecursiveAabb(ctrl):GetMaxY() + Consts.MENU_ENTRY_VSPACING
+        local ctrl = entryDef:create_control(self.layout)
+        ctrl:set_position(nil, y)
+        y = self.layout:get_recursive_aabb(ctrl):get_max_y() + Consts.MENU_ENTRY_VSPACING
     end
 end
 
-function MenuScreen:Init(title, entries)
-    FormScreen.Init(self)
+function MenuScreen:init(title, entries)
+    FormScreen.init(self)
     self.title = title
     self.entries = entries
 
@@ -50,14 +58,14 @@ function MenuScreen:Init(title, entries)
     CreateEntries(self)
 end
 
-function MenuScreen:Show()
-    FormScreen.Show(self)
-    self:OnResize(app.width, app.height)
+function MenuScreen:show()
+    FormScreen.show(self)
+    self:on_resize(app.width, app.height)
 end
 
-function MenuScreen:OnResize(w, h)
-    self.background:SetSize(w, h)
+function MenuScreen:on_resize(w, h)
+    self.background:set_size(w, h)
     CenterLayout(self)
 end
 
-MakeClassOf(MenuScreen, FormScreen)
+return MenuScreen

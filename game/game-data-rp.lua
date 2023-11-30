@@ -1,4 +1,9 @@
-GameDataRp = {}
+local RemoteProcedure = require("networking.remote-procedure")
+local WaitingScreen = require("screens.waiting-screen")
+local GameScreen = require("game.game-screen")
+
+---@class GameDataRp: RemoteProcedure
+local GameDataRp = class("GameDataRp", RemoteProcedure)
 
 local function ListRequiredAssets()
     local list = {}
@@ -11,23 +16,23 @@ local function ListRequiredAssets()
     return list
 end
 
-function GameDataRp:Init(connection)
-    RemoteProcedure.Init(self, connection)
+function GameDataRp:init(connection)
+    RemoteProcedure.init(self, connection)
 end
 
-function GameDataRp:SendResponse()
+function GameDataRp:send_response()
     return {
         data = app.data
     }
 end
 
-function GameDataRp:ReceiveResponse(response)
+function GameDataRp:receive_response(response)
     app.data = response.data
-    app.screenManager:Show(WaitingScreen("Synchronizing Assets..."))
+    app.screen_manager:show(WaitingScreen("Synchronizing Assets..."))
     local list = ListRequiredAssets()
-    app.assetManager:DownloadMissingAssets(list, function()
-        app.screenManager:Show(GameScreen(app.data.game))
+    app.asset_manager:download_missing_assets(list, function()
+        app.screen_manager:show(GameScreen(app.data.game))
     end)
 end
 
-MakeClassOf(GameDataRp, RemoteProcedure)
+return GameDataRp

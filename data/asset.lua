@@ -1,6 +1,12 @@
-Asset = {}
+local Consts = require("app.consts")
 
-local function CreateIntermediateDirs(path)
+---@class Asset
+---@field private _path string
+local Asset = class("Asset")
+
+---@param path string
+---@return void
+local function _create_intermediate_dirs(path)
     local found = 0
     while true do
         found = string.find(path, "/", found + 1)
@@ -17,45 +23,59 @@ local function CreateIntermediateDirs(path)
     end
 end
 
-function Asset.GetAssetPath(virtualPath)
-    return (app.isServer and Consts.ASSETS_SERVER_ROOT or Consts.ASSETS_CLIENT_ROOT) .. "/assets/" .. virtualPath
+---@param virtual_path string
+---@return string
+function Asset.get_asset_path(virtual_path)
+    return (app.is_server and Consts.ASSETS_SERVER_ROOT or Consts.ASSETS_CLIENT_ROOT) .. "/assets/" .. virtual_path
 end
 
-function Asset.GetRootPath(virtualPath)
-    return (app.isServer and Consts.ASSETS_SERVER_ROOT or Consts.ASSETS_CLIENT_ROOT) .. "/" .. virtualPath
+---@param virtual_path string
+---@return string
+function Asset.get_root_path(virtual_path)
+    return (app.is_server and Consts.ASSETS_SERVER_ROOT or Consts.ASSETS_CLIENT_ROOT) .. "/" .. virtual_path
 end
 
-function Asset:Init(path, onRoot)
+---@param path string
+---@param is_on_root boolean
+---@return void
+function Asset:init(path, is_on_root)
     assert(string.sub(path, 1, 1) ~= "/")
-    self.path = onRoot and Asset.GetRootPath(path) or Asset.GetAssetPath(path)
+    self._path = is_on_root and Asset.get_root_path(path) or Asset.get_asset_path(path)
 end
 
-function Asset:Create()
-    CreateIntermediateDirs(self.path)
-    assert(love.filesystem.write(self.path, ""))
+---@return void
+function Asset:create()
+    _create_intermediate_dirs(self._path)
+    assert(love.filesystem.write(self._path, ""))
 end
 
-function Asset:Write(content)
-    assert(love.filesystem.write(self.path, content))
+---@param content string
+---@return void
+function Asset:write(content)
+    assert(love.filesystem.write(self._path, content))
 end
 
-function Asset:Read()
-    return love.filesystem.read(self.path)
+---@return string
+function Asset:read()
+    return love.filesystem.read(self._path)
 end
 
-function Asset:GetType()
-    local info = love.filesystem.getInfo(self.path)
+---@return string|nil
+function Asset:get_type()
+    local info = love.filesystem.getInfo(self._path)
     return info and info.type
 end
 
-function Asset:GetSize()
-    local info = love.filesystem.getInfo(self.path)
+---@return number
+function Asset:get_size()
+    local info = love.filesystem.getInfo(self._path)
     return info and info.size
 end
 
-function Asset:GetPath()
-    local info = love.filesystem.getInfo(self.path)
-    return info and self.path
+---@return string
+function Asset:get_path()
+    local info = love.filesystem.getInfo(self._path)
+    return info and self._path
 end
 
-MakeClassOf(Asset)
+return Asset

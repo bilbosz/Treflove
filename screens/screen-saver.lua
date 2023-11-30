@@ -1,13 +1,19 @@
-ScreenSaver = {}
+local Screen = require("screens.screen")
+local UpdateEventListener = require("events.update-event").Listener
+local Rectangle = require("controls.rectangle")
+local Logo = require("game.logo")
 
-function ScreenSaver:Init()
-    Screen.Init(self)
+---@class ScreenSaver: Screen, UpdateEventListener
+local ScreenSaver = class("ScreenSaver", Screen, UpdateEventListener)
+
+function ScreenSaver:init()
+    Screen.init(self)
 end
 
-function ScreenSaver:Show()
+function ScreenSaver:show()
     assert(not config.window.resizable)
-    Screen.Show(self)
-    self.screen:SetSize(app.width, app.height)
+    Screen.show(self)
+    self.screen:set_size(app.width, app.height)
 
     self.background = Rectangle(self.screen, app.width, app.height, {
         1,
@@ -21,16 +27,16 @@ function ScreenSaver:Show()
     self.dirRot = 1
     self.dirX, self.dirY = 1, 1
 
-    app.updateEventManager:RegisterListener(self)
+    app.update_event_manager:register_listener(self)
 end
 
-function ScreenSaver:OnUpdate(dt)
+function ScreenSaver:on_update(dt)
     local logo = self.logo
-    logo:SetRotation(logo:GetRotation() + dt * self.dirRot)
+    logo:set_rotation(logo:get_rotation() + dt * self.dirRot)
 
-    local x, y = logo:GetPosition()
-    local r = logo:GetSize() * 0.5
-    local w, h = self.screen:GetSize()
+    local x, y = logo:get_position()
+    local r = logo:get_size() * 0.5
+    local w, h = self.screen:get_size()
     local move = 60 * dt
 
     local newX, newY = x + self.dirX * move, y + self.dirY * move
@@ -63,7 +69,7 @@ function ScreenSaver:OnUpdate(dt)
         self.dirRot = -self.dirRot
     end
 
-    logo:SetPosition(newX, newY)
+    logo:set_position(newX, newY)
 end
 
-MakeClassOf(ScreenSaver, Screen, UpdateEventListener)
+return ScreenSaver

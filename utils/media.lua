@@ -1,4 +1,5 @@
-Media = {}
+---@class Media
+local Media = class("Media")
 
 Media.Type = {
     VIDEO = 1,
@@ -44,10 +45,9 @@ local MATCH_FILE = {
 }
 
 function Media.GetTypeAndMedium(data)
-    local isOk, asset
     for _, v in ipairs(MATCH_FILE) do
         local f, t = unpack(v)
-        isOk, medium = pcall(function()
+        local isOk, medium = pcall(function()
             return f(data)
         end)
         if isOk then
@@ -56,3 +56,5 @@ function Media.GetTypeAndMedium(data)
     end
     return nil, nil
 end
+
+return Media()

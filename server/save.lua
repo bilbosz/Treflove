@@ -90,14 +90,14 @@ return {
             name = "Adam",
             -- login: adam
             -- password: krause
-            auth = "XyKeQ5OJSYgSjmsJhL4fK3pbT4bSSl+TenkDlwgpSY8=",
+            auth = "48nI0XjJ11hysenR6bLDNrlo9Vk7gktIUfV1ZZ6wiNs=",
             group = "master"
         },
         ["piotr"] = {
             name = "Piotrek",
             -- login: piotr
             -- password: stępczyński
-            auth = "deQBx+//Zt17STnCjN/oKlQf93o6MRhCcOSZdSe/31w=",
+            auth = "h56e16kPixnS4sl1flNsuzCyaD+6KUhKPFFNKu8mS0o=",
             group = "player"
         }
     }

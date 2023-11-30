@@ -1,15 +1,16 @@
-MenuEntry = {}
+---@class MenuEntry
+local MenuEntry = class("MenuEntry")
 
-function MenuEntry:Init()
+function MenuEntry:init()
     self.control = nil
 end
 
-function MenuEntry:CreateControl(parent)
+function MenuEntry:create_control(parent)
     abstract()
 end
 
-function MenuEntry:GetControl()
+function MenuEntry:get_control()
     return self.control
 end
 
-MakeClassOf(MenuEntry)
+return MenuEntry

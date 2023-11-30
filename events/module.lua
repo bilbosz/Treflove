@@ -1,8 +1,0 @@
-Loader.LoadFile("events/event-manager.lua")
-Loader.LoadFile("events/update-event-manager.lua")
-Loader.LoadFile("events/pointer-event-manager.lua")
-Loader.LoadFile("events/keyboard-manager.lua")
-Loader.LoadFile("events/resize-manager.lua")
-Loader.LoadFile("events/wheel-event-manager.lua")
-Loader.LoadFile("events/defer-manager.lua")
-Loader.LoadFile("events/file-drop-event-manager.lua")

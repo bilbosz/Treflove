@@ -1,0 +1,82 @@
+local Control = require("controls.control")
+local EventManager = require("events.event-manager")
+
+---@class PointerEventListener: Control
+local PointerEventListener = class("PointerEventListener", Control)
+
+function PointerEventListener:init(receiveThrough)
+    self.receiveThrough = receiveThrough
+end
+
+function PointerEventListener:on_pointer_down(x, y, id)
+
+end
+
+function PointerEventListener:on_pointer_up(x, y, id)
+
+end
+
+function PointerEventListener:on_pointer_move(x, y, id)
+
+end
+
+---@class PointerEventManager: EventManager
+local PointerEventManager = class("PointerEventManager", EventManager)
+
+local function GetListenerList(ctrl, listeners, x, y, list)
+    if not ctrl:is_visible() or not ctrl:get_global_recursive_aabb():is_point_inside(x, y) then
+        return nil
+    end
+    if listeners[ctrl] then
+        table.insert(list, ctrl)
+    end
+    for _, child in ipairs(ctrl:get_children()) do
+        GetListenerList(child, listeners, x, y, list)
+    end
+end
+
+function PointerEventManager:init()
+    EventManager.init(self, PointerEventListener)
+    self.downId = nil
+end
+
+function PointerEventManager:pointer_down(x, y, id)
+    self.downId = id
+    self:invoke_event(PointerEventListener.on_pointer_down, x, y, id)
+end
+
+function PointerEventManager:pointer_up(x, y, id)
+    self:invoke_event(PointerEventListener.on_pointer_up, x, y, id)
+    self.downId = nil
+end
+
+function PointerEventManager:pointer_move(x, y, id)
+    self:invoke_event(PointerEventListener.on_pointer_move, x, y, id or self.downId)
+end
+
+function PointerEventManager:get_position()
+    return love.mouse.getPosition()
+end
+
+function PointerEventManager:invoke_event(method, x, y, id)
+    local listeners = self._methods[method]
+    local list = {}
+    GetListenerList(app.root, listeners, x, y, list)
+    local topToBeCalled = true
+    for _, ctrl in ripairs(list) do
+        local listener = listeners[ctrl]
+        if topToBeCalled then
+            local passThrough = listener(ctrl, x, y, id)
+            if not passThrough then
+                topToBeCalled = false
+            end
+        elseif ctrl.receiveThrough then
+            listener(ctrl, x, y, id)
+        end
+    end
+end
+
+return {
+    Listener = PointerEventListener,
+    Manager = PointerEventManager
+}

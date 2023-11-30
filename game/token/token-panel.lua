@@ -1,22 +1,30 @@
-TokenPanel = {}
+local Panel = require("ui.panel")
+local Consts = require("app.consts")
+local Text = require("controls.text")
+local TextInput = require("ui.text-input")
+local NumberInput = require("ui.number-input")
+local TextButton = require("ui.text-button")
 
-function TokenPanel:Init(gameScreen, width, height)
-    Panel.Init(self, gameScreen:GetControl(), width, height)
+---@class TokenPanel: Panel
+local TokenPanel = class("TokenPanel", Panel)
+
+function TokenPanel:init(gameScreen, width, height)
+    Panel.init(self, gameScreen:get_control(), width, height)
     self.gameScreen = gameScreen
     self.properties = {}
     self.keys = nil
-    self.selectionSet = gameScreen:GetSelection():GetSelectSet()
+    self.selectionSet = gameScreen:get_selection():GetSelectSet()
     self.cancelButton = nil
     self.applyButton = nil
 end
 
-function TokenPanel:OnResize(w, h)
-    Panel.OnResize(self, w, h)
+function TokenPanel:on_resize(w, h)
+    Panel.on_resize(self, w, h)
     self:UpdateView()
 end
 
-function TokenPanel:OnSelectionChange()
-    self.selectionSet = self.gameScreen:GetSelection():GetSelectSet()
+function TokenPanel:on_selection_change()
+    self.selectionSet = self.gameScreen:get_selection():GetSelectSet()
     self:UpdateView()
 end
 
@@ -31,7 +39,7 @@ end
 function TokenPanel:UpdatePropertyKeys()
     local uniqueKeys = {}
     for token in pairs(self.selectionSet) do
-        for k in pairs(token:GetData()) do
+        for k in pairs(token:get_data()) do
             uniqueKeys[k] = true
         end
     end
@@ -60,28 +68,28 @@ function TokenPanel:FillInProperties()
             do
                 local title = self:CreatePropertyTitle(property)
                 property.title = title
-                title:SetPosition(Consts.PADDING, y)
-                local h = select(2, title:GetSize())
-                y = y + h * title:GetScale()
+                title:set_position(Consts.PADDING, y)
+                local h = select(2, title:get_size())
+                y = y + h * title:get_scale()
             end
 
             do
                 local input = self:CreatePropertyInput(property)
                 property.input = input
-                input:SetPosition(Consts.PADDING, y)
-                local h = select(2, input:GetSize())
+                input:set_position(Consts.PADDING, y)
+                local h = select(2, input:get_size())
                 y = y + h
 
                 local isSingleValue, value = self:GetValueByKey(k)
                 if isSingleValue then
                     local t = property.def.type
                     if t == "string" then
-                        input:SetText(value)
+                        input:set_text(value)
                     elseif t == "number" then
-                        input:SetNumber(value)
+                        input:set_number(value)
                     end
                 else
-                    input:SetMultivalue(true)
+                    input:set_multivalue(true)
                 end
             end
 
@@ -94,24 +102,25 @@ end
 
 function TokenPanel:CreatePropertyTitle(property)
     local title = Text(self, property.def.title, Consts.FOREGROUND_COLOR)
-    title:SetScale(Consts.PANEL_FIELD_SCALE)
+    title:set_scale(Consts.PANEL_FIELD_SCALE)
     return title
 end
 
 function TokenPanel:CreatePropertyInput(property)
-    local panelW = self:GetSize()
+    local panelW = self:get_size()
 
     local t = property.def.type
     local apply = function()
         self:Apply()
     end
+
     local input
     if t == "string" then
         input = TextInput(self, self.gameScreen, panelW - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT, false, nil, apply)
     elseif t == "number" then
         input = NumberInput(self, self.gameScreen, panelW - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT, nil, apply)
     else
-        assert(false)
+        assert_unreachable()
     end
     return input
 end
@@ -120,7 +129,7 @@ function TokenPanel:GetValueByKey(key)
     local once = true
     local value
     for token in pairs(self.selectionSet) do
-        local current = token:GetData()[key]
+        local current = token:get_data()[key]
         if once then
             once = false
             value = current
@@ -132,7 +141,7 @@ function TokenPanel:GetValueByKey(key)
 end
 
 function TokenPanel:CreateCancelButton()
-    local h = select(2, self:GetSize())
+    local h = select(2, self:get_size())
 
     local button = TextButton(self, self.gameScreen, "Cancel", function()
         self:Cancel()
@@ -140,14 +149,14 @@ function TokenPanel:CreateCancelButton()
     self.cancelButton = button
 
     local s = Consts.PANEL_FIELD_SCALE
-    button:SetScale(s)
+    button:set_scale(s)
 
-    local buttonH = select(2, button:GetSize())
-    button:SetPosition(Consts.PADDING, h - buttonH * s - Consts.PADDING)
+    local buttonH = select(2, button:get_size())
+    button:set_position(Consts.PADDING, h - buttonH * s - Consts.PADDING)
 end
 
 function TokenPanel:CreateApplyButton()
-    local w, h = self:GetSize()
+    local w, h = self:get_size()
 
     local button = TextButton(self, self.gameScreen, "Apply", function()
         self:Apply()
@@ -155,63 +164,63 @@ function TokenPanel:CreateApplyButton()
     self.applyButton = button
 
     local s = Consts.PANEL_FIELD_SCALE
-    button:SetScale(s)
+    button:set_scale(s)
 
-    local buttonW, buttonH = button:GetSize()
-    button:SetPosition(w - buttonW * s - Consts.PADDING, h - buttonH * s - Consts.PADDING)
+    local buttonW, buttonH = button:get_size()
+    button:set_position(w - buttonW * s - Consts.PADDING, h - buttonH * s - Consts.PADDING)
 end
 
 function TokenPanel:ReleaseProperties()
     for _, v in ipairs(self.properties) do
-        v.title:SetParent(nil)
+        v.title:set_parent(nil)
 
-        self.gameScreen:RemoveInput(v.input)
-        v.input:SetParent(nil)
+        self.gameScreen:remove_input(v.input)
+        v.input:set_parent(nil)
     end
     self.properties = {}
 
     if self.cancelButton then
-        self.gameScreen:RemoveInput(self.cancelButton)
-        self.cancelButton:SetParent(nil)
+        self.gameScreen:remove_input(self.cancelButton)
+        self.cancelButton:set_parent(nil)
         self.cancelButton = nil
     end
 
     if self.applyButton then
-        self.gameScreen:RemoveInput(self.applyButton)
-        self.applyButton:SetParent(nil)
+        self.gameScreen:remove_input(self.applyButton)
+        self.applyButton:set_parent(nil)
         self.applyButton = nil
     end
 end
 
 function TokenPanel:Apply()
     for _, property in ipairs(self.properties) do
-        if not property.input:IsMultivalueDefault() then
+        if not property.input:is_multivalue_default() then
             local t = property.def.type
             if t == "string" then
-                local key, value = property.key, property.input:GetText()
+                local key, value = property.key, property.input:get_text()
                 for token in pairs(self.selectionSet) do
-                    local old = token:GetData()[key]
+                    local old = token:get_data()[key]
                     if old ~= value then
-                        token:SetData(key, value)
+                        token:set_data(key, value)
                     end
                 end
             elseif t == "number" then
-                local key, value = property.key, property.input:GetNumber()
+                local key, value = property.key, property.input:get_number()
                 for token in pairs(self.selectionSet) do
-                    local old = token:GetData()[key]
+                    local old = token:get_data()[key]
                     if old ~= value then
-                        token:SetData(key, value)
+                        token:set_data(key, value)
                     end
                 end
             else
-                assert(false)
+                assert_unreachable()
             end
         end
     end
 end
 
 function TokenPanel:Cancel()
-    self.gameScreen:GetSelection():Unselect()
+    self.gameScreen:get_selection():Unselect()
 end
 
-MakeClassOf(TokenPanel, Panel)
+return TokenPanel

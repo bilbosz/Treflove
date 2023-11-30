@@ -1,7 +1,10 @@
-ConnectionScreen = {}
+local WaitingScreen = require("screens.waiting-screen")
 
-function ConnectionScreen:Init()
-    WaitingScreen.Init(self, "Connecting...")
+---@class ConnectingScreen: WaitingScreen
+local ConnectingScreen = class("ConnectingScreen", WaitingScreen)
+
+function ConnectingScreen:init()
+    WaitingScreen.init(self, "Connecting...")
 end
 
-MakeClassOf(ConnectionScreen, WaitingScreen)
+return ConnectingScreen
