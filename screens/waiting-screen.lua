@@ -9,7 +9,7 @@ local UpdateEventListener = require("events.update-event").Listener
 ---@class WaitingScreen: Screen, UpdateEventListener
 local WaitingScreen = class("WaitingScreen", Screen, UpdateEventListener)
 
-local function CreateBackground(self)
+local function _create_background(self)
     self.background = Rectangle(self.screen, app.width, app.height, Consts.BACKGROUND_COLOR)
 end
 
@@ -45,7 +45,7 @@ function WaitingScreen:init(message)
     Screen.init(self)
     self.message = message
 
-    CreateBackground(self)
+    _create_background(self)
     CreateLayout(self)
     CreateLogo(self)
     CreateText(self)

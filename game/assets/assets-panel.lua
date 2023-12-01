@@ -124,18 +124,18 @@ end
 
 local function CreateUploadButton(self)
     local button = TextButton(self, self.gameScreen, "Upload", function()
-        self:Upload()
+        self:_upload()
     end)
     self.uploadButton = button
 
     RefreshUploadButtonGeometry(self)
 end
 
-local function CreateCancelButton(self)
+local function _create_cancel_button(self)
     local h = select(2, self:get_size())
 
     local button = TextButton(self, self.gameScreen, "Cancel", function()
-        self:Cancel()
+        self:cancel()
     end)
     self.cancelButton = button
 
@@ -167,11 +167,11 @@ function AssetsPanel:init(gameScreen, width, height)
     CreateLocationField(self)
     CreateFileTypeField(self)
     CreateRemoteLocationField(self)
-    CreateCancelButton(self)
+    _create_cancel_button(self)
     CreateUploadButton(self)
 end
 
-function AssetsPanel:SetFile(file)
+function AssetsPanel:set_file(file)
     local data = file:read("data")
     local size = file:getSize()
     self.data = data
@@ -203,11 +203,11 @@ function AssetsPanel:reset()
     self.dataSize = nil
 end
 
-function AssetsPanel:Upload()
+function AssetsPanel:_upload()
     app.asset_manager:upload_asset(self.remoteLocationInput:get_text(), self.data)
 end
 
-function AssetsPanel:Cancel()
+function AssetsPanel:cancel()
     self:reset()
 end
 

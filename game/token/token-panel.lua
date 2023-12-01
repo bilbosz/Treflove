@@ -13,30 +13,30 @@ function TokenPanel:init(gameScreen, width, height)
     self.gameScreen = gameScreen
     self.properties = {}
     self.keys = nil
-    self.selectionSet = gameScreen:get_selection():GetSelectSet()
+    self.selectionSet = gameScreen:get_selection():get_select_set()
     self.cancelButton = nil
     self.applyButton = nil
 end
 
 function TokenPanel:on_resize(w, h)
     Panel.on_resize(self, w, h)
-    self:UpdateView()
+    self:_update_view()
 end
 
 function TokenPanel:on_selection_change()
-    self.selectionSet = self.gameScreen:get_selection():GetSelectSet()
-    self:UpdateView()
+    self.selectionSet = self.gameScreen:get_selection():get_select_set()
+    self:_update_view()
 end
 
-function TokenPanel:UpdateView()
-    self:ReleaseProperties()
-    self:UpdatePropertyKeys()
-    self:FillInProperties()
-    self:CreateCancelButton()
-    self:CreateApplyButton()
+function TokenPanel:_update_view()
+    self:_release_properties()
+    self:_update_property_keys()
+    self:_fill_in_properties()
+    self:_create_cancel_button()
+    self:_create_apply_button()
 end
 
-function TokenPanel:UpdatePropertyKeys()
+function TokenPanel:_update_property_keys()
     local uniqueKeys = {}
     for token in pairs(self.selectionSet) do
         for k in pairs(token:get_data()) do
@@ -54,7 +54,7 @@ function TokenPanel:UpdatePropertyKeys()
     self.keys = keys
 end
 
-function TokenPanel:FillInProperties()
+function TokenPanel:_fill_in_properties()
     local y = 0
     for _, k in ipairs(self.keys) do
         if app.data.token_properties[k] then
@@ -66,7 +66,7 @@ function TokenPanel:FillInProperties()
             }
 
             do
-                local title = self:CreatePropertyTitle(property)
+                local title = self:_create_property_title(property)
                 property.title = title
                 title:set_position(Consts.PADDING, y)
                 local h = select(2, title:get_size())
@@ -74,13 +74,13 @@ function TokenPanel:FillInProperties()
             end
 
             do
-                local input = self:CreatePropertyInput(property)
+                local input = self:_create_property_input(property)
                 property.input = input
                 input:set_position(Consts.PADDING, y)
                 local h = select(2, input:get_size())
                 y = y + h
 
-                local isSingleValue, value = self:GetValueByKey(k)
+                local isSingleValue, value = self:_get_value_by_key(k)
                 if isSingleValue then
                     local t = property.def.type
                     if t == "string" then
@@ -100,18 +100,18 @@ function TokenPanel:FillInProperties()
     end
 end
 
-function TokenPanel:CreatePropertyTitle(property)
+function TokenPanel:_create_property_title(property)
     local title = Text(self, property.def.title, Consts.FOREGROUND_COLOR)
     title:set_scale(Consts.PANEL_FIELD_SCALE)
     return title
 end
 
-function TokenPanel:CreatePropertyInput(property)
+function TokenPanel:_create_property_input(property)
     local panelW = self:get_size()
 
     local t = property.def.type
     local apply = function()
-        self:Apply()
+        self:_apply()
     end
 
     local input
@@ -125,7 +125,7 @@ function TokenPanel:CreatePropertyInput(property)
     return input
 end
 
-function TokenPanel:GetValueByKey(key)
+function TokenPanel:_get_value_by_key(key)
     local once = true
     local value
     for token in pairs(self.selectionSet) do
@@ -140,11 +140,11 @@ function TokenPanel:GetValueByKey(key)
     return true, value
 end
 
-function TokenPanel:CreateCancelButton()
+function TokenPanel:_create_cancel_button()
     local h = select(2, self:get_size())
 
     local button = TextButton(self, self.gameScreen, "Cancel", function()
-        self:Cancel()
+        self:cancel()
     end)
     self.cancelButton = button
 
@@ -155,11 +155,11 @@ function TokenPanel:CreateCancelButton()
     button:set_position(Consts.PADDING, h - buttonH * s - Consts.PADDING)
 end
 
-function TokenPanel:CreateApplyButton()
+function TokenPanel:_create_apply_button()
     local w, h = self:get_size()
 
     local button = TextButton(self, self.gameScreen, "Apply", function()
-        self:Apply()
+        self:_apply()
     end)
     self.applyButton = button
 
@@ -170,7 +170,7 @@ function TokenPanel:CreateApplyButton()
     button:set_position(w - buttonW * s - Consts.PADDING, h - buttonH * s - Consts.PADDING)
 end
 
-function TokenPanel:ReleaseProperties()
+function TokenPanel:_release_properties()
     for _, v in ipairs(self.properties) do
         v.title:set_parent(nil)
 
@@ -192,7 +192,7 @@ function TokenPanel:ReleaseProperties()
     end
 end
 
-function TokenPanel:Apply()
+function TokenPanel:_apply()
     for _, property in ipairs(self.properties) do
         if not property.input:is_multivalue_default() then
             local t = property.def.type
@@ -219,7 +219,7 @@ function TokenPanel:Apply()
     end
 end
 
-function TokenPanel:Cancel()
+function TokenPanel:cancel()
     self.gameScreen:get_selection():Unselect()
 end
 

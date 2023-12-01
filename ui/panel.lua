@@ -6,7 +6,7 @@ local Rectangle = require("controls.rectangle")
 ---@class Panel: ClippingRectangle
 local Panel = class("Panel", ClippingRectangle)
 
-local function CreateBackground(self)
+local function _create_background(self)
     local w, h = self:get_size()
     self.background = Rectangle(self, w, h, Consts.BACKGROUND_COLOR)
 end
@@ -18,7 +18,7 @@ end
 
 function Panel:init(parent, width, height)
     ClippingRectangle.init(self, parent, width, height)
-    CreateBackground(self)
+    _create_background(self)
 end
 
 function Panel:on_resize(w, h)

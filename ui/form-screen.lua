@@ -5,7 +5,7 @@ local KeyboardEventListener = require("events.keyboard").Listener
 ---@class FormScreen: Screen, KeyboardEventListener
 local FormScreen = class("FormScreen", Screen, KeyboardEventListener)
 
-local function NotifyListeners(self)
+local function _notify_listeners(self)
     if self.prevFocus == self._focus then
         return
     end
@@ -19,7 +19,7 @@ local function NotifyListeners(self)
     end
 end
 
-local function AdvanceFocus(self, d)
+local function _advance_focus(self, d)
     assert(d == 1 or d == -1)
     local inputs = self.inputs
     self.prevFocus = self._focus
@@ -83,11 +83,11 @@ end
 function FormScreen:on_key_pressed(key)
     if key == "tab" then
         if app.keyboard_manager:is_key_down("lshift") then
-            AdvanceFocus(self, -1)
+            _advance_focus(self, -1)
         else
-            AdvanceFocus(self, 1)
+            _advance_focus(self, 1)
         end
-        NotifyListeners(self)
+        _notify_listeners(self)
     end
 end
 
@@ -114,7 +114,7 @@ function FormScreen:read_only_change(input)
     local found = table.find_array_idx(self.inputs, input)
     assert(found)
     if found == self._focus then
-        AdvanceFocus(self, 1)
+        _advance_focus(self, 1)
     end
 end
 
@@ -130,7 +130,7 @@ function FormScreen:focus(input)
     assert(found)
     self.prevFocus = self._focus
     self._focus = found
-    NotifyListeners(self)
+    _notify_listeners(self)
 end
 
 function FormScreen:remove_all_inputs()

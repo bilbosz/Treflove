@@ -11,7 +11,7 @@ local Consts = require("app.consts")
 ---@class Page: Model, ClippingRectangle, PointerEventListener, WheelEventListener
 local Page = class("Page", Model, ClippingRectangle, PointerEventListener, WheelEventListener)
 
-function Page:CreateBackground(path)
+function Page:_create_background(path)
     local bg = Image(self, path)
     self.background = bg
     local bgW, bgH = bg:get_size()
@@ -23,7 +23,7 @@ function Page:CreateBackground(path)
     bg:set_position(w * 0.5, h * 0.5)
 end
 
-function Page:CreatePageCoordinates()
+function Page:_create_page_coordinates()
     local bg = self.background
     local bgW = bg:get_size()
     self.pageCoordinates = Control(bg)
@@ -41,8 +41,8 @@ function Page:init(data, gameScreen, width, height)
     self.pointerDownPos = {}
     self.gameScreen = gameScreen
 
-    self:CreateBackground(data.image)
-    self:CreatePageCoordinates()
+    self:_create_background(data.image)
+    self:_create_page_coordinates()
     self.selection = Selection(self)
 
     self.tokens = {}
@@ -54,11 +54,11 @@ function Page:init(data, gameScreen, width, height)
     app.wheel_event_manager:register_listener(self)
 end
 
-function Page:GetPageCoordinates()
+function Page:get_page_coordinates()
     return self.pageCoordinates
 end
 
-function Page:GetTokens()
+function Page:get_tokens()
     return self.tokens
 end
 
@@ -69,7 +69,7 @@ function Page:on_pointer_down(x, y, button)
     end
     if button == Consts.PAGE_SELECT_BUTTON and not self.pointerDownPos[Consts.PAGE_DRAG_TOKEN_BUTTON] then
         local wx, wy = self.pageCoordinates:transform_to_local(x, y)
-        self.selection:SetStartPoint(wx, wy)
+        self.selection:set_start_point(wx, wy)
         self.pointerDownPos[button] = {
             tx,
             ty
@@ -86,7 +86,7 @@ function Page:on_pointer_down(x, y, button)
             self.pageCoordinates:transform_to_local(x, y)
         }
         self.selectSetStartPos = {}
-        local set = self.selection:GetSelectSet()
+        local set = self.selection:get_select_set()
         for token in pairs(set) do
             self.selectSetStartPos[token] = {
                 token:get_position()
@@ -99,16 +99,16 @@ function Page:on_pointer_up(x, y, button)
     if self.pointerDownPos[Consts.PAGE_SELECT_BUTTON] and button == Consts.PAGE_SELECT_BUTTON then
         local wx, wy = self.pageCoordinates:transform_to_local(x, y)
         local selection = self.selection
-        selection:SetEndPoint(wx, wy)
+        selection:set_end_point(wx, wy)
 
         local shift = app.keyboard_manager:is_key_down("lshift")
         local ctrl = app.keyboard_manager:is_key_down("lctrl")
         if shift then
-            selection:AddApply()
+            selection:add_apply()
         elseif ctrl then
-            selection:ToggleApply()
+            selection:toggle_apply()
         else
-            selection:Apply()
+            selection:apply()
         end
         selection:hide()
     end
@@ -126,13 +126,13 @@ function Page:on_pointer_move(x, y)
     end
     if self.pointerDownPos[Consts.PAGE_SELECT_BUTTON] then
         local wx, wy = self.pageCoordinates:transform_to_local(x, y)
-        self.selection:SetEndPoint(wx, wy)
+        self.selection:set_end_point(wx, wy)
     end
     if self.pointerDownPos[Consts.PAGE_DRAG_TOKEN_BUTTON] then
         local sx, sy = unpack(self.pointerDownPos[Consts.PAGE_DRAG_TOKEN_BUTTON])
         local wx, wy = self.pageCoordinates:transform_to_local(x, y)
         local ox, oy = wx - sx, wy - sy
-        local set = self.selection:GetSelectSet()
+        local set = self.selection:get_select_set()
         for token in pairs(set) do
             local startPosX, startPosY = unpack(self.selectSetStartPos[token])
             token:set_position(startPosX + ox, startPosY + oy)
@@ -157,7 +157,7 @@ function Page:on_wheel_moved(x, y)
     end
 end
 
-function Page:GetGameScreen()
+function Page:get_game_screen()
     return self.gameScreen
 end
 

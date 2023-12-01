@@ -54,7 +54,7 @@ local function SetLabels(self, labels)
     labels:set_enabled(true)
 end
 
-local function CreateBackground(self)
+local function _create_background(self)
     local w, h = self:get_size()
     local background = Rectangle(self, w, h, Consts.BUTTON_NORMAL_COLOR)
     self.previewLabels = CreateBackgroundLabels(self, PREVIEW_STRING)
@@ -74,7 +74,7 @@ end
 function PreviewArea:init(parent, width, height)
     ClippingRectangle.init(self, parent, width, height)
     FileSystemDropEventListener.init(self, true)
-    CreateBackground(self)
+    _create_background(self)
     CreateContentParent(self)
 
     self.preview = nil
@@ -85,7 +85,7 @@ end
 function PreviewArea:on_file_system_drop(x, y, droppedFile)
     local ok, err = droppedFile:open("r")
     assert(ok, err)
-    self.parent:SetFile(droppedFile)
+    self.parent:set_file(droppedFile)
     droppedFile:close()
 end
 

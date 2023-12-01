@@ -8,7 +8,7 @@ local Text = require("controls.text")
 ---@class MenuScreen: FormScreen
 local MenuScreen = class("MenuScreen", FormScreen)
 
-local function CreateBackground(self)
+local function _create_background(self)
     self.background = Rectangle(self.screen, app.width, app.height, Consts.BACKGROUND_COLOR)
 end
 
@@ -51,7 +51,7 @@ function MenuScreen:init(title, entries)
     self.title = title
     self.entries = entries
 
-    CreateBackground(self)
+    _create_background(self)
     CreateLayout(self)
     CreateLogo(self)
     CreateTitle(self)

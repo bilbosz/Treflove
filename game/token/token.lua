@@ -71,11 +71,11 @@ function Token:init(data, parent)
     app.pointer_event_manager:register_listener(self)
 end
 
-function Token:GetRadius()
+function Token:get_radius()
     return self.data.diameter * 0.5
 end
 
-function Token:SetSelect(value)
+function Token:set_select(value)
     self.isSelected = value
     self.selection:set_enabled(value)
     if value then
@@ -83,7 +83,7 @@ function Token:SetSelect(value)
     end
 end
 
-function Token:GetSelect()
+function Token:get_select()
     return self.isSelected
 end
 

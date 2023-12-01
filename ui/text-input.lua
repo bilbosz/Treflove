@@ -80,7 +80,7 @@ local function UpdateContentView(self)
     end
 end
 
-local function UpdateView(self)
+local function _update_view(self)
     UpdateBackgroundView(self)
     UpdateContentView(self)
 
@@ -91,7 +91,7 @@ local function UpdateView(self)
     end
 end
 
-local function CreateBackground(self)
+local function _create_background(self)
     self.background = Rectangle(self, self.width, self.height, Consts.BUTTON_NORMAL_COLOR)
 end
 
@@ -144,10 +144,10 @@ function TextInput:init(parent, formScreen, width, height, masked, onInput, onEn
     self.caretTime = nil
     self.isMultivalue = false
     self.hasNewValue = false
-    CreateBackground(self)
+    _create_background(self)
     CreateClip(self)
     CreateContent(self)
-    UpdateView(self)
+    _update_view(self)
 end
 
 function TextInput:on_screen_show()
@@ -172,25 +172,25 @@ end
 
 function TextInput:on_pointer_enter()
     ButtonEventListener.on_pointer_enter(self)
-    UpdateView(self)
+    _update_view(self)
 end
 
 function TextInput:on_pointer_leave()
     ButtonEventListener.on_pointer_leave(self)
-    UpdateView(self)
+    _update_view(self)
 end
 
 function TextInput:on_click()
     ButtonEventListener.on_click(self)
     self:get_form_screen():focus(self)
-    UpdateView(self)
+    _update_view(self)
 end
 
 function TextInput:on_edit(...)
     if self.isMultivalue then
         self.hasNewValue = true
     end
-    UpdateView(self)
+    _update_view(self)
     if self.onInput then
         self.onInput()
     end
@@ -200,14 +200,14 @@ function TextInput:on_enter()
     if self.onEnter then
         self.onEnter()
     end
-    UpdateView(self)
+    _update_view(self)
 end
 
 function TextInput:on_remove_empty()
     if self.isMultivalue then
         self.hasNewValue = not self.hasNewValue
     end
-    UpdateView(self)
+    _update_view(self)
 end
 
 function TextInput:on_remove_word()
@@ -221,19 +221,19 @@ end
 function TextInput:on_focus()
     Input.on_focus(self)
     app.text_event_manager:set_text_input(true)
-    UpdateView(self)
+    _update_view(self)
 end
 
 function TextInput:on_focus_lost()
     Input.on_focus_lost(self)
     app.text_event_manager:set_text_input(false)
     self.caret:set_enabled(false)
-    UpdateView(self)
+    _update_view(self)
 end
 
 function TextInput:set_text(text)
     TextEventListener.set_text(self, text)
-    UpdateView(self)
+    _update_view(self)
 end
 
 function TextInput:set_multivalue(value)
@@ -242,7 +242,7 @@ function TextInput:set_multivalue(value)
     end
     self.isMultivalue = value
     self.hasNewValue = false
-    UpdateView(self)
+    _update_view(self)
 end
 
 function TextInput:is_multivalue()
@@ -255,7 +255,7 @@ end
 
 function TextInput:on_read_only_change()
     Input.on_read_only_change(self)
-    UpdateView(self)
+    _update_view(self)
 end
 
 return TextInput
