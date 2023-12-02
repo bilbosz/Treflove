@@ -23,7 +23,7 @@ function LoginScreen:init(login)
         MenuTextButton(self, "Sign In", function()
             login(self)
         end),
-        MenuTextButton(self, "quit", function()
+        MenuTextButton(self, "Quit", function()
             app:quit()
         end)
     })

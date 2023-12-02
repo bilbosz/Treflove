@@ -1,6 +1,7 @@
 {
     "recommendations": [
         // lua linter and intellisense. More on annotations https://luals.github.io/wiki/annotations/
+        // openjdk 17 is required
         "tangzx.emmylua",
         // lua formatter, requires /usr/local/bin/lua-format (via luarocks install --server=https://luarocks.org/dev luaformatter)
         "koihik.vscode-lua-format",

@@ -18,7 +18,7 @@ function UserMenuScreen:init(session)
         MenuTextButton(self, "Log Out", function()
             self:logout()
         end),
-        MenuTextButton(self, "quit", function()
+        MenuTextButton(self, "Quit", function()
             self:quit()
         end)
     })
