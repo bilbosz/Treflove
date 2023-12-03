@@ -1,37 +1,37 @@
-local loggerData, address, dispatcherChannel, channel, inThread = ...
+local logger_data, address, dispatcher_channel, channel, in_thread = ...
 
 local Socket = require("socket")
-local logger = require("utils.logger")(loggerData, "server-in-?????")
+local logger = require("utils.logger")(logger_data, "server-in-?????")
 
-local inServer, error = Socket.bind(address, 0)
+local in_server, error = Socket.bind(address, 0)
 if error then
     logger:log("Could not bind for receiver")
-    dispatcherChannel:push(false)
+    dispatcher_channel:push(false)
     return
 end
 
-local inPort = select(2, inServer:getsockname())
-logger:set_name(string.format("server-in-%05i", inPort))
-logger:log("Bound port " .. inPort .. " for receiver")
-dispatcherChannel:push(inPort)
+local in_port = select(2, in_server:getsockname())
+logger:set_name(string.format("server-in-%05i", in_port))
+logger:log("Bound port " .. in_port .. " for receiver")
+dispatcher_channel:push(in_port)
 
-local inClient = inServer:accept()
-logger:log("Accepted client sender connection on port " .. inPort)
+local in_client = in_server:accept()
+logger:log("Accepted client sender connection on port " .. in_port)
 
-local outPort, error = inClient:receive("*l")
-if error or not tonumber(outPort) then
+local out_port, error = in_client:receive("*l")
+if error or not tonumber(out_port) then
     logger:log("Could not receive client receiver port")
-    dispatcherChannel:push(false)
+    dispatcher_channel:push(false)
     return
 end
-logger:log("Received client receiver port " .. outPort)
+logger:log("Received client receiver port " .. out_port)
 
-local inChannel, outChannel = love.thread.newChannel(), love.thread.newChannel()
-local outThread = love.thread.newThread("networking/detail/server-out.lua")
-outThread:start(loggerData, address, outPort, inChannel, outChannel, channel, outThread, inThread)
+local in_channel, out_channel = love.thread.newChannel(), love.thread.newChannel()
+local out_thread = love.thread.newThread("networking/detail/server-out.lua")
+out_thread:start(logger_data, address, out_port, in_channel, out_channel, channel, out_thread, in_thread)
 
 while true do
-    local msg, error = inClient:receive("*l")
+    local msg, error = in_client:receive("*l")
     if error then
         if error == "closed" then
             logger:log("Connection closed by client")
@@ -45,7 +45,7 @@ while true do
         logger:log("Did not receive line with data size")
         break
     end
-    local data, error = inClient:receive(n)
+    local data, error = in_client:receive(n)
     if error then
         if error == "closed" then
             logger:log("Connection lost")
@@ -55,9 +55,9 @@ while true do
         break
     end
     logger:log("Received data with size of " .. n)
-    inChannel:push(data)
+    in_channel:push(data)
 end
 channel:push({
     "i",
-    inChannel
+    in_channel
 })

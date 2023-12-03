@@ -4,8 +4,8 @@ local EventManager = require("events.event-manager")
 ---@class PointerEventListener: Control
 local PointerEventListener = class("PointerEventListener", Control)
 
-function PointerEventListener:init(receiveThrough)
-    self.receiveThrough = receiveThrough
+function PointerEventListener:init(receive_through)
+    self.receive_through = receive_through
 end
 
 function PointerEventListener:on_pointer_down(x, y, id)
@@ -37,21 +37,21 @@ end
 
 function PointerEventManager:init()
     EventManager.init(self, PointerEventListener)
-    self.downId = nil
+    self.down_id = nil
 end
 
 function PointerEventManager:pointer_down(x, y, id)
-    self.downId = id
+    self.down_id = id
     self:invoke_event(PointerEventListener.on_pointer_down, x, y, id)
 end
 
 function PointerEventManager:pointer_up(x, y, id)
     self:invoke_event(PointerEventListener.on_pointer_up, x, y, id)
-    self.downId = nil
+    self.down_id = nil
 end
 
 function PointerEventManager:pointer_move(x, y, id)
-    self:invoke_event(PointerEventListener.on_pointer_move, x, y, id or self.downId)
+    self:invoke_event(PointerEventListener.on_pointer_move, x, y, id or self.down_id)
 end
 
 function PointerEventManager:get_position()
@@ -66,11 +66,11 @@ function PointerEventManager:invoke_event(method, x, y, id)
     for _, ctrl in ripairs(list) do
         local listener = listeners[ctrl]
         if topToBeCalled then
-            local passThrough = listener(ctrl, x, y, id)
-            if not passThrough then
+            local pass_through = listener(ctrl, x, y, id)
+            if not pass_through then
                 topToBeCalled = false
             end
-        elseif ctrl.receiveThrough then
+        elseif ctrl.receive_through then
             listener(ctrl, x, y, id)
         end
     end

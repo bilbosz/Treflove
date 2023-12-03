@@ -4,11 +4,11 @@ local EventManager = require("events.event-manager")
 ---@class FileSystemDropEventListener: Control
 local FileSystemDropEventListener = class("FileSystemDropEventListener", Control)
 
-function FileSystemDropEventListener:init(receiveThrough)
-    self.receiveThrough = receiveThrough
+function FileSystemDropEventListener:init(receive_through)
+    self.receive_through = receive_through
 end
 
-function FileSystemDropEventListener:on_file_system_drop(x, y, droppedFile)
+function FileSystemDropEventListener:on_file_system_drop(x, y, dropped_file)
 
 end
 
@@ -31,12 +31,12 @@ function FileSystemDropEventManager:init()
     EventManager.init(self, FileSystemDropEventListener)
 end
 
-function FileSystemDropEventManager:file_drop(droppedFile)
+function FileSystemDropEventManager:file_drop(dropped_file)
     local x, y = app.pointer_event_manager:get_position()
-    self:invoke_event(FileSystemDropEventListener.on_file_system_drop, x, y, droppedFile)
+    self:invoke_event(FileSystemDropEventListener.on_file_system_drop, x, y, dropped_file)
 end
 
-function FileSystemDropEventManager:invoke_event(method, x, y, droppedFile)
+function FileSystemDropEventManager:invoke_event(method, x, y, dropped_file)
     local listeners = self._methods[method]
     local list = {}
     GetListenerList(app.root, listeners, x, y, list)
@@ -44,12 +44,12 @@ function FileSystemDropEventManager:invoke_event(method, x, y, droppedFile)
     for _, ctrl in ripairs(list) do
         local listener = listeners[ctrl]
         if topToBeCalled then
-            local passThrough = listener(ctrl, x, y, droppedFile)
-            if not passThrough then
+            local pass_through = listener(ctrl, x, y, dropped_file)
+            if not pass_through then
                 topToBeCalled = false
             end
-        elseif ctrl.receiveThrough then
-            listener(ctrl, x, y, droppedFile)
+        elseif ctrl.receive_through then
+            listener(ctrl, x, y, dropped_file)
         end
     end
 end

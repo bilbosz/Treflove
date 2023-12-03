@@ -14,32 +14,32 @@ local Page = class("Page", Model, ClippingRectangle, PointerEventListener, Wheel
 function Page:_create_background(path)
     local bg = Image(self, path)
     self.background = bg
-    local bgW, bgH = bg:get_size()
+    local bg_w, bg_h = bg:get_size()
 
     local w, h = self:get_size()
 
-    bg:set_scale(self.pixelPerMeter * self.pageWidth / bgW)
-    bg:set_origin(bgW * 0.5, bgH * 0.5)
+    bg:set_scale(self.pixelPerMeter * self.page_width / bg_w)
+    bg:set_origin(bg_w * 0.5, bg_h * 0.5)
     bg:set_position(w * 0.5, h * 0.5)
 end
 
 function Page:_create_page_coordinates()
     local bg = self.background
-    local bgW = bg:get_size()
-    self.pageCoordinates = Control(bg)
-    self.pageCoordinates:set_scale(bgW / self.pageWidth)
+    local bg_w = bg:get_size()
+    self.page_coordinates = Control(bg)
+    self.page_coordinates:set_scale(bg_w / self.page_width)
 end
 
-function Page:init(data, gameScreen, width, height)
+function Page:init(data, game_screen, width, height)
 
     Model.init(self, data)
-    ClippingRectangle.init(self, gameScreen:get_control(), width, height)
+    ClippingRectangle.init(self, game_screen:get_control(), width, height)
     PointerEventListener.init(self, true)
     self.name = data.name
     self.pixelPerMeter = data.pixel_per_meter
-    self.pageWidth = data.width
+    self.page_width = data.width
     self.pointerDownPos = {}
-    self.gameScreen = gameScreen
+    self.game_screen = game_screen
 
     self:_create_background(data.image)
     self:_create_page_coordinates()
@@ -47,7 +47,7 @@ function Page:init(data, gameScreen, width, height)
 
     self.tokens = {}
     for _, name in ipairs(data.tokens) do
-        table.insert(self.tokens, Token(app.data.tokens[name], self.pageCoordinates))
+        table.insert(self.tokens, Token(app.data.tokens[name], self.page_coordinates))
     end
 
     app.pointer_event_manager:register_listener(self)
@@ -55,7 +55,7 @@ function Page:init(data, gameScreen, width, height)
 end
 
 function Page:get_page_coordinates()
-    return self.pageCoordinates
+    return self.page_coordinates
 end
 
 function Page:get_tokens()
@@ -68,7 +68,7 @@ function Page:on_pointer_down(x, y, button)
         return
     end
     if button == Consts.PAGE_SELECT_BUTTON and not self.pointerDownPos[Consts.PAGE_DRAG_TOKEN_BUTTON] then
-        local wx, wy = self.pageCoordinates:transform_to_local(x, y)
+        local wx, wy = self.page_coordinates:transform_to_local(x, y)
         self.selection:set_start_point(wx, wy)
         self.pointerDownPos[button] = {
             tx,
@@ -83,7 +83,7 @@ function Page:on_pointer_down(x, y, button)
     end
     if button == Consts.PAGE_DRAG_TOKEN_BUTTON and not self.pointerDownPos[Consts.PAGE_SELECT_BUTTON] then
         self.pointerDownPos[button] = {
-            self.pageCoordinates:transform_to_local(x, y)
+            self.page_coordinates:transform_to_local(x, y)
         }
         self.selectSetStartPos = {}
         local set = self.selection:get_select_set()
@@ -97,7 +97,7 @@ end
 
 function Page:on_pointer_up(x, y, button)
     if self.pointerDownPos[Consts.PAGE_SELECT_BUTTON] and button == Consts.PAGE_SELECT_BUTTON then
-        local wx, wy = self.pageCoordinates:transform_to_local(x, y)
+        local wx, wy = self.page_coordinates:transform_to_local(x, y)
         local selection = self.selection
         selection:set_end_point(wx, wy)
 
@@ -120,17 +120,17 @@ function Page:on_pointer_move(x, y)
         local px, py = unpack(self.pointerDownPos[Consts.PAGE_DRAG_VIEW_BUTTON])
         local tx, ty = self:transform_to_local(x, y)
         local bg = self.background
-        local bgX, bgY = bg:get_position()
-        bg:set_position(bgX + tx - px, bgY + ty - py)
+        local bg_x, bg_y = bg:get_position()
+        bg:set_position(bg_x + tx - px, bg_y + ty - py)
         self.pointerDownPos[Consts.PAGE_DRAG_VIEW_BUTTON][1], self.pointerDownPos[Consts.PAGE_DRAG_VIEW_BUTTON][2] = tx, ty
     end
     if self.pointerDownPos[Consts.PAGE_SELECT_BUTTON] then
-        local wx, wy = self.pageCoordinates:transform_to_local(x, y)
+        local wx, wy = self.page_coordinates:transform_to_local(x, y)
         self.selection:set_end_point(wx, wy)
     end
     if self.pointerDownPos[Consts.PAGE_DRAG_TOKEN_BUTTON] then
         local sx, sy = unpack(self.pointerDownPos[Consts.PAGE_DRAG_TOKEN_BUTTON])
-        local wx, wy = self.pageCoordinates:transform_to_local(x, y)
+        local wx, wy = self.page_coordinates:transform_to_local(x, y)
         local ox, oy = wx - sx, wy - sy
         local set = self.selection:get_select_set()
         for token in pairs(set) do
@@ -141,24 +141,24 @@ function Page:on_pointer_move(x, y)
 end
 
 function Page:on_wheel_moved(x, y)
-    local realMouseX, realMouseY = love.mouse.getPosition()
+    local realMouseX, realMouseY = love.mouse.get_position()
     local selfMouseX, selfMouseY = self:transform_to_local(realMouseX, realMouseY)
     if selfMouseX >= 0 and selfMouseX < self.size[1] and selfMouseY >= 0 and selfMouseY < self.size[2] then
         local bg = self.background
         local bgMouseX, bgMouseY = bg:transform_to_local(realMouseX, realMouseY)
 
-        local zoomInc = math.pow(Consts.PAGE_ZOOM_INCREASE, y)
+        local zoom_inc = math.pow(Consts.PAGE_ZOOM_INCREASE, y)
 
         bg:set_origin(bgMouseX, bgMouseY)
         bg:set_position(selfMouseX, selfMouseY)
 
-        local scale = bg:get_scale() * zoomInc
+        local scale = bg:get_scale() * zoom_inc
         bg:set_scale(scale)
     end
 end
 
 function Page:get_game_screen()
-    return self.gameScreen
+    return self.game_screen
 end
 
 function Page:get_selection()

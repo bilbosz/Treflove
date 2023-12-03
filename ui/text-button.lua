@@ -11,13 +11,13 @@ local function UpdateTextColor(self)
     self:set_color((self:is_focused() or self:is_selected()) and Consts.BUTTON_SELECT_COLOR or self:is_hovered() and Consts.BUTTON_HOVER_COLOR or Consts.BUTTON_NORMAL_COLOR)
 end
 
-function TextButton:init(parent, formScreen, text, action)
+function TextButton:init(parent, form_screen, text, action)
     Text.init(self, parent, text, Consts.BUTTON_NORMAL_COLOR)
     ButtonEventListener.init(self)
-    Input.init(self, formScreen)
+    Input.init(self, form_screen)
     KeyboardEventListener.init(self, true)
     self.action = action
-    self.isHover = false
+    self.is_hover = false
     self.text = text
 end
 

@@ -103,8 +103,8 @@ function Client:register_love_callbacks()
         self.pointer_event_manager:pointer_move(x, y, id)
         self.button_event_manager:pointer_move(x, y, id)
     end
-    function love.filedropped(droppedFile)
-        self.file_system_drop_event_manager:file_drop(droppedFile)
+    function love.filedropped(dropped_file)
+        self.file_system_drop_event_manager:file_drop(dropped_file)
     end
     function love.textinput(text)
         self.text_event_manager:text_input(text)

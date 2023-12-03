@@ -18,11 +18,11 @@ local function CreateBackgroundLabels(self, str)
     label:set_scale(Consts.PANEL_FIELD_SCALE)
     local w, h = label:get_outer_size()
 
-    local areaW, areaH = self:get_size()
-    local desiredW, desiredH = areaW * math.sqrt(2), areaH * math.sqrt(2)
-    local hor = math.ceil(desiredW / (w + Consts.PADDING) + 0.5)
-    local ver = math.ceil(desiredH / (h + Consts.PADDING))
-    local labelsW, labelsH = hor * (w + Consts.PADDING), ver * (h + Consts.PADDING)
+    local area_w, area_h = self:get_size()
+    local desired_w, desired_h = area_w * math.sqrt(2), area_h * math.sqrt(2)
+    local hor = math.ceil(desired_w / (w + Consts.PADDING) + 0.5)
+    local ver = math.ceil(desired_h / (h + Consts.PADDING))
+    local labels_w, labels_h = hor * (w + Consts.PADDING), ver * (h + Consts.PADDING)
 
     local x, y, w, h = 0, 0, nil, nil
     for i = 1, ver do
@@ -37,8 +37,8 @@ local function CreateBackgroundLabels(self, str)
         y = y + h + Consts.PADDING
     end
 
-    labels:set_position(areaW * 0.5, areaH * 0.5)
-    labels:set_origin(labelsW * 0.5, labelsH * 0.5)
+    labels:set_position(area_w * 0.5, area_h * 0.5)
+    labels:set_origin(labels_w * 0.5, labels_h * 0.5)
     labels:set_rotation(math.pi * 0.25)
 
     return labels
@@ -46,7 +46,7 @@ end
 
 local function SetLabels(self, labels)
     for _, v in ipairs({
-        self.previewLabels,
+        self.preview_labels,
         self.dropFileLabels
     }) do
         v:set_enabled(false)
@@ -56,8 +56,8 @@ end
 
 local function _create_background(self)
     local w, h = self:get_size()
-    local background = Rectangle(self, w, h, Consts.BUTTON_NORMAL_COLOR)
-    self.previewLabels = CreateBackgroundLabels(self, PREVIEW_STRING)
+    Rectangle(self, w, h, Consts.BUTTON_NORMAL_COLOR)
+    self.preview_labels = CreateBackgroundLabels(self, PREVIEW_STRING)
     self.dropFileLabels = CreateBackgroundLabels(self, DROP_FILE_STRING)
 
     SetLabels(self, self.dropFileLabels)
@@ -65,7 +65,7 @@ end
 
 local function CreateContentParent(self)
     local control = Control(self)
-    self.contentParent = control
+    self.content_parent = control
 
     local w, h = self:get_size()
     control:set_position(w * 0.5, h * 0.5)
@@ -82,17 +82,17 @@ function PreviewArea:init(parent, width, height)
     app.file_system_drop_event_manager:register_listener(self)
 end
 
-function PreviewArea:on_file_system_drop(x, y, droppedFile)
-    local ok, err = droppedFile:open("r")
+function PreviewArea:on_file_system_drop(x, y, dropped_file)
+    local ok, err = dropped_file:open("r")
     assert(ok, err)
-    self.parent:set_file(droppedFile)
-    droppedFile:close()
+    self.parent:set_file(dropped_file)
+    dropped_file:close()
 end
 
-function PreviewArea:SetContent(loveContent, Preview)
+function PreviewArea:SetContent(love_content, Preview)
     self:reset()
-    SetLabels(self, self.previewLabels)
-    self.preview = Preview(self, loveContent)
+    SetLabels(self, self.preview_labels)
+    self.preview = Preview(self, love_content)
 end
 
 function PreviewArea:reset()

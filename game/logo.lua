@@ -7,10 +7,10 @@ local Logo = class("Logo", DrawableControl)
 
 function Logo:init(parent)
     local image = love.graphics.newImage("icon.png")
-    local imgW, imgH = image:getDimensions()
-    local r = imgW * 0.5
+    local img_w, img_h = image:getDimensions()
+    local r = img_w * 0.5
 
-    DrawableControl.init(self, parent, imgW, imgW, function()
+    DrawableControl.init(self, parent, img_w, img_w, function()
         love.graphics.setColor(Consts.LOGO_COLOR_BG)
         love.graphics.circle("fill", r, r, r)
     end)
@@ -25,20 +25,20 @@ function Logo:init(parent)
             return vec4(1.0);
         }
     ]])
-    local mask = ClippingMask(self, imgW, imgH, function()
+    local mask = ClippingMask(self, img_w, img_h, function()
         love.graphics.setShader(shader)
         love.graphics.draw(image)
         love.graphics.setShader()
     end)
-    mask:set_origin(r, imgH * 0.5 - 11)
+    mask:set_origin(r, img_h * 0.5 - 11)
     mask:set_position(r, r)
     mask:set_scale(0.94)
     self.mask = mask
 
     self.color = Consts.LOGO_COLOR_FG
-    local background = DrawableControl(mask, imgW, imgW, function()
+    local background = DrawableControl(mask, img_w, img_w, function()
         love.graphics.setColor(self.color)
-        love.graphics.rectangle("fill", 0, 0, imgW, imgW)
+        love.graphics.rectangle("fill", 0, 0, img_w, img_w)
     end)
     background:set_origin(r, r)
     background:set_position(r, r)

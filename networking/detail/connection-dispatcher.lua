@@ -1,7 +1,7 @@
-local loggerData, channel, address, port = ...
+local logger_data, channel, address, port = ...
 
 local Socket = require("socket")
-local logger = require("utils.logger")(loggerData, "connection-dispatcher")
+local logger = require("utils.logger")(logger_data, "connection-dispatcher")
 
 local server, error = Socket.bind(address, tonumber(port))
 assert(not error, error)
@@ -13,21 +13,21 @@ while true do
     local client = server:accept()
     logger:log("New client found")
 
-    local dispatcherChannel = love.thread.newChannel()
-    local inThread = love.thread.newThread("networking/detail/server-in.lua")
-    inThread:start(loggerData, address, dispatcherChannel, channel, inThread)
+    local dispatcher_channel = love.thread.newChannel()
+    local in_thread = love.thread.newThread("networking/detail/server-in.lua")
+    in_thread:start(logger_data, address, dispatcher_channel, channel, in_thread)
 
-    local inPort = dispatcherChannel:demand()
-    if inPort then
-        local inPortString = tostring(inPort)
+    local in_port = dispatcher_channel:demand()
+    if in_port then
+        local inPortString = tostring(in_port)
         logger:log("Received receiver port " .. inPortString)
         client:send(inPortString .. "\n")
     else
         logger:log("Server input port not received")
-        inThread:release()
+        in_thread:release()
     end
-    dispatcherChannel:release()
+    dispatcher_channel:release()
 
     client:close()
-    logger:log("Dispatcher connection closed for client with port " .. inPort)
+    logger:log("Dispatcher connection closed for client with port " .. in_port)
 end

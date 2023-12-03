@@ -1,17 +1,17 @@
-local loggerData, channel, address, getPortChannel, inChannel, outChannel = ...
+local logger_data, channel, address, getPortChannel, in_channel = ...
 
 local Socket = require("socket")
-local logger = require("utils.logger")(loggerData, "client-in-?????")
+local logger = require("utils.logger")(logger_data, "client-in-?????")
 
-local inServer, error = Socket.bind(address, 0)
+local in_server, error = Socket.bind(address, 0)
 if error then
     logger:log("Could not bind for receiver")
     return
 end
-local inPort = select(2, inServer:getsockname())
-logger:set_name(string.format("client-in-%05i", inPort))
-getPortChannel:push(inPort)
-local inClient, error = inServer:accept()
+local in_port = select(2, in_server:getsockname())
+logger:set_name(string.format("client-in-%05i", in_port))
+getPortChannel:push(in_port)
+local in_client, error = in_server:accept()
 if error then
     logger:log("Could not connect to server")
     return
@@ -19,7 +19,7 @@ end
 logger:log("Established input connection to server. Waiting for messages...")
 
 while true do
-    local msg, error = inClient:receive("*l")
+    local msg, error = in_client:receive("*l")
     if error then
         if error == "closed" then
             logger:log("Connection closed by host")
@@ -30,7 +30,7 @@ while true do
     end
     local n = tonumber(msg)
     assert_type(n, "number")
-    local data, error = inClient:receive(n)
+    local data, error = in_client:receive(n)
     if error then
         if error == "closed" then
             logger:log("Connection lost")
@@ -40,9 +40,9 @@ while true do
         break
     end
     logger:log("Received data with size of " .. n)
-    inChannel:push(data)
+    in_channel:push(data)
 end
 channel:push({
     "i",
-    inChannel
+    in_channel
 })

@@ -44,7 +44,7 @@ local function UpdateBackgroundView(self)
 end
 
 local function UpdateTextView(self)
-    local text = self.textCtrl
+    local text = self.text_ctrl
     if self.masked then
         text:set_text(string.rep("•", self:get_text_length()))
     else
@@ -54,13 +54,13 @@ end
 
 local function UpdateCaretView(self)
     local caret = self.caret
-    local isFocused = self:is_focused()
-    caret:set_enabled(isFocused)
-    if isFocused then
-        self.caretTime = 0
+    local is_focused = self:is_focused()
+    caret:set_enabled(is_focused)
+    if is_focused then
+        self.caret_time = 0
     end
 
-    local text = self.textCtrl
+    local text = self.text_ctrl
     local w = text:get_size() * text:get_scale()
     caret:set_position(w)
 end
@@ -113,7 +113,7 @@ end
 local function CreateText(self)
     local font = Consts.USER_INPUT_FONT
     local text = Text(self.content, "", Consts.TEXT_INPUT_FOREGROUND_COLOR, font)
-    self.textCtrl = text
+    self.text_ctrl = text
 
     text:set_origin(0, font:getHeight() * 0.5)
     text:set_scale(Consts.MENU_FIELD_SCALE)
@@ -129,20 +129,20 @@ local function CreateContent(self)
     CreateText(self)
 end
 
-function TextInput:init(parent, formScreen, width, height, masked, onInput, onEnter)
-    assert_type(formScreen, FormScreen)
+function TextInput:init(parent, form_screen, width, height, masked, on_input, on_enter)
+    assert_type(form_screen, FormScreen)
     Control.init(self, parent, width, height)
     ButtonEventListener.init(self)
     TextEventListener.init(self)
-    Input.init(self, formScreen)
+    Input.init(self, form_screen)
     self.width = width
     self.height = height
     self.padding = 10
     self.masked = masked or false
-    self.onInput = onInput
-    self.onEnter = onEnter
-    self.caretTime = nil
-    self.isMultivalue = false
+    self.on_input = on_input
+    self.on_enter = on_enter
+    self.caret_time = nil
+    self.is_multivalue = false
     self.hasNewValue = false
     _create_background(self)
     CreateClip(self)
@@ -164,8 +164,8 @@ end
 function TextInput:on_update(dt)
     local caret = self.caret
     if self:is_focused() then
-        local time = self.caretTime + dt
-        self.caretTime = time
+        local time = self.caret_time + dt
+        self.caret_time = time
         caret:set_enabled(math.fmod(time, Consts.CARET_BLINK_INTERVAL * 2) <= Consts.CARET_BLINK_INTERVAL)
     end
 end
@@ -187,24 +187,24 @@ function TextInput:on_click()
 end
 
 function TextInput:on_edit(...)
-    if self.isMultivalue then
+    if self.is_multivalue then
         self.hasNewValue = true
     end
     _update_view(self)
-    if self.onInput then
-        self.onInput()
+    if self.on_input then
+        self.on_input()
     end
 end
 
 function TextInput:on_enter()
-    if self.onEnter then
-        self.onEnter()
+    if self.on_enter then
+        self.on_enter()
     end
     _update_view(self)
 end
 
 function TextInput:on_remove_empty()
-    if self.isMultivalue then
+    if self.is_multivalue then
         self.hasNewValue = not self.hasNewValue
     end
     _update_view(self)
@@ -240,17 +240,17 @@ function TextInput:set_multivalue(value)
     if value then
         TextEventListener.set_text(self, "")
     end
-    self.isMultivalue = value
+    self.is_multivalue = value
     self.hasNewValue = false
     _update_view(self)
 end
 
 function TextInput:is_multivalue()
-    return self.isMultivalue
+    return self.is_multivalue
 end
 
 function TextInput:is_multivalue_default()
-    return self.isMultivalue and not self.hasNewValue
+    return self.is_multivalue and not self.hasNewValue
 end
 
 function TextInput:on_read_only_change()

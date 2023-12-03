@@ -22,10 +22,10 @@ local function CreateAvatar(self, path)
     local img = Image(clip, path)
     self.image = img
 
-    local imgW, imgH = img:get_size()
-    local scaleW, scaleH = d / imgW, d / imgH
-    img:set_origin(imgW * 0.5, imgH * 0.5)
-    img:set_scale(math.max(scaleW, scaleH))
+    local img_w, img_h = img:get_size()
+    local scale_w, scale_h = d / img_w, d / img_h
+    img:set_origin(img_w * 0.5, img_h * 0.5)
+    img:set_scale(math.max(scale_w, scale_h))
     img:set_position(r, r)
 end
 
@@ -66,7 +66,7 @@ function Token:init(data, parent)
     CreateLabel(self, data.name)
     CreateSelectionEffect(self)
 
-    self.isSelected = false
+    self.is_selected = false
 
     app.pointer_event_manager:register_listener(self)
 end
@@ -76,7 +76,7 @@ function Token:get_radius()
 end
 
 function Token:set_select(value)
-    self.isSelected = value
+    self.is_selected = value
     self.selection:set_enabled(value)
     if value then
         self:reattach()
@@ -84,7 +84,7 @@ function Token:set_select(value)
 end
 
 function Token:get_select()
-    return self.isSelected
+    return self.is_selected
 end
 
 function Token:set_position(x, y)
@@ -111,16 +111,16 @@ function Token:set_data(key, value)
         end)
 
         local img = self.image
-        local imgW, imgH = img:get_size()
-        local scaleW, scaleH = d / imgW, d / imgH
-        img:set_origin(imgW * 0.5, imgH * 0.5)
-        img:set_scale(math.max(scaleW, scaleH))
+        local img_w, img_h = img:get_size()
+        local scale_w, scale_h = d / img_w, d / img_h
+        img:set_origin(img_w * 0.5, img_h * 0.5)
+        img:set_scale(math.max(scale_w, scale_h))
         img:set_position(r, r)
 
-        local selectionR = self.d * 0.5 - Consts.TOKEN_SELECTION_THICKNESS * 0.5
+        local selection_r = self.d * 0.5 - Consts.TOKEN_SELECTION_THICKNESS * 0.5
         local selection = self.selection
-        selection:set_radius(selectionR, selectionR)
-        selection:set_position(-selectionR, -selectionR)
+        selection:set_radius(selection_r, selection_r)
+        selection:set_position(-selection_r, -selection_r)
 
         CenterLabel(self)
     end

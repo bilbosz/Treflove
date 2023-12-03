@@ -4,8 +4,8 @@ local TextInput = require("ui.text-input")
 ---@class NumberInput: TextInput
 local NumberInput = class("NumberInput", TextInput)
 
-function NumberInput:init(parent, formScreen, width, height, onInput, onEnter)
-    TextInput.init(self, parent, formScreen, width, height, false, onInput, onEnter)
+function NumberInput:init(parent, form_screen, width, height, on_input, on_enter)
+    TextInput.init(self, parent, form_screen, width, height, false, on_input, on_enter)
     self.number = 0
 end
 

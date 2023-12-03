@@ -140,6 +140,7 @@ function table.from_string(str)
     local chunk = loadstring(str)
     local no_error, result = pcall(chunk)
     if not no_error then
+        app:log("Error when creating table.", tostring(result))
         return nil
     end
     return result

@@ -6,23 +6,23 @@ local KeyboardEventListener = require("events.keyboard").Listener
 local FormScreen = class("FormScreen", Screen, KeyboardEventListener)
 
 local function _notify_listeners(self)
-    if self.prevFocus == self._focus then
+    if self.prev_focus == self._focus then
         return
     end
-    local oldItem = self.inputs[self.prevFocus]
-    if oldItem then
-        oldItem:on_focus_lost()
+    local old_item = self.inputs[self.prev_focus]
+    if old_item then
+        old_item:on_focus_lost()
     end
-    local newItem = self.inputs[self._focus]
-    if newItem then
-        newItem:on_focus()
+    local new_item = self.inputs[self._focus]
+    if new_item then
+        new_item:on_focus()
     end
 end
 
 local function _advance_focus(self, d)
     assert(d == 1 or d == -1)
     local inputs = self.inputs
-    self.prevFocus = self._focus
+    self.prev_focus = self._focus
 
     local n = #inputs
     if n == 0 then
@@ -53,9 +53,9 @@ function FormScreen:init()
     Screen.init(self)
     KeyboardEventListener.init(self, true)
     self.inputs = {}
-    self.prevFocus = nil
+    self.prev_focus = nil
     self._focus = nil
-    self.isShowed = false
+    self._is_showed = false
 end
 
 function FormScreen:show(...)
@@ -64,11 +64,11 @@ function FormScreen:show(...)
         input:on_screen_show()
     end
     app.keyboard_manager:register_listener(self)
-    self.isShowed = true
+    self._is_showed = true
 end
 
 function FormScreen:hide()
-    self.isShowed = false
+    self._is_showed = false
     app.keyboard_manager:unregister_listener(self)
     for _, input in ipairs(self.inputs) do
         input:on_screen_hide()
@@ -77,7 +77,7 @@ function FormScreen:hide()
 end
 
 function FormScreen:is_showed()
-    return self.isShowed
+    return self._is_showed
 end
 
 function FormScreen:on_key_pressed(key)
@@ -104,8 +104,8 @@ function FormScreen:remove_input(input)
     if found == self._focus then
         self._focus = nil
     end
-    if found == self.prevFocus then
-        self.prevFocus = nil
+    if found == self.prev_focus then
+        self.prev_focus = nil
     end
 end
 
@@ -128,14 +128,14 @@ function FormScreen:focus(input)
         end
     end
     assert(found)
-    self.prevFocus = self._focus
+    self.prev_focus = self._focus
     self._focus = found
     _notify_listeners(self)
 end
 
 function FormScreen:remove_all_inputs()
     self.inputs = {}
-    self.prevFocus = nil
+    self.prev_focus = nil
     self._focus = nil
 end
 

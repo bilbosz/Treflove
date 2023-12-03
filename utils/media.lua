@@ -47,10 +47,10 @@ local MATCH_FILE = {
 function Media.GetTypeAndMedium(data)
     for _, v in ipairs(MATCH_FILE) do
         local f, t = unpack(v)
-        local isOk, medium = pcall(function()
+        local is_ok, medium = pcall(function()
             return f(data)
         end)
-        if isOk then
+        if is_ok then
             return t, medium
         end
     end

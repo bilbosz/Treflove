@@ -3,19 +3,21 @@ local FormScreen = require("ui.form-screen")
 ---@class Input
 local Input = class("Input")
 
-function Input:init(formScreen)
-    assert_type(formScreen, FormScreen)
-    self.formScreen = formScreen
-    self.isFocused = false
+---@param form_screen FormScreen
+---@return void
+function Input:init(form_screen)
+    assert_type(form_screen, FormScreen)
+    self.form_screen = form_screen
+    self._is_focused = false
     self.isReadOnly = false
-    formScreen:add_input(self)
-    if formScreen:is_showed() then
+    form_screen:add_input(self)
+    if form_screen:is_showed() then
         self:on_screen_show()
     end
 end
 
 function Input:get_form_screen()
-    return self.formScreen
+    return self.form_screen
 end
 
 function Input:set_read_only(value)
@@ -30,7 +32,7 @@ function Input:is_read_only()
 end
 
 function Input:on_read_only_change()
-    self.formScreen:read_only_change(self)
+    self.form_screen:read_only_change(self)
 end
 
 function Input:on_screen_show()
@@ -42,15 +44,15 @@ function Input:on_screen_hide()
 end
 
 function Input:on_focus()
-    self.isFocused = true
+    self._is_focused = true
 end
 
 function Input:on_focus_lost()
-    self.isFocused = false
+    self._is_focused = false
 end
 
 function Input:is_focused()
-    return self.isFocused
+    return self._is_focused
 end
 
 return Input

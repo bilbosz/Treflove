@@ -1,11 +1,11 @@
-local loggerData, channel, address, port, outThread = ...
+local logger_data, channel, address, port, out_thread = ...
 
 require("app.globals")
 local Socket = require("socket")
 local Logger = require("utils.logger")
-local logger = Logger(loggerData, "client-out-?????")
+local logger = Logger(logger_data, "client-out-?????")
 
-local outPort
+local out_port
 do
     logger:log("Trying to connect to port " .. port)
     local client, error = Socket.connect(address, tonumber(port))
@@ -13,9 +13,9 @@ do
         logger:log("Could not connect to port " .. port)
         return
     end
-    outPort, error = client:receive("*l")
-    logger:set_name(string.format("client-out-%05i", outPort))
-    if error or not tonumber(outPort) then
+    out_port, error = client:receive("*l")
+    logger:set_name(string.format("client-out-%05i", out_port))
+    if error or not tonumber(out_port) then
         client:close()
         logger:log("Could not receive client sender port")
         return
@@ -26,35 +26,35 @@ end
 
 do
     local getPortChannel = love.thread.newChannel()
-    local inChannel, outChannel = love.thread.newChannel(), love.thread.newChannel()
-    local outClient, error = Socket.connect(address, tonumber(outPort))
+    local in_channel, out_channel = love.thread.newChannel(), love.thread.newChannel()
+    local out_client, error = Socket.connect(address, tonumber(out_port))
     if error then
-        logger:log("Could not connect to server on port " .. outPort)
+        logger:log("Could not connect to server on port " .. out_port)
         return
     end
-    local inThread = love.thread.newThread("networking/detail/client-in.lua")
-    inThread:start(loggerData, channel, address, getPortChannel, inChannel, outChannel)
+    local in_thread = love.thread.newThread("networking/detail/client-in.lua")
+    in_thread:start(logger_data, channel, address, getPortChannel, in_channel, out_channel)
 
-    local inPort = getPortChannel:demand()
-    local error = select(2, outClient:send(tostring(inPort) .. "\n"))
+    local in_port = getPortChannel:demand()
+    local error = select(2, out_client:send(tostring(in_port) .. "\n"))
     if error then
         logger:log("Could not send receiver port")
         return
     end
     channel:push({
         "a",
-        inChannel,
-        inThread,
-        outChannel,
-        outThread
+        in_channel,
+        in_thread,
+        out_channel,
+        out_thread
     })
     logger:log("Established output connection with host")
 
-    local msg = outChannel:demand()
+    local msg = out_channel:demand()
     while msg ~= false do
         assert_type(msg, "string")
         local n = #msg
-        local error = select(2, outClient:send(tostring(n) .. "\n"))
+        local error = select(2, out_client:send(tostring(n) .. "\n"))
         if error then
             if error == "closed" then
                 logger:log("Connection closed by host")
@@ -63,7 +63,7 @@ do
             end
             break
         end
-        local error = select(2, outClient:send(msg))
+        local error = select(2, out_client:send(msg))
         if error then
             if error == "closed" then
                 logger:log("Connection lost")
@@ -73,10 +73,10 @@ do
             break
         end
         logger:log("Send data with size of " .. n)
-        msg = outChannel:demand()
+        msg = out_channel:demand()
     end
     channel:push({
         "o",
-        outChannel
+        out_channel
     })
 end

@@ -37,9 +37,9 @@ end
 function KeyboardManager:invoke_event(method, ...)
     assert(not self._lock)
     self._lock = true
-    for listener, listenerMethod in pairs(self._methods[method]) do
+    for listener, listener_method in pairs(self._methods[method]) do
         if not self._to_remove[listener] and (listener:ignore_text_events() or not app.text_event_manager:is_text_input()) then
-            listenerMethod(listener, ...)
+            listener_method(listener, ...)
         end
     end
     self._lock = false

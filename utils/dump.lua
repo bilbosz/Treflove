@@ -3,111 +3,111 @@ local function DumpGenerator(config)
         return
     end
 
-    local function createKeyword(keyword)
+    local function create_keyword(keyword)
         return "[" .. keyword .. "]\n"
     end
 
-    local function createStacktrace(config)
+    local function create_stacktrace(config)
         local result = "\n[STACKTRACE]\n"
         local trace = debug.traceback()
-        local lineNo = 1
-        local ignoreHead = 3
+        local line_no = 1
+        local ignore_head = 3
         local found = 0
         while found do
             local prev = found
             found = string.find(trace, "\n", found + 1)
             local line = string.sub(trace, prev + 1, found)
-            if lineNo > ignoreHead and not string.find(line, "boot%.lua") and not string.find(line, "%[C%]") then
+            if line_no > ignore_head and not string.find(line, "boot%.lua") and not string.find(line, "%[C%]") then
                 result = result .. line
             end
-            lineNo = lineNo + 1
+            line_no = line_no + 1
         end
         return result
     end
 
-    local nodeTypes = {
+    local node_types = {
         Value = 1,
         Index = 2,
         Key = 3
     }
 
-    local nodeDisplays = {
-        [nodeTypes.Value] = config.dump.valueDisplay,
-        [nodeTypes.Index] = config.dump.indexDisplay,
-        [nodeTypes.Key] = config.dump.keyDisplay
+    local node_displays = {
+        [node_types.Value] = config.dump.value_display,
+        [node_types.Index] = config.dump.index_display,
+        [node_types.Key] = config.dump.key_display
     }
 
-    local function createDump(config, args, n)
+    local function create_dump(config, args, n)
         config.tableMaxLevel = config.tableMaxLevel or math.huge
         assert(not config.tableUnfoldRepeated or config.tableMaxLevel ~= math.huge)
 
-        local function getGlobVarName(val, tab, recursionCheck, isFirstLayer)
+        local function getGlobVarName(val, tab, recursion_check, isFirstLayer)
             tab = tab or _G
-            recursionCheck = recursionCheck or {}
+            recursion_check = recursion_check or {}
             isFirstLayer = isFirstLayer == nil and true
 
-            for varName, curVal in pairs(tab) do
-                if curVal == val then
-                    if type(varName) == "number" then
-                        return "[" .. varName .. "]"
+            for var_name, cur_val in pairs(tab) do
+                if cur_val == val then
+                    if type(var_name) == "number" then
+                        return "[" .. var_name .. "]"
                     else
-                        return (isFirstLayer and "" or ".") .. varName
+                        return (isFirstLayer and "" or ".") .. var_name
                     end
-                elseif type(curVal) == "table" then
-                    if recursionCheck[curVal] then
+                elseif type(cur_val) == "table" then
+                    if recursion_check[cur_val] then
                         return
                     else
-                        recursionCheck[curVal] = true
+                        recursion_check[cur_val] = true
                     end
-                    local founding = getGlobVarName(val, curVal, recursionCheck, false)
+                    local founding = getGlobVarName(val, cur_val, recursion_check, false)
                     if founding then
-                        if type(varName) == "number" then
-                            return "[" .. varName .. "]" .. founding
+                        if type(var_name) == "number" then
+                            return "[" .. var_name .. "]" .. founding
                         else
-                            return (isFirstLayer and "" or ".") .. varName .. founding
+                            return (isFirstLayer and "" or ".") .. var_name .. founding
                         end
                     end
                 end
             end
         end
 
-        local function dump(val, level, node, recursionCheck)
+        local function dump(val, level, node, recursion_check)
             local result = ""
 
-            recursionCheck = recursionCheck or {}
+            recursion_check = recursion_check or {}
 
-            local indention = config.tableIndention and string.rep(config.tableIndention, level) or ""
-            local valueIndention = node == nodeTypes.Value and "" or indention
+            local indention = config.table_indention and string.rep(config.table_indention, level) or ""
+            local value_indention = node == node_types.Value and "" or indention
 
             local type_ = type(val)
-            local varName
+            local var_name
             if config.showGlobalNames then
-                varName = getGlobVarName(val)
+                var_name = getGlobVarName(val)
             end
             local content
 
-            if type_ == "table" and (config.tableUnfoldRepeated or not recursionCheck[val]) and node == nodeTypes.Value and level < config.tableMaxLevel then
-                recursionCheck[val] = true
-                content = valueIndention .. "{" .. config.tableNewline
-                local lastIndex = 0
-                for key, curVal in pairs(val) do
-                    local keyType = type(key)
-                    if keyType == "number" and key == lastIndex + 1 then
-                        lastIndex = key
-                        content = content .. dump(key, level + 1, nodeTypes.Index)
+            if type_ == "table" and (config.tableUnfoldRepeated or not recursion_check[val]) and node == node_types.Value and level < config.tableMaxLevel then
+                recursion_check[val] = true
+                content = value_indention .. "{" .. config.table_newline
+                local last_index = 0
+                for key, cur_val in pairs(val) do
+                    local key_type = type(key)
+                    if key_type == "number" and key == last_index + 1 then
+                        last_index = key
+                        content = content .. dump(key, level + 1, node_types.Index)
                     else
-                        content = content .. dump(key, level + 1, nodeTypes.Key)
+                        content = content .. dump(key, level + 1, node_types.Key)
                     end
-                    content = content .. dump(curVal, level + 1, nodeTypes.Value, recursionCheck) .. "," .. config.tableNewline
+                    content = content .. dump(cur_val, level + 1, node_types.Value, recursion_check) .. "," .. config.table_newline
                 end
                 content = content .. indention .. "}"
             end
-            return valueIndention .. nodeDisplays[node](val, type_, varName, content)
+            return value_indention .. node_displays[node](val, type_, var_name, content)
         end
 
         local result = "\n[DUMP]\n"
         for i = 1, n do
-            result = result .. dump(args[i], 0, nodeTypes.Value) .. (i ~= n and config.separator or "")
+            result = result .. dump(args[i], 0, node_types.Value) .. (i ~= n and config.separator or "")
         end
         return result
     end
@@ -116,11 +116,11 @@ local function DumpGenerator(config)
         local result = ""
 
         if config.keyword then
-            result = result .. createKeyword(config.keyword)
+            result = result .. create_keyword(config.keyword)
         end
 
         if config.stacktrace then
-            result = result .. createStacktrace(config.stacktrace)
+            result = result .. create_stacktrace(config.stacktrace)
         end
 
         if config.dump then
@@ -128,11 +128,11 @@ local function DumpGenerator(config)
                 ...
             }
             local n = select("#", ...)
-            result = result .. createDump(config.dump, args, n)
+            result = result .. create_dump(config.dump, args, n)
         end
 
-        if config.textProcessor then
-            return config.textProcessor(result)
+        if config.text_processor then
+            return config.text_processor(result)
         else
             return result
         end
@@ -160,13 +160,13 @@ local defaultDumpConfig = {
     dump = {
         showGlobalNames = false,
         tableMaxLevel = nil,
-        tableIndention = "    ",
+        table_indention = "    ",
         tableUnfoldRepeated = false,
-        tableNewline = "\n",
-        indexDisplay = function(value, type, globalName, content)
+        table_newline = "\n",
+        index_display = function(value, type, global_name, content)
             return ""
         end,
-        keyDisplay = function(value, type, globalName, content)
+        key_display = function(value, type, global_name, content)
             if type == "table" or type == "userdata" or type == "function" or type == "thread" then
                 return tostring(value)
             elseif type == "string" then
@@ -179,7 +179,7 @@ local defaultDumpConfig = {
                 return "[" .. tostring(value) .. "] = "
             end
         end,
-        valueDisplay = function(value, type, globalName, content)
+        value_display = function(value, type, global_name, content)
             if type == "table" then
                 return content and content or tostring(value)
             elseif type == "string" then
@@ -190,7 +190,7 @@ local defaultDumpConfig = {
         end,
         separator = ",\n"
     },
-    textProcessor = print
+    text_processor = print
 }
 
 dump = DumpGenerator(defaultDumpConfig)

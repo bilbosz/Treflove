@@ -21,8 +21,8 @@ local function LogImpl(self, format, level, ...)
         return
     end
     local sep = self.separator
-    local timeDiff = Utils.get_time() - self.start_time
-    local result = string.format("%8.3f%s%21s", timeDiff, sep, self.name)
+    local time_diff = Utils.get_time() - self.start_time
+    local result = string.format("%8.3f%s%21s", time_diff, sep, self.name)
     if debug then
         local info = debug.getinfo(level, "Sl")
         local location = string.format("%s:%i", info.short_src, info.currentline)

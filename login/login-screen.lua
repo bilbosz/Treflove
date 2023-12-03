@@ -6,20 +6,20 @@ local MenuTextButton = require("ui.menu.menu-text-button")
 local LoginScreen = class("LoginScreen", MenuScreen)
 
 local function login(self)
-    self.login:login(self.loginInput:get_text(), self.passwordInput:get_text())
+    self.login:login(self.login_input:get_text(), self.password_input:get_text())
 end
 
 function LoginScreen:init(login)
     self.login = login
-    self.loginInput = MenuTextInput(self, "Login", false, function()
+    self.login_input = MenuTextInput(self, "Login", false, function()
         login(self)
     end)
-    self.passwordInput = MenuTextInput(self, "Password", true, function()
+    self.password_input = MenuTextInput(self, "Password", true, function()
         login(self)
     end)
     MenuScreen.init(self, "Welcome", {
-        self.loginInput,
-        self.passwordInput,
+        self.login_input,
+        self.password_input,
         MenuTextButton(self, "Sign In", function()
             login(self)
         end),

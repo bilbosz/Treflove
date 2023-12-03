@@ -8,14 +8,14 @@ local TextButton = require("ui.text-button")
 ---@class TokenPanel: Panel
 local TokenPanel = class("TokenPanel", Panel)
 
-function TokenPanel:init(gameScreen, width, height)
-    Panel.init(self, gameScreen:get_control(), width, height)
-    self.gameScreen = gameScreen
+function TokenPanel:init(game_screen, width, height)
+    Panel.init(self, game_screen:get_control(), width, height)
+    self.game_screen = game_screen
     self.properties = {}
     self.keys = nil
-    self.selectionSet = gameScreen:get_selection():get_select_set()
-    self.cancelButton = nil
-    self.applyButton = nil
+    self.selection_set = game_screen:get_selection():get_select_set()
+    self.cancel_button = nil
+    self.apply_button = nil
 end
 
 function TokenPanel:on_resize(w, h)
@@ -24,7 +24,7 @@ function TokenPanel:on_resize(w, h)
 end
 
 function TokenPanel:on_selection_change()
-    self.selectionSet = self.gameScreen:get_selection():get_select_set()
+    self.selection_set = self.game_screen:get_selection():get_select_set()
     self:_update_view()
 end
 
@@ -37,14 +37,14 @@ function TokenPanel:_update_view()
 end
 
 function TokenPanel:_update_property_keys()
-    local uniqueKeys = {}
-    for token in pairs(self.selectionSet) do
+    local unique_keys = {}
+    for token in pairs(self.selection_set) do
         for k in pairs(token:get_data()) do
-            uniqueKeys[k] = true
+            unique_keys[k] = true
         end
     end
     local keys = {}
-    for k in pairs(uniqueKeys) do
+    for k in pairs(unique_keys) do
         local t = app.data.token_properties[k].type
         if t == "string" or t == "number" then
             table.insert(keys, k)
@@ -107,7 +107,7 @@ function TokenPanel:_create_property_title(property)
 end
 
 function TokenPanel:_create_property_input(property)
-    local panelW = self:get_size()
+    local panel_w = self:get_size()
 
     local t = property.def.type
     local apply = function()
@@ -116,9 +116,9 @@ function TokenPanel:_create_property_input(property)
 
     local input
     if t == "string" then
-        input = TextInput(self, self.gameScreen, panelW - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT, false, nil, apply)
+        input = TextInput(self, self.game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT, false, nil, apply)
     elseif t == "number" then
-        input = NumberInput(self, self.gameScreen, panelW - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT, nil, apply)
+        input = NumberInput(self, self.game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT, nil, apply)
     else
         assert_unreachable()
     end
@@ -128,7 +128,7 @@ end
 function TokenPanel:_get_value_by_key(key)
     local once = true
     local value
-    for token in pairs(self.selectionSet) do
+    for token in pairs(self.selection_set) do
         local current = token:get_data()[key]
         if once then
             once = false
@@ -143,52 +143,52 @@ end
 function TokenPanel:_create_cancel_button()
     local h = select(2, self:get_size())
 
-    local button = TextButton(self, self.gameScreen, "Cancel", function()
+    local button = TextButton(self, self.game_screen, "Cancel", function()
         self:cancel()
     end)
-    self.cancelButton = button
+    self.cancel_button = button
 
     local s = Consts.PANEL_FIELD_SCALE
     button:set_scale(s)
 
-    local buttonH = select(2, button:get_size())
-    button:set_position(Consts.PADDING, h - buttonH * s - Consts.PADDING)
+    local button_h = select(2, button:get_size())
+    button:set_position(Consts.PADDING, h - button_h * s - Consts.PADDING)
 end
 
 function TokenPanel:_create_apply_button()
     local w, h = self:get_size()
 
-    local button = TextButton(self, self.gameScreen, "Apply", function()
+    local button = TextButton(self, self.game_screen, "Apply", function()
         self:_apply()
     end)
-    self.applyButton = button
+    self.apply_button = button
 
     local s = Consts.PANEL_FIELD_SCALE
     button:set_scale(s)
 
-    local buttonW, buttonH = button:get_size()
-    button:set_position(w - buttonW * s - Consts.PADDING, h - buttonH * s - Consts.PADDING)
+    local button_w, button_h = button:get_size()
+    button:set_position(w - button_w * s - Consts.PADDING, h - button_h * s - Consts.PADDING)
 end
 
 function TokenPanel:_release_properties()
     for _, v in ipairs(self.properties) do
         v.title:set_parent(nil)
 
-        self.gameScreen:remove_input(v.input)
+        self.game_screen:remove_input(v.input)
         v.input:set_parent(nil)
     end
     self.properties = {}
 
-    if self.cancelButton then
-        self.gameScreen:remove_input(self.cancelButton)
-        self.cancelButton:set_parent(nil)
-        self.cancelButton = nil
+    if self.cancel_button then
+        self.game_screen:remove_input(self.cancel_button)
+        self.cancel_button:set_parent(nil)
+        self.cancel_button = nil
     end
 
-    if self.applyButton then
-        self.gameScreen:remove_input(self.applyButton)
-        self.applyButton:set_parent(nil)
-        self.applyButton = nil
+    if self.apply_button then
+        self.game_screen:remove_input(self.apply_button)
+        self.apply_button:set_parent(nil)
+        self.apply_button = nil
     end
 end
 
@@ -198,7 +198,7 @@ function TokenPanel:_apply()
             local t = property.def.type
             if t == "string" then
                 local key, value = property.key, property.input:get_text()
-                for token in pairs(self.selectionSet) do
+                for token in pairs(self.selection_set) do
                     local old = token:get_data()[key]
                     if old ~= value then
                         token:set_data(key, value)
@@ -206,7 +206,7 @@ function TokenPanel:_apply()
                 end
             elseif t == "number" then
                 local key, value = property.key, property.input:get_number()
-                for token in pairs(self.selectionSet) do
+                for token in pairs(self.selection_set) do
                     local old = token:get_data()[key]
                     if old ~= value then
                         token:set_data(key, value)
@@ -220,7 +220,7 @@ function TokenPanel:_apply()
 end
 
 function TokenPanel:cancel()
-    self.gameScreen:get_selection():Unselect()
+    self.game_screen:get_selection():Unselect()
 end
 
 return TokenPanel

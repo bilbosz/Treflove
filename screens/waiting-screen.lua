@@ -27,8 +27,8 @@ local function CreateText(self)
     local text = Text(self.layout, self.message, Consts.FOREGROUND_COLOR)
     self.text = text
     text:set_position(0, 100)
-    local textW = text:get_size()
-    text:set_origin(textW * 0.5, 0)
+    local text_w = text:get_size()
+    text:set_origin(text_w * 0.5, 0)
     text:set_scale(Consts.MENU_TITLE_SCALE)
 end
 

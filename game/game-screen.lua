@@ -16,13 +16,13 @@ function GameScreen:init(data)
 
     self.page = Page(app.data.pages[data.page], self, app.width * 0.8, app.height)
 
-    self.tokenPanel = TokenPanel(self, app.width * 0.2, app.height)
-    self.assetsPanel = AssetsPanel(self, app.width * 0.2, app.height)
+    self.token_panel = TokenPanel(self, app.width * 0.2, app.height)
+    self.assets_panel = AssetsPanel(self, app.width * 0.2, app.height)
 
-    self.panel = self.assetsPanel
+    self.panel = self.assets_panel
     local panels = {
-        self.tokenPanel,
-        self.assetsPanel
+        self.token_panel,
+        self.assets_panel
     }
     self.panels = panels
     for _, v in ipairs(panels) do
@@ -32,12 +32,12 @@ function GameScreen:init(data)
     end
 
     self.quickAccessPanel = QuickAccessPanel(self, app.width * 0.8, Consts.QUICK_ACCESS_PANEL_HEIGHT)
-    self.quickAccessPanel:AddEntry("Tokens", self.tokenPanel)
-    self.quickAccessPanel:AddEntry("Assets", self.assetsPanel)
+    self.quickAccessPanel:AddEntry("Tokens", self.token_panel)
+    self.quickAccessPanel:AddEntry("Assets", self.assets_panel)
 end
 
 function GameScreen:release()
-    self.assetsPanel:release()
+    self.assets_panel:release()
 end
 
 function GameScreen:show()
@@ -50,7 +50,7 @@ function GameScreen:show()
 end
 
 function GameScreen:on_selection_change()
-    self.tokenPanel:on_selection_change()
+    self.token_panel:on_selection_change()
 end
 
 function GameScreen:on_resize(w, h)
@@ -60,11 +60,11 @@ function GameScreen:on_resize(w, h)
     self.quickAccessPanel:set_position(0, 0)
     self.quickAccessPanel:on_resize(w * 0.8, Consts.QUICK_ACCESS_PANEL_HEIGHT)
 
-    self.tokenPanel:set_position(w * 0.8, 0)
-    self.tokenPanel:on_resize(w * 0.2, h)
+    self.token_panel:set_position(w * 0.8, 0)
+    self.token_panel:on_resize(w * 0.2, h)
 
-    self.assetsPanel:set_position(w * 0.8, 0)
-    self.assetsPanel:on_resize(w * 0.2, h)
+    self.assets_panel:set_position(w * 0.8, 0)
+    self.assets_panel:on_resize(w * 0.2, h)
 end
 
 function GameScreen:get_page()
@@ -76,7 +76,7 @@ function GameScreen:get_selection()
 end
 
 function GameScreen:get_token_panel()
-    return self.tokenPanel
+    return self.token_panel
 end
 
 function GameScreen:select_panel(panel)

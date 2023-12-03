@@ -35,7 +35,7 @@ function class(name, ...)
     end
 
     local index = _create_index(class, ...)
-    local objMt = {
+    local obj_mt = {
         __index = index,
         class = class
     }
@@ -45,7 +45,7 @@ function class(name, ...)
         __newindex = index,
         __call = function(_, ...)
             local obj = {}
-            setmetatable(obj, objMt)
+            setmetatable(obj, obj_mt)
             if obj.init then
                 obj:init(...)
             end
@@ -85,14 +85,14 @@ function assert_type(obj, typ)
     if type(typ) == "string" then
         assert(type(obj) == typ, string.format(msg, typ, type(obj)))
     elseif type(typ) == "table" then
-        local classMt = getmetatable(typ)
-        assert(classMt)
-        local className = classMt.name
-        assert(className)
+        local class_mt = getmetatable(typ)
+        assert(class_mt)
+        local class_name = class_mt.name
+        assert(class_name)
         if getmetatable(obj) and get_class_of(obj) then
-            assert(is_instance_of(obj, typ), string.format(msg, className, get_class_name_of(obj)))
+            assert(is_instance_of(obj, typ), string.format(msg, class_name, get_class_name_of(obj)))
         else
-            assert_unreachable(string.format(msg, className, type(obj)))
+            assert_unreachable(string.format(msg, class_name, type(obj)))
         end
     else
         assert_unreachable()

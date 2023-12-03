@@ -31,15 +31,15 @@ end
 
 function NotificationManager:on_update()
     local time = app:get_time()
-    local toRemove
+    local to_remove
     for i, notification in ipairs(self.notifications) do
         if time > notification.start_time + notification.duration then
-            toRemove = toRemove or {}
-            table.insert(toRemove, i)
+            to_remove = to_remove or {}
+            table.insert(to_remove, i)
         end
     end
-    if toRemove then
-        for _, i in ripairs(toRemove) do
+    if to_remove then
+        for _, i in ripairs(to_remove) do
             table.remove(self.notifications, i)
         end
         self.panel:update_notifications()

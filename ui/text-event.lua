@@ -35,9 +35,9 @@ function TextEventListener:on_remove_empty()
 
 end
 
-function TextEventListener:on_remove_characters(characterNumber)
-    local offset = utf8.offset(self.text, -characterNumber)
-    if self.text == "" and characterNumber > 0 then
+function TextEventListener:on_remove_characters(character_number)
+    local offset = utf8.offset(self.text, -character_number)
+    if self.text == "" and character_number > 0 then
         self:on_remove_empty()
     elseif offset then
         self.text = string.sub(self.text, 1, offset - 1)
@@ -49,16 +49,16 @@ function TextEventListener:on_remove_word()
     if self.text == "" then
         self:on_remove_empty()
     else
-        local lastSpace = nil
+        local last_space = nil
         for i, code in utf8.codes(self.text) do
             for _, wcode in ipairs(WHITESPACE_CODES) do
                 if code == wcode then
-                    lastSpace = i
+                    last_space = i
                 end
             end
         end
-        if lastSpace then
-            self.text = string.sub(self.text, 1, lastSpace - 1)
+        if last_space then
+            self.text = string.sub(self.text, 1, last_space - 1)
         else
             self.text = ""
         end
