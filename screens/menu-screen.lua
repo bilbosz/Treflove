@@ -39,8 +39,8 @@ end
 
 local function CreateEntries(self)
     local y = 250
-    for _, entryDef in ipairs(self.entries) do
-        local ctrl = entryDef:create_control(self.layout)
+    for _, entry_def in ipairs(self.entries) do
+        local ctrl = entry_def:create_control(self.layout)
         ctrl:set_position(nil, y)
         y = self.layout:get_recursive_aabb(ctrl):get_max_y() + Consts.MENU_ENTRY_VSPACING
     end

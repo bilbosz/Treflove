@@ -13,9 +13,9 @@ end
 
 local function AddLine(self, line, y)
     local ctrl = Text(self.anchor, line, Consts.NOTIFICATION_COLOR)
-    local ctrlW, ctrlH = ctrl:get_size()
+    local ctrl_w, ctrl_h = ctrl:get_size()
     ctrl:set_scale(Consts.NOTIFICATION_TEXT_SCALE)
-    ctrl:set_origin(ctrlW, ctrlH)
+    ctrl:set_origin(ctrl_w, ctrl_h)
     ctrl:set_position(self.width - Consts.NOTIFICATION_PADDING, y)
     return ctrl
 end

@@ -7,22 +7,22 @@ function Connector:init(address, port)
     self.address = address
     self.port = port
     self.channel = love.thread.newChannel()
-    self.retryTime = 1
+    self._retry_time = 1
     self.thread = nil
     self.connection_manager = nil
 end
 
 function Connector:start(connection_manager)
     self.connection_manager = connection_manager
-    self:try_restart_connection()
+    self:_try_restart_connection()
 
     app.update_event_manager:register_listener(self)
 end
 
-function Connector:try_restart_connection()
+function Connector:_try_restart_connection()
     local now = love.timer.getTime()
-    if not self.thread or not self.thread:isRunning() and (not self.lastStart or now - self.lastStart >= self.retryTime) then
-        self.lastStart = love.timer.getTime()
+    if not self.thread or not self.thread:isRunning() and (not self._last_start or now - self._last_start >= self._retry_time) then
+        self._last_start = love.timer.getTime()
         if not self.thread then
             if app.is_server then
                 self.thread = love.thread.newThread("networking/detail/connection-dispatcher.lua")
@@ -60,7 +60,7 @@ function Connector:remove_thread()
 end
 
 function Connector:on_update()
-    self:try_restart_connection()
+    self:_try_restart_connection()
     self:handle_connections()
 end
 

@@ -4,14 +4,14 @@
 local RemoteProcedure = class("RemoteProcedure")
 
 ---@param connection Connection
----@param dontStart boolean
+---@param dont_start boolean
 ---@return void
-function RemoteProcedure:init(connection, dontStart)
+function RemoteProcedure:init(connection, dont_start)
     assert(connection)
     self._connection = connection
     self._id = get_class_name_of(self)
 
-    if not dontStart then
+    if not dont_start then
         self:start()
     end
 end
