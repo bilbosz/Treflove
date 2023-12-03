@@ -18,7 +18,7 @@ function Page:_create_background(path)
 
     local w, h = self:get_size()
 
-    bg:set_scale(self.pixelPerMeter * self.page_width / bg_w)
+    bg:set_scale(self.pixel_per_meter * self.page_width / bg_w)
     bg:set_origin(bg_w * 0.5, bg_h * 0.5)
     bg:set_position(w * 0.5, h * 0.5)
 end
@@ -36,9 +36,9 @@ function Page:init(data, game_screen, width, height)
     ClippingRectangle.init(self, game_screen:get_control(), width, height)
     PointerEventListener.init(self, true)
     self.name = data.name
-    self.pixelPerMeter = data.pixel_per_meter
+    self.pixel_per_meter = data.pixel_per_meter
     self.page_width = data.width
-    self.pointerDownPos = {}
+    self.pointer_down_pos = {}
     self.game_screen = game_screen
 
     self:_create_background(data.image)
@@ -67,28 +67,28 @@ function Page:on_pointer_down(x, y, button)
     if tx < 0 or tx >= self.size[1] or ty < 0 or ty >= self.size[2] then
         return
     end
-    if button == Consts.PAGE_SELECT_BUTTON and not self.pointerDownPos[Consts.PAGE_DRAG_TOKEN_BUTTON] then
+    if button == Consts.PAGE_SELECT_BUTTON and not self.pointer_down_pos[Consts.PAGE_DRAG_TOKEN_BUTTON] then
         local wx, wy = self.page_coordinates:transform_to_local(x, y)
         self.selection:set_start_point(wx, wy)
-        self.pointerDownPos[button] = {
+        self.pointer_down_pos[button] = {
             tx,
             ty
         }
     end
     if button == Consts.PAGE_DRAG_VIEW_BUTTON then
-        self.pointerDownPos[button] = {
+        self.pointer_down_pos[button] = {
             tx,
             ty
         }
     end
-    if button == Consts.PAGE_DRAG_TOKEN_BUTTON and not self.pointerDownPos[Consts.PAGE_SELECT_BUTTON] then
-        self.pointerDownPos[button] = {
+    if button == Consts.PAGE_DRAG_TOKEN_BUTTON and not self.pointer_down_pos[Consts.PAGE_SELECT_BUTTON] then
+        self.pointer_down_pos[button] = {
             self.page_coordinates:transform_to_local(x, y)
         }
-        self.selectSetStartPos = {}
+        self.select_set_start_pos = {}
         local set = self.selection:get_select_set()
         for token in pairs(set) do
-            self.selectSetStartPos[token] = {
+            self.select_set_start_pos[token] = {
                 token:get_position()
             }
         end
@@ -96,7 +96,7 @@ function Page:on_pointer_down(x, y, button)
 end
 
 function Page:on_pointer_up(x, y, button)
-    if self.pointerDownPos[Consts.PAGE_SELECT_BUTTON] and button == Consts.PAGE_SELECT_BUTTON then
+    if self.pointer_down_pos[Consts.PAGE_SELECT_BUTTON] and button == Consts.PAGE_SELECT_BUTTON then
         local wx, wy = self.page_coordinates:transform_to_local(x, y)
         local selection = self.selection
         selection:set_end_point(wx, wy)
@@ -112,45 +112,45 @@ function Page:on_pointer_up(x, y, button)
         end
         selection:hide()
     end
-    self.pointerDownPos[button] = nil
+    self.pointer_down_pos[button] = nil
 end
 
 function Page:on_pointer_move(x, y)
-    if self.pointerDownPos[Consts.PAGE_DRAG_VIEW_BUTTON] then
-        local px, py = unpack(self.pointerDownPos[Consts.PAGE_DRAG_VIEW_BUTTON])
+    if self.pointer_down_pos[Consts.PAGE_DRAG_VIEW_BUTTON] then
+        local px, py = unpack(self.pointer_down_pos[Consts.PAGE_DRAG_VIEW_BUTTON])
         local tx, ty = self:transform_to_local(x, y)
         local bg = self.background
         local bg_x, bg_y = bg:get_position()
         bg:set_position(bg_x + tx - px, bg_y + ty - py)
-        self.pointerDownPos[Consts.PAGE_DRAG_VIEW_BUTTON][1], self.pointerDownPos[Consts.PAGE_DRAG_VIEW_BUTTON][2] = tx, ty
+        self.pointer_down_pos[Consts.PAGE_DRAG_VIEW_BUTTON][1], self.pointer_down_pos[Consts.PAGE_DRAG_VIEW_BUTTON][2] = tx, ty
     end
-    if self.pointerDownPos[Consts.PAGE_SELECT_BUTTON] then
+    if self.pointer_down_pos[Consts.PAGE_SELECT_BUTTON] then
         local wx, wy = self.page_coordinates:transform_to_local(x, y)
         self.selection:set_end_point(wx, wy)
     end
-    if self.pointerDownPos[Consts.PAGE_DRAG_TOKEN_BUTTON] then
-        local sx, sy = unpack(self.pointerDownPos[Consts.PAGE_DRAG_TOKEN_BUTTON])
+    if self.pointer_down_pos[Consts.PAGE_DRAG_TOKEN_BUTTON] then
+        local sx, sy = unpack(self.pointer_down_pos[Consts.PAGE_DRAG_TOKEN_BUTTON])
         local wx, wy = self.page_coordinates:transform_to_local(x, y)
         local ox, oy = wx - sx, wy - sy
         local set = self.selection:get_select_set()
         for token in pairs(set) do
-            local startPosX, startPosY = unpack(self.selectSetStartPos[token])
-            token:set_position(startPosX + ox, startPosY + oy)
+            local start_pos_x, start_pos_y = unpack(self.select_set_start_pos[token])
+            token:set_position(start_pos_x + ox, start_pos_y + oy)
         end
     end
 end
 
 function Page:on_wheel_moved(x, y)
-    local realMouseX, realMouseY = love.mouse.get_position()
-    local selfMouseX, selfMouseY = self:transform_to_local(realMouseX, realMouseY)
-    if selfMouseX >= 0 and selfMouseX < self.size[1] and selfMouseY >= 0 and selfMouseY < self.size[2] then
+    local real_mouse_x, real_mouse_y = love.mouse.getPosition()
+    local self_mouse_x, self_mouse_y = self:transform_to_local(real_mouse_x, real_mouse_y)
+    if self_mouse_x >= 0 and self_mouse_x < self.size[1] and self_mouse_y >= 0 and self_mouse_y < self.size[2] then
         local bg = self.background
-        local bgMouseX, bgMouseY = bg:transform_to_local(realMouseX, realMouseY)
+        local bg_mouse_x, bg_mouse_y = bg:transform_to_local(real_mouse_x, real_mouse_y)
 
         local zoom_inc = math.pow(Consts.PAGE_ZOOM_INCREASE, y)
 
-        bg:set_origin(bgMouseX, bgMouseY)
-        bg:set_position(selfMouseX, selfMouseY)
+        bg:set_origin(bg_mouse_x, bg_mouse_y)
+        bg:set_position(self_mouse_x, self_mouse_y)
 
         local scale = bg:get_scale() * zoom_inc
         bg:set_scale(scale)

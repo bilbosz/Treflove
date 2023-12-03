@@ -64,7 +64,7 @@ end
 local function CreateFileTypeInput(self)
     local panel_w = self:get_size()
     local input = TextInput(self, self.game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT)
-    self.fileTypeInput = input
+    self.file_type_input = input
 
     input:set_read_only(true)
     return input
@@ -79,7 +79,7 @@ end
 
 local function CreateRemoteLocationLabel(self)
     local text = Text(self, "Remote location", Consts.FOREGROUND_COLOR)
-    local _, input_y, _, input_h = self.fileTypeInput:get_position_and_size()
+    local _, input_y, _, input_h = self.file_type_input:get_position_and_size()
 
     text:set_position(Consts.PADDING, input_y + input_h + Consts.PADDING)
     text:set_scale(Consts.PANEL_FIELD_SCALE)
@@ -89,7 +89,7 @@ end
 local function CreateRemoteLocationInput(self)
     local panel_w = self:get_size()
     local input = TextInput(self, self.game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT)
-    self.remoteLocationInput = input
+    self.remote_location_input = input
 
     input:set_read_only(true)
     return input
@@ -150,11 +150,11 @@ end
 local function SetFileType(self, data)
     local media_type, medium = Media.GetTypeAndMedium(data)
     self.media_type = media_type
-    local fileTypePreview = FILE_TYPE_PREVIEW[media_type]
-    if fileTypePreview then
-        self.preview_area:SetContent(medium, fileTypePreview)
+    local file_type_preview = FILE_TYPE_PREVIEW[media_type]
+    if file_type_preview then
+        self.preview_area:SetContent(medium, file_type_preview)
     end
-    self.fileTypeInput:set_text(tostring(table.find_table_key(Media.Type, media_type)))
+    self.file_type_input:set_text(tostring(table.find_table_key(Media.Type, media_type)))
 end
 
 function AssetsPanel:init(game_screen, width, height)
@@ -183,8 +183,8 @@ function AssetsPanel:set_file(file)
     local split_path = Utils.split_path(path)
 
     local file_name = split_path[#split_path]
-    self.remoteLocationInput:set_text(file_name)
-    self.remoteLocationInput:set_read_only(false)
+    self.remote_location_input:set_text(file_name)
+    self.remote_location_input:set_read_only(false)
 end
 
 function AssetsPanel:on_resize(w, h)
@@ -195,16 +195,16 @@ end
 function AssetsPanel:reset()
     self.preview_area:reset()
     self.location_input:set_text("")
-    self.fileTypeInput:set_text("")
-    self.remoteLocationInput:set_read_only(true)
-    self.remoteLocationInput:set_text("")
+    self.file_type_input:set_text("")
+    self.remote_location_input:set_read_only(true)
+    self.remote_location_input:set_text("")
     self.media_type = nil
     self.data = nil
     self.data_size = nil
 end
 
 function AssetsPanel:_upload()
-    app.asset_manager:upload_asset(self.remoteLocationInput:get_text(), self.data)
+    app.asset_manager:upload_asset(self.remote_location_input:get_text(), self.data)
 end
 
 function AssetsPanel:cancel()

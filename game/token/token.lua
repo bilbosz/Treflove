@@ -57,8 +57,8 @@ function Token:init(data, parent)
     Control.init(self, parent)
     PointerEventListener.init(self)
 
-    self.dragMouseButton = 1
-    self.prevDragMouseX, self.prevDragMouseY = nil, nil
+    self.drag_mouse_button = 1
+    self.prev_drag_mouse_x, self.prev_drag_mouse_y = nil, nil
 
     self.d = data.diameter
     self:set_position(unpack(data.position))

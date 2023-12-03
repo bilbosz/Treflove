@@ -143,7 +143,7 @@ function TextInput:init(parent, form_screen, width, height, masked, on_input, on
     self.on_enter = on_enter
     self.caret_time = nil
     self.is_multivalue = false
-    self.hasNewValue = false
+    self.has_new_value = false
     _create_background(self)
     CreateClip(self)
     CreateContent(self)
@@ -188,7 +188,7 @@ end
 
 function TextInput:on_edit(...)
     if self.is_multivalue then
-        self.hasNewValue = true
+        self.has_new_value = true
     end
     _update_view(self)
     if self.on_input then
@@ -205,7 +205,7 @@ end
 
 function TextInput:on_remove_empty()
     if self.is_multivalue then
-        self.hasNewValue = not self.hasNewValue
+        self.has_new_value = not self.has_new_value
     end
     _update_view(self)
 end
@@ -241,7 +241,7 @@ function TextInput:set_multivalue(value)
         TextEventListener.set_text(self, "")
     end
     self.is_multivalue = value
-    self.hasNewValue = false
+    self.has_new_value = false
     _update_view(self)
 end
 
@@ -250,7 +250,7 @@ function TextInput:is_multivalue()
 end
 
 function TextInput:is_multivalue_default()
-    return self.is_multivalue and not self.hasNewValue
+    return self.is_multivalue and not self.has_new_value
 end
 
 function TextInput:on_read_only_change()

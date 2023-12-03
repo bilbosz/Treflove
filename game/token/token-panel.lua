@@ -80,8 +80,8 @@ function TokenPanel:_fill_in_properties()
                 local h = select(2, input:get_size())
                 y = y + h
 
-                local isSingleValue, value = self:_get_value_by_key(k)
-                if isSingleValue then
+                local is_single_value, value = self:_get_value_by_key(k)
+                if is_single_value then
                     local t = property.def.type
                     if t == "string" then
                         input:set_text(value)

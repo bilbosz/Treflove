@@ -1,4 +1,4 @@
-local logger_data, channel, address, getPortChannel, in_channel = ...
+local logger_data, channel, address, get_port_channel, in_channel = ...
 
 local Socket = require("socket")
 local logger = require("utils.logger")(logger_data, "client-in-?????")
@@ -10,7 +10,7 @@ if error then
 end
 local in_port = select(2, in_server:getsockname())
 logger:set_name(string.format("client-in-%05i", in_port))
-getPortChannel:push(in_port)
+get_port_channel:push(in_port)
 local in_client, error = in_server:accept()
 if error then
     logger:log("Could not connect to server")

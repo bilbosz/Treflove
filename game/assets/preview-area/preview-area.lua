@@ -47,7 +47,7 @@ end
 local function SetLabels(self, labels)
     for _, v in ipairs({
         self.preview_labels,
-        self.dropFileLabels
+        self.drop_file_labels
     }) do
         v:set_enabled(false)
     end
@@ -58,9 +58,9 @@ local function _create_background(self)
     local w, h = self:get_size()
     Rectangle(self, w, h, Consts.BUTTON_NORMAL_COLOR)
     self.preview_labels = CreateBackgroundLabels(self, PREVIEW_STRING)
-    self.dropFileLabels = CreateBackgroundLabels(self, DROP_FILE_STRING)
+    self.drop_file_labels = CreateBackgroundLabels(self, DROP_FILE_STRING)
 
-    SetLabels(self, self.dropFileLabels)
+    SetLabels(self, self.drop_file_labels)
 end
 
 local function CreateContentParent(self)
@@ -96,7 +96,7 @@ function PreviewArea:SetContent(love_content, Preview)
 end
 
 function PreviewArea:reset()
-    SetLabels(self, self.dropFileLabels)
+    SetLabels(self, self.drop_file_labels)
     if self.preview then
         self.preview:set_parent(nil)
     end

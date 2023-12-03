@@ -62,13 +62,13 @@ function PointerEventManager:invoke_event(method, x, y, id)
     local listeners = self._methods[method]
     local list = {}
     GetListenerList(app.root, listeners, x, y, list)
-    local topToBeCalled = true
+    local top_to_be_called = true
     for _, ctrl in ripairs(list) do
         local listener = listeners[ctrl]
-        if topToBeCalled then
+        if top_to_be_called then
             local pass_through = listener(ctrl, x, y, id)
             if not pass_through then
-                topToBeCalled = false
+                top_to_be_called = false
             end
         elseif ctrl.receive_through then
             listener(ctrl, x, y, id)

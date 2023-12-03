@@ -52,7 +52,7 @@ function Session:init(connection)
         _on_logout(self)
     end)
     self.login = login
-    self.gameDataRp = GameDataRp(self.connection)
+    self.game_data_rp = GameDataRp(self.connection)
     app.asset_manager:register_session(self)
 
     if app.is_client then
@@ -91,7 +91,7 @@ end
 function Session:join_game()
     assert(app.is_client)
     app.screen_manager:show(WaitingScreen("Loading..."))
-    self.gameDataRp:send_request({})
+    self.game_data_rp:send_request({})
 end
 
 ---@return void

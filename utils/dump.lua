@@ -38,20 +38,20 @@ local function DumpGenerator(config)
     }
 
     local function create_dump(config, args, n)
-        config.tableMaxLevel = config.tableMaxLevel or math.huge
-        assert(not config.tableUnfoldRepeated or config.tableMaxLevel ~= math.huge)
+        config.table_max_level = config.table_max_level or math.huge
+        assert(not config.table_unfold_repeated or config.table_max_level ~= math.huge)
 
-        local function getGlobVarName(val, tab, recursion_check, isFirstLayer)
+        local function get_glob_var_name(val, tab, recursion_check, is_first_layer)
             tab = tab or _G
             recursion_check = recursion_check or {}
-            isFirstLayer = isFirstLayer == nil and true
+            is_first_layer = is_first_layer == nil and true
 
             for var_name, cur_val in pairs(tab) do
                 if cur_val == val then
                     if type(var_name) == "number" then
                         return "[" .. var_name .. "]"
                     else
-                        return (isFirstLayer and "" or ".") .. var_name
+                        return (is_first_layer and "" or ".") .. var_name
                     end
                 elseif type(cur_val) == "table" then
                     if recursion_check[cur_val] then
@@ -59,12 +59,12 @@ local function DumpGenerator(config)
                     else
                         recursion_check[cur_val] = true
                     end
-                    local founding = getGlobVarName(val, cur_val, recursion_check, false)
+                    local founding = get_glob_var_name(val, cur_val, recursion_check, false)
                     if founding then
                         if type(var_name) == "number" then
                             return "[" .. var_name .. "]" .. founding
                         else
-                            return (isFirstLayer and "" or ".") .. var_name .. founding
+                            return (is_first_layer and "" or ".") .. var_name .. founding
                         end
                     end
                 end
@@ -81,12 +81,12 @@ local function DumpGenerator(config)
 
             local type_ = type(val)
             local var_name
-            if config.showGlobalNames then
-                var_name = getGlobVarName(val)
+            if config.show_global_names then
+                var_name = get_glob_var_name(val)
             end
             local content
 
-            if type_ == "table" and (config.tableUnfoldRepeated or not recursion_check[val]) and node == node_types.Value and level < config.tableMaxLevel then
+            if type_ == "table" and (config.table_unfold_repeated or not recursion_check[val]) and node == node_types.Value and level < config.table_max_level then
                 recursion_check[val] = true
                 content = value_indention .. "{" .. config.table_newline
                 local last_index = 0
@@ -155,13 +155,13 @@ local function LongPrint(str)
     end
 end
 
-local defaultDumpConfig = {
+local default_dump_config = {
     stacktrace = {},
     dump = {
-        showGlobalNames = false,
-        tableMaxLevel = nil,
+        show_global_names = false,
+        table_max_level = nil,
         table_indention = "    ",
-        tableUnfoldRepeated = false,
+        table_unfold_repeated = false,
         table_newline = "\n",
         index_display = function(value, type, global_name, content)
             return ""
@@ -193,4 +193,4 @@ local defaultDumpConfig = {
     text_processor = print
 }
 
-dump = DumpGenerator(defaultDumpConfig)
+dump = DumpGenerator(default_dump_config)

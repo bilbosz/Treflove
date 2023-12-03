@@ -3,8 +3,8 @@ local EventManager = require("events.event-manager")
 ---@class KeyboardEventListener
 local KeyboardEventListener = class("KeyboardEventListener")
 
-function KeyboardEventListener:init(ignoreTextEvents)
-    self.ignoreTextEvents = ignoreTextEvents
+function KeyboardEventListener:init(ignore_text_events)
+    self._ignore_text_events = ignore_text_events
 end
 
 function KeyboardEventListener:on_key_pressed(key)
@@ -16,7 +16,7 @@ function KeyboardEventListener:on_key_released(key)
 end
 
 function KeyboardEventListener:ignore_text_events()
-    return self.ignoreTextEvents
+    return self._ignore_text_events
 end
 
 ---@class KeyboardManager: EventManager

@@ -9,7 +9,7 @@ function Input:init(form_screen)
     assert_type(form_screen, FormScreen)
     self.form_screen = form_screen
     self._is_focused = false
-    self.isReadOnly = false
+    self._is_read_only = false
     form_screen:add_input(self)
     if form_screen:is_showed() then
         self:on_screen_show()
@@ -21,14 +21,14 @@ function Input:get_form_screen()
 end
 
 function Input:set_read_only(value)
-    if self.isReadOnly ~= value then
-        self.isReadOnly = value
+    if self._is_read_only ~= value then
+        self._is_read_only = value
         self:on_read_only_change()
     end
 end
 
 function Input:is_read_only()
-    return self.isReadOnly
+    return self._is_read_only
 end
 
 function Input:on_read_only_change()

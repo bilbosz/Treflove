@@ -2,8 +2,8 @@
 local DeferManager = class("DeferManager")
 
 local function AddDefers(self)
-    table.merge_array(self.queue, self.toAddDefers)
-    self.toAddDefers = {}
+    table.merge_array(self.queue, self.to_add_defers)
+    self.to_add_defers = {}
     table.sort(self.queue, function(a, b)
         return a[1] < b[1]
     end)
@@ -11,13 +11,13 @@ end
 
 function DeferManager:init()
     self.queue = {}
-    self.toAddDefers = {}
+    self.to_add_defers = {}
 end
 
 function DeferManager:call_defered(t, f, ...)
     assert_type(t, "number")
     assert_type(f, "function")
-    table.insert(self.toAddDefers, {
+    table.insert(self.to_add_defers, {
         app:get_time() + t,
         f,
         {
@@ -27,7 +27,7 @@ function DeferManager:call_defered(t, f, ...)
 end
 
 function DeferManager:update()
-    if #self.toAddDefers > 0 then
+    if #self.to_add_defers > 0 then
         AddDefers(self)
     end
     while #self.queue > 0 and app:get_time() >= self.queue[1][1] do

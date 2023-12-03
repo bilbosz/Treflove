@@ -31,9 +31,9 @@ function GameScreen:init(data)
         end
     end
 
-    self.quickAccessPanel = QuickAccessPanel(self, app.width * 0.8, Consts.QUICK_ACCESS_PANEL_HEIGHT)
-    self.quickAccessPanel:AddEntry("Tokens", self.token_panel)
-    self.quickAccessPanel:AddEntry("Assets", self.assets_panel)
+    self.quick_access_panel = QuickAccessPanel(self, app.width * 0.8, Consts.QUICK_ACCESS_PANEL_HEIGHT)
+    self.quick_access_panel:AddEntry("Tokens", self.token_panel)
+    self.quick_access_panel:AddEntry("Assets", self.assets_panel)
 end
 
 function GameScreen:release()
@@ -57,8 +57,8 @@ function GameScreen:on_resize(w, h)
     self.page:set_position(0, Consts.QUICK_ACCESS_PANEL_HEIGHT)
     self.page:set_size(w * 0.8, h - Consts.QUICK_ACCESS_PANEL_HEIGHT)
 
-    self.quickAccessPanel:set_position(0, 0)
-    self.quickAccessPanel:on_resize(w * 0.8, Consts.QUICK_ACCESS_PANEL_HEIGHT)
+    self.quick_access_panel:set_position(0, 0)
+    self.quick_access_panel:on_resize(w * 0.8, Consts.QUICK_ACCESS_PANEL_HEIGHT)
 
     self.token_panel:set_position(w * 0.8, 0)
     self.token_panel:on_resize(w * 0.2, h)

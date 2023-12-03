@@ -19,9 +19,9 @@ while true do
 
     local in_port = dispatcher_channel:demand()
     if in_port then
-        local inPortString = tostring(in_port)
-        logger:log("Received receiver port " .. inPortString)
-        client:send(inPortString .. "\n")
+        local in_port_string = tostring(in_port)
+        logger:log("Received receiver port " .. in_port_string)
+        client:send(in_port_string .. "\n")
     else
         logger:log("Server input port not received")
         in_thread:release()

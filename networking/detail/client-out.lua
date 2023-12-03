@@ -25,7 +25,7 @@ do
 end
 
 do
-    local getPortChannel = love.thread.newChannel()
+    local get_port_channel = love.thread.newChannel()
     local in_channel, out_channel = love.thread.newChannel(), love.thread.newChannel()
     local out_client, error = Socket.connect(address, tonumber(out_port))
     if error then
@@ -33,9 +33,9 @@ do
         return
     end
     local in_thread = love.thread.newThread("networking/detail/client-in.lua")
-    in_thread:start(logger_data, channel, address, getPortChannel, in_channel, out_channel)
+    in_thread:start(logger_data, channel, address, get_port_channel, in_channel, out_channel)
 
-    local in_port = getPortChannel:demand()
+    local in_port = get_port_channel:demand()
     local error = select(2, out_client:send(tostring(in_port) .. "\n"))
     if error then
         logger:log("Could not send receiver port")
