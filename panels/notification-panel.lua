@@ -7,11 +7,11 @@ local Text = require("controls.text")
 ---@class NotificationPanel: UpdateEventListener, ResizeEventListener
 local NotificationPanel = class("NotificationPanel", UpdateEventListener, ResizeEventListener)
 
-local function CreateAnchor(self)
+local function _center_anchor(self)
     self.anchor = ClippingRectangle(app.root, 0, 0)
 end
 
-local function AddLine(self, line, y)
+local function _add_line(self, line, y)
     local ctrl = Text(self.anchor, line, Consts.NOTIFICATION_COLOR)
     local ctrl_w, ctrl_h = ctrl:get_size()
     ctrl:set_scale(Consts.NOTIFICATION_TEXT_SCALE)
@@ -20,7 +20,7 @@ local function AddLine(self, line, y)
     return ctrl
 end
 
-local function AddNotification(self, notification, y)
+local function _add_notification(self, notification, y)
     local lines = {}
 
     for line in string.gmatch(notification.message, "[^\n]+") do
@@ -28,7 +28,7 @@ local function AddNotification(self, notification, y)
     end
 
     for _, line in ripairs(lines) do
-        local ctrl = AddLine(self, line, y)
+        local ctrl = _add_line(self, line, y)
         local s = ctrl:get_scale()
         local _, h = ctrl:get_size()
         y = y - h * s
@@ -37,7 +37,7 @@ local function AddNotification(self, notification, y)
     return y - Consts.NOTIFICATION_VSPACE
 end
 
-local function PositionAnchor(self)
+local function _position_anchor(self)
     self.anchor:set_position(app.width, app.height)
     local w, h = Consts.NOTIFICATION_PANEL_WIDTH * app.width, Consts.NOTIFICATION_PANEL_HEIGHT * app.height
     self.width, self.height = w, h
@@ -46,8 +46,8 @@ local function PositionAnchor(self)
 end
 
 function NotificationPanel:init()
-    CreateAnchor(self)
-    PositionAnchor(self)
+    _center_anchor(self)
+    _position_anchor(self)
     app.update_event_manager:register_listener(self)
     app.resize_manager:register_listener(self)
 end
@@ -58,7 +58,7 @@ function NotificationPanel:update_notifications()
     end
     local y = self.height - Consts.NOTIFICATION_PADDING
     for _, notification in ipairs(app.notification_manager:get_notifications()) do
-        y = AddNotification(self, notification, y)
+        y = _add_notification(self, notification, y)
     end
 end
 
@@ -67,7 +67,7 @@ function NotificationPanel:on_update()
 end
 
 function NotificationPanel:on_resize()
-    PositionAnchor(self)
+    _position_anchor(self)
     self:update_notifications()
 end
 

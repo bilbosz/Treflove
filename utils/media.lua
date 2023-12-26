@@ -9,37 +9,37 @@ Media.Type = {
     TEXT = 5
 }
 
-local function TryCreateAudioFile(data)
+local function _try_create_audio_file(data)
     return love.audio.newSource(data, "static")
 end
 
-local function TryCreateImageFile(data)
+local function _try_create_image_file(data)
     return love.graphics.newImage(data)
 end
 
-local function TryCreateFontFile(data)
+local function _try_create_font_file(data)
     return love.graphics.newFont(data)
 end
 
-local function TryCreateVideoFile(data)
+local function _try_create_video_file(data)
     return love.graphics.newVideo(data)
 end
 
 local MATCH_FILE = {
     {
-        TryCreateVideoFile,
+        _try_create_video_file,
         Media.Type.VIDEO
     },
     {
-        TryCreateImageFile,
+        _try_create_image_file,
         Media.Type.IMAGE
     },
     {
-        TryCreateAudioFile,
+        _try_create_audio_file,
         Media.Type.AUDIO
     },
     {
-        TryCreateFontFile,
+        _try_create_font_file,
         Media.Type.FONT
     }
 }

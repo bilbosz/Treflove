@@ -10,7 +10,7 @@ end
 ---@class ResizeManager: EventManager
 local ResizeManager = class("ResizeManager", EventManager)
 
-local function UpdateNonFsSize(self)
+local function _update_non_fs_size(self)
     if not self:get_fullscreen() then
         self.width, self.height = self:get_dimensions()
     end
@@ -19,12 +19,12 @@ end
 function ResizeManager:init()
     self.width = config.window.width or 0
     self.height = config.window.height or 0
-    UpdateNonFsSize(self)
+    _update_non_fs_size(self)
     EventManager.init(self, ResizeEventListener)
 end
 
 function ResizeManager:resize()
-    UpdateNonFsSize(self)
+    _update_non_fs_size(self)
     app:rescale_root()
     self:invoke_event(ResizeEventListener.on_resize, app.width, app.height)
 end

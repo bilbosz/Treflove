@@ -7,7 +7,7 @@ local PreviewAudioArea = class("PreviewAudioArea", Control)
 
 local MUSIC_NOTE_IMAGE_PATH = "game/assets/eighthnote.png"
 
-local function CreatePreview(self, _)
+local function _create_preview(self, _)
     local symbol = Image(self, MUSIC_NOTE_IMAGE_PATH)
 
     local area_w, area_h = self.preview_area:get_size()
@@ -22,7 +22,7 @@ end
 function PreviewAudioArea:init(preview_area, love_content)
     self.preview_area = preview_area
     Control.init(self, preview_area.content_parent)
-    CreatePreview(self, love_content)
+    _create_preview(self, love_content)
 end
 
 return PreviewAudioArea

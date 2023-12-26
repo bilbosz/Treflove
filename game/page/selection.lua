@@ -6,7 +6,7 @@ local Consts = require("app.consts")
 ---@class Selection: Rectangle, UpdateEventListener
 local Selection = class("Selection", Rectangle, UpdateEventListener)
 
-local function UpdateRectangle(self)
+local function _update_rectangle(self)
     local aabb = Aabb()
     aabb:add_point(unpack(self.start_point))
     aabb:add_point(unpack(self.end_point))
@@ -44,13 +44,13 @@ function Selection:set_start_point(x, y)
     self:show()
     self.start_point[1], self.start_point[2] = x, y
     self.end_point[1], self.end_point[2] = x, y
-    UpdateRectangle(self)
+    _update_rectangle(self)
 end
 
 function Selection:set_end_point(x, y)
     assert(self:is_enabled())
     self.end_point[1], self.end_point[2] = x, y
-    UpdateRectangle(self)
+    _update_rectangle(self)
 end
 
 function Selection:apply()

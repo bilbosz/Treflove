@@ -7,7 +7,7 @@ local Consts = require("app.consts")
 ---@class TextButton: Text, ButtonEventListener, Input, KeyboardEventListener
 local TextButton = class("TextButton", Text, ButtonEventListener, Input, KeyboardEventListener)
 
-local function UpdateTextColor(self)
+local function _update_text_color(self)
     self:set_color((self:is_focused() or self:is_selected()) and Consts.BUTTON_SELECT_COLOR or self:is_hovered() and Consts.BUTTON_HOVER_COLOR or Consts.BUTTON_NORMAL_COLOR)
 end
 
@@ -35,34 +35,34 @@ end
 
 function TextButton:on_focus()
     Input.on_focus(self)
-    UpdateTextColor(self)
+    _update_text_color(self)
     app.keyboard_manager:register_listener(self)
 end
 
 function TextButton:on_focus_lost()
     app.keyboard_manager:unregister_listener(self)
     Input.on_focus_lost(self)
-    UpdateTextColor(self)
+    _update_text_color(self)
 end
 
 function TextButton:on_select()
     ButtonEventListener.on_select(self)
-    UpdateTextColor(self)
+    _update_text_color(self)
 end
 
 function TextButton:on_unselect()
     ButtonEventListener.on_unselect(self)
-    UpdateTextColor(self)
+    _update_text_color(self)
 end
 
 function TextButton:on_pointer_enter()
     ButtonEventListener.on_pointer_enter(self)
-    UpdateTextColor(self)
+    _update_text_color(self)
 end
 
 function TextButton:on_pointer_leave()
     ButtonEventListener.on_pointer_leave(self)
-    UpdateTextColor(self)
+    _update_text_color(self)
 end
 
 function TextButton:on_click()

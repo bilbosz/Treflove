@@ -8,7 +8,7 @@ local function _get_server_auth(user_name, client_auth)
     return Utils.hash(user_name .. string.char(0) .. Utils.generate_salt(32) .. string.char(0) .. client_auth)
 end
 
-local function FindUserByClientAuth(client_auth)
+local function _find_user_by_client_auth(client_auth)
     for user_name, user_data in pairs(app.data.players) do
         local server_auth = _get_server_auth(user_name, client_auth)
         if server_auth == user_data.auth then
@@ -24,7 +24,7 @@ end
 
 function LoginRp:send_response(request)
     assert(app.is_server)
-    local user = FindUserByClientAuth(request.auth)
+    local user = _find_user_by_client_auth(request.auth)
     if user then
         self.on_login(user)
     end

@@ -1,4 +1,4 @@
-local function DumpGenerator(config)
+local function _dump_generator(config)
     if not config then
         return
     end
@@ -146,7 +146,7 @@ local function _is_identifier(str)
     return b == 1 and e == l
 end
 
-local function LongPrint(str)
+local function _long_print(str)
     local limit = 3000
     local strlen = #str
     for i = 1, strlen, limit do
@@ -193,4 +193,4 @@ local default_dump_config = {
     text_processor = print
 }
 
-dump = DumpGenerator(default_dump_config)
+dump = _dump_generator(default_dump_config)

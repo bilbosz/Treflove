@@ -5,7 +5,7 @@ local Consts = require("app.consts")
 ---@class PreviewImageArea: Control
 local PreviewImageArea = class("PreviewImageArea", Control)
 
-local function CreatePreview(self, love_content)
+local function _create_preview(self, love_content)
     local image = Image(self, love_content)
 
     local area_w, area_h = self.preview_area:get_size()
@@ -20,7 +20,7 @@ end
 function PreviewImageArea:init(preview_area, love_content)
     self.preview_area = preview_area
     Control.init(self, preview_area.content_parent)
-    CreatePreview(self, love_content)
+    _create_preview(self, love_content)
 end
 
 return PreviewImageArea

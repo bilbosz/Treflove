@@ -11,7 +11,7 @@ local PreviewArea = class("PreviewArea", ClippingRectangle, FileSystemDropEventL
 local PREVIEW_STRING = "Preview"
 local DROP_FILE_STRING = "Drop File Here"
 
-local function CreateBackgroundLabels(self, str)
+local function _create_background_labels(self, str)
     local labels = Control(self)
 
     local label = Text(nil, str)
@@ -44,7 +44,7 @@ local function CreateBackgroundLabels(self, str)
     return labels
 end
 
-local function SetLabels(self, labels)
+local function _set_labels(self, labels)
     for _, v in ipairs({
         self.preview_labels,
         self.drop_file_labels
@@ -57,13 +57,13 @@ end
 local function _create_background(self)
     local w, h = self:get_size()
     Rectangle(self, w, h, Consts.BUTTON_NORMAL_COLOR)
-    self.preview_labels = CreateBackgroundLabels(self, PREVIEW_STRING)
-    self.drop_file_labels = CreateBackgroundLabels(self, DROP_FILE_STRING)
+    self.preview_labels = _create_background_labels(self, PREVIEW_STRING)
+    self.drop_file_labels = _create_background_labels(self, DROP_FILE_STRING)
 
-    SetLabels(self, self.drop_file_labels)
+    _set_labels(self, self.drop_file_labels)
 end
 
-local function CreateContentParent(self)
+local function _create_content_parent(self)
     local control = Control(self)
     self.content_parent = control
 
@@ -75,7 +75,7 @@ function PreviewArea:init(parent, width, height)
     ClippingRectangle.init(self, parent, width, height)
     FileSystemDropEventListener.init(self, true)
     _create_background(self)
-    CreateContentParent(self)
+    _create_content_parent(self)
 
     self.preview = nil
 
@@ -91,12 +91,12 @@ end
 
 function PreviewArea:SetContent(love_content, Preview)
     self:reset()
-    SetLabels(self, self.preview_labels)
+    _set_labels(self, self.preview_labels)
     self.preview = Preview(self, love_content)
 end
 
 function PreviewArea:reset()
-    SetLabels(self, self.drop_file_labels)
+    _set_labels(self, self.drop_file_labels)
     if self.preview then
         self.preview:set_parent(nil)
     end

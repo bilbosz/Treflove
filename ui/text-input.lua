@@ -12,7 +12,7 @@ local FormScreen = require("ui.form-screen")
 ---@class TextInput: Control, UpdateEventListener, ButtonEventListener, TextEventListener, Input
 local TextInput = class("TextInput", Control, UpdateEventListener, ButtonEventListener, TextEventListener, Input)
 
-local function UpdateBackgroundView(self)
+local function _upload_background_view(self)
     local color
     if self:is_focused() then
         if self:is_multivalue_default() then
@@ -43,7 +43,7 @@ local function UpdateBackgroundView(self)
     self.background:set_color(color)
 end
 
-local function UpdateTextView(self)
+local function _update_text_view(self)
     local text = self.text_ctrl
     if self.masked then
         text:set_text(string.rep("•", self:get_text_length()))
@@ -52,7 +52,7 @@ local function UpdateTextView(self)
     end
 end
 
-local function UpdateCaretView(self)
+local function _upload_caret_view(self)
     local caret = self.caret
     local is_focused = self:is_focused()
     caret:set_enabled(is_focused)
@@ -65,9 +65,9 @@ local function UpdateCaretView(self)
     caret:set_position(w)
 end
 
-local function UpdateContentView(self)
-    UpdateTextView(self)
-    UpdateCaretView(self)
+local function _update_content_view(self)
+    _update_text_view(self)
+    _upload_caret_view(self)
 
     local content = self.content
     local w = content:get_recursive_aabb():get_width()
@@ -81,8 +81,8 @@ local function UpdateContentView(self)
 end
 
 local function _update_view(self)
-    UpdateBackgroundView(self)
-    UpdateContentView(self)
+    _upload_background_view(self)
+    _update_content_view(self)
 
     if self:is_focused() then
         app.text_event_manager:register_listener(self)
@@ -95,14 +95,14 @@ local function _create_background(self)
     self.background = Rectangle(self, self.width, self.height, Consts.BUTTON_NORMAL_COLOR)
 end
 
-local function CreateClip(self)
+local function _create_clip(self)
     local clip = ClippingRectangle(self, self.width - 2 * self.padding, self.height)
     self.clip = clip
 
     clip:set_position(self.padding, 0)
 end
 
-local function CreateCaret(self)
+local function _create_caret(self)
     local h = self.height - 2 * self.padding
     local caret = Rectangle(self.content, Consts.CARET_WIDTH, h, Consts.TEXT_INPUT_FOREGROUND_COLOR)
     self.caret = caret
@@ -110,7 +110,7 @@ local function CreateCaret(self)
     caret:set_origin(0, h * 0.5)
 end
 
-local function CreateText(self)
+local function _create_text(self)
     local font = Consts.USER_INPUT_FONT
     local text = Text(self.content, "", Consts.TEXT_INPUT_FOREGROUND_COLOR, font)
     self.text_ctrl = text
@@ -119,14 +119,14 @@ local function CreateText(self)
     text:set_scale(Consts.MENU_FIELD_SCALE)
 end
 
-local function CreateContent(self)
+local function _create_content(self)
     local content = Control(self.clip)
     self.content = content
 
     content:set_position(0, self.height * 0.5)
 
-    CreateCaret(self)
-    CreateText(self)
+    _create_caret(self)
+    _create_text(self)
 end
 
 function TextInput:init(parent, form_screen, width, height, masked, on_input, on_enter)
@@ -145,8 +145,8 @@ function TextInput:init(parent, form_screen, width, height, masked, on_input, on
     self.is_multivalue = false
     self.has_new_value = false
     _create_background(self)
-    CreateClip(self)
-    CreateContent(self)
+    _create_clip(self)
+    _create_content(self)
     _update_view(self)
 end
 

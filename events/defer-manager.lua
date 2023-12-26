@@ -1,7 +1,7 @@
 ---@class DeferManager
 local DeferManager = class("DeferManager")
 
-local function AddDefers(self)
+local function _add_defers(self)
     table.merge_array(self.queue, self.to_add_defers)
     self.to_add_defers = {}
     table.sort(self.queue, function(a, b)
@@ -28,7 +28,7 @@ end
 
 function DeferManager:update()
     if #self.to_add_defers > 0 then
-        AddDefers(self)
+        _add_defers(self)
     end
     while #self.queue > 0 and app:get_time() >= self.queue[1][1] do
         local defer = table.remove(self.queue, 1)

@@ -23,7 +23,7 @@ end
 ---@class PointerEventManager: EventManager
 local PointerEventManager = class("PointerEventManager", EventManager)
 
-local function GetListenerList(ctrl, listeners, x, y, list)
+local function _get_listener_list(ctrl, listeners, x, y, list)
     if not ctrl:is_visible() or not ctrl:get_global_recursive_aabb():is_point_inside(x, y) then
         return nil
     end
@@ -31,7 +31,7 @@ local function GetListenerList(ctrl, listeners, x, y, list)
         table.insert(list, ctrl)
     end
     for _, child in ipairs(ctrl:get_children()) do
-        GetListenerList(child, listeners, x, y, list)
+        _get_listener_list(child, listeners, x, y, list)
     end
 end
 
@@ -61,7 +61,7 @@ end
 function PointerEventManager:invoke_event(method, x, y, id)
     local listeners = self._methods[method]
     local list = {}
-    GetListenerList(app.root, listeners, x, y, list)
+    _get_listener_list(app.root, listeners, x, y, list)
     local top_to_be_called = true
     for _, ctrl in ripairs(list) do
         local listener = listeners[ctrl]

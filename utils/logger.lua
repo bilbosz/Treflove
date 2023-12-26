@@ -16,7 +16,7 @@ local function _is_enabled(name)
     return true
 end
 
-local function LogImpl(self, format, level, ...)
+local function _log_implementation(self, format, level, ...)
     if not self._is_enabled then
         return
     end
@@ -49,15 +49,15 @@ function Logger:set_name(name)
 end
 
 function Logger:log(string)
-    LogImpl(self, "%s", 3, string)
+    _log_implementation(self, "%s", 3, string)
 end
 
 function Logger:log_format(format, ...)
-    LogImpl(self, format, 3, ...)
+    _log_implementation(self, format, 3, ...)
 end
 
 function Logger:log_up(format, up, ...)
-    LogImpl(self, format, 3 + up, ...)
+    _log_implementation(self, format, 3 + up, ...)
 end
 
 return Logger

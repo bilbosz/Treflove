@@ -10,7 +10,7 @@ local Text = require("controls.text")
 ---@class Token: Model, Control, PointerEventListener
 local Token = class("Token", Model, Control, PointerEventListener)
 
-local function CreateAvatar(self, path)
+local function _create_avatar(self, path)
     local d = self.d
     local r = d * 0.5
     local clip = ClippingMask(self, d, d, function()
@@ -29,7 +29,7 @@ local function CreateAvatar(self, path)
     img:set_position(r, r)
 end
 
-local function CenterLabel(self)
+local function _center_label(self)
     local label = self.label
     local s = 0.007
     local w, h = label:get_size()
@@ -38,12 +38,12 @@ local function CenterLabel(self)
     label:set_position(0, self.d * 0.5 + Consts.TOKEN_SELECTION_THICKNESS + h * s * 0.5)
 end
 
-local function CreateLabel(self, label)
+local function _create_label(self, label)
     self.label = Text(self, label)
-    CenterLabel(self)
+    _center_label(self)
 end
 
-local function CreateSelectionEffect(self)
+local function _create_selection_effect(self)
     local r = self.d * 0.5 - Consts.TOKEN_SELECTION_THICKNESS * 0.5
     local circle = Circle(self, r, Consts.TOKEN_SELECTION_COLOR, Consts.TOKEN_SELECTION_THICKNESS)
     circle:set_position(-r, -r)
@@ -62,9 +62,9 @@ function Token:init(data, parent)
 
     self.d = data.diameter
     self:set_position(unpack(data.position))
-    CreateAvatar(self, data.avatar)
-    CreateLabel(self, data.name)
-    CreateSelectionEffect(self)
+    _create_avatar(self, data.avatar)
+    _create_label(self, data.name)
+    _create_selection_effect(self)
 
     self.is_selected = false
 
@@ -97,7 +97,7 @@ function Token:set_data(key, value)
     Model.set_data(self, key, value)
     if key == "name" then
         self.label:set_text(self.data.name)
-        CenterLabel(self)
+        _center_label(self)
     elseif key == "diameter" then
         self.d = self.data.diameter
         local d = self.d
@@ -122,7 +122,7 @@ function Token:set_data(key, value)
         selection:set_radius(selection_r, selection_r)
         selection:set_position(-selection_r, -selection_r)
 
-        CenterLabel(self)
+        _center_label(self)
     end
 end
 

@@ -13,17 +13,17 @@ local function _create_background(self)
     self.background = Rectangle(self.screen, app.width, app.height, Consts.BACKGROUND_COLOR)
 end
 
-local function CreateLayout(self)
+local function _create_layout(self)
     self.layout = Control(self.screen)
 end
 
-local function CreateLogo(self)
+local function _create_logo(self)
     local logo = Logo(self.layout)
     self.logo = logo
     logo:set_position(0, -15)
 end
 
-local function CreateText(self)
+local function _create_text(self)
     local text = Text(self.layout, self.message, Consts.FOREGROUND_COLOR)
     self.text = text
     text:set_position(0, 100)
@@ -32,7 +32,7 @@ local function CreateText(self)
     text:set_scale(Consts.MENU_TITLE_SCALE)
 end
 
-local function CenterLayout(self)
+local function _center_layout(self)
     local layout = self.layout
     local aabb = layout:get_global_recursive_aabb()
     local h = aabb:get_height()
@@ -46,9 +46,9 @@ function WaitingScreen:init(message)
     self.message = message
 
     _create_background(self)
-    CreateLayout(self)
-    CreateLogo(self)
-    CreateText(self)
+    _create_layout(self)
+    _create_logo(self)
+    _create_text(self)
     app.update_event_manager:register_listener(self)
 end
 
@@ -59,7 +59,7 @@ end
 
 function WaitingScreen:on_resize(w, h)
     self.background:set_size(w, h)
-    CenterLayout(self)
+    _center_layout(self)
 end
 
 function WaitingScreen:on_update(dt)

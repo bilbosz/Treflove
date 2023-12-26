@@ -5,7 +5,7 @@ local GameScreen = require("game.game-screen")
 ---@class GameDataRp: RemoteProcedure
 local GameDataRp = class("GameDataRp", RemoteProcedure)
 
-local function ListRequiredAssets()
+local function _list_required_assets()
     local list = {}
     local data = app.data
     local page = data.pages[data.game.page]
@@ -29,7 +29,7 @@ end
 function GameDataRp:receive_response(response)
     app.data = response.data
     app.screen_manager:show(WaitingScreen("Synchronizing Assets..."))
-    local list = ListRequiredAssets()
+    local list = _list_required_assets()
     app.asset_manager:download_missing_assets(list, function()
         app.screen_manager:show(GameScreen(app.data.game))
     end)
