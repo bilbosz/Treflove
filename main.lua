@@ -6,7 +6,7 @@ local Utils = require("utils.utils")
 
 local params = ArgParser.parse(arg)
 if not params then
-    print(Consts.APP_USAGE_MESSAGE)
+    io.write(Consts.APP_USAGE_MESSAGE)
     love.event.quit(Consts.APP_SUCCESS_EXIT_CODE)
 elseif params.app_type == "client" then
     xpcall(function()

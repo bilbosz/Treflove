@@ -1,7 +1,9 @@
 ---@class Consts
 local Consts = {
-    APP_USAGE_MESSAGE = [[Usage:
-    treflun <app_type> <address> <port>]],
+    APP_USAGE_MESSAGE = [[
+Usage:
+    treflun <app_type> <address> <port>
+]],
     APP_SUCCESS_EXIT_CODE = 0,
     NETWORK_COMPRESSION = "lz4",
     HASH_ALGORITHM = "sha256",
