@@ -5,14 +5,21 @@ local Consts = require("app.consts")
 local Text = require("controls.text")
 
 ---@class NotificationPanel: UpdateEventListener, ResizeEventListener
+---@field private _anchor Control
 local NotificationPanel = class("NotificationPanel", UpdateEventListener, ResizeEventListener)
 
-local function _center_anchor(self)
-    self.anchor = ClippingRectangle(app.root, 0, 0)
+---@private
+---@return void
+function NotificationPanel:_center_anchor()
+    self._anchor = ClippingRectangle(app.root, 0, 0)
 end
 
-local function _add_line(self, line, y)
-    local ctrl = Text(self.anchor, line, Consts.NOTIFICATION_COLOR)
+---@private
+---@param line string
+---@param y number
+---@return Text
+function NotificationPanel:_add_line(line, y)
+    local ctrl = Text(self._anchor, line, Consts.NOTIFICATION_COLOR)
     local ctrl_w, ctrl_h = ctrl:get_size()
     ctrl:set_scale(Consts.NOTIFICATION_TEXT_SCALE)
     ctrl:set_origin(ctrl_w, ctrl_h)
@@ -20,7 +27,12 @@ local function _add_line(self, line, y)
     return ctrl
 end
 
-local function _add_notification(self, notification, y)
+---@private
+---@param notification Notification
+---@param y number
+---@return number
+function NotificationPanel:_add_notification(notification, y)
+    ---@type string[]
     local lines = {}
 
     for line in string.gmatch(notification.message, "[^\n]+") do
@@ -28,7 +40,7 @@ local function _add_notification(self, notification, y)
     end
 
     for _, line in ripairs(lines) do
-        local ctrl = _add_line(self, line, y)
+        local ctrl = self:_add_line(line, y)
         local s = ctrl:get_scale()
         local _, h = ctrl:get_size()
         y = y - h * s
@@ -37,37 +49,43 @@ local function _add_notification(self, notification, y)
     return y - Consts.NOTIFICATION_VSPACE
 end
 
-local function _position_anchor(self)
-    self.anchor:set_position(app.width, app.height)
+---@private
+---@return void
+function NotificationPanel:_position_anchor()
+    self._anchor:set_position(app.width, app.height)
     local w, h = Consts.NOTIFICATION_PANEL_WIDTH * app.width, Consts.NOTIFICATION_PANEL_HEIGHT * app.height
     self.width, self.height = w, h
-    self.anchor:set_size(w, h)
-    self.anchor:set_origin(w, h)
+    self._anchor:set_size(w, h)
+    self._anchor:set_origin(w, h)
 end
 
+---@return void
 function NotificationPanel:init()
-    _center_anchor(self)
-    _position_anchor(self)
+    self:_center_anchor()
+    self:_position_anchor()
     app.update_event_manager:register_listener(self)
     app.resize_manager:register_listener(self)
 end
 
+---@return void
 function NotificationPanel:update_notifications()
-    for _, child in ipairs(self.anchor:get_children()) do
+    for _, child in ipairs(self._anchor:get_children()) do
         child:set_parent(nil)
     end
     local y = self.height - Consts.NOTIFICATION_PADDING
-    for _, notification in ipairs(app.notification_manager:get_notifications()) do
-        y = _add_notification(self, notification, y)
+    for _, notification in ipairs(app.notification_manager:_get_notifications()) do
+        y = self:_add_notification(notification, y)
     end
 end
 
+---@return void
 function NotificationPanel:on_update()
-    self.anchor:reattach()
+    self._anchor:reattach()
 end
 
+---@return void
 function NotificationPanel:on_resize()
-    _position_anchor(self)
+    self:_position_anchor()
     self:update_notifications()
 end
 

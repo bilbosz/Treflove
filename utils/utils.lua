@@ -179,13 +179,13 @@ end
 ---@param msg string|nil
 ---@return void
 function assert_unreachable(msg)
-    assert(false, msg)
+    error(msg)
 end
 
 ---Use to mark abstract methods
 ---@return void
 function abstract()
-    assert_unreachable("Method marked as abstract has no implementation")
+    error("Method marked as abstract has no implementation")
 end
 
 return Utils

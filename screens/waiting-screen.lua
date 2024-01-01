@@ -1,39 +1,54 @@
-local Rectangle = require("controls.rectangle")
 local Consts = require("app.consts")
 local Control = require("controls.control")
 local Logo = require("game.logo")
-local Text = require("controls.text")
+local Rectangle = require("controls.rectangle")
 local Screen = require("screens.screen")
+local Text = require("controls.text")
 local UpdateEventListener = require("events.update-event").Listener
 
 ---@class WaitingScreen: Screen, UpdateEventListener
+---@field private _background Rectangle
+---@field private _layout Control
+---@field private _logo Logo
+---@field private _message string
+---@field private _text Text
 local WaitingScreen = class("WaitingScreen", Screen, UpdateEventListener)
 
-local function _create_background(self)
-    self.background = Rectangle(self.screen, app.width, app.height, Consts.BACKGROUND_COLOR)
+---@private
+---@return void
+function WaitingScreen:_create_background()
+    self._background = Rectangle(self.screen, app.width, app.height, Consts.BACKGROUND_COLOR)
 end
 
-local function _create_layout(self)
-    self.layout = Control(self.screen)
+---@private
+---@return void
+function WaitingScreen:_create_layout()
+    self._layout = Control(self.screen)
 end
 
-local function _create_logo(self)
-    local logo = Logo(self.layout)
-    self.logo = logo
+---@private
+---@return void
+function WaitingScreen:_create_logo()
+    local logo = Logo(self._layout)
+    self._logo = logo
     logo:set_position(0, -15)
 end
 
-local function _create_text(self)
-    local text = Text(self.layout, self.message, Consts.FOREGROUND_COLOR)
-    self.text = text
+---@private
+---@return void
+function WaitingScreen:_create_text()
+    local text = Text(self._layout, self._message, Consts.FOREGROUND_COLOR)
+    self._text = text
     text:set_position(0, 100)
     local text_w = text:get_size()
     text:set_origin(text_w * 0.5, 0)
     text:set_scale(Consts.MENU_TITLE_SCALE)
 end
 
-local function _center_layout(self)
-    local layout = self.layout
+---@private
+---@return void
+function WaitingScreen:_center_layout()
+    local layout = self._layout
     local aabb = layout:get_global_recursive_aabb()
     local h = aabb:get_height()
     local s = app.root:get_scale()
@@ -41,29 +56,37 @@ local function _center_layout(self)
     layout:set_origin(0, h * 0.5 / s)
 end
 
+---@param message string
+---@return void
 function WaitingScreen:init(message)
     Screen.init(self)
-    self.message = message
+    self._message = message
 
-    _create_background(self)
-    _create_layout(self)
-    _create_logo(self)
-    _create_text(self)
+    self:_create_background()
+    self:_create_layout()
+    self:_create_logo()
+    self:_create_text()
     app.update_event_manager:register_listener(self)
 end
 
+---@return void
 function WaitingScreen:show()
     Screen.show(self)
     self:on_resize(app.width, app.height)
 end
 
+---@param w number
+---@param h number
+---@return void
 function WaitingScreen:on_resize(w, h)
-    self.background:set_size(w, h)
-    _center_layout(self)
+    self._background:set_size(w, h)
+    self:_center_layout()
 end
 
+---@param dt number
+---@return void
 function WaitingScreen:on_update(dt)
-    local logo = self.logo
+    local logo = self._logo
     logo:set_rotation(logo:get_rotation() + dt)
 end
 

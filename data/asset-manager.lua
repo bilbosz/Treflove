@@ -123,9 +123,8 @@ function AssetManager:download_asset(path)
     })
 end
 
----TODO type to be resolved
 ---@param list string[]
----@param cb ToDo
+---@param cb fun():void
 ---@return void
 function AssetManager:download_missing_assets(list, cb)
     _filter_for_missing_assets(list)

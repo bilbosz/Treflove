@@ -1,28 +1,40 @@
-local FormScreen = require("ui.form-screen")
-local Rectangle = require("controls.rectangle")
-local Control = require("controls.control")
 local Consts = require("app.consts")
+local Control = require("controls.control")
+local FormScreen = require("ui.form-screen")
 local Logo = require("game.logo")
+local Rectangle = require("controls.rectangle")
 local Text = require("controls.text")
 
 ---@class MenuScreen: FormScreen
+---@field private _background Rectangle
+---@field private _entries MenuEntry[]
+---@field private _layout Control
+---@field private _title string
 local MenuScreen = class("MenuScreen", FormScreen)
 
-local function _create_background(self)
-    self.background = Rectangle(self.screen, app.width, app.height, Consts.BACKGROUND_COLOR)
+---@private
+---@return void
+function MenuScreen:_create_background()
+    self._background = Rectangle(self.screen, app.width, app.height, Consts.BACKGROUND_COLOR)
 end
 
-local function _create_layout(self)
-    self.layout = Control(self.screen)
+---@private
+---@return void
+function MenuScreen:_create_layout()
+    self._layout = Control(self.screen)
 end
 
-local function _create_logo(self)
-    local logo = Logo(self.layout)
+---@private
+---@return void
+function MenuScreen:_create_logo()
+    local logo = Logo(self._layout)
     logo:set_position(0, 0)
 end
 
-local function _create_title(self)
-    local text = Text(self.layout, self.title, Consts.FOREGROUND_COLOR)
+---@private
+---@return void
+function MenuScreen:_create_title()
+    local text = Text(self._layout, self._title, Consts.FOREGROUND_COLOR)
 
     local w, h = text:get_size()
     text:set_origin(w * 0.5, h * 0.5)
@@ -30,42 +42,53 @@ local function _create_title(self)
     text:set_scale(Consts.MENU_TITLE_SCALE)
 end
 
-local function _center_layout(self)
-    local layout = self.layout
+---@private
+---@return void
+function MenuScreen:_center_layout()
+    local layout = self._layout
     local aabb = layout:get_recursive_aabb()
     layout:set_origin(0, aabb:get_height() * 0.5)
     layout:set_position(app.width * 0.5, app.height * 0.5)
 end
 
-local function _create_entries(self)
+---@private
+---@return void
+function MenuScreen:_create_entries()
     local y = 250
-    for _, entry_def in ipairs(self.entries) do
-        local ctrl = entry_def:create_control(self.layout)
+    for _, entry_def in ipairs(self._entries) do
+        local ctrl = entry_def:create_control(self._layout)
         ctrl:set_position(nil, y)
-        y = self.layout:get_recursive_aabb(ctrl):get_max_y() + Consts.MENU_ENTRY_VSPACING
+        y = self._layout:get_recursive_aabb(ctrl):get_max_y() + Consts.MENU_ENTRY_VSPACING
     end
 end
 
+---@param title string
+---@param entries MenuEntry[]
+---@return void
 function MenuScreen:init(title, entries)
     FormScreen.init(self)
-    self.title = title
-    self.entries = entries
+    self._title = title
+    self._entries = entries
 
-    _create_background(self)
-    _create_layout(self)
-    _create_logo(self)
-    _create_title(self)
-    _create_entries(self)
+    self:_create_background()
+    self:_create_layout()
+    self:_create_logo()
+    self:_create_title()
+    self:_create_entries()
 end
 
+---@return void
 function MenuScreen:show()
     FormScreen.show(self)
     self:on_resize(app.width, app.height)
 end
 
+---@param w number
+---@param h number
+---@return void
 function MenuScreen:on_resize(w, h)
-    self.background:set_size(w, h)
-    _center_layout(self)
+    self._background:set_size(w, h)
+    self:_center_layout()
 end
 
 return MenuScreen

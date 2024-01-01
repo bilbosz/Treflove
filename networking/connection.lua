@@ -1,7 +1,19 @@
 local Consts = require("app.consts")
 local UpdateEventListener = require("events.update-event").Listener
 
+---@class Request
+---@field public source string
+---@field public id string
+---@field public body table
+
+---@class Response
+---@field public source string
+---@field public id string
+---@field public body table
+
+---@alias ConnectionQueueEntry Request|Response
 ---@class Connection: UpdateEventListener
+---@field private _queue ConnectionQueueEntry[]
 local Connection = class("Connection", UpdateEventListener)
 
 ---@param message table
@@ -100,15 +112,15 @@ function Connection:release()
 end
 
 ---@private
----@param message table
+---@param message Response
 ---@return string
 function Connection:_handle_response(message)
     return table.remove(self._queue, 1)(message.body)
 end
 
 ---@private
----@param request table
----@return table
+---@param request Request
+---@return void
 function Connection:_send_response(request)
     assert_type(request, "table")
     assert_type(request.body, "table")

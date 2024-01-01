@@ -4,6 +4,7 @@ local MenuTextButton = require("ui.menu.menu-text-button")
 ---@class OptionsMenuScreen: MenuScreen
 local OptionsMenuScreen = class("OptionsMenuScreen", MenuScreen)
 
+---@return void
 function OptionsMenuScreen:init()
     MenuScreen.init(self, "Options", {
         MenuTextButton(self, "Toggle Fullscreen", function()

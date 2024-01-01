@@ -1,67 +1,84 @@
 local UpdateEventListener = require("events.update-event").Listener
 
 ---@class Connector: UpdateEventListener
+---@field private _address string
+---@field private _port string
+---@field private _channel LoveChannel
+---@field private _retry_time number
+---@field private _thread LoveThread
+---@field private _connection_manager ConnectionManager
 local Connector = class("Connector", UpdateEventListener)
 
+---@param address string
+---@param port string
+---@return void
 function Connector:init(address, port)
-    self.address = address
-    self.port = port
-    self.channel = love.thread.newChannel()
+    self._address = address
+    self._port = port
+    self._channel = love.thread.newChannel()
     self._retry_time = 1
-    self.thread = nil
-    self.connection_manager = nil
+    self._thread = nil
+    self._connection_manager = nil
 end
 
+---@param connection_manager ConnectionManager
+---@return void
 function Connector:start(connection_manager)
-    self.connection_manager = connection_manager
+    self._connection_manager = connection_manager
     self:_try_restart_connection()
 
     app.update_event_manager:register_listener(self)
 end
 
+---@private
+---@return void
 function Connector:_try_restart_connection()
     local now = love.timer.getTime()
-    if not self.thread or not self.thread:isRunning() and (not self._last_start or now - self._last_start >= self._retry_time) then
+    if not self._thread or not self._thread:isRunning() and (not self._last_start or now - self._last_start >= self._retry_time) then
         self._last_start = love.timer.getTime()
-        if not self.thread then
+        if not self._thread then
             if app.is_server then
-                self.thread = love.thread.newThread("networking/detail/connection-dispatcher.lua")
+                self._thread = love.thread.newThread("networking/detail/connection-dispatcher.lua")
             else
-                self.thread = love.thread.newThread("networking/detail/client-out.lua")
+                self._thread = love.thread.newThread("networking/detail/client-out.lua")
             end
         end
         if app.is_server then
-            self.thread:start(app.logger:get_data(), self.channel, self.address, self.port)
+            self._thread:start(app.logger:get_data(), self._channel, self._address, self._port)
         else
-            self.thread:start(app.logger:get_data(), self.channel, self.address, self.port, self.thread)
+            self._thread:start(app.logger:get_data(), self._channel, self._address, self._port, self._thread)
         end
     end
 end
 
-function Connector:handle_connections()
+---@private
+---@return void
+function Connector:_handle_connections()
     while true do
-        local msg = self.channel:pop()
+        local msg = self._channel:pop()
         if not msg then
             break
         end
         local action, channel1, thread1, channel2, thread2 = unpack(msg)
         if action == "a" then
-            self.connection_manager:add_connection(channel1, thread1, channel2, thread2)
+            self._connection_manager:add_connection(channel1, thread1, channel2, thread2)
         elseif action == "i" then
-            self.connection_manager:remove_by_in_channel(channel1)
+            self._connection_manager:remove_by_in_channel(channel1)
         elseif action == "o" then
-            self.connection_manager:remove_by_out_channel(channel1)
+            self._connection_manager:remove_by_out_channel(channel1)
         end
     end
 end
 
+---@return void
 function Connector:remove_thread()
-    self.thread = nil
+    self._thread = nil
 end
 
+---@return void
 function Connector:on_update()
     self:_try_restart_connection()
-    self:handle_connections()
+    self:_handle_connections()
 end
 
 return Connector

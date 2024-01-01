@@ -11,7 +11,7 @@ function love.conf(t)
         t.window = nil
     elseif params.app_type == "server" then
         t.console = true
-        if love._os == "Windows" then
+        if true or love._os == "Windows" then
             t.window.title = "Treflove - Server"
             t.window.icon = "icon.png"
         else
@@ -21,8 +21,8 @@ function love.conf(t)
         t.window.title = "Treflove"
         t.window.icon = "icon.png"
         t.window.resizable = true
-        t.window.fullscreen = false
-        t.window.display = 2
+        t.window.fullscreen = true
+        t.window.display = 1
     else
         assert_unreachable()
     end

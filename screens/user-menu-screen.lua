@@ -3,11 +3,14 @@ local MenuTextButton = require("ui.menu.menu-text-button")
 local OptionsMenuScreen = require("screens.options-menu-screen")
 
 ---@class UserMenuScreen: MenuScreen
+---@field private _session Session
 local UserMenuScreen = class("UserMenuScreen", MenuScreen)
 
+---@param session Session
+---@return void
 function UserMenuScreen:init(session)
     assert(session)
-    self.session = session
+    self._session = session
     MenuScreen.init(self, "Menu", {
         MenuTextButton(self, "Join Game", function()
             self:join_game()
@@ -24,21 +27,25 @@ function UserMenuScreen:init(session)
     })
 end
 
+---@return void
 function UserMenuScreen:join_game()
-    self.session:join_game()
+    self._session:join_game()
 end
 
+---@return void
 function UserMenuScreen:options()
     app.backstack_manager:push(function()
-        app.screen_manager:show(self, self.session)
+        app.screen_manager:show(self, self._session)
     end)
     app.screen_manager:show(OptionsMenuScreen())
 end
 
+---@return void
 function UserMenuScreen:logout()
-    self.session:logout()
+    self._session:logout()
 end
 
+---@return void
 function UserMenuScreen:quit()
     app:quit()
 end
