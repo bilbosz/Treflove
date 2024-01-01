@@ -204,7 +204,9 @@ function AssetsPanel:reset()
 end
 
 function AssetsPanel:_upload()
-    app.asset_manager:upload_asset(self.remote_location_input:get_text(), self.data)
+    if self.data then
+        app.asset_manager:upload_asset(self.remote_location_input:get_text(), self.data)
+    end
 end
 
 function AssetsPanel:cancel()

@@ -24,7 +24,7 @@ std = {
         "tostring",
         "type",
         "unpack",
-        "xpcall"
+        "xpcall",
     },
 
     globals = {
@@ -47,7 +47,8 @@ std = {
         "love",
         "prev",
         "ripairs",
-        "table"
+        "table",
+        "toboolean",
     }
 }
 

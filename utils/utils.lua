@@ -188,4 +188,10 @@ function abstract()
     error("Method marked as abstract has no implementation")
 end
 
+---@param value any
+---@return boolean
+function toboolean(value)
+    return not not value
+end
+
 return Utils
