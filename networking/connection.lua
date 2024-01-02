@@ -1,15 +1,19 @@
 local Consts = require("app.consts")
 local UpdateEventListener = require("events.update-event").Listener
 
+---@class RequestBody
+
 ---@class Request
 ---@field public source string
 ---@field public id string
----@field public body table
+---@field public body RequestBody
+
+---@class ResponseBody
 
 ---@class Response
 ---@field public source string
 ---@field public id string
----@field public body table
+---@field public body ResponseBody
 
 ---@alias ConnectionQueueEntry Request|Response
 ---@class Connection: UpdateEventListener

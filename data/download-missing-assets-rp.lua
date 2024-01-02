@@ -1,12 +1,23 @@
 local RemoteProcedure = require("networking.remote-procedure")
 
+---@class DownloadMissingAssetsRequest
+---@field public list string[]
+
+---@class DownloadMissingAssetsResponse
+---@field public success boolean
+---@field public contents table<string, string>
+
 ---@class DownloadMissingAssetsRp: RemoteProcedure
 local DownloadMissingAssetsRp = class("DownloadMissingAssetsRp", RemoteProcedure)
 
+---@param connection Connection
+---@return void
 function DownloadMissingAssetsRp:init(connection)
     RemoteProcedure.init(self, connection)
 end
 
+---@param request DownloadMissingAssetsRequest
+---@return DownloadMissingAssetsResponse
 function DownloadMissingAssetsRp:send_response(request)
     assert(app.is_server)
     local contents = {}
@@ -19,6 +30,8 @@ function DownloadMissingAssetsRp:send_response(request)
     }
 end
 
+---@param response DownloadMissingAssetsResponse
+---@return void
 function DownloadMissingAssetsRp:receive_response(response)
     assert(app.is_client)
     assert(response.success)

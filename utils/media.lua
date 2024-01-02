@@ -9,22 +9,31 @@ Media.Type = {
     TEXT = 5
 }
 
+---@param data string
+---@return LoveSource
 local function _try_create_audio_file(data)
     return love.audio.newSource(data, "static")
 end
 
+---@param data string
+---@return LoveImage
 local function _try_create_image_file(data)
     return love.graphics.newImage(data)
 end
 
+---@param data string
+---@return LoveFont
 local function _try_create_font_file(data)
     return love.graphics.newFont(data)
 end
 
+---@param data string
+---@return LoveVideo
 local function _try_create_video_file(data)
     return love.graphics.newVideo(data)
 end
 
+---@type any[]
 local MATCH_FILE = {
     {
         _try_create_video_file,
@@ -44,6 +53,8 @@ local MATCH_FILE = {
     }
 }
 
+---@param data string
+---@return string, LoveSource|LoveImage|LoveFont|LoveVideo
 function Media.GetTypeAndMedium(data)
     for _, v in ipairs(MATCH_FILE) do
         local f, t = unpack(v)

@@ -2,9 +2,19 @@ local Consts = require("app.consts")
 local Model = require("data.model")
 local Utils = require("utils.utils")
 
+---@class LoggerData
+---@field public start_time number
+
 ---@class Logger: Model
+---@field public data LoggerData
+---@field private _is_enabled boolean
+---@field private _name string
+---@field private _separator string
+---@field private _start_time number
 local Logger = class("Logger", Model)
 
+---@param name string
+---@return boolean
 local function _is_enabled(name)
     local n = #name
     for _, pattern in ipairs(Consts.LOGGER_NAME_BLACKLIST) do
@@ -16,13 +26,18 @@ local function _is_enabled(name)
     return true
 end
 
-local function _log_implementation(self, format, level, ...)
+---@private
+---@param format string
+---@param level number
+---@param ... vararg
+---@return void
+function Logger:_log_implementation(format, level, ...)
     if not self._is_enabled then
         return
     end
-    local sep = self.separator
-    local time_diff = Utils.get_time() - self.start_time
-    local result = string.format("%8.3f%s%21s", time_diff, sep, self.name)
+    local sep = self._separator
+    local time_diff = Utils.get_time() - self._start_time
+    local result = string.format("%8.3f%s%21s", time_diff, sep, self._name)
     if debug then
         local info = debug.getinfo(level, "Sl")
         local location = string.format("%s:%i", info.short_src, info.currentline)
@@ -32,32 +47,45 @@ local function _log_implementation(self, format, level, ...)
     print(result)
 end
 
+---@param data LoggerData
+---@param name string
+---@return void
 function Logger:init(data, name)
     assert_type(name, "string")
     Model.init(self, data)
-    self.name = name
+    self._name = name
     self.data.start_time = self.data.start_time or Utils.get_time()
-    self.start_time = self.data.start_time
-    self.separator = " "
+    self._start_time = self.data.start_time
+    self._separator = " "
     self._is_enabled = _is_enabled(name)
 end
 
+---@param name string
+---@return void
 function Logger:set_name(name)
     assert_type(name, "string")
-    self.name = name
+    self._name = name
     self._is_enabled = _is_enabled(name)
 end
 
+---@param string string
+---@return void
 function Logger:log(string)
-    _log_implementation(self, "%s", 3, string)
+    self:_log_implementation("%s", 3, string)
 end
 
+---@param format string
+---@param ... vararg
+---@return void
 function Logger:log_format(format, ...)
-    _log_implementation(self, format, 3, ...)
+    self:_log_implementation(format, 3, ...)
 end
 
+---@param format string
+---@param up number
+---@param ... vararg
 function Logger:log_up(format, up, ...)
-    _log_implementation(self, format, 3 + up, ...)
+    self:_log_implementation(format, 3 + up, ...)
 end
 
 return Logger
