@@ -3,7 +3,7 @@
 ---@field public children Tree[]
 local Tree = class("Tree")
 
----@param parent Tree
+---@param parent Tree|nil
 function Tree:init(parent)
     self.children = {}
     self.parent = nil
@@ -12,7 +12,7 @@ function Tree:init(parent)
     end
 end
 
----@param parent Tree
+---@param parent Tree|nil
 function Tree:set_parent(parent)
     if parent then
         parent:add_child(self)
@@ -59,7 +59,7 @@ function Tree:get_parent()
     return self.parent
 end
 
----@param n number
+---@param n number|nil
 function Tree:reattach(n)
     local children = self.parent.children
     n = n or #children

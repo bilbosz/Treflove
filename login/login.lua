@@ -17,8 +17,8 @@ local function _get_client_auth(user_name, password)
 end
 
 ---@param session Session
----@param on_login fun(user:string):void
----@param on_logout fun():void
+---@param on_login fun(user:string)
+---@param on_logout fun()
 function Login:init(session, on_login, on_logout)
     self._connection = session:get_connection()
     self._login_rp = LoginRp(self._connection, on_login)

@@ -4,6 +4,7 @@ local Aabb = require("utils.aabb")
 local Consts = require("app.consts")
 
 ---@class Selection: Rectangle, UpdateEventListener
+---@field public page Page
 local Selection = class("Selection", Rectangle, UpdateEventListener)
 
 local function _update_rectangle(self)
@@ -14,6 +15,7 @@ local function _update_rectangle(self)
     self:set_size(aabb:get_size())
 end
 
+---@param page Page
 function Selection:init(page)
     -- assert_type(page, Page)
     self.page = page

@@ -1,7 +1,7 @@
 local Control = require("controls.control")
 
----@alias _StencilCallback fun():void
----@alias _DrawMaskCallback fun():void
+---@alias _StencilCallback fun()
+---@alias _DrawMaskCallback fun()
 
 ---@class ClippingMask: Control
 ---@field private _stencil_cb _StencilCallback

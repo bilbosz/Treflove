@@ -2,16 +2,18 @@ local Aabb = require("utils.aabb")
 local Tree = require("utils.tree")
 
 ---@class Control: Tree
----@field private _global_aabb LoveTransform
+---@field public parent Control|nil
+---@field public children Control[]|nil
+---@field protected global_transform love.Transform
+---@field protected size [number, number]
+---@field private _global_aabb Aabb
 ---@field private _is_enabled boolean
 ---@field private _is_visable boolean
----@field private _local_transform LoveTransform
----@field private _origin number[]
----@field private _position number[]
+---@field private _local_transform love.Transform
+---@field private _origin [number, number]
+---@field private _position [number, number]
 ---@field private _rotation number
 ---@field private _scale number[]
----@field protected global_transform LoveTransform
----@field protected size number[]
 local Control = class("Control", Tree)
 
 -- Transformations
@@ -55,7 +57,7 @@ end
 
 ---@private
 function Control:_update_global_aabb_parent()
-    local parent = self:get_parent()
+    local parent = self:get_parent() ---@cast parent Control|nil
     while parent do
         parent._global_aabb:set(parent:get_global_aabb())
         local aabb = parent._global_aabb
@@ -128,11 +130,11 @@ end
 
 ---@return number, number
 function Control:get_position()
-    return unpack(self._position)
+    return self._position[1], self._position[2]
 end
 
 ---@param scale_x number
----@param scale_y number
+---@param scale_y number|nil
 function Control:set_scale(scale_x, scale_y)
     assert(scale_x)
     scale_y = scale_y or scale_x
@@ -143,7 +145,7 @@ end
 
 ---@return number, number
 function Control:get_scale()
-    return unpack(self._scale)
+    return self._scale[1], self._scale[2]
 end
 
 ---@param rotation number
@@ -159,7 +161,7 @@ function Control:get_rotation()
 end
 
 ---@param x number
----@param y number
+---@param y number|nil
 function Control:set_origin(x, y)
     assert(x or y)
     if x then
@@ -173,10 +175,10 @@ end
 
 ---@return number, number
 function Control:get_origin()
-    return unpack(self._origin)
+    return self._origin[1], self._origin[2]
 end
 
----@param child Tree
+---@param child Control
 function Control:add_child(child)
     Tree.add_child(self, child)
     child:_update_global_transform()
@@ -212,7 +214,7 @@ function Control:get_global_aabb()
 end
 
 ---@private
----@param reference_transform LoveTransform
+---@param reference_transform love.Transform
 ---@return Aabb
 function Control:_get_recursive_aabb_detail(reference_transform)
     local aabb = Aabb()
@@ -231,7 +233,7 @@ function Control:_get_recursive_aabb_detail(reference_transform)
     return aabb
 end
 
----@param ctrl Control
+---@param ctrl Control|nil
 ---@return Aabb
 function Control:get_recursive_aabb(ctrl)
     ctrl = ctrl or self
@@ -253,7 +255,7 @@ end
 
 ---@return number, number
 function Control:get_size()
-    return unpack(self.size)
+    return self.size[1], self.size[2]
 end
 
 ---@return number, number

@@ -1,6 +1,7 @@
 ---@class Media
 local Media = class("Media")
 
+---@enum Media.Type
 Media.Type = {
     VIDEO = 1,
     AUDIO = 2,
@@ -10,25 +11,25 @@ Media.Type = {
 }
 
 ---@param data string
----@return LoveSource
+---@return love.Source
 local function _try_create_audio_file(data)
     return love.audio.newSource(data, "static")
 end
 
 ---@param data string
----@return LoveImage
+---@return love.Image
 local function _try_create_image_file(data)
     return love.graphics.newImage(data)
 end
 
 ---@param data string
----@return LoveFont
+---@return love.Font
 local function _try_create_font_file(data)
     return love.graphics.newFont(data)
 end
 
 ---@param data string
----@return LoveVideo
+---@return love.Video
 local function _try_create_video_file(data)
     return love.graphics.newVideo(data)
 end
@@ -54,8 +55,8 @@ local MATCH_FILE = {
 }
 
 ---@param data string
----@return string, LoveSource|LoveImage|LoveFont|LoveVideo
-function Media.GetTypeAndMedium(data)
+---@return string|nil, love.Source|love.Image|love.Font|love.Video|nil
+function Media.get_type_and_medium(data)
     for _, v in ipairs(MATCH_FILE) do
         local f, t = unpack(v)
         local is_ok, medium = pcall(function()

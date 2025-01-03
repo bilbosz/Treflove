@@ -37,7 +37,7 @@ end
 ---@return string|nil Input string or `nil` when provided string was wrong
 local function _parse_port(str)
     local num = tonumber(str)
-    return num and num >= 1024 and num <= 65535 and str
+    return num and num >= 1024 and num <= 65535 and str or nil
 end
 
 ---@class ArgParserResult

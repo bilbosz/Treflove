@@ -84,25 +84,24 @@ function AssetManager:mount_file(mount_point, content)
 end
 
 ---@param path string
----@return string
+---@return string|nil
 function AssetManager:get_content(path)
     local file = Asset(path)
     if file:get_type() ~= "file" then
         return nil
     end
-    return love.data.encode("string", "base64", file:read(), file:get_size())
+    return love.data.encode("string", "base64", file:read(), file:get_size()) --[[@as string]]
 end
 
 ---@param path string
 ---@param data string
----@param data_size number
-function AssetManager:upload_asset(path, data, data_size)
+function AssetManager:upload_asset(path, data)
     assert(app.is_client)
 
     local rp = _get_any_rp(self._upload_asset_rp)
     rp:send_request({
         path = path,
-        content = love.data.encode("string", "base64", data, data_size)
+        content = love.data.encode("string", "base64", data)
     })
 end
 
@@ -117,7 +116,7 @@ function AssetManager:download_asset(path)
 end
 
 ---@param list string[]
----@param cb fun():void
+---@param cb fun()
 function AssetManager:download_missing_assets(list, cb)
     _filter_for_missing_assets(list)
 

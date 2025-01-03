@@ -54,6 +54,7 @@ function Page:init(data, game_screen, width, height)
     app.wheel_event_manager:register_listener(self)
 end
 
+---@return Control
 function Page:get_page_coordinates()
     return self.page_coordinates
 end

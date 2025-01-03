@@ -6,12 +6,12 @@ local TextButton = require("ui.text-button")
 ---@class MenuTextButton: MenuEntry
 ---@field private _screen MenuScreen
 ---@field private _label string
----@field private _cb fun():void
+---@field private _cb fun()
 local MenuTextButton = class("MenuTextButton", MenuEntry)
 
 ---@param screen MenuScreen
 ---@param label string
----@param cb fun():void
+---@param cb fun()
 function MenuTextButton:init(screen, label, cb)
     MenuEntry.init(self)
     self._screen = screen

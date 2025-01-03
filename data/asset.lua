@@ -6,6 +6,7 @@ local Asset = class("Asset")
 
 ---@param path string
 local function _create_intermediate_dirs(path)
+    ---@type integer|nil
     local found = 0
     while true do
         found = string.find(path, "/", found + 1)
@@ -53,7 +54,7 @@ end
 
 ---@return string
 function Asset:read()
-    return love.filesystem.read(self._path)
+    return (love.filesystem.read(self._path))
 end
 
 ---@return string|nil

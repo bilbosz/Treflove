@@ -29,7 +29,7 @@ end
 ---@private
 ---@param format string
 ---@param level number
----@param ... vararg
+---@param ... any
 function Logger:_log_implementation(format, level, ...)
     if not self._is_enabled then
         return
@@ -71,14 +71,14 @@ function Logger:log(string)
 end
 
 ---@param format string
----@param ... vararg
+---@param ... any
 function Logger:log_format(format, ...)
     self:_log_implementation(format, 3, ...)
 end
 
 ---@param format string
 ---@param up number
----@param ... vararg
+---@param ... any
 function Logger:log_up(format, up, ...)
     self:_log_implementation(format, 3 + up, ...)
 end

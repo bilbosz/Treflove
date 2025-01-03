@@ -1,6 +1,6 @@
 local Control = require("controls.control")
 
----@alias _DrawCb fun():void
+---@alias _DrawCb fun()
 
 ---@class DrawableControl: Control
 ---@field private _draw_cb _DrawCb

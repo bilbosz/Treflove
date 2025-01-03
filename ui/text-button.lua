@@ -5,7 +5,7 @@ local KeyboardEventListener = require("events.keyboard").Listener
 local Text = require("controls.text")
 
 ---@class TextButton: Text, ButtonEventListener, Input, KeyboardEventListener
----@field private _action fun():void
+---@field private _action fun()
 local TextButton = class("TextButton", Text, ButtonEventListener, Input, KeyboardEventListener)
 
 ---@private
@@ -16,7 +16,7 @@ end
 ---@param parent Control
 ---@param form_screen FormScreen
 ---@param text string
----@param action fun():void
+---@param action fun()
 function TextButton:init(parent, form_screen, text, action)
     Text.init(self, parent, text, Consts.BUTTON_NORMAL_COLOR)
     ButtonEventListener.init(self)

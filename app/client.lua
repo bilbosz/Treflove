@@ -61,6 +61,7 @@ end
 function Client:register_love_callbacks()
     App.register_love_callbacks(self)
     local app_key_pressed = love.keypressed
+    ---@diagnostic disable-next-line: duplicate-set-field
     function love.keypressed(key)
         app_key_pressed(key)
         if key == Consts.TOGGLE_FULLSCREEN_KEY then

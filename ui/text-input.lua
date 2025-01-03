@@ -18,8 +18,8 @@ local UpdateEventListener = require("events.update-event").Listener
 ---@field private _has_new_value boolean
 ---@field private _is_multivalue boolean
 ---@field private _masked boolean
----@field private _on_enter fun():void
----@field private _on_input fun():void
+---@field private _on_enter fun()
+---@field private _on_input fun()
 ---@field private _padding number
 ---@field private _text_ctrl Text
 local TextInput = class("TextInput", Control, UpdateEventListener, ButtonEventListener, TextEventListener, Input)
@@ -160,8 +160,8 @@ end
 ---@param width number
 ---@param height number
 ---@param masked boolean
----@param on_input fun():void
----@param on_enter fun():void
+---@param on_input fun()
+---@param on_enter fun()
 function TextInput:init(parent, form_screen, width, height, masked, on_input, on_enter)
     assert_type(form_screen, FormScreen)
     Control.init(self, parent, width, height)

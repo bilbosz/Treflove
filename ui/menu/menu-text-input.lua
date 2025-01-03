@@ -9,14 +9,14 @@ local TextEventListener = require("ui.text-event").Listener
 ---@field private _field_name string
 ---@field private _input TextInput
 ---@field private _masked boolean
----@field private _on_enter fun():void
+---@field private _on_enter fun()
 ---@field private _screen MenuScreen
 local MenuTextInput = class("MenuTextInput", MenuEntry)
 
 ---@param screen MenuScreen
 ---@param field_name string
 ---@param masked boolean
----@param on_enter fun():void
+---@param on_enter fun()
 function MenuTextInput:init(screen, field_name, masked, on_enter)
     MenuEntry.init(self)
     self._screen = screen

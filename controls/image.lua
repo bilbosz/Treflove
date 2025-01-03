@@ -5,7 +5,7 @@ local Asset = require("data.asset")
 local Image = class("Image", DrawableControl)
 
 ---@param parent Control
----@param path_or_love_image string|LoveImage
+---@param path_or_love_image string|love.Image
 function Image:init(parent, path_or_love_image)
     local love_image
     if type(path_or_love_image) == "string" then

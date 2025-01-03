@@ -32,10 +32,10 @@ local function _decompress(payload)
     return table.from_string(love.data.decompress("string", Consts.NETWORK_COMPRESSION, payload))
 end
 
----@param in_channel LoveChannel
----@param in_thread LoveThread
----@param out_channel LoveChannel
----@param out_thread LoveThread
+---@param in_channel love.Channel
+---@param in_thread love.Thread
+---@param out_channel love.Channel
+---@param out_thread love.Thread
 function Connection:init(in_channel, in_thread, out_channel, out_thread)
     self._in_channel = in_channel
     self._in_thread = in_thread
@@ -50,7 +50,7 @@ end
 
 ---@param id string
 ---@param body table
----@param response_handler fun(body:table):void
+---@param response_handler fun(body:table)
 function Connection:send_request(id, body, response_handler)
     assert_type(body, "table")
     assert_type(response_handler, "function")
@@ -65,7 +65,7 @@ function Connection:send_request(id, body, response_handler)
 end
 
 ---@param id string
----@param response_handler fun(body:table):void
+---@param response_handler fun(body:table)
 function Connection:register_request_handler(id, response_handler)
     assert(not self._requests_handlers[id])
     self._requests_handlers[id] = response_handler
@@ -76,12 +76,12 @@ function Connection:unregister_request_handler(id)
     self._requests_handlers[id] = nil
 end
 
----@return LoveChannel
+---@return love.Channel
 function Connection:get_in_channel()
     return self._in_channel
 end
 
----@return LoveChannel
+---@return love.Channel
 function Connection:get_out_channel()
     return self._out_channel
 end

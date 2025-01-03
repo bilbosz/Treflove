@@ -1,7 +1,7 @@
 local Consts = require("app.consts")
 local KeyboardEventListener = require("events.keyboard").Listener
 
----@alias BackstackManagerCb fun():void
+---@alias BackstackManagerCb fun()
 
 ---@class BackstackManager: KeyboardEventListener
 ---@field private _stack BackstackManagerCb[]

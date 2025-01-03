@@ -3,9 +3,9 @@ local UpdateEventListener = require("events.update-event").Listener
 ---@class Connector: UpdateEventListener
 ---@field private _address string
 ---@field private _port string
----@field private _channel LoveChannel
+---@field private _channel love.Channel
 ---@field private _retry_time number
----@field private _thread LoveThread
+---@field private _thread love.Thread
 ---@field private _connection_manager ConnectionManager
 local Connector = class("Connector", UpdateEventListener)
 

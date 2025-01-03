@@ -4,7 +4,7 @@
 local RemoteProcedure = class("RemoteProcedure")
 
 ---@param connection Connection
----@param dont_start boolean
+---@param dont_start boolean|nil
 function RemoteProcedure:init(connection, dont_start)
     assert(connection)
     self._connection = connection
@@ -26,7 +26,7 @@ function RemoteProcedure:stop()
 end
 
 ---@param request Request
----@param cb nil|fun(response:Response):void
+---@param cb nil|fun(response:Response)
 function RemoteProcedure:send_request(request, cb)
     self._connection:send_request(self._id, request, function(response)
         self:receive_response(response)

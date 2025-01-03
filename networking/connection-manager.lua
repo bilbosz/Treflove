@@ -1,13 +1,13 @@
 local Connector = require("networking.connector")
 local Connection = require("networking.connection")
 
----@alias ConnectionManagerOnConnect fun(connection:Connection):void
----@alias ConnectionManagerOnDisconnect fun(connection:Connection):void
+---@alias ConnectionManagerOnConnect fun(connection:Connection)
+---@alias ConnectionManagerOnDisconnect fun(connection:Connection)
 
 ---@class ConnectionManager
 ---@field private _connections table<Connection, boolean>
----@field private _by_in_channel table<LoveChannel, Connection>
----@field private _by_out_channel table<LoveChannel, Connection>
+---@field private _by_in_channel table<love.Channel, Connection>
+---@field private _by_out_channel table<love.Channel, Connection>
 ---@field private _on_connect ConnectionManagerOnConnect
 ---@field private _on_disconnect ConnectionManagerOnDisconnect
 ---@field private _connector Connector
@@ -32,10 +32,10 @@ function ConnectionManager:start(on_connect, on_disconnect)
     self._connector:start(self)
 end
 
----@param in_channel LoveChannel
----@param in_thread LoveThread
----@param out_channel LoveChannel
----@param out_thread LoveThread
+---@param in_channel love.Channel
+---@param in_thread love.Thread
+---@param out_channel love.Channel
+---@param out_thread love.Thread
 function ConnectionManager:add_connection(in_channel, in_thread, out_channel, out_thread)
     local connection = Connection(in_channel, in_thread, out_channel, out_thread)
     self._connections[connection] = true
@@ -44,12 +44,12 @@ function ConnectionManager:add_connection(in_channel, in_thread, out_channel, ou
     self._on_connect(connection)
 end
 
----@param in_channel LoveChannel
+---@param in_channel love.Channel
 function ConnectionManager:remove_by_in_channel(in_channel)
     self:remove(self._by_in_channel[in_channel])
 end
 
----@param out_channel LoveChannel
+---@param out_channel love.Channel
 function ConnectionManager:remove_by_out_channel(out_channel)
     self:remove(self._by_out_channel[out_channel])
 end

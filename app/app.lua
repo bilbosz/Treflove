@@ -30,7 +30,7 @@ local Utils = require("utils.utils")
 ---@field public update_event_manager UpdateEventManager
 ---@field public wheel_event_manager WheelEventManager
 ---@field public width number
----@field protected load fun(self:App):void
+---@field protected load fun(self:App)
 ---@field protected params string[]
 ---@field private _draw_aabbs boolean
 ---@field private _mark_for_quit boolean
@@ -68,6 +68,7 @@ function App:register_love_callbacks()
                 love.graphics.reset()
             end
         end
+        ---@diagnostic disable-next-line: duplicate-set-field
         function love.keypressed(key)
             if key == Consts.DRAW_AABBS_KEY then
                 self._draw_aabbs = not self._draw_aabbs
