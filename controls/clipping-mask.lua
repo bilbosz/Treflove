@@ -11,14 +11,12 @@ local ClippingMask = class("ClippingMask", Control)
 ---@param width number
 ---@param height number
 ---@param draw_mask_cb _DrawMaskCallback
----@return void
 function ClippingMask:init(parent, width, height, draw_mask_cb)
     assert(width and height and draw_mask_cb)
     Control.init(self, parent, width, height)
     self:set_draw_mask_callback(draw_mask_cb)
 end
 
----@return void
 function ClippingMask:draw()
     love.graphics.stencil(self._stencil_cb, "replace", 1)
     love.graphics.setStencilTest("greater", 0)
@@ -27,7 +25,6 @@ function ClippingMask:draw()
 end
 
 ---@param draw_mask_cb _DrawMaskCallback
----@return void
 function ClippingMask:set_draw_mask_callback(draw_mask_cb)
     self._stencil_cb = function()
         love.graphics.push()

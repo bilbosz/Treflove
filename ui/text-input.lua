@@ -25,7 +25,6 @@ local UpdateEventListener = require("events.update-event").Listener
 local TextInput = class("TextInput", Control, UpdateEventListener, ButtonEventListener, TextEventListener, Input)
 
 ---@private
----@return void
 function TextInput:_upload_background_view()
     local color
     if self:is_focused() then
@@ -58,7 +57,6 @@ function TextInput:_upload_background_view()
 end
 
 ---@private
----@return void
 function TextInput:_update_text_view()
     local text = self._text_ctrl
     if self._masked then
@@ -69,7 +67,6 @@ function TextInput:_update_text_view()
 end
 
 ---@private
----@return void
 function TextInput:_upload_caret_view()
     local caret = self._caret
     local is_focused = self:is_focused()
@@ -84,7 +81,6 @@ function TextInput:_upload_caret_view()
 end
 
 ---@private
----@return void
 function TextInput:_update_content_view()
     self:_update_text_view()
     self:_upload_caret_view()
@@ -101,7 +97,6 @@ function TextInput:_update_content_view()
 end
 
 ---@private
----@return void
 function TextInput:_update_view()
     self:_upload_background_view()
     self:_update_content_view()
@@ -114,14 +109,12 @@ function TextInput:_update_view()
 end
 
 ---@private
----@return void
 function TextInput:_create_background()
     local width, height = self:get_size()
     self._background = Rectangle(self, width, height, Consts.BUTTON_NORMAL_COLOR)
 end
 
 ---@private
----@return void
 function TextInput:_create_clip()
     local width, height = self:get_size()
     local clip = ClippingRectangle(self, width - 2 * self._padding, height)
@@ -131,7 +124,6 @@ function TextInput:_create_clip()
 end
 
 ---@private
----@return void
 function TextInput:_create_caret()
     local _, height = self:get_size()
     local caret_height = height - 2 * self._padding
@@ -142,7 +134,6 @@ function TextInput:_create_caret()
 end
 
 ---@private
----@return void
 function TextInput:_create_text()
     local font = Consts.USER_INPUT_FONT
     local text = Text(self._content, "", Consts.TEXT_INPUT_FOREGROUND_COLOR, font)
@@ -153,7 +144,6 @@ function TextInput:_create_text()
 end
 
 ---@private
----@return void
 function TextInput:_create_content()
     local content = Control(self._clip)
     self._content = content
@@ -172,7 +162,6 @@ end
 ---@param masked boolean
 ---@param on_input fun():void
 ---@param on_enter fun():void
----@return void
 function TextInput:init(parent, form_screen, width, height, masked, on_input, on_enter)
     assert_type(form_screen, FormScreen)
     Control.init(self, parent, width, height)
@@ -192,13 +181,11 @@ function TextInput:init(parent, form_screen, width, height, masked, on_input, on
     self:_update_view()
 end
 
----@return void
 function TextInput:on_screen_show()
     Input.on_screen_show(self)
     app.update_event_manager:register_listener(self)
 end
 
----@return void
 function TextInput:on_screen_hide()
     app.update_event_manager:unregister_listener(self)
     app.text_event_manager:unregister_listener(self)
@@ -206,7 +193,6 @@ function TextInput:on_screen_hide()
 end
 
 ---@param dt number
----@return void
 function TextInput:on_update(dt)
     local caret = self._caret
     if self:is_focused() then
@@ -216,19 +202,16 @@ function TextInput:on_update(dt)
     end
 end
 
----@return void
 function TextInput:on_pointer_enter()
     ButtonEventListener.on_pointer_enter(self)
     self:_update_view()
 end
 
----@return void
 function TextInput:on_pointer_leave()
     ButtonEventListener.on_pointer_leave(self)
     self:_update_view()
 end
 
----@return void
 function TextInput:on_click()
     ButtonEventListener.on_click(self)
     self:get_form_screen():focus(self)
@@ -236,7 +219,6 @@ function TextInput:on_click()
 end
 
 ---@param ... vararg
----@return void
 function TextInput:on_edit(...)
     if self._is_multivalue then
         self._has_new_value = true
@@ -247,7 +229,6 @@ function TextInput:on_edit(...)
     end
 end
 
----@return void
 function TextInput:on_enter()
     if self._on_enter then
         self._on_enter()
@@ -255,7 +236,6 @@ function TextInput:on_enter()
     self:_update_view()
 end
 
----@return void
 function TextInput:on_remove_empty()
     if self._is_multivalue then
         self._has_new_value = not self._has_new_value
@@ -263,7 +243,6 @@ function TextInput:on_remove_empty()
     self:_update_view()
 end
 
----@return void
 function TextInput:on_remove_word()
     if self._masked then
         self:set_text("")
@@ -272,14 +251,12 @@ function TextInput:on_remove_word()
     end
 end
 
----@return void
 function TextInput:on_focus()
     Input.on_focus(self)
     app.text_event_manager:set_text_input(true)
     self:_update_view()
 end
 
----@return void
 function TextInput:on_focus_lost()
     Input.on_focus_lost(self)
     app.text_event_manager:set_text_input(false)
@@ -288,14 +265,12 @@ function TextInput:on_focus_lost()
 end
 
 ---@param text string
----@return void
 function TextInput:set_text(text)
     TextEventListener.set_text(self, text)
     self:_update_view()
 end
 
 ---@param value boolean
----@return void
 function TextInput:set_multivalue(value)
     if value then
         TextEventListener.set_text(self, "")
@@ -315,7 +290,6 @@ function TextInput:is_multivalue_default()
     return self._is_multivalue and not self._has_new_value
 end
 
----@return void
 function TextInput:on_read_only_change()
     Input.on_read_only_change(self)
     self:_update_view()

@@ -39,7 +39,6 @@ local Utils = require("utils.utils")
 local App = class("App")
 
 ---@protected
----@return void
 function App:register_love_callbacks()
     if self.load then
         function love.load()
@@ -105,20 +104,17 @@ function App:get_time()
     return self._time
 end
 
----@return void
 function App:quit()
     self._mark_for_quit = true
 end
 
 ---@param ... any
----@return void
 function App:log(...)
     local format = string.rep("%s", select("#", ...), " ")
     self.logger:log_up(format, 1, ...)
 end
 
 ---@param ... any
----@return void
 function App:log_fun(...)
     local format = ""
     if debug then
@@ -129,7 +125,6 @@ function App:log_fun(...)
     self.logger:log_up(format, 1, ...)
 end
 
----@return void
 function App:rescale_root()
     local real_w, real_h = love.graphics.getDimensions()
     local scale = real_w / Consts.MODEL_WIDTH
@@ -138,7 +133,6 @@ function App:rescale_root()
 end
 
 ---@param params ArgParserResult
----@return void
 function App:init(params)
     app = self
     self._start_time = Utils.get_time()

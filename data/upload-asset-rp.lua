@@ -11,7 +11,6 @@ local RemoteProcedure = require("networking.remote-procedure")
 local UploadAssetRp = class("UploadAssetRp", RemoteProcedure)
 
 ---@param connection Connection
----@return void
 function UploadAssetRp:init(connection)
     RemoteProcedure.init(self, connection)
 end
@@ -27,7 +26,6 @@ function UploadAssetRp:send_response(request)
 end
 
 ---@param response UploadAssetResponse
----@return void
 function UploadAssetRp:receive_response(response)
     assert(app.is_client)
     assert(response.success)

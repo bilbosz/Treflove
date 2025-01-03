@@ -30,7 +30,6 @@ end
 ---@param format string
 ---@param level number
 ---@param ... vararg
----@return void
 function Logger:_log_implementation(format, level, ...)
     if not self._is_enabled then
         return
@@ -49,7 +48,6 @@ end
 
 ---@param data LoggerData
 ---@param name string
----@return void
 function Logger:init(data, name)
     assert_type(name, "string")
     Model.init(self, data)
@@ -61,7 +59,6 @@ function Logger:init(data, name)
 end
 
 ---@param name string
----@return void
 function Logger:set_name(name)
     assert_type(name, "string")
     self._name = name
@@ -69,14 +66,12 @@ function Logger:set_name(name)
 end
 
 ---@param string string
----@return void
 function Logger:log(string)
     self:_log_implementation("%s", 3, string)
 end
 
 ---@param format string
 ---@param ... vararg
----@return void
 function Logger:log_format(format, ...)
     self:_log_implementation(format, 3, ...)
 end

@@ -9,7 +9,6 @@ local Session = class("Session")
 
 ---@param self Session
 ---@param user string
----@return void
 local function _on_login(self, user)
     assert(not self.user)
     self.user = user
@@ -26,7 +25,6 @@ local function _on_login(self, user)
 end
 
 ---@param self Session
----@return void
 local function _on_logout(self)
     assert(self.user)
     self.user = nil
@@ -39,7 +37,6 @@ local function _on_logout(self)
 end
 
 ---@param connection Connection
----@return void
 function Session:init(connection)
     self.connection = connection
     self.user = nil
@@ -72,12 +69,10 @@ end
 
 ---@param user string
 ---@param password string
----@return void
 function Session:login(user, password)
     self.login:login(user, password)
 end
 
----@return void
 function Session:logout()
     self.login:logout()
 end
@@ -87,14 +82,12 @@ function Session:is_logged_in()
     return not not self.user
 end
 
----@return void
 function Session:join_game()
     assert(app.is_client)
     app.screen_manager:show(WaitingScreen("Loading..."))
     self.game_data_rp:send_request({})
 end
 
----@return void
 function Session:release()
     app.asset_manager:unregister_session(self)
     if app.is_client then

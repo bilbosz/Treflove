@@ -4,7 +4,6 @@ local ResizeEventListener = require("events.resize").Listener
 ---@field private _screen Screen
 local ScreenManager = class("ScreenManager", ResizeEventListener)
 
----@return void
 function ScreenManager:init()
     self._screen = nil
     if app.resize_manager then
@@ -14,7 +13,6 @@ end
 
 ---@param screen Screen
 ---@param ... vararg
----@return void
 function ScreenManager:show(screen, ...)
     if self._screen then
         self._screen:hide()
@@ -25,7 +23,6 @@ end
 
 ---@param w number
 ---@param h number
----@return void
 function ScreenManager:on_resize(w, h)
     if not self._screen then
         return

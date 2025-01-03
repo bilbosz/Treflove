@@ -11,14 +11,12 @@ local NumberInput = class("NumberInput", TextInput)
 ---@param height number
 ---@param on_input fun():void
 ---@param on_enter fun():void
----@return void
 function NumberInput:init(parent, form_screen, width, height, on_input, on_enter)
     TextInput.init(self, parent, form_screen, width, height, false, on_input, on_enter)
     self._number = 0
 end
 
 ---@param number number
----@return void
 function NumberInput:set_number(number)
     self._number = number
     self:set_text(tostring(number))
@@ -30,7 +28,6 @@ function NumberInput:get_number()
 end
 
 ---@param text string
----@return void
 function NumberInput:on_append_text(text)
     if TextEventListener.get_text(self) == "" and text == "-" then
         self._number = 0
@@ -45,14 +42,12 @@ function NumberInput:on_append_text(text)
 end
 
 ---@param character_number number
----@return void
 function NumberInput:on_remove_characters(character_number)
     TextEventListener.on_remove_characters(self, character_number)
     self._number = tonumber(TextEventListener.get_text(self))
 end
 
 ---@param text string
----@return void
 function NumberInput:set_text(text)
     local n = tonumber(text)
     self._number = n

@@ -79,7 +79,6 @@ end
 
 ---@param obj any
 ---@param typ string|table
----@return void
 function assert_type(obj, typ)
     local msg = "Expected %s got %s"
     if type(typ) == "string" then

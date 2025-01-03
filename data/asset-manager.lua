@@ -10,7 +10,6 @@ local UploadAssetRp = require("data.upload-asset-rp")
 local AssetManager = class("AssetManager")
 
 ---@param list string[]
----@return void
 local function _filter_for_missing_assets(list)
     for i, v in ripairs(list) do
         if Asset(v):get_type() then
@@ -27,7 +26,6 @@ local function _get_any_rp(rp_list)
 end
 
 ---@param path string
----@return void
 local function _remove_server_mount(path)
     local info = love.filesystem.getInfo(path)
     if not info then
@@ -48,7 +46,6 @@ end
 
 ---@param src_path string
 ---@param dst_path string
----@return void
 local function _mount_server_assets(src_path, dst_path)
     local src_info = love.filesystem.getInfo(src_path)
     if src_info.type == "file" then
@@ -65,7 +62,6 @@ local function _mount_server_assets(src_path, dst_path)
     end
 end
 
----@return void
 function AssetManager:init()
     -- remote procedures by session
     if app.is_server then
@@ -79,7 +75,6 @@ end
 
 ---@param mount_point string
 ---@param content string
----@return void
 function AssetManager:mount_file(mount_point, content)
     local file = Asset(mount_point)
     if not file:get_type() then
@@ -101,7 +96,6 @@ end
 ---@param path string
 ---@param data string
 ---@param data_size number
----@return void
 function AssetManager:upload_asset(path, data, data_size)
     assert(app.is_client)
 
@@ -113,7 +107,6 @@ function AssetManager:upload_asset(path, data, data_size)
 end
 
 ---@param path string
----@return void
 function AssetManager:download_asset(path)
     assert(app.is_client)
 
@@ -125,7 +118,6 @@ end
 
 ---@param list string[]
 ---@param cb fun():void
----@return void
 function AssetManager:download_missing_assets(list, cb)
     _filter_for_missing_assets(list)
 
@@ -136,7 +128,6 @@ function AssetManager:download_missing_assets(list, cb)
 end
 
 ---@param session Session
----@return void
 function AssetManager:register_session(session)
     local connection = session:get_connection()
     self._upload_asset_rp[session] = UploadAssetRp(connection)
@@ -145,7 +136,6 @@ function AssetManager:register_session(session)
 end
 
 ---@param session Session
----@return void
 function AssetManager:unregister_session(session)
     self._upload_asset_rp[session]:release()
     self._upload_asset_rp[session] = nil

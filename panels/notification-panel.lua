@@ -9,7 +9,6 @@ local Text = require("controls.text")
 local NotificationPanel = class("NotificationPanel", UpdateEventListener, ResizeEventListener)
 
 ---@private
----@return void
 function NotificationPanel:_center_anchor()
     self._anchor = ClippingRectangle(app.root, 0, 0)
 end
@@ -50,7 +49,6 @@ function NotificationPanel:_add_notification(notification, y)
 end
 
 ---@private
----@return void
 function NotificationPanel:_position_anchor()
     self._anchor:set_position(app.width, app.height)
     local w, h = Consts.NOTIFICATION_PANEL_WIDTH * app.width, Consts.NOTIFICATION_PANEL_HEIGHT * app.height
@@ -59,7 +57,6 @@ function NotificationPanel:_position_anchor()
     self._anchor:set_origin(w, h)
 end
 
----@return void
 function NotificationPanel:init()
     self:_center_anchor()
     self:_position_anchor()
@@ -67,7 +64,6 @@ function NotificationPanel:init()
     app.resize_manager:register_listener(self)
 end
 
----@return void
 function NotificationPanel:update_notifications()
     for _, child in ipairs(self._anchor:get_children()) do
         child:set_parent(nil)
@@ -78,12 +74,10 @@ function NotificationPanel:update_notifications()
     end
 end
 
----@return void
 function NotificationPanel:on_update()
     self._anchor:reattach()
 end
 
----@return void
 function NotificationPanel:on_resize()
     self:_position_anchor()
     self:update_notifications()

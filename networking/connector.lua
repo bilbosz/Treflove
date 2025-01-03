@@ -11,7 +11,6 @@ local Connector = class("Connector", UpdateEventListener)
 
 ---@param address string
 ---@param port string
----@return void
 function Connector:init(address, port)
     self._address = address
     self._port = port
@@ -22,7 +21,6 @@ function Connector:init(address, port)
 end
 
 ---@param connection_manager ConnectionManager
----@return void
 function Connector:start(connection_manager)
     self._connection_manager = connection_manager
     self:_try_restart_connection()
@@ -31,7 +29,6 @@ function Connector:start(connection_manager)
 end
 
 ---@private
----@return void
 function Connector:_try_restart_connection()
     local now = love.timer.getTime()
     if not self._thread or not self._thread:isRunning() and (not self._last_start or now - self._last_start >= self._retry_time) then
@@ -52,7 +49,6 @@ function Connector:_try_restart_connection()
 end
 
 ---@private
----@return void
 function Connector:_handle_connections()
     while true do
         local msg = self._channel:pop()
@@ -70,12 +66,10 @@ function Connector:_handle_connections()
     end
 end
 
----@return void
 function Connector:remove_thread()
     self._thread = nil
 end
 
----@return void
 function Connector:on_update()
     self:_try_restart_connection()
     self:_handle_connections()

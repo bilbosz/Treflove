@@ -11,12 +11,10 @@ local UpdateEventListener = require("events.update-event").Listener
 ---@field private _logo Logo
 local ScreenSaver = class("ScreenSaver", Screen, UpdateEventListener)
 
----@return void
 function ScreenSaver:init()
     Screen.init(self)
 end
 
----@return void
 function ScreenSaver:show()
     assert(not config.window.resizable)
     Screen.show(self)
@@ -38,7 +36,6 @@ function ScreenSaver:show()
 end
 
 ---@param dt number
----@return void
 function ScreenSaver:on_update(dt)
     local logo = self._logo
     logo:set_rotation(logo:get_rotation() + dt * self._dir_rot)

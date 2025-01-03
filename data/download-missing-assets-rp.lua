@@ -11,7 +11,6 @@ local RemoteProcedure = require("networking.remote-procedure")
 local DownloadMissingAssetsRp = class("DownloadMissingAssetsRp", RemoteProcedure)
 
 ---@param connection Connection
----@return void
 function DownloadMissingAssetsRp:init(connection)
     RemoteProcedure.init(self, connection)
 end
@@ -31,7 +30,6 @@ function DownloadMissingAssetsRp:send_response(request)
 end
 
 ---@param response DownloadMissingAssetsResponse
----@return void
 function DownloadMissingAssetsRp:receive_response(response)
     assert(app.is_client)
     assert(response.success)

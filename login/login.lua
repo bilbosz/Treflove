@@ -19,7 +19,6 @@ end
 ---@param session Session
 ---@param on_login fun(user:string):void
 ---@param on_logout fun():void
----@return void
 function Login:init(session, on_login, on_logout)
     self._connection = session:get_connection()
     self._login_rp = LoginRp(self._connection, on_login)
@@ -28,7 +27,6 @@ end
 
 ---@param user string
 ---@param password string
----@return void
 function Login:login(user, password)
     assert(app.is_client)
     self._login_rp:send_request({
@@ -36,13 +34,11 @@ function Login:login(user, password)
     })
 end
 
----@return void
 function Login:logout()
     assert(app.is_client)
     self._logout_rp:send_request({})
 end
 
----@return void
 function Login:release()
     self._login_rp:release()
     self._logout_rp:release()

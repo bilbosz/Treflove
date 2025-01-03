@@ -36,7 +36,6 @@ end
 ---@param in_thread LoveThread
 ---@param out_channel LoveChannel
 ---@param out_thread LoveThread
----@return void
 function Connection:init(in_channel, in_thread, out_channel, out_thread)
     self._in_channel = in_channel
     self._in_thread = in_thread
@@ -52,7 +51,6 @@ end
 ---@param id string
 ---@param body table
 ---@param response_handler fun(body:table):void
----@return void
 function Connection:send_request(id, body, response_handler)
     assert_type(body, "table")
     assert_type(response_handler, "function")
@@ -68,14 +66,12 @@ end
 
 ---@param id string
 ---@param response_handler fun(body:table):void
----@return void
 function Connection:register_request_handler(id, response_handler)
     assert(not self._requests_handlers[id])
     self._requests_handlers[id] = response_handler
 end
 
 ---@param id string
----@return void
 function Connection:unregister_request_handler(id)
     self._requests_handlers[id] = nil
 end
@@ -90,7 +86,6 @@ function Connection:get_out_channel()
     return self._out_channel
 end
 
----@return void
 function Connection:on_update()
     while true do
         local payload = self._in_channel:pop()
@@ -106,7 +101,6 @@ function Connection:on_update()
     end
 end
 
----@return void
 function Connection:release()
     app.update_event_manager:unregister_listener(self)
     self._in_thread:release()
@@ -124,7 +118,6 @@ end
 
 ---@private
 ---@param request Request
----@return void
 function Connection:_send_response(request)
     assert_type(request, "table")
     assert_type(request.body, "table")

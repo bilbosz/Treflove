@@ -5,7 +5,6 @@ local RemoteProcedure = class("RemoteProcedure")
 
 ---@param connection Connection
 ---@param dont_start boolean
----@return void
 function RemoteProcedure:init(connection, dont_start)
     assert(connection)
     self._connection = connection
@@ -16,21 +15,18 @@ function RemoteProcedure:init(connection, dont_start)
     end
 end
 
----@return void
 function RemoteProcedure:start()
     self._connection:register_request_handler(self._id, function(request)
         return self:send_response(request)
     end)
 end
 
----@return void
 function RemoteProcedure:stop()
     self._connection:unregister_request_handler(self._id)
 end
 
 ---@param request Request
 ---@param cb nil|fun(response:Response):void
----@return void
 function RemoteProcedure:send_request(request, cb)
     self._connection:send_request(self._id, request, function(response)
         self:receive_response(response)
@@ -56,7 +52,6 @@ function RemoteProcedure:receive_response(response)
 end
 -- luacheck: pop
 
----@return void
 function RemoteProcedure:release()
     self:stop()
     self._connection = nil

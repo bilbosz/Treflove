@@ -10,7 +10,6 @@ local Rectangle = class("Rectangle", Control)
 ---@param height number
 ---@param color number[]
 ---@param border_only boolean|nil
----@return void
 function Rectangle:init(parent, width, height, color, border_only)
     assert(width and height)
     Control.init(self, parent, width, height)
@@ -24,7 +23,6 @@ function Rectangle:init(parent, width, height, color, border_only)
 end
 
 ---@param color number[]
----@return void
 function Rectangle:set_color(color)
     self._color = color
 end
@@ -34,7 +32,6 @@ function Rectangle:get_color()
     return self._color
 end
 
----@return void
 function Rectangle:draw()
     love.graphics.push()
     love.graphics.setColor(unpack(self._color))

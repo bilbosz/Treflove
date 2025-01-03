@@ -23,13 +23,11 @@ local Control = class("Control", Tree)
 --   * Position
 
 ---@private
----@return void
 function Control:_update_local_transform()
     self._local_transform = self._local_transform:setTransformation(self._position[1], self._position[2], self._rotation, self._scale[1], self._scale[2], self._origin[1], self._origin[2])
 end
 
 ---@private
----@return void
 function Control:_update_global_transform()
     if self.parent then
         self.global_transform:setMatrix(self.parent.global_transform:getMatrix())
@@ -44,7 +42,6 @@ function Control:_update_global_transform()
 end
 
 ---@private
----@return void
 function Control:_update_global_aabb_children()
     self._global_aabb:set(self:get_global_aabb())
     local aabb = self._global_aabb
@@ -57,7 +54,6 @@ function Control:_update_global_aabb_children()
 end
 
 ---@private
----@return void
 function Control:_update_global_aabb_parent()
     local parent = self:get_parent()
     while parent do
@@ -73,14 +69,12 @@ function Control:_update_global_aabb_parent()
 end
 
 ---@private
----@return void
 function Control:_update_global_aabb()
     self:_update_global_aabb_children()
     self:_update_global_aabb_parent()
 end
 
 ---@private
----@return void
 function Control:_update_transform()
     self:_update_local_transform()
     self:_update_global_transform()
@@ -88,7 +82,6 @@ function Control:_update_transform()
 end
 
 ---@private
----@return void
 function Control:_reset_local_transform()
     self._position = {
         0,
@@ -122,7 +115,6 @@ end
 
 ---@param x number|nil
 ---@param y number|nil
----@return void
 function Control:set_position(x, y)
     assert(x or y)
     if x then
@@ -141,7 +133,6 @@ end
 
 ---@param scale_x number
 ---@param scale_y number
----@return void
 function Control:set_scale(scale_x, scale_y)
     assert(scale_x)
     scale_y = scale_y or scale_x
@@ -156,7 +147,6 @@ function Control:get_scale()
 end
 
 ---@param rotation number
----@return void
 function Control:set_rotation(rotation)
     assert(rotation)
     self._rotation = rotation
@@ -170,7 +160,6 @@ end
 
 ---@param x number
 ---@param y number
----@return void
 function Control:set_origin(x, y)
     assert(x or y)
     if x then
@@ -188,7 +177,6 @@ function Control:get_origin()
 end
 
 ---@param child Tree
----@return void
 function Control:add_child(child)
     Tree.add_child(self, child)
     child:_update_global_transform()
@@ -257,7 +245,6 @@ end
 
 ---@param width number
 ---@param height number
----@return void
 function Control:set_size(width, height)
     assert(math.min(0, width, height) >= 0)
     self.size[1], self.size[2] = width, height
@@ -275,7 +262,6 @@ function Control:get_outer_size()
 end
 
 ---@param value boolean
----@return void
 function Control:set_enabled(value)
     self._is_enabled = value
     if value and self.parent then
@@ -301,7 +287,6 @@ function Control:are_all_predecessors_enabled()
 end
 
 ---@param value boolean
----@return void
 function Control:set_visible(value)
     self._is_visable = value
 end
@@ -311,7 +296,6 @@ function Control:is_visible()
     return self._is_enabled and self._is_visable
 end
 
----@return void
 function Control:draw()
     local w, h = love.graphics:getDimensions()
     for _, child in ipairs(self.children) do

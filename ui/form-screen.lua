@@ -9,7 +9,6 @@ local Screen = require("screens.screen")
 local FormScreen = class("FormScreen", Screen, KeyboardEventListener)
 
 ---@private
----@return void
 function FormScreen:_notify_listeners()
     if self.prev_focus == self._focus then
         return
@@ -26,7 +25,6 @@ end
 
 ---@private
 ---@param d number
----@return void
 function FormScreen:_advance_focus(d)
     assert(d == 1 or d == -1)
     local inputs = self._inputs
@@ -57,7 +55,6 @@ function FormScreen:_advance_focus(d)
     self._focus = i
 end
 
----@return void
 function FormScreen:init()
     Screen.init(self)
     KeyboardEventListener.init(self, true)
@@ -68,7 +65,6 @@ function FormScreen:init()
 end
 
 ---@param ... vararg
----@return void
 function FormScreen:show(...)
     Screen.show(self, ...)
     for _, input in ipairs(self._inputs) do
@@ -78,7 +74,6 @@ function FormScreen:show(...)
     self._is_showed = true
 end
 
----@return void
 function FormScreen:hide()
     self._is_showed = false
     app.keyboard_manager:unregister_listener(self)
@@ -94,7 +89,6 @@ function FormScreen:is_showed()
 end
 
 ---@param key string
----@return void
 function FormScreen:on_key_pressed(key)
     if key == "tab" then
         if app.keyboard_manager:is_key_down("lshift") then
@@ -107,13 +101,11 @@ function FormScreen:on_key_pressed(key)
 end
 
 ---@param input Input
----@return void
 function FormScreen:add_input(input)
     table.insert(self._inputs, input)
 end
 
 ---@param input Input
----@return void
 function FormScreen:remove_input(input)
     local found = table.find_array_idx(self._inputs, input)
     assert(found)
@@ -127,7 +119,6 @@ function FormScreen:remove_input(input)
 end
 
 ---@param input Input
----@return void
 function FormScreen:read_only_change(input)
     local found = table.find_array_idx(self._inputs, input)
     assert(found)
@@ -137,7 +128,6 @@ function FormScreen:read_only_change(input)
 end
 
 ---@param input Input
----@return void
 function FormScreen:focus(input)
     local found
     for i, v in ipairs(self._inputs) do
@@ -152,7 +142,6 @@ function FormScreen:focus(input)
     self:_notify_listeners()
 end
 
----@return void
 function FormScreen:remove_all_inputs()
     self._inputs = {}
     self._prev_focus = nil

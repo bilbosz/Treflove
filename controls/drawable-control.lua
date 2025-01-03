@@ -10,14 +10,12 @@ local DrawableControl = class("DrawableControl", Control)
 ---@param width number
 ---@param height number
 ---@param draw_cb _DrawCb
----@return void
 function DrawableControl:init(parent, width, height, draw_cb)
     Control.init(self, parent, width, height)
     assert(draw_cb)
     self._draw_cb = draw_cb
 end
 
----@return void
 function DrawableControl:draw()
     love.graphics.push()
     love.graphics.replaceTransform(self.global_transform)
@@ -29,7 +27,6 @@ end
 
 ---@protected
 ---@param draw_cb _DrawCb
----@return void
 function DrawableControl:set_draw_callback(draw_cb)
     self._draw_cb = draw_cb
 end

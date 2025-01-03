@@ -5,7 +5,6 @@ local Consts = require("app.consts")
 local Asset = class("Asset")
 
 ---@param path string
----@return void
 local function _create_intermediate_dirs(path)
     local found = 0
     while true do
@@ -37,20 +36,17 @@ end
 
 ---@param path string
 ---@param is_on_root boolean
----@return void
 function Asset:init(path, is_on_root)
     assert(string.sub(path, 1, 1) ~= "/")
     self._path = is_on_root and Asset.get_root_path(path) or Asset.get_asset_path(path)
 end
 
----@return void
 function Asset:create()
     _create_intermediate_dirs(self._path)
     assert(love.filesystem.write(self._path, ""))
 end
 
 ---@param content string
----@return void
 function Asset:write(content)
     assert(love.filesystem.write(self._path, content))
 end

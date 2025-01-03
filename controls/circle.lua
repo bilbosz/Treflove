@@ -11,7 +11,6 @@ local Circle = class("Circle", DrawableControl)
 ---@param radius number
 ---@param color number[]
 ---@param line_width number
----@return void
 function Circle:init(parent, radius, color, line_width)
     local r = radius
     local d = r * 2
@@ -30,7 +29,6 @@ function Circle:init(parent, radius, color, line_width)
 end
 
 ---@param radius number
----@return void
 function Circle:set_radius(radius)
     local r = radius
     local d = r * 2

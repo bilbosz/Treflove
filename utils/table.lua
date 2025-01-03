@@ -9,7 +9,6 @@ end
 ---@generic K, V
 ---@param destination table<K, V>
 ---@param source table<K, V>
----@return void
 function table.merge(destination, source)
     for k, v in pairs(source) do
         destination[k] = v
@@ -19,7 +18,6 @@ end
 ---@generic V
 ---@param destination table<number, V>|V[]
 ---@param source V[]
----@return void
 function table.merge_array(destination, source)
     for _, v in ipairs(source) do
         table.insert(destination, v)

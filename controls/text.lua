@@ -13,7 +13,6 @@ local Text = class("Text", DrawableControl)
 ---@param text string
 ---@param color number[]
 ---@param font LoveFont
----@return void
 function Text:init(parent, text, color, font)
     self._font = font or Consts.DISPLAY_FONT
     DrawableControl.init(self, parent, 0, 0, function()
@@ -30,7 +29,6 @@ function Text:init(parent, text, color, font)
 end
 
 ---@param color number[]
----@return void
 function Text:set_color(color)
     self._color = color
 end
@@ -41,7 +39,6 @@ function Text:get_color()
 end
 
 ---@param text string
----@return void
 function Text:set_text(text)
     assert_type(text, "string")
     self._text = text

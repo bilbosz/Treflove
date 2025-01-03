@@ -17,7 +17,6 @@ local MenuTextInput = class("MenuTextInput", MenuEntry)
 ---@param field_name string
 ---@param masked boolean
 ---@param on_enter fun():void
----@return void
 function MenuTextInput:init(screen, field_name, masked, on_enter)
     MenuEntry.init(self)
     self._screen = screen

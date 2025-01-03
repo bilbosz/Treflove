@@ -12,7 +12,6 @@ local MenuTextButton = class("MenuTextButton", MenuEntry)
 ---@param screen MenuScreen
 ---@param label string
 ---@param cb fun():void
----@return void
 function MenuTextButton:init(screen, label, cb)
     MenuEntry.init(self)
     self._screen = screen

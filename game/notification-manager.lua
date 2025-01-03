@@ -12,7 +12,6 @@ local Consts = require("app.consts")
 ---@field private _notifications Notification[]
 local NotificationManager = class("NotificationManager", UpdateEventListener)
 
----@return void
 function NotificationManager:init()
     self._panel = NotificationPanel(self)
     self._notifications = {}
@@ -21,7 +20,6 @@ end
 
 ---@param message string
 ---@param duration number
----@return void
 function NotificationManager:notify(message, duration)
     table.insert(self._notifications, {
         message = message,
@@ -37,13 +35,11 @@ function NotificationManager:_get_notifications()
     return self._notifications
 end
 
----@return void
 function NotificationManager:clear_notifications()
     self._notifications = {}
     self._panel:update_notifications()
 end
 
----@return void
 function NotificationManager:on_update()
     local time = app:get_time()
     local to_remove

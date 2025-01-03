@@ -21,7 +21,6 @@ local TextEventManager = require("ui.text-event").Manager
 local Client = class("Client", App)
 
 ---@param params ArgParserResult
----@return void
 function Client:init(params)
     App.init(self, params)
     self.logger:set_name("client-main")
@@ -42,7 +41,6 @@ function Client:init(params)
     self.session = nil
 end
 
----@return void
 function Client:load()
     self.backstack_manager:push(function()
         app:quit()
@@ -60,7 +58,6 @@ function Client:load()
 end
 
 ---@private
----@return void
 function Client:register_love_callbacks()
     App.register_love_callbacks(self)
     local app_key_pressed = love.keypressed

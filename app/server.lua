@@ -12,7 +12,6 @@ local ScreenSaver = require("screens.screen-saver")
 local Server = class("Server", App)
 
 ---@param params ArgParserResult
----@return void
 function Server:init(params)
     App.init(self, params)
     self.logger:set_name("server-main")
@@ -29,7 +28,6 @@ function Server:init(params)
 end
 
 ---@private
----@return void
 function Server:load()
     self:_load_data()
     self.connection_manager:start(function(connection)
@@ -41,21 +39,18 @@ function Server:load()
 end
 
 ---@private
----@return void
 function Server:_load_data()
     local content = self._save_file:read()
     self.data = table.from_string(content)
 end
 
 ---@private
----@return void
 function Server:save_data()
     local content = table.to_string(self.data)
     self._save_file:write(content)
 end
 
 ---@private
----@return void
 function Server:register_love_callbacks()
     App.register_love_callbacks(self)
 end

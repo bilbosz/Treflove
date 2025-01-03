@@ -4,7 +4,6 @@
 local Tree = class("Tree")
 
 ---@param parent Tree
----@return void
 function Tree:init(parent)
     self.children = {}
     self.parent = nil
@@ -14,7 +13,6 @@ function Tree:init(parent)
 end
 
 ---@param parent Tree
----@return void
 function Tree:set_parent(parent)
     if parent then
         parent:add_child(self)
@@ -26,7 +24,6 @@ function Tree:set_parent(parent)
 end
 
 ---@param child Tree
----@return void
 function Tree:add_child(child)
     if child.parent then
         child.parent:remove_child(child)
@@ -36,7 +33,6 @@ function Tree:add_child(child)
 end
 
 ---@param child Tree
----@return void
 function Tree:remove_child(child)
     local found
     for i, v in ipairs(self.children) do
@@ -64,7 +60,6 @@ function Tree:get_parent()
 end
 
 ---@param n number
----@return void
 function Tree:reattach(n)
     local children = self.parent.children
     n = n or #children

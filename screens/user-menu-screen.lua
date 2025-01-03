@@ -7,7 +7,6 @@ local OptionsMenuScreen = require("screens.options-menu-screen")
 local UserMenuScreen = class("UserMenuScreen", MenuScreen)
 
 ---@param session Session
----@return void
 function UserMenuScreen:init(session)
     assert(session)
     self._session = session
@@ -27,12 +26,10 @@ function UserMenuScreen:init(session)
     })
 end
 
----@return void
 function UserMenuScreen:join_game()
     self._session:join_game()
 end
 
----@return void
 function UserMenuScreen:options()
     app.backstack_manager:push(function()
         app.screen_manager:show(self, self._session)
@@ -40,12 +37,10 @@ function UserMenuScreen:options()
     app.screen_manager:show(OptionsMenuScreen())
 end
 
----@return void
 function UserMenuScreen:logout()
     self._session:logout()
 end
 
----@return void
 function UserMenuScreen:quit()
     app:quit()
 end

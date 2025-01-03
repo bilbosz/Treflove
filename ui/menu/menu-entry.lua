@@ -2,7 +2,6 @@
 ---@field public control nil|Control
 local MenuEntry = class("MenuEntry")
 
----@return void
 function MenuEntry:init()
     self.control = nil
 end

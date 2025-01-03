@@ -20,29 +20,24 @@ local WHITESPACE_CODES = {
     0x2001
 }
 
----@return void
 function TextEventListener:init()
     self._text = ""
 end
 
 ---@param text string
----@return void
 function TextEventListener:on_edit(text)
 
 end
 
----@return void
 function TextEventListener:on_enter()
 
 end
 
----@return void
 function TextEventListener:on_remove_empty()
 
 end
 
 ---@param character_number number
----@return void
 function TextEventListener:on_remove_characters(character_number)
     local offset = utf8.offset(self._text, -character_number)
     if self._text == "" and character_number > 0 then
@@ -53,7 +48,6 @@ function TextEventListener:on_remove_characters(character_number)
     end
 end
 
----@return void
 function TextEventListener:on_remove_word()
     if self._text == "" then
         self:on_remove_empty()
@@ -76,7 +70,6 @@ function TextEventListener:on_remove_word()
 end
 
 ---@param text string
----@return void
 function TextEventListener:on_append_text(text)
     self._text = self._text .. text
     self:on_edit(self._text)
@@ -88,7 +81,6 @@ function TextEventListener:get_text()
 end
 
 ---@param text string
----@return void
 function TextEventListener:set_text(text)
     self._text = text
 end
@@ -101,7 +93,6 @@ end
 ---@class TextEventManager: EventManager
 local TextEventManager = class("TextEventManager", EventManager)
 
----@return void
 function TextEventManager:init()
     EventManager.init(self, TextEventListener)
     self:set_text_input(false)
@@ -109,13 +100,11 @@ function TextEventManager:init()
 end
 
 ---@param text string
----@return void
 function TextEventManager:text_input(text)
     self:invoke_event(TextEventListener.on_append_text, text)
 end
 
 ---@param key string
----@return void
 function TextEventManager:key_pressed(key)
     if not self:is_text_input() then
         return
@@ -132,7 +121,6 @@ function TextEventManager:key_pressed(key)
 end
 
 ---@param value boolean
----@return void
 function TextEventManager:set_text_input(value)
     love.keyboard.setTextInput(value)
 end

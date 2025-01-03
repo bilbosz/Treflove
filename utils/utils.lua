@@ -4,7 +4,6 @@ local Socket = require("socket")
 local Utils = {}
 
 ---@param ctrl Control
----@return void
 local function _draw_aabbs_detail(ctrl)
     love.graphics.rectangle("fill", ctrl:get_global_recursive_aabb():get_position_and_size())
     for _, child in ipairs(ctrl.children) do
@@ -15,7 +14,6 @@ local function _draw_aabbs_detail(ctrl)
 end
 
 ---@param ctrl Control
----@return void
 function Utils.draw_aabbs(ctrl)
     love.graphics.setColor({
         1,
@@ -47,7 +45,6 @@ end
 
 ---@param obj table
 ---@param black_functions table
----@return void
 function Utils.monitor_object(obj, black_functions)
     black_functions = black_functions or {}
     local mt = getmetatable(obj)
@@ -166,7 +163,6 @@ function Utils.split_path(path)
 end
 
 ---@param module string
----@return void
 function Utils.error_handler(module)
     assert_type(module, "string")
     return function(msg)
@@ -177,13 +173,11 @@ end
 
 ---Use to mark code that should not be reached
 ---@param msg string|nil
----@return void
 function assert_unreachable(msg)
     error(msg)
 end
 
 ---Use to mark abstract methods
----@return void
 function abstract()
     error("Method marked as abstract has no implementation")
 end

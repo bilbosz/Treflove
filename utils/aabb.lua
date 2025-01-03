@@ -4,7 +4,6 @@ local Utils = require("utils.utils")
 ---@field private _data number[]
 local Aabb = class("Aabb")
 
----@return void
 function Aabb:init()
     self._data = {
         math.huge,
@@ -28,7 +27,6 @@ end
 ---@param y number
 ---@param w number
 ---@param h number
----@return void
 function Aabb:set_position_and_size(x, y, w, h)
     self._data[1], self._data[2], self._data[3], self._data[4] = x, y, x + w, y + h
 end
@@ -55,7 +53,6 @@ end
 
 ---@param x number
 ---@param y number
----@return void
 function Aabb:add_point(x, y)
     local min_x, min_y, max_x, max_y = unpack(self._data)
     self._data = {
@@ -67,7 +64,6 @@ function Aabb:add_point(x, y)
 end
 
 ---@param other Aabb
----@return void
 function Aabb:add_aabb(other)
     assert_type(other, Aabb)
     local min_x, min_y, max_x, max_y = unpack(self._data)
@@ -80,12 +76,10 @@ function Aabb:add_aabb(other)
 end
 
 ---@param other Aabb
----@return void
 function Aabb:set(other)
     self._data = table.copy(other._data)
 end
 
----@return void
 function Aabb:reset()
     self._data[1] = math.huge
     self._data[2] = math.huge
