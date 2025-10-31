@@ -67,14 +67,17 @@ function GameScreen:on_resize(w, h)
     self.assets_panel:on_resize(w * 0.2, h)
 end
 
+---@return Page
 function GameScreen:get_page()
     return self.page
 end
 
+---@return Selection
 function GameScreen:get_selection()
     return self.page:get_selection()
 end
 
+---@return TokenPanel
 function GameScreen:get_token_panel()
     return self.token_panel
 end

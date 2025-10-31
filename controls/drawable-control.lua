@@ -1,15 +1,15 @@
 local Control = require("controls.control")
 
----@alias _DrawCb fun()
+---@alias DrawCb fun()
 
 ---@class DrawableControl: Control
----@field private _draw_cb _DrawCb
+---@field private _draw_cb DrawCb
 local DrawableControl = class("DrawableControl", Control)
 
 ---@param parent Control
 ---@param width number
 ---@param height number
----@param draw_cb _DrawCb
+---@param draw_cb DrawCb
 function DrawableControl:init(parent, width, height, draw_cb)
     Control.init(self, parent, width, height)
     assert(draw_cb)
@@ -26,7 +26,7 @@ function DrawableControl:draw()
 end
 
 ---@protected
----@param draw_cb _DrawCb
+---@param draw_cb DrawCb
 function DrawableControl:set_draw_callback(draw_cb)
     self._draw_cb = draw_cb
 end

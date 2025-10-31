@@ -97,7 +97,7 @@ function Selection:toggle_apply()
     self:on_selection_change()
 end
 
-function Selection:Unselect()
+function Selection:unselect()
     for _, token in ipairs(self.page:get_tokens()) do
         self.select_set[token] = nil
         token:set_select(false)

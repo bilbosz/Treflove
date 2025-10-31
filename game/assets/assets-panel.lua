@@ -182,7 +182,7 @@ local function _set_file_type(self, data)
     self.media_type = media_type
     local file_type_preview = FILE_TYPE_PREVIEW[media_type]
     if file_type_preview then
-        self.preview_area:SetContent(medium, file_type_preview)
+        self.preview_area:set_content(medium, file_type_preview)
     end
     self.file_type_input:set_text(tostring(table.find_table_key(Media.Type, media_type)))
 end

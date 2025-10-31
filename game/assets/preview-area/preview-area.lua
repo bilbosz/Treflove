@@ -89,10 +89,10 @@ function PreviewArea:on_file_system_drop(x, y, dropped_file)
     dropped_file:close()
 end
 
-function PreviewArea:SetContent(love_content, Preview)
+function PreviewArea:set_content(love_content, preview)
     self:reset()
     _set_labels(self, self.preview_labels)
-    self.preview = Preview(self, love_content)
+    self.preview = preview(self, love_content)
 end
 
 function PreviewArea:reset()

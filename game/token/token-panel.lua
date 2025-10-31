@@ -220,7 +220,7 @@ function TokenPanel:_apply()
 end
 
 function TokenPanel:cancel()
-    self.game_screen:get_selection():Unselect()
+    self.game_screen:get_selection():unselect()
 end
 
 return TokenPanel

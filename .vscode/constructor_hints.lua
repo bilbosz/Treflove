@@ -1,9 +1,7 @@
 ---@diagnostic disable
-
 local guide = require("parser.guide")
 local visualize = require("cli.visualize")
 local inspect = require("inspect")
-
 
 local CTOR_LABEL = "init"
 local PARAM_PATTERN = "^-@param%s+(%S+)%s+(.*)$"
@@ -15,7 +13,7 @@ local BIND_DOC_ACCEPT = {
     "setlocal",
     "setglobal",
     "setfield",
-    "setmethod" ,
+    "setmethod",
     "setindex",
     "tablefield",
     "tableindex",
@@ -23,9 +21,8 @@ local BIND_DOC_ACCEPT = {
     "function",
     "return",
     "...",
-    "call",
+    "call"
 }
-
 
 ---@generic K, V
 ---@param t table<K, V>|V[]
@@ -40,7 +37,6 @@ local function find(t, value)
     return nil, nil
 end
 
-
 ---@generic K, V
 ---@param t table<K, V>|V[]
 ---@param cond fun(k: K, v: V): boolean?
@@ -54,7 +50,6 @@ local function find_if(t, cond)
     return nil, nil
 end
 
-
 ---@generic V
 ---@param target_array V[]
 ---@param source_array V[]
@@ -63,7 +58,6 @@ local function merge_array(target_array, source_array)
         target_array[#target_array + 1] = v
     end
 end
-
 
 ---@generic T
 ---@param t T
@@ -75,7 +69,6 @@ local function shallow_copy(t)
     end
     return copy
 end
-
 
 ---@param origin table|nil
 ---@return any
@@ -91,7 +84,6 @@ local function get_or_nil(origin, ...)
     return current
 end
 
-
 ---@param ast parser.object
 local function visualize_ast(ast)
     local dot_file = io.open("vis.dot", "w")
@@ -100,14 +92,12 @@ local function visualize_ast(ast)
     io.close(dot_file)
 end
 
-
 ---@param node parser.object
 ---@param indent string
 local function print_node_short(node, indent)
     local name = guide.getKeyName(node)
     print(string.format("%s* %s%s %s %d-%d", indent, node.type, name and string.format(" %q", name) or "", tostring(node), node.start, node.finish))
 end
-
 
 ---@param node parser.object
 ---@param indent string
@@ -122,7 +112,6 @@ local function print_node(node, indent)
     end
 end
 
-
 ---@param ast parser.object
 ---@param indent string
 ---@param cb fun(ast: parser.object[], indent: string)
@@ -136,12 +125,10 @@ local function traverse_ast_detail(ast, indent, cb)
     end)
 end
 
-
 ---@param ast parser.object
 local function traverse_ast(ast)
     traverse_ast_detail(ast, "", print_node)
 end
-
 
 ---@param a parser.object
 ---@param b parser.object
@@ -149,7 +136,6 @@ end
 local function parser_object_comparator(a, b)
     return a.start < b.start
 end
-
 
 ---@param ast parser.object
 ---@param elems parser.object[]
@@ -165,7 +151,6 @@ local function append_comms(ast, elems)
     return raw_comms
 end
 
-
 ---@param ast parser.object
 ---@param elems parser.object[]
 local function append_nodes(ast, elems)
@@ -173,7 +158,6 @@ local function append_nodes(ast, elems)
         elems[#elems + 1] = node
     end)
 end
-
 
 ---@param node parser.object
 ---@return string?
@@ -184,13 +168,11 @@ local function get_class_name_annotation(node)
     return string.match(node.text, CLASS_PATTERN)
 end
 
-
 ---@param node parser.object
 ---@return boolean
 local function is_assign_node(node)
     return node.type == "local" or node.type == "setglobal"
 end
-
 
 ---@param node parser.object
 ---@return boolean
@@ -202,7 +184,6 @@ local function is_class_construction(node)
     return function_name == CLASS_FACTORY_NAME
 end
 
-
 ---@param node parser.object
 ---@return string?, string?
 local function get_param_annotation(node)
@@ -212,13 +193,11 @@ local function get_param_annotation(node)
     return string.match(node.text, PARAM_PATTERN)
 end
 
-
 ---@param node parser.object
 ---@return boolean
 local function is_function_node(node)
     return node.type == "function"
 end
-
 
 ---@param node parser.object
 ---@return boolean
@@ -227,13 +206,11 @@ local function is_ctor_node(node)
     return parent.type == "setmethod" and get_or_nil(parent, "method", 1) == CTOR_LABEL
 end
 
-
 ---@param function_node parser.object
 ---@return parser.object|nil
 local function get_class_node(function_node)
     return get_or_nil(function_node, "parent", "node", "node")
 end
-
 
 ---@param class_name string
 ---@param param_stack string[]
@@ -241,7 +218,6 @@ end
 local function create_overload_anntotation(class_name, param_stack)
     return "-@overload fun(" .. table.concat(param_stack, ", ") .. "): " .. class_name
 end
-
 
 ---@param class_node parser.object
 ---@param raw_comms parser.object[]
@@ -253,10 +229,9 @@ local function insert_overload_annotation(class_node, raw_comms, overload_annota
         start = pos,
         finish = pos,
         text = overload_annotation,
-        virtual = true,
+        virtual = true
     }
 end
-
 
 ---@param raw_comms parser.comm[]
 ---@param all_elems parser.object[]
@@ -305,7 +280,6 @@ local function handle_constructors(raw_comms, all_elems)
         ::CONTINUE::
     end
 end
-
 
 -- Plugin's entry point
 ---@param ast parser.object

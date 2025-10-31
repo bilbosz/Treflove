@@ -10,10 +10,10 @@ local FormScreen = class("FormScreen", Screen, KeyboardEventListener)
 
 ---@private
 function FormScreen:_notify_listeners()
-    if self.prev_focus == self._focus then
+    if self._prev_focus == self._focus then
         return
     end
-    local old_item = self._inputs[self.prev_focus]
+    local old_item = self._inputs[self._prev_focus]
     if old_item then
         old_item:on_focus_lost()
     end
@@ -28,7 +28,7 @@ end
 function FormScreen:_advance_focus(d)
     assert(d == 1 or d == -1)
     local inputs = self._inputs
-    self.prev_focus = self._focus
+    self._prev_focus = self._focus
 
     local n = #inputs
     if n == 0 then
@@ -94,7 +94,7 @@ function FormScreen:on_key_pressed(key)
         if app.keyboard_manager:is_key_down("lshift") then
             self:_advance_focus(-1)
         else
-            self:_advance_focus( 1)
+            self:_advance_focus(1)
         end
         self:_notify_listeners()
     end
