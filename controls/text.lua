@@ -9,9 +9,9 @@ local DrawableControl = require("controls.drawable-control")
 ---@field private _text_drawable love.Text
 local Text = class("Text", DrawableControl)
 
----@param parent Control
+---@param parent Control|nil
 ---@param text string
----@param color number[]
+---@param color number[]|nil
 ---@param font love.Font|nil
 function Text:init(parent, text, color, font)
     self._font = font or Consts.DISPLAY_FONT

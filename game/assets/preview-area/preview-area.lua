@@ -6,11 +6,18 @@ local Consts = require("app.consts")
 local Rectangle = require("controls.rectangle")
 
 ---@class PreviewArea: ClippingRectangle, FileSystemDropEventListener
+---@field parent AssetsPanel
+---@field preview_labels Control
+---@field drop_file_labels Control
+---@field content_parent Control
 local PreviewArea = class("PreviewArea", ClippingRectangle, FileSystemDropEventListener)
 
 local PREVIEW_STRING = "Preview"
 local DROP_FILE_STRING = "Drop File Here"
 
+---@param self PreviewArea
+---@param str string
+---@return Control
 local function _create_background_labels(self, str)
     local labels = Control(self)
 
@@ -44,6 +51,8 @@ local function _create_background_labels(self, str)
     return labels
 end
 
+---@param self PreviewArea
+---@param labels Control
 local function _set_labels(self, labels)
     for _, v in ipairs({
         self.preview_labels,
@@ -54,6 +63,7 @@ local function _set_labels(self, labels)
     labels:set_enabled(true)
 end
 
+---@param self PreviewArea
 local function _create_background(self)
     local w, h = self:get_size()
     Rectangle(self, w, h, Consts.BUTTON_NORMAL_COLOR)
@@ -63,6 +73,7 @@ local function _create_background(self)
     _set_labels(self, self.drop_file_labels)
 end
 
+---@param self PreviewArea
 local function _create_content_parent(self)
     local control = Control(self)
     self.content_parent = control
@@ -71,6 +82,9 @@ local function _create_content_parent(self)
     control:set_position(w * 0.5, h * 0.5)
 end
 
+---@param parent Control|nil
+---@param width number
+---@param height number
 function PreviewArea:init(parent, width, height)
     ClippingRectangle.init(self, parent, width, height)
     FileSystemDropEventListener.init(self, true)
@@ -82,6 +96,9 @@ function PreviewArea:init(parent, width, height)
     app.file_system_drop_event_manager:register_listener(self)
 end
 
+---@param x number
+---@param y number
+---@param dropped_file love.DroppedFile
 function PreviewArea:on_file_system_drop(x, y, dropped_file)
     local ok, err = dropped_file:open("r")
     assert(ok, err)
@@ -89,10 +106,12 @@ function PreviewArea:on_file_system_drop(x, y, dropped_file)
     dropped_file:close()
 end
 
-function PreviewArea:set_content(love_content, preview)
+---@param love_content LoveMedium
+---@param PreviewComponent PreviewImageArea|PreviewAudioArea
+function PreviewArea:set_content(love_content, PreviewComponent)
     self:reset()
     _set_labels(self, self.preview_labels)
-    self.preview = preview(self, love_content)
+    self.preview = PreviewComponent(self, love_content)
 end
 
 function PreviewArea:reset()

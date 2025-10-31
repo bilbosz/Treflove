@@ -2,12 +2,13 @@ local Panel = require("ui.panel")
 local PreviewArea = require("game.assets.preview-area.preview-area")
 local PreviewAudioArea = require("game.assets.preview-area.preview-audio-area")
 local PreviewImageArea = require("game.assets.preview-area.preview-image-area")
-local Media = require("utils.media")
 local Consts = require("app.consts")
 local Text = require("controls.text")
 local TextInput = require("ui.text-input")
 local TextButton = require("ui.text-button")
 local Utils = require("utils.utils")
+
+local media = require("utils.media")
 
 ---@class AssetsPanel: Panel
 ---@field public location_input TextInput
@@ -21,11 +22,11 @@ local AssetsPanel = class("AssetsPanel", Panel)
 
 ---@type table<Media.Type, Control|nil>
 local FILE_TYPE_PREVIEW = {
-    [Media.Type.IMAGE] = PreviewImageArea,
-    [Media.Type.AUDIO] = PreviewAudioArea,
-    [Media.Type.VIDEO] = nil,
-    [Media.Type.TEXT] = nil,
-    [Media.Type.FONT] = nil
+    [media.Type.IMAGE] = PreviewImageArea,
+    [media.Type.AUDIO] = PreviewAudioArea,
+    [media.Type.VIDEO] = nil,
+    [media.Type.TEXT] = nil,
+    [media.Type.FONT] = nil
 }
 
 ---@param self AssetsPanel
@@ -178,13 +179,13 @@ end
 
 ---@param self AssetsPanel
 local function _set_file_type(self, data)
-    local media_type, medium = Media.get_type_and_medium(data)
+    local media_type, medium = media.get_type_and_medium(data)
     self.media_type = media_type
-    local file_type_preview = FILE_TYPE_PREVIEW[media_type]
-    if file_type_preview then
-        self.preview_area:set_content(medium, file_type_preview)
+    local FileTypePreview = FILE_TYPE_PREVIEW[media_type]
+    if FileTypePreview then
+        self.preview_area:set_content(medium, FileTypePreview)
     end
-    self.file_type_input:set_text(tostring(table.find_table_key(Media.Type, media_type)))
+    self.file_type_input:set_text(tostring(table.find_table_key(media.Type, media_type)))
 end
 
 ---@param game_screen GameScreen

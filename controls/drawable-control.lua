@@ -6,7 +6,7 @@ local Control = require("controls.control")
 ---@field private _draw_cb DrawCb
 local DrawableControl = class("DrawableControl", Control)
 
----@param parent Control
+---@param parent Control|nil
 ---@param width number
 ---@param height number
 ---@param draw_cb DrawCb

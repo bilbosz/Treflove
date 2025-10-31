@@ -8,7 +8,7 @@ function Screen:init()
     self.screen = Control()
 end
 
----@param ... vararg
+---@param ... any
 function Screen:show(...)
     assert(not self.screen:get_parent())
     self.screen:set_parent(app.root)

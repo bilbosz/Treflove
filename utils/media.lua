@@ -1,8 +1,10 @@
 ---@class Media
-local Media = class("Media")
+local media = {}
+
+---@alias LoveMedium love.Source|love.Image|love.Font|love.Video|nil
 
 ---@enum Media.Type
-Media.Type = {
+media.Type = {
     VIDEO = 1,
     AUDIO = 2,
     IMAGE = 3,
@@ -38,30 +40,28 @@ end
 local MATCH_FILE = {
     {
         _try_create_video_file,
-        Media.Type.VIDEO
+        media.Type.VIDEO
     },
     {
         _try_create_image_file,
-        Media.Type.IMAGE
+        media.Type.IMAGE
     },
     {
         _try_create_audio_file,
-        Media.Type.AUDIO
+        media.Type.AUDIO
     },
     {
         _try_create_font_file,
-        Media.Type.FONT
+        media.Type.FONT
     }
 }
 
 ---@param data string
----@return string|nil, love.Source|love.Image|love.Font|love.Video|nil
-function Media.get_type_and_medium(data)
+---@return string|nil, LoveMedium
+function media.get_type_and_medium(data)
     for _, v in ipairs(MATCH_FILE) do
         local f, t = unpack(v)
-        local is_ok, medium = pcall(function()
-            return f(data)
-        end)
+        local is_ok, medium = pcall(f, data)
         if is_ok then
             return t, medium
         end
@@ -69,4 +69,4 @@ function Media.get_type_and_medium(data)
     return nil, nil
 end
 
-return Media()
+return media

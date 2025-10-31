@@ -30,9 +30,15 @@ Format all Lua code (uses lua-format):
 ./format-code.sh
 ```
 
+Diagnose all Lua code (uses lua-language-server):
+```
+./diagnose-code.sh
+```
+
 The project uses:
 - `lua-format` for code formatting (config in [.lua-format](.lua-format))
 - `luacheck` for linting (config in [.luacheckrc](.luacheckrc))
+- `lua-language-server` for diagnosis report (config in [.luarc.json](.luarc.json))
 
 ## Architecture
 
