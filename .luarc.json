@@ -8,5 +8,16 @@
     "runtime.special": {
         "love.filesystem.load": "loadfile"
     },
-    "workspace.checkThirdParty": false
+    "workspace.checkThirdParty": false,
+    "diagnostics.globals": [
+        "class",
+        "app",
+        "is_instance_of",
+        "get_class_name_of",
+        "assert_type",
+        "get_class_of"
+    ],
+    "diagnostics.disable": [
+        "param-type-mismatch"
+    ]
 }

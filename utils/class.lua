@@ -26,7 +26,7 @@ local function _is_instance_of(cls, base)
 end
 
 ---@param name string Class name
----@param ... table Class bases
+---@param ... any Class bases
 function class(name, ...)
     local class = {}
     assert(name)
@@ -58,20 +58,23 @@ function class(name, ...)
     return setmetatable(class, class_metatable)
 end
 
----@param obj table
+---@generic O
+---@param obj O
 ---@return table
 function get_class_of(obj)
     return getmetatable(obj).class
 end
 
----@param obj table
+---@generic O
+---@param obj O
 ---@return string
 function get_class_name_of(obj)
     return getmetatable(get_class_of(obj)).name
 end
 
----@param obj table
----@param cls table
+---@generic O, C
+---@param obj O
+---@param cls C
 ---@return boolean
 function is_instance_of(obj, cls)
     return _is_instance_of(get_class_of(obj), cls)

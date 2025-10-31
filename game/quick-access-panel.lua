@@ -11,7 +11,7 @@ function QuickAccessPanel:init(game_screen, width, height)
     self.entries = {}
 end
 
-function QuickAccessPanel:AddEntry(label, entry)
+function QuickAccessPanel:add_entry(label, entry)
     local children = self:get_children()
     local x = 0
     if #children > 1 then

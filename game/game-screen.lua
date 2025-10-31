@@ -32,8 +32,8 @@ function GameScreen:init(data)
     end
 
     self.quick_access_panel = QuickAccessPanel(self, app.width * 0.8, Consts.QUICK_ACCESS_PANEL_HEIGHT)
-    self.quick_access_panel:AddEntry("Tokens", self.token_panel)
-    self.quick_access_panel:AddEntry("Assets", self.assets_panel)
+    self.quick_access_panel:add_entry("Tokens", self.token_panel)
+    self.quick_access_panel:add_entry("Assets", self.assets_panel)
 end
 
 function GameScreen:release()

@@ -1,11 +1,12 @@
 {
     "recommendations": [
-        // lua linter and intellisense. More on annotations https://luals.github.io/wiki/annotations/
-        // openjdk 17 is required
-        "tangzx.emmylua",
+        // lua language server
+        "sumneko.lua",
         // lua formatter, requires /usr/local/bin/lua-format (via luarocks install --server=https://luarocks.org/dev luaformatter)
         "koihik.vscode-lua-format",
         // running ./run.sh as launch configuration
         "discretegames.f5anything",
+        // AI support
+        "Anthropic.claude-code",
     ]
-}
+}                       

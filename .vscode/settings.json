@@ -1,10 +1,8 @@
 {
     "vscode-lua-format.configPath": "",
     "vscode-lua-format.binaryPath": "/usr/local/bin/lua-format",
-    "emmylua.constructorNames": "init",
     "files.associations": {
         "*.luacheckrc": "lua"
     },
-    "emmylua.debugger.defaultProgram": "luajit",
-    "emmylua.typecheck.defineTypeCanReceiveNilType": false
+    "Lua.runtime.plugin": ".vscode/constructor_hints.lua"
 }

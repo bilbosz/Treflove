@@ -12,7 +12,7 @@ local AssetManager = class("AssetManager")
 ---@param list string[]
 local function _filter_for_missing_assets(list)
     for i, v in ripairs(list) do
-        if Asset(v):get_type() then
+        if Asset(v, false):get_type() then
             table.remove(list, i)
         end
     end
@@ -76,7 +76,7 @@ end
 ---@param mount_point string
 ---@param content string
 function AssetManager:mount_file(mount_point, content)
-    local file = Asset(mount_point)
+    local file = Asset(mount_point, false)
     if not file:get_type() then
         file:create()
     end
@@ -86,7 +86,7 @@ end
 ---@param path string
 ---@return string|nil
 function AssetManager:get_content(path)
-    local file = Asset(path)
+    local file = Asset(path, false)
     if file:get_type() ~= "file" then
         return nil
     end

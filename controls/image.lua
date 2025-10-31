@@ -9,7 +9,7 @@ local Image = class("Image", DrawableControl)
 function Image:init(parent, path_or_love_image)
     local love_image
     if type(path_or_love_image) == "string" then
-        love_image = love.graphics.newImage(Asset(path_or_love_image):get_path() or path_or_love_image)
+        love_image = love.graphics.newImage(Asset(path_or_love_image, false):get_path() or path_or_love_image)
     else
         love_image = path_or_love_image
     end
