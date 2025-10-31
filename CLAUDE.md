@@ -158,6 +158,16 @@ Server persists game state to `save.lua` in human-readable format:
 - **Privacy**: Prefix private members with underscore (`_method`, `_field`)
 - **Callbacks**: Named with `on_` prefix (`on_connect`, `on_disconnect`)
 - **Type annotations**: Use LuaDoc format (`---@class`, `---@param`, `---@return`, `---@field`, `---@alias`)
+  - **Required whenever possible**: All public functions and methods should have type annotations
+  - **Parameters**: Always annotate function parameters with `---@param name Type`
+  - **Return values**: Only annotate return types when functions **DO** return values using `---@return Type`
+  - **Void functions**: Do NOT annotate functions that return nothing - no `---@return void` or similar
+  - **Classes**: All classes must have `---@class ClassName` annotation
+    - For single inheritance: `---@class ClassName : BaseClass`
+    - For multiple inheritance: `---@class ClassName : BaseClass1, BaseClass2, BaseClass3`
+    - Multiple inheritance is supported by the custom class system (see [utils/class.lua](utils/class.lua))
+  - **Fields**: Class fields should be documented with `---@field name Type`
+  - **Variadic functions**: Functions using `...` should document the variadic parameter with `---@param ... Type`
 - **Type aliases**: For callbacks: `---@alias CallbackName fun(param:Type)`
 
 ## Global Variables and Functions
