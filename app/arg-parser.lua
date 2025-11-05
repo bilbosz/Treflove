@@ -1,7 +1,7 @@
 require("utils.class")
 
 ---@class ArgParser Example usage: `love . server 0.0.0.0 8080` or `love . client 192.0.0.1 8080`
-local ArgParser = class("ArgParser")
+local arg_parser = {}
 
 ---@param str string
 ---@return string|nil Input string or `nil` when provided string was wrong
@@ -41,13 +41,13 @@ local function _parse_port(str)
 end
 
 ---@class ArgParserResult
----@field public app_type string
+---@field public app_type "server"|"client"
 ---@field public address string
----@field public port string
+---@field public port string Port number as string (range: 1024-65535)
 
 ---@param args string[] Program argument list
 ---@return ArgParserResult|nil
-function ArgParser.parse(args)
+function arg_parser.parse(args)
     if #args < 4 then
         return nil
     else
@@ -63,4 +63,4 @@ function ArgParser.parse(args)
     end
 end
 
-return ArgParser()
+return arg_parser

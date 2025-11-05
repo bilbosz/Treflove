@@ -40,6 +40,21 @@ The project uses:
 - `luacheck` for linting (config in [.luacheckrc](.luacheckrc))
 - `lua-language-server` for diagnosis report (config in [.luarc.json](.luarc.json))
 
+## Type Annotations
+
+The [annotations/](annotations/) folder contains type definition packages for external libraries used by the Lua language server. These provide autocomplete, type checking, and diagnostics for frameworks like LÖVE.
+
+- Annotation packages are typically git submodules maintained in upstream repositories
+- **DO NOT manually edit** annotation files - they are often auto-generated
+- Integrated via `workspace.library` setting in [.luarc.json](.luarc.json)
+- Update submodules with: `git submodule update --init --recursive`
+- **External library documentation** can be found within annotation files. For example, `love.keypressed` is documented in [annotations/love2d/library/love.lua](annotations/love2d/library/love.lua):
+  ```lua
+  ---Callback function triggered when a key is pressed.
+  ---@alias love.keypressed fun(key: love.KeyConstant, scancode: love.Scancode, isrepeat: boolean)
+  ```
+- See [annotations/CLAUDE.md](annotations/CLAUDE.md) for details on adding new annotation packages
+
 ## Architecture
 
 ### Dual-Mode Bootstrap
@@ -160,7 +175,23 @@ Server persists game state to `save.lua` in human-readable format:
 
 ## Code Conventions
 
-- **Naming**: snake_case for functions/variables, PascalCase for classes
+- **Naming**:
+  - snake_case for functions, variables, and module tables
+  - PascalCase for classes
+  - Examples:
+    - Class: `local MyClass = class("MyClass")`
+    - Module: `local arg_parser = {}` (table with static functions)
+    - Function: `function arg_parser.parse(args)`
+    - Variable: `local start_time = 0`
+- **Modules vs Classes**:
+  - **Modules**: Tables with static functions (no instances created)
+    - Use snake_case naming: `arg_parser`, `utils`, etc.
+    - Return the table directly: `return arg_parser`
+    - Example: [app/arg-parser.lua](app/arg-parser.lua)
+  - **Classes**: Use custom class system for object-oriented code
+    - Use PascalCase naming: `Client`, `Server`, `Session`
+    - Create instances with `ClassName()`
+    - Example: [app/client.lua](app/client.lua)
 - **Privacy**: Prefix private members with underscore (`_method`, `_field`)
 - **Callbacks**: Named with `on_` prefix (`on_connect`, `on_disconnect`)
 - **Type annotations**: Use LuaDoc format (`---@class`, `---@param`, `---@return`, `---@field`, `---@alias`)
@@ -173,7 +204,9 @@ Server persists game state to `save.lua` in human-readable format:
     - For multiple inheritance: `---@class ClassName : BaseClass1, BaseClass2, BaseClass3`
     - Multiple inheritance is supported by the custom class system (see [utils/class.lua](utils/class.lua))
   - **Fields**: Class fields should be documented with `---@field name Type`
+    - For constants/configuration tables with literal values, the Lua language server can infer types automatically - explicit field annotations are optional
   - **Variadic functions**: Functions using `...` should document the variadic parameter with `---@param ... Type`
+  - **LÖVE framework types**: Use specific LÖVE types from annotations (e.g., `love.KeyConstant`, `love.Font`, `love.DroppedFile`) instead of generic types like `string` or `any`
 - **Type aliases**: For callbacks: `---@alias CallbackName fun(param:Type)`
 
 ## Global Variables and Functions

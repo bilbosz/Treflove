@@ -1,10 +1,11 @@
 require("app.globals")
 
-local ArgParser = require("app.arg-parser")
 local Consts = require("app.consts")
 local Utils = require("utils.utils")
 
-local params = ArgParser.parse(arg)
+local arg_parser = require("app.arg-parser")
+
+local params = arg_parser.parse(arg)
 if not params then
     io.write(Consts.APP_USAGE_MESSAGE)
     love.event.quit(Consts.APP_SUCCESS_EXIT_CODE)

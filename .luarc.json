@@ -1,7 +1,8 @@
 {
     "workspace": {
         "library": [
-            "${addons}/love2d/module/library"
+
+            "annotations/love2d/library"
         ]
     },
     "runtime.version": "LuaJIT",
@@ -10,12 +11,13 @@
     },
     "workspace.checkThirdParty": false,
     "diagnostics.globals": [
-        "class",
         "app",
-        "is_instance_of",
-        "get_class_name_of",
         "assert_type",
-        "get_class_of"
+        "class",
+        "config",
+        "get_class_name_of",
+        "get_class_of",
+        "is_instance_of"
     ],
     "diagnostics.disable": [
         "param-type-mismatch"

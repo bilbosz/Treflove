@@ -1,9 +1,28 @@
-local ArgParser = require("app.arg-parser")
+local arg_parser = require("app.arg-parser")
 
+---@class love.ConfigTable
+---@field console boolean
+---@field window love.WindowConfig|nil
+
+---@class love.WindowConfig
+---@field title string
+---@field icon string
+---@field resizable boolean
+---@field fullscreen boolean
+---@field display number
+---@field width number
+---@field height number
+---@field minwidth number
+---@field minheight number
+
+---@param t love.ConfigTable
 function love.conf(t)
-    local params = ArgParser.parse(arg)
+    local params = arg_parser.parse(arg)
 
-    if love._os == "Windows" then
+    ---@type "OS X"|"Windows"|"Linux"|"Android"|"iOS"
+---@diagnostic disable-next-line: undefined-field
+    local os = love._os
+    if os == "Windows" then
         t.console = true
     end
 
@@ -11,7 +30,7 @@ function love.conf(t)
         t.window = nil
     elseif params.app_type == "server" then
         t.console = true
-        if true or love._os == "Windows" then
+        if true or os == "Windows" then
             t.window.title = "Treflove - Server"
             t.window.icon = "icon.png"
         else

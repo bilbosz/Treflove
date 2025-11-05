@@ -18,7 +18,7 @@ The `app/` directory contains the application layer that bootstraps and manages 
 ## Bootstrap Flow
 
 1. [main.lua](../main.lua) requires [globals.lua](globals.lua) first (sets up global utilities)
-2. ArgParser parses command-line arguments: `love . <client|server> <address> <port>`
+2. `arg_parser.parse(arg)` parses command-line arguments: `love . <client|server> <address> <port>`
 3. Based on `app_type`, either Client or Server is instantiated with parsed params
 4. The instance assigns itself to global `app` variable
 5. LÖVE callbacks are registered via `register_love_callbacks()`
@@ -170,20 +170,33 @@ The server maintains multiple sessions simultaneously:
 
 [arg-parser.lua](arg-parser.lua) validates and parses command-line arguments.
 
+**Module Type**: Returns a table (not a class instance) with a `parse` function.
+
 **Expected format**: `love . <app_type> <address> <port>`
 
 **Validation**:
-- `app_type`: Must be "server" or "client"
+- `app_type`: Must be "server" or "client" (typed as literal union `"server"|"client"`)
 - `address`: Either "localhost" or valid IPv4 (e.g., "192.168.1.1")
-- `port`: Number between 1024-65535
+- `port`: Number between 1024-65535 (returned as string)
 
 **Returns**: `ArgParserResult` table with validated fields, or `nil` if invalid.
 
-**Usage in main.lua**:
+**Type Definition**:
 ```lua
-local params = ArgParser.parse(arg)
+---@class ArgParserResult
+---@field public app_type "server"|"client"
+---@field public address string
+---@field public port string Port number as string (range: 1024-65535)
+```
+
+**Usage**:
+```lua
+local arg_parser = require("app.arg-parser")
+local params = arg_parser.parse(arg)
 if not params then
     -- Show usage and quit
+else
+    -- params.app_type is guaranteed to be "server" or "client"
 end
 ```
 

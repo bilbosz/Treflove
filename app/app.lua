@@ -68,6 +68,7 @@ function App:register_love_callbacks()
                 love.graphics.reset()
             end
         end
+        ---@param key love.KeyConstant
         ---@diagnostic disable-next-line: duplicate-set-field
         function love.keypressed(key)
             if key == Consts.DRAW_AABBS_KEY then
@@ -79,6 +80,7 @@ function App:register_love_callbacks()
     end
 
     if debug then
+        ---@param msg string
         function love.errorhandler(msg)
             print(string.format("%s error: \"%s\"", app.is_client and "Client" or "Server", msg))
             print(Utils.get_stack_trace(2))
@@ -89,6 +91,7 @@ function App:register_love_callbacks()
         end
     end
 
+    ---@param dt number
     function love.update(dt)
         self.defer_manager:update()
         if self._mark_for_quit then
