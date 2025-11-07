@@ -31,9 +31,18 @@ Format all Lua code (uses lua-format):
 ```
 
 Diagnose all Lua code (uses lua-language-server):
+```bash
+./diagnose-code.sh [target_path]
 ```
-./diagnose-code.sh
-```
+
+The `diagnose-code.sh` script:
+- Runs `lua-language-server` diagnostics and outputs results as JSON
+- Accepts optional `target_path` argument to filter results (file or directory)
+- Defaults to diagnosing the entire project if no target is specified
+- Examples:
+  - `./diagnose-code.sh` - diagnose entire project
+  - `./diagnose-code.sh app/client.lua` - diagnose single file
+  - `./diagnose-code.sh controls/` - diagnose directory
 
 The project uses:
 - `lua-format` for code formatting (config in [.lua-format](.lua-format))
