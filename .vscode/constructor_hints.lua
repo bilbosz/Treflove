@@ -269,7 +269,6 @@ local function handle_constructors(raw_comms, all_elems)
                 local class_name = get_or_nil(class_names, class_node)
                 if class_name then
                     local overload_annotation = create_overload_anntotation(class_name, param_stack)
-                    print(class_name, overload_annotation)
                     insert_overload_annotation(class_node, raw_comms, overload_annotation)
                 end
             end

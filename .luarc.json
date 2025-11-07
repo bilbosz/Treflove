@@ -1,7 +1,6 @@
 {
     "workspace": {
         "library": [
-
             "annotations/love2d/library"
         ]
     },

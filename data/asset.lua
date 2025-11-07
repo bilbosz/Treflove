@@ -69,7 +69,7 @@ function Asset:get_size()
     return info and info.size
 end
 
----@return string
+---@return string|nil
 function Asset:get_path()
     local info = love.filesystem.getInfo(self._path)
     return info and self._path

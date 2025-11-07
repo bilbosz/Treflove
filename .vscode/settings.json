@@ -4,5 +4,7 @@
     "files.associations": {
         "*.luacheckrc": "lua"
     },
-    "Lua.runtime.plugin": ".vscode/constructor_hints.lua"
+    "Lua.runtime.plugin": ".vscode/constructor_hints.lua",
+    "Lua.runtime.version": "LuaJIT",
+    "Lua.runtime.pathStrict": true,
 }
