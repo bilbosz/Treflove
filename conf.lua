@@ -20,7 +20,7 @@ function love.conf(t)
     local params = arg_parser.parse(arg)
 
     ---@type "OS X"|"Windows"|"Linux"|"Android"|"iOS"
----@diagnostic disable-next-line: undefined-field
+    ---@diagnostic disable-next-line: undefined-field
     local os = love._os
     if os == "Windows" then
         t.console = true

@@ -7,7 +7,7 @@ local DrawableControl = require("controls.drawable-control")
 ---@field private _radius number
 local Circle = class("Circle", DrawableControl)
 
----@param parent Control
+---@param parent Control|nil
 ---@param radius number
 ---@param color number[]
 ---@param line_width number

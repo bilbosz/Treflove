@@ -5,7 +5,7 @@ local Control = require("controls.control")
 ---@field private _mode string
 local Rectangle = class("Rectangle", Control)
 
----@param parent Control
+---@param parent Control|nil
 ---@param width number
 ---@param height number
 ---@param color number[]

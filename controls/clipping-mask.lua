@@ -7,7 +7,7 @@ local Control = require("controls.control")
 ---@field private _stencil_cb StencilCallback
 local ClippingMask = class("ClippingMask", Control)
 
----@param parent Control
+---@param parent Control|nil
 ---@param width number
 ---@param height number
 ---@param draw_mask_cb DrawMaskCallback

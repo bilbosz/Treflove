@@ -4,7 +4,7 @@ local Asset = require("data.asset")
 ---@class Image: DrawableControl
 local Image = class("Image", DrawableControl)
 
----@param parent Control
+---@param parent Control|nil
 ---@param path_or_love_image string|love.Image
 function Image:init(parent, path_or_love_image)
     local love_image

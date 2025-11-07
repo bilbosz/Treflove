@@ -3,7 +3,7 @@ local Control = require("controls.control")
 ---@class ClippingRectangle: Control
 local ClippingRectangle = class("ClippingRectangle", Control)
 
----@param parent Control
+---@param parent Control|nil
 ---@param width number
 ---@param height number
 function ClippingRectangle:init(parent, width, height)
