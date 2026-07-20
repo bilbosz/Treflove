@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Treflove is a multiplayer turn-based tabletop game engine built on LÖVE (love2d). The game master creates rules in Lua and can dynamically modify game state during gameplay. The project follows a server-client uniform architecture where many classes work in both server and client contexts. Only vanilla love2d is used - no external dependencies.
 
+## Prerequisites
+
+External tools required by the dev scripts (`love`, `lua-format`, `lua-language-server`, `jq`, `rg`) are listed with installation instructions in [REQUIREMENTS.md](REQUIREMENTS.md).
+
 ## Running the Application
 
 Run server only:
@@ -25,7 +29,7 @@ Run both server and client together:
 
 ## Development Commands
 
-Format all Lua code (uses lua-format):
+Format all Lua code (uses lua-format, excludes [annotations/](annotations/)):
 ```bash
 ./format-code.sh
 ```
@@ -48,6 +52,8 @@ The project uses:
 - `lua-format` for code formatting (config in [.lua-format](.lua-format))
 - `luacheck` for linting (config in [.luacheckrc](.luacheckrc))
 - `lua-language-server` for diagnosis report (config in [.luarc.json](.luarc.json))
+
+There is no automated test suite. Verify changes with `./diagnose-code.sh` and by running the app (`./run.sh`).
 
 ## Type Annotations
 
@@ -178,6 +184,8 @@ Server persists game state to `save.lua` in human-readable format:
 - `Server:save_data()` writes to file
 - `Server:_load_data()` reads on startup
 
+The [server/](server/) directory contains server data, not source code: [server/save.lua](server/save.lua) (persisted game state) and `server/assets/` (game assets like tokens and the world map).
+
 ### Backstack Navigation
 
 [BackstackManager](utils/backstack-manager.lua) maintains a stack of callbacks for back navigation (similar to browser history). When user presses back, the top callback is invoked and popped.
@@ -223,12 +231,17 @@ Server persists game state to `save.lua` in human-readable format:
 Defined in [.luacheckrc](.luacheckrc) and loaded via [app/globals.lua](app/globals.lua):
 
 - `app` - global Client or Server instance
-- `class()` - class constructor
+- `config` - LÖVE config table, set in [conf.lua](conf.lua)
+- `class()` - class constructor; `abstract()` - marks abstract methods
 - `is_instance_of()`, `get_class_name_of()`, `get_class_of()` - reflection
 - `assert_type()`, `assert_unreachable()` - assertions
 - `table.*` - extended table utilities (merge, find, serialization)
+- `ripairs()`, `cipairs()`, `cripairs()`, `cpairs()`, `prev()` - reverse/cyclic iterators ([utils/table.lua](utils/table.lua))
+- `toboolean()` - value-to-boolean conversion
 - `love.*` - LÖVE framework API
 - `dump()` - debug dumping (only in debug mode)
+
+Note: `Utils.get_time()`, `Utils.get_stack_trace()`, `Utils.draw_aabbs()` live in the [utils/utils.lua](utils/utils.lua) module (required locally, not global). See [.luacheckrc](.luacheckrc) for the authoritative globals list.
 
 ## Key Design Patterns
 
@@ -250,3 +263,7 @@ Defined in [.luacheckrc](.luacheckrc) and loaded via [app/globals.lua](app/globa
 - Client uses love.graphics, love.window, love.keyboard, love.mouse, love.touch
 - Both use love.thread and love.channel for networking
 - Server can run headless (no graphics) or with minimal UI
+
+## Project Status
+
+The README lists completed milestones and known to-dos. Notably **not yet implemented**: game master script handling, game state synchronization, game objects other than tokens, media other than images, and prefabs. [TODO.md](TODO.md) tracks a checklist of pending type-annotation fixes across the codebase.
