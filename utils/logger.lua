@@ -65,9 +65,9 @@ function Logger:set_name(name)
     self._is_enabled = _is_enabled(name)
 end
 
----@param string string
-function Logger:log(string)
-    self:_log_implementation("%s", 3, string)
+---@param text string
+function Logger:log(text)
+    self:_log_implementation("%s", 3, text)
 end
 
 ---@param format string

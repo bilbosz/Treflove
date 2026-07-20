@@ -2,13 +2,13 @@ local Control = require("controls.control")
 
 ---@class Rectangle: Control
 ---@field private _color number[]
----@field private _mode string
+---@field private _mode love.DrawMode
 local Rectangle = class("Rectangle", Control)
 
 ---@param parent Control|nil
 ---@param width number
 ---@param height number
----@param color number[]
+---@param color number[]|nil
 ---@param border_only boolean|nil
 function Rectangle:init(parent, width, height, color, border_only)
     assert(width and height)

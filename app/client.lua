@@ -41,6 +41,7 @@ function Client:init(params)
     self.session = nil
 end
 
+---@protected
 function Client:load()
     self.backstack_manager:push(function()
         app:quit()
@@ -57,7 +58,7 @@ function Client:load()
     end)
 end
 
----@private
+---@protected
 function Client:register_love_callbacks()
     App.register_love_callbacks(self)
     local app_key_pressed = love.keypressed

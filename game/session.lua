@@ -5,13 +5,19 @@ local UserMenuScreen = require("screens.user-menu-screen")
 local WaitingScreen = require("screens.waiting-screen")
 
 ---@class Session
+---@field _user string|nil Logged-in user name
+---@field _connection Connection|nil
+---@field _login Login|nil
+---@field _game_data_rp GameDataRp
+---@field _user_menu_screen UserMenuScreen|nil
+---@field _backstack_cb BackstackManagerCb|nil
 local Session = class("Session")
 
 ---@param self Session
 ---@param user string
 local function _on_login(self, user)
-    assert(not self.user)
-    self.user = user
+    assert(not self._user)
+    self._user = user
     if app.is_client then
         app.text_event_manager:set_text_input(false)
         self._user_menu_screen = UserMenuScreen(self)
@@ -26,20 +32,20 @@ end
 
 ---@param self Session
 local function _on_logout(self)
-    assert(self.user)
-    self.user = nil
+    assert(self._user)
+    self._user = nil
     if app.is_client then
         app.backstack_manager:pop(self._backstack_cb)
         self._backstack_cb = nil
         self._user_menu_screen = nil
-        app.screen_manager:show(LoginScreen(self.login))
+        app.screen_manager:show(LoginScreen(self._login))
     end
 end
 
 ---@param connection Connection
 function Session:init(connection)
-    self.connection = connection
-    self.user = nil
+    self._connection = connection
+    self._user = nil
     local login = Login(self, function(user)
         _on_login(self, user)
         if app.is_client then
@@ -48,8 +54,8 @@ function Session:init(connection)
     end, function()
         _on_logout(self)
     end)
-    self.login = login
-    self.game_data_rp = GameDataRp(self.connection)
+    self._login = login
+    self._game_data_rp = GameDataRp(self._connection)
     app.asset_manager:register_session(self)
 
     if app.is_client then
@@ -57,35 +63,35 @@ function Session:init(connection)
     end
 end
 
----@return string
+---@return string|nil
 function Session:get_user()
-    return self.user
+    return self._user
 end
 
 ---@return Connection
 function Session:get_connection()
-    return self.connection
+    return self._connection
 end
 
 ---@param user string
 ---@param password string
 function Session:login(user, password)
-    self.login:login(user, password)
+    self._login:login(user, password)
 end
 
 function Session:logout()
-    self.login:logout()
+    self._login:logout()
 end
 
 ---@return boolean
 function Session:is_logged_in()
-    return not not self.user
+    return not not self._user
 end
 
 function Session:join_game()
     assert(app.is_client)
     app.screen_manager:show(WaitingScreen("Loading..."))
-    self.game_data_rp:send_request({})
+    self._game_data_rp:send_request({})
 end
 
 function Session:release()
@@ -94,9 +100,9 @@ function Session:release()
         app.backstack_manager:pop(self._backstack_cb)
         self._backstack_cb = nil
     end
-    self.login:release()
-    self.login = nil
-    self.connection = nil
+    self._login:release()
+    self._login = nil
+    self._connection = nil
 end
 
 return Session

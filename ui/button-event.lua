@@ -48,12 +48,22 @@ end
 local ButtonEventManager = class("ButtonEventManager", EventManager)
 
 ---@param ctrl Control
+---@return boolean
+local function _is_read_only_input(ctrl)
+    if not is_instance_of(ctrl, Input) then
+        return false
+    end
+    ---@cast ctrl Input
+    return ctrl:is_read_only()
+end
+
+---@param ctrl Control
 ---@param listeners table<Control, boolean>
 ---@param x number
 ---@param y number
 ---@return nil|Control|ButtonEventListener
 local function _get_listener_internal(ctrl, listeners, x, y)
-    if not ctrl:is_visible() or not ctrl:get_global_recursive_aabb():is_point_inside(x, y) or is_instance_of(ctrl, Input) and ctrl:is_read_only() then
+    if not ctrl:is_visible() or not ctrl:get_global_recursive_aabb():is_point_inside(x, y) or _is_read_only_input(ctrl) then
         return nil
     end
     local top
@@ -71,7 +81,7 @@ end
 ---@param y number
 ---@return nil|ButtonEventListener
 function ButtonEventManager:_get_listener(x, y)
-    return _get_listener_internal(app.root, select(2, next(self._methods)), x, y)
+    return _get_listener_internal(app.root, select(2, next(self._methods)), x, y) --[[@as nil|ButtonEventListener]]
 end
 
 function ButtonEventManager:init()
@@ -82,7 +92,7 @@ end
 
 ---@param x number
 ---@param y number
----@param id number
+---@param id PointerId
 function ButtonEventManager:pointer_down(x, y, id)
     assert(not self._selection)
     local selection = self:_get_listener(x, y)
@@ -95,7 +105,7 @@ end
 
 ---@param x number
 ---@param y number
----@param id number
+---@param id PointerId
 function ButtonEventManager:pointer_up(x, y, id)
     local selection = self._selection
     local top = self:_get_listener(x, y)
@@ -108,7 +118,7 @@ end
 
 ---@param x number
 ---@param y number
----@param id number
+---@param id PointerId
 function ButtonEventManager:pointer_move(x, y, id)
     local top = self:_get_listener(x, y)
     local selection = self._selection

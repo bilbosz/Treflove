@@ -25,8 +25,8 @@ function RemoteProcedure:stop()
     self._connection:unregister_request_handler(self._id)
 end
 
----@param request Request
----@param cb nil|fun(response:Response)
+---@param request table Request body
+---@param cb nil|fun(response: table) Called with the response body after `receive_response`
 function RemoteProcedure:send_request(request, cb)
     self._connection:send_request(self._id, request, function(response)
         self:receive_response(response)
@@ -36,21 +36,16 @@ function RemoteProcedure:send_request(request, cb)
     end)
 end
 
--- luacheck: push no unused args
----@param request table
----@return table
+---@param request table Request body
+---@return table Response body
 function RemoteProcedure:send_response(request)
-    abstract()
+    return abstract()
 end
--- luacheck: pop
 
--- luacheck: push no unused args
----@param response table
----@return table
+---@param response table Response body
 function RemoteProcedure:receive_response(response)
     abstract()
 end
--- luacheck: pop
 
 function RemoteProcedure:release()
     self:stop()

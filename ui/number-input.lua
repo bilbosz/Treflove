@@ -2,15 +2,15 @@ local TextEventListener = require("ui.text-event").Listener
 local TextInput = require("ui.text-input")
 
 ---@class NumberInput: TextInput
----@field private _number number
+---@field private _number number|nil Nil when the text is not a valid number
 local NumberInput = class("NumberInput", TextInput)
 
 ---@param parent Control
 ---@param form_screen FormScreen
 ---@param width number
 ---@param height number
----@param on_input fun()
----@param on_enter fun()
+---@param on_input fun()|nil
+---@param on_enter fun()|nil
 function NumberInput:init(parent, form_screen, width, height, on_input, on_enter)
     TextInput.init(self, parent, form_screen, width, height, false, on_input, on_enter)
     self._number = 0
@@ -22,7 +22,7 @@ function NumberInput:set_number(number)
     self:set_text(tostring(number))
 end
 
----@return number
+---@return number|nil
 function NumberInput:get_number()
     return self._number
 end

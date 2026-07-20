@@ -1,17 +1,40 @@
+---@alias DumpNodeDisplay fun(value: any, type: string, global_name: string|nil, content: string|nil): string
+---@class DumpDisplayConfig
+---@field show_global_names boolean
+---@field table_max_level number|nil
+---@field table_indention string|nil
+---@field table_unfold_repeated boolean
+---@field table_newline string
+---@field index_display DumpNodeDisplay
+---@field key_display DumpNodeDisplay
+---@field value_display DumpNodeDisplay
+---@field separator string
+---@class DumpConfig
+---@field keyword string|nil
+---@field stacktrace table|nil
+---@field dump DumpDisplayConfig
+---@field text_processor nil|fun(text: string): any
+---@param config DumpConfig|nil
+---@return nil|fun(...: any): any
 local function _dump_generator(config)
     if not config then
         return
     end
 
+    ---@param keyword string
+    ---@return string
     local function create_keyword(keyword)
         return "[" .. keyword .. "]\n"
     end
 
-    local function create_stacktrace(config)
+    ---@param stacktrace_config table
+    ---@return string
+    local function create_stacktrace(stacktrace_config)
         local result = "\n[STACKTRACE]\n"
         local trace = debug.traceback()
         local line_no = 1
         local ignore_head = 3
+        ---@type number|nil
         local found = 0
         while found do
             local prev = found
@@ -37,10 +60,19 @@ local function _dump_generator(config)
         [node_types.Key] = config.dump.key_display
     }
 
-    local function create_dump(config, args, n)
-        config.table_max_level = config.table_max_level or math.huge
-        assert(not config.table_unfold_repeated or config.table_max_level ~= math.huge)
+    ---@param dump_config DumpDisplayConfig
+    ---@param args any[]
+    ---@param n number
+    ---@return string
+    local function create_dump(dump_config, args, n)
+        dump_config.table_max_level = dump_config.table_max_level or math.huge
+        assert(not dump_config.table_unfold_repeated or dump_config.table_max_level ~= math.huge)
 
+        ---@param val any
+        ---@param tab table|nil
+        ---@param recursion_check table<table, boolean>|nil
+        ---@param is_first_layer boolean|nil
+        ---@return string|nil
         local function get_glob_var_name(val, tab, recursion_check, is_first_layer)
             tab = tab or _G
             recursion_check = recursion_check or {}
@@ -71,24 +103,27 @@ local function _dump_generator(config)
             end
         end
 
+        ---@param val any
+        ---@param level number
+        ---@param node number
+        ---@param recursion_check table<table, boolean>|nil
+        ---@return string
         local function dump(val, level, node, recursion_check)
-            local result = ""
-
             recursion_check = recursion_check or {}
 
-            local indention = config.table_indention and string.rep(config.table_indention, level) or ""
+            local indention = dump_config.table_indention and string.rep(dump_config.table_indention, level) or ""
             local value_indention = node == node_types.Value and "" or indention
 
             local type_ = type(val)
             local var_name
-            if config.show_global_names then
+            if dump_config.show_global_names then
                 var_name = get_glob_var_name(val)
             end
             local content
 
-            if type_ == "table" and (config.table_unfold_repeated or not recursion_check[val]) and node == node_types.Value and level < config.table_max_level then
+            if type_ == "table" and (dump_config.table_unfold_repeated or not recursion_check[val]) and node == node_types.Value and level < dump_config.table_max_level then
                 recursion_check[val] = true
-                content = value_indention .. "{" .. config.table_newline
+                content = value_indention .. "{" .. dump_config.table_newline
                 local last_index = 0
                 for key, cur_val in pairs(val) do
                     local key_type = type(key)
@@ -98,7 +133,7 @@ local function _dump_generator(config)
                     else
                         content = content .. dump(key, level + 1, node_types.Key)
                     end
-                    content = content .. dump(cur_val, level + 1, node_types.Value, recursion_check) .. "," .. config.table_newline
+                    content = content .. dump(cur_val, level + 1, node_types.Value, recursion_check) .. "," .. dump_config.table_newline
                 end
                 content = content .. indention .. "}"
             end
@@ -107,7 +142,7 @@ local function _dump_generator(config)
 
         local result = "\n[DUMP]\n"
         for i = 1, n do
-            result = result .. dump(args[i], 0, node_types.Value) .. (i ~= n and config.separator or "")
+            result = result .. dump(args[i], 0, node_types.Value) .. (i ~= n and dump_config.separator or "")
         end
         return result
     end
@@ -140,21 +175,27 @@ local function _dump_generator(config)
 
 end
 
+---@param str string
+---@return boolean
 local function _is_identifier(str)
     local l = #str
     local b, e = string.find(str, "[%a_][%w_]*")
     return b == 1 and e == l
 end
 
-local function _long_print(str)
+-- Kept as a drop-in `text_processor` replacement for `print` when dumps
+-- exceed the console line-length limit
+---@param str string
+local function _long_print(str) -- luacheck: ignore 211
     local limit = 3000
     local strlen = #str
     for i = 1, strlen, limit do
-        res = string.sub(str, i, i + limit - 1)
+        local res = string.sub(str, i, i + limit - 1)
         print(res)
     end
 end
 
+---@type DumpConfig
 local default_dump_config = {
     stacktrace = {},
     dump = {

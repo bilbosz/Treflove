@@ -3,25 +3,30 @@ local MenuTextInput = require("ui.menu.menu-text-input")
 local MenuTextButton = require("ui.menu.menu-text-button")
 
 ---@class LoginScreen: MenuScreen
+---@field _login Login
+---@field _login_input MenuTextInput
+---@field _password_input MenuTextInput
 local LoginScreen = class("LoginScreen", MenuScreen)
 
-local function _login(self)
-    self.login:login(self.login_input:get_text(), self.password_input:get_text())
+---@param self LoginScreen
+local function _submit(self)
+    self._login:login(self._login_input:get_text(), self._password_input:get_text())
 end
 
+---@param login Login
 function LoginScreen:init(login)
-    self.login = login
-    self.login_input = MenuTextInput(self, "Login", false, function()
-        _login(self)
+    self._login = login
+    self._login_input = MenuTextInput(self, "Login", false, function()
+        _submit(self)
     end)
-    self.password_input = MenuTextInput(self, "Password", true, function()
-        _login(self)
+    self._password_input = MenuTextInput(self, "Password", true, function()
+        _submit(self)
     end)
     MenuScreen.init(self, "Welcome", {
-        self.login_input,
-        self.password_input,
+        self._login_input,
+        self._password_input,
         MenuTextButton(self, "Sign In", function()
-            _login(self)
+            _submit(self)
         end),
         MenuTextButton(self, "Quit", function()
             app:quit()

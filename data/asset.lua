@@ -63,7 +63,7 @@ function Asset:get_type()
     return info and info.type
 end
 
----@return number
+---@return number|nil
 function Asset:get_size()
     local info = love.filesystem.getInfo(self._path)
     return info and info.size

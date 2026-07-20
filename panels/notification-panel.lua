@@ -6,6 +6,8 @@ local Text = require("controls.text")
 
 ---@class NotificationPanel: UpdateEventListener, ResizeEventListener
 ---@field private _anchor Control
+---@field private _width number
+---@field private _height number
 local NotificationPanel = class("NotificationPanel", UpdateEventListener, ResizeEventListener)
 
 ---@private
@@ -22,7 +24,7 @@ function NotificationPanel:_add_line(line, y)
     local ctrl_w, ctrl_h = ctrl:get_size()
     ctrl:set_scale(Consts.NOTIFICATION_TEXT_SCALE)
     ctrl:set_origin(ctrl_w, ctrl_h)
-    ctrl:set_position(self.width - Consts.NOTIFICATION_PADDING, y)
+    ctrl:set_position(self._width - Consts.NOTIFICATION_PADDING, y)
     return ctrl
 end
 
@@ -52,7 +54,7 @@ end
 function NotificationPanel:_position_anchor()
     self._anchor:set_position(app.width, app.height)
     local w, h = Consts.NOTIFICATION_PANEL_WIDTH * app.width, Consts.NOTIFICATION_PANEL_HEIGHT * app.height
-    self.width, self.height = w, h
+    self._width, self._height = w, h
     self._anchor:set_size(w, h)
     self._anchor:set_origin(w, h)
 end
@@ -68,7 +70,7 @@ function NotificationPanel:update_notifications()
     for _, child in ipairs(self._anchor:get_children()) do
         child:set_parent(nil)
     end
-    local y = self.height - Consts.NOTIFICATION_PADDING
+    local y = self._height - Consts.NOTIFICATION_PADDING
     for _, notification in ipairs(app.notification_manager:_get_notifications()) do
         y = self:_add_notification(notification, y)
     end

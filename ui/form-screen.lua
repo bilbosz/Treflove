@@ -64,7 +64,7 @@ function FormScreen:init()
     self._is_showed = false
 end
 
----@param ... vararg
+---@param ... any Arguments forwarded to `Screen.show`
 function FormScreen:show(...)
     Screen.show(self, ...)
     for _, input in ipairs(self._inputs) do

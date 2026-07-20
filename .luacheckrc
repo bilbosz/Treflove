@@ -2,13 +2,20 @@
 max_line_length = false
 max_comment_line_length = false
 
+-- 212 (unused argument): listener interfaces and callback tables keep their
+-- full parameter lists as API documentation even when a stub body ignores them
+ignore = {"212"}
+
 std = {
     read_globals = {
+        "_G",
         "arg",
         "assert",
         "collectgarbage",
         "debug",
+        "error",
         "getmetatable",
+        "io",
         "ipairs",
         "loadstring",
         "math",
@@ -53,5 +60,8 @@ std = {
 }
 
 exclude_files = {
-    "doc/**"
+    "doc/**",
+    -- lua-language-server plugin, runs inside the language server's own
+    -- environment (parser.guide, cli.visualize), not inside the app
+    ".vscode/**"
 }

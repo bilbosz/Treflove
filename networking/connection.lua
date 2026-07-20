@@ -15,21 +15,30 @@ local UpdateEventListener = require("events.update-event").Listener
 ---@field public id string
 ---@field public body ResponseBody
 
----@alias ConnectionQueueEntry Request|Response
+---@alias ConnectionResponseHandler fun(body: table) Processes the body of a received response
+---@alias ConnectionRequestHandler fun(body: table): table Handles a request body and returns the response body
+
 ---@class Connection: UpdateEventListener
----@field private _queue ConnectionQueueEntry[]
+---@field private _queue ConnectionResponseHandler[] Handlers awaiting responses, in request order
+---@field private _in_channel love.Channel
+---@field private _in_thread love.Thread
+---@field private _out_channel love.Channel
+---@field private _out_thread love.Thread
+---@field private _source string
+---@field private _requests_handlers table<string, ConnectionRequestHandler>
 local Connection = class("Connection", UpdateEventListener)
 
 ---@param message table
 ---@return string
 local function _compress(message)
-    return love.data.compress("string", Consts.NETWORK_COMPRESSION, table.to_string(message))
+    return love.data.compress("string", Consts.NETWORK_COMPRESSION, table.to_string(message)) --[[@as string]]
 end
 
 ---@param payload string
 ---@return table
 local function _decompress(payload)
-    return table.from_string(love.data.decompress("string", Consts.NETWORK_COMPRESSION, payload))
+    local serialized = love.data.decompress("string", Consts.NETWORK_COMPRESSION, payload) --[[@as string]]
+    return table.from_string(serialized) --[[@as table]]
 end
 
 ---@param in_channel love.Channel
@@ -50,7 +59,7 @@ end
 
 ---@param id string
 ---@param body table
----@param response_handler fun(body:table)
+---@param response_handler ConnectionResponseHandler
 function Connection:send_request(id, body, response_handler)
     assert_type(body, "table")
     assert_type(response_handler, "function")
@@ -65,10 +74,10 @@ function Connection:send_request(id, body, response_handler)
 end
 
 ---@param id string
----@param response_handler fun(body:table)
-function Connection:register_request_handler(id, response_handler)
+---@param request_handler ConnectionRequestHandler
+function Connection:register_request_handler(id, request_handler)
     assert(not self._requests_handlers[id])
-    self._requests_handlers[id] = response_handler
+    self._requests_handlers[id] = request_handler
 end
 
 ---@param id string
@@ -111,9 +120,8 @@ end
 
 ---@private
 ---@param message Response
----@return string
 function Connection:_handle_response(message)
-    return table.remove(self._queue, 1)(message.body)
+    table.remove(self._queue, 1)(message.body)
 end
 
 ---@private

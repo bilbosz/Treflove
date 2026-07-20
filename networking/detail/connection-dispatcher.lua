@@ -3,8 +3,8 @@ local logger_data, channel, address, port = ...
 local Socket = require("socket")
 local logger = require("utils.logger")(logger_data, "connection-dispatcher")
 
-local server, error = Socket.bind(address, tonumber(port))
-assert(not error, error)
+local server, bind_err = Socket.bind(address, tonumber(port))
+assert(not bind_err, bind_err)
 logger:log("Connection dispatcher started working")
 
 while true do

@@ -1,6 +1,9 @@
 local FormScreen = require("ui.form-screen")
 
----@class Input
+---Interface for focusable form elements. Not a Control subclass at runtime,
+---but always mixed into Control-derived classes (see TextInput, TextButton),
+---which the `: Control` annotation reflects.
+---@class Input: Control
 ---@field private _form_screen FormScreen
 ---@field private _is_focused boolean
 ---@field private _is_read_only boolean

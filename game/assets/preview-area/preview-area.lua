@@ -7,9 +7,10 @@ local Rectangle = require("controls.rectangle")
 
 ---@class PreviewArea: ClippingRectangle, FileSystemDropEventListener
 ---@field parent AssetsPanel
----@field preview_labels Control
----@field drop_file_labels Control
----@field content_parent Control
+---@field _preview_labels Control
+---@field _drop_file_labels Control
+---@field content_parent Control Parent for preview components, centered in the area
+---@field _preview PreviewImageArea|PreviewAudioArea|nil
 local PreviewArea = class("PreviewArea", ClippingRectangle, FileSystemDropEventListener)
 
 local PREVIEW_STRING = "Preview"
@@ -21,9 +22,9 @@ local DROP_FILE_STRING = "Drop File Here"
 local function _create_background_labels(self, str)
     local labels = Control(self)
 
-    local label = Text(nil, str)
-    label:set_scale(Consts.PANEL_FIELD_SCALE)
-    local w, h = label:get_outer_size()
+    local measure_label = Text(nil, str)
+    measure_label:set_scale(Consts.PANEL_FIELD_SCALE)
+    local w, h = measure_label:get_outer_size()
 
     local area_w, area_h = self:get_size()
     local desired_w, desired_h = area_w * math.sqrt(2), area_h * math.sqrt(2)
@@ -31,9 +32,9 @@ local function _create_background_labels(self, str)
     local ver = math.ceil(desired_h / (h + Consts.PADDING))
     local labels_w, labels_h = hor * (w + Consts.PADDING), ver * (h + Consts.PADDING)
 
-    local x, y, w, h = 0, 0, nil, nil
+    local x, y = 0, 0
     for i = 1, ver do
-        for j = 1, hor do
+        for _ = 1, hor do
             local label = Text(labels, str, Consts.BACKGROUND_COLOR)
             label:set_scale(Consts.PANEL_FIELD_SCALE)
             label:set_position(x, y)
@@ -55,8 +56,8 @@ end
 ---@param labels Control
 local function _set_labels(self, labels)
     for _, v in ipairs({
-        self.preview_labels,
-        self.drop_file_labels
+        self._preview_labels,
+        self._drop_file_labels
     }) do
         v:set_enabled(false)
     end
@@ -67,10 +68,10 @@ end
 local function _create_background(self)
     local w, h = self:get_size()
     Rectangle(self, w, h, Consts.BUTTON_NORMAL_COLOR)
-    self.preview_labels = _create_background_labels(self, PREVIEW_STRING)
-    self.drop_file_labels = _create_background_labels(self, DROP_FILE_STRING)
+    self._preview_labels = _create_background_labels(self, PREVIEW_STRING)
+    self._drop_file_labels = _create_background_labels(self, DROP_FILE_STRING)
 
-    _set_labels(self, self.drop_file_labels)
+    _set_labels(self, self._drop_file_labels)
 end
 
 ---@param self PreviewArea
@@ -91,7 +92,7 @@ function PreviewArea:init(parent, width, height)
     _create_background(self)
     _create_content_parent(self)
 
-    self.preview = nil
+    self._preview = nil
 
     app.file_system_drop_event_manager:register_listener(self)
 end
@@ -110,14 +111,14 @@ end
 ---@param PreviewComponent PreviewImageArea|PreviewAudioArea
 function PreviewArea:set_content(love_content, PreviewComponent)
     self:reset()
-    _set_labels(self, self.preview_labels)
-    self.preview = PreviewComponent(self, love_content)
+    _set_labels(self, self._preview_labels)
+    self._preview = PreviewComponent(self, love_content)
 end
 
 function PreviewArea:reset()
-    _set_labels(self, self.drop_file_labels)
-    if self.preview then
-        self.preview:set_parent(nil)
+    _set_labels(self, self._drop_file_labels)
+    if self._preview then
+        self._preview:set_parent(nil)
     end
 end
 

@@ -57,7 +57,7 @@ local MATCH_FILE = {
 }
 
 ---@param data string
----@return string|nil, LoveMedium
+---@return Media.Type|nil, LoveMedium
 function media.get_type_and_medium(data)
     for _, v in ipairs(MATCH_FILE) do
         local f, t = unpack(v)

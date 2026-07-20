@@ -27,7 +27,7 @@ function Server:init(params)
     self.asset_manager = AssetManager()
 end
 
----@private
+---@protected
 function Server:load()
     self:_load_data()
     self.connection_manager:start(function(connection)
@@ -44,13 +44,12 @@ function Server:_load_data()
     self.data = table.from_string(content)
 end
 
----@private
 function Server:save_data()
     local content = table.to_string(self.data)
     self._save_file:write(content)
 end
 
----@private
+---@protected
 function Server:register_love_callbacks()
     App.register_love_callbacks(self)
 end

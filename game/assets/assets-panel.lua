@@ -11,16 +11,20 @@ local Utils = require("utils.utils")
 local media = require("utils.media")
 
 ---@class AssetsPanel: Panel
----@field public location_input TextInput
----@field public remote_location_input TextInput
----@field public preview_area PreviewArea
----@field public file_type_input TextInput
----@field public upload_button TextButton
----@field public cancel_button TextButton
----@field public data string|nil
+---@field _game_screen GameScreen
+---@field _location_input TextInput
+---@field _remote_location_input TextInput
+---@field _preview_area PreviewArea
+---@field _file_type_input TextInput
+---@field _upload_button TextButton
+---@field _cancel_button TextButton
+---@field _media_type Media.Type|nil
+---@field _data string|nil Raw content of the dropped file
+---@field _data_size number|nil
 local AssetsPanel = class("AssetsPanel", Panel)
 
----@type table<Media.Type, Control|nil>
+-- Preview component class tables by media type
+---@type table<Media.Type, table|nil>
 local FILE_TYPE_PREVIEW = {
     [media.Type.IMAGE] = PreviewImageArea,
     [media.Type.AUDIO] = PreviewAudioArea,
@@ -32,15 +36,15 @@ local FILE_TYPE_PREVIEW = {
 ---@param self AssetsPanel
 local function _create_preview_area(self)
     local w = self:get_size() - 2 * Consts.PADDING
-    self.preview_area = PreviewArea(self, w, w)
-    self.preview_area:set_position(Consts.PADDING, Consts.PADDING)
+    self._preview_area = PreviewArea(self, w, w)
+    self._preview_area:set_position(Consts.PADDING, Consts.PADDING)
 end
 
 ---@param self AssetsPanel
 ---@return Text
 local function _create_location_label(self)
     local text = Text(self, "Local path", Consts.FOREGROUND_COLOR)
-    local _, area_y, _, area_h = self.preview_area:get_position_and_size()
+    local _, area_y, _, area_h = self._preview_area:get_position_and_size()
 
     text:set_position(Consts.PADDING, area_y + area_h + Consts.PADDING)
     text:set_scale(Consts.PANEL_FIELD_SCALE)
@@ -51,8 +55,8 @@ end
 ---@return TextInput
 local function _create_location_input(self)
     local panel_w = self:get_size()
-    local input = TextInput(self, self.game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT)
-    self.location_input = input
+    local input = TextInput(self, self._game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT)
+    self._location_input = input
 
     input:set_read_only(true)
     return input
@@ -71,7 +75,7 @@ end
 ---@return Text
 local function _create_file_type_label(self)
     local text = Text(self, "File type", Consts.FOREGROUND_COLOR)
-    local _, input_y, _, input_h = self.location_input:get_position_and_size()
+    local _, input_y, _, input_h = self._location_input:get_position_and_size()
 
     text:set_position(Consts.PADDING, input_y + input_h + Consts.PADDING)
     text:set_scale(Consts.PANEL_FIELD_SCALE)
@@ -82,8 +86,8 @@ end
 ---@return TextInput
 local function _create_file_type_input(self)
     local panel_w = self:get_size()
-    local input = TextInput(self, self.game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT)
-    self.file_type_input = input
+    local input = TextInput(self, self._game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT)
+    self._file_type_input = input
 
     input:set_read_only(true)
     return input
@@ -101,7 +105,7 @@ end
 ---@return Text
 local function _create_remote_location_label(self)
     local text = Text(self, "Remote location", Consts.FOREGROUND_COLOR)
-    local _, input_y, _, input_h = self.file_type_input:get_position_and_size()
+    local _, input_y, _, input_h = self._file_type_input:get_position_and_size()
 
     text:set_position(Consts.PADDING, input_y + input_h + Consts.PADDING)
     text:set_scale(Consts.PANEL_FIELD_SCALE)
@@ -112,8 +116,8 @@ end
 ---@return TextInput
 local function _create_remote_location_input(self)
     local panel_w = self:get_size()
-    local input = TextInput(self, self.game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT)
-    self.remote_location_input = input
+    local input = TextInput(self, self._game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT)
+    self._remote_location_input = input
 
     input:set_read_only(true)
     return input
@@ -130,7 +134,7 @@ end
 ---@param self AssetsPanel
 local function _refresh_upload_button_geometry(self)
     local w, h = self:get_size()
-    local button = self.upload_button
+    local button = self._upload_button
     local s = Consts.PANEL_FIELD_SCALE
     button:set_scale(s)
 
@@ -141,7 +145,7 @@ end
 ---@param self AssetsPanel
 local function _refresh_cancel_button_geometry(self)
     local _, h = self:get_size()
-    local button = self.cancel_button
+    local button = self._cancel_button
     local s = Consts.PANEL_FIELD_SCALE
     button:set_scale(s)
 
@@ -151,22 +155,20 @@ end
 
 ---@param self AssetsPanel
 local function _create_upload_button(self)
-    local button = TextButton(self, self.game_screen, "Upload", function()
+    local button = TextButton(self, self._game_screen, "Upload", function()
         self:_upload()
     end)
-    self.upload_button = button
+    self._upload_button = button
 
     _refresh_upload_button_geometry(self)
 end
 
 ---@param self AssetsPanel
 local function _create_cancel_button(self)
-    local h = select(2, self:get_size())
-
-    local button = TextButton(self, self.game_screen, "Cancel", function()
+    local button = TextButton(self, self._game_screen, "Cancel", function()
         self:cancel()
     end)
-    self.cancel_button = button
+    self._cancel_button = button
 
     _refresh_cancel_button_geometry(self)
 end
@@ -178,14 +180,15 @@ local function _refresh_action_buttons(self)
 end
 
 ---@param self AssetsPanel
+---@param data string Raw file content
 local function _set_file_type(self, data)
     local media_type, medium = media.get_type_and_medium(data)
-    self.media_type = media_type
+    self._media_type = media_type
     local FileTypePreview = FILE_TYPE_PREVIEW[media_type]
     if FileTypePreview then
-        self.preview_area:set_content(medium, FileTypePreview)
+        self._preview_area:set_content(medium, FileTypePreview)
     end
-    self.file_type_input:set_text(tostring(table.find_table_key(media.Type, media_type)))
+    self._file_type_input:set_text(tostring(table.find_table_key(media.Type, media_type)))
 end
 
 ---@param game_screen GameScreen
@@ -193,10 +196,10 @@ end
 ---@param height number
 function AssetsPanel:init(game_screen, width, height)
     Panel.init(self, game_screen:get_control(), width, height)
-    self.game_screen = game_screen
-    self.media_type = nil
-    self.data = nil
-    self.data_size = nil
+    self._game_screen = game_screen
+    self._media_type = nil
+    self._data = nil
+    self._data_size = nil
     _create_preview_area(self)
     _create_location_field(self)
     _create_file_type_field(self)
@@ -209,17 +212,17 @@ end
 function AssetsPanel:set_file(file)
     local data = file:read("data") --[[@as string]]
     local size = file:getSize()
-    self.data = data
-    self.data_size = size
+    self._data = data
+    self._data_size = size
     _set_file_type(self, data)
 
     local path = file:getFilename()
-    self.location_input:set_text(path)
+    self._location_input:set_text(path)
     local split_path = Utils.split_path(path)
 
     local file_name = split_path[#split_path]
-    self.remote_location_input:set_text(file_name)
-    self.remote_location_input:set_read_only(false)
+    self._remote_location_input:set_text(file_name)
+    self._remote_location_input:set_read_only(false)
 end
 
 ---@param w number
@@ -230,19 +233,19 @@ function AssetsPanel:on_resize(w, h)
 end
 
 function AssetsPanel:reset()
-    self.preview_area:reset()
-    self.location_input:set_text("")
-    self.file_type_input:set_text("")
-    self.remote_location_input:set_read_only(true)
-    self.remote_location_input:set_text("")
-    self.media_type = nil
-    self.data = nil
-    self.data_size = nil
+    self._preview_area:reset()
+    self._location_input:set_text("")
+    self._file_type_input:set_text("")
+    self._remote_location_input:set_read_only(true)
+    self._remote_location_input:set_text("")
+    self._media_type = nil
+    self._data = nil
+    self._data_size = nil
 end
 
 function AssetsPanel:_upload()
-    if self.data then
-        app.asset_manager:upload_asset(self.remote_location_input:get_text(), self.data)
+    if self._data then
+        app.asset_manager:upload_asset(self._remote_location_input:get_text(), self._data)
     end
 end
 
@@ -251,7 +254,7 @@ function AssetsPanel:cancel()
 end
 
 function AssetsPanel:release()
-    self.preview_area:release()
+    self._preview_area:release()
 end
 
 return AssetsPanel

@@ -2,6 +2,9 @@ require("utils.table")
 
 local select = select
 
+---@param self table Class table under construction
+---@param ... table Base class tables
+---@return table Merged method index table
 local function _create_index(self, ...)
     local idx = {}
     for i = select("#", ...), 1, -1 do
@@ -11,6 +14,9 @@ local function _create_index(self, ...)
     return idx
 end
 
+---@param self table Class table under construction
+---@param ... table Base class tables
+---@return table[] All classes `self` derives from, including itself
 local function _create_bases(self, ...)
     local bases = {
         self
@@ -21,12 +27,16 @@ local function _create_bases(self, ...)
     return bases
 end
 
+---@param cls table Class table
+---@param base table Potential base class table
+---@return boolean
 local function _is_instance_of(cls, base)
     return table.find_table_key(getmetatable(cls).bases, base) ~= nil
 end
 
 ---@param name string Class name
 ---@param ... any Class bases
+---@return table New class table
 function class(name, ...)
     local class = {}
     assert(name)

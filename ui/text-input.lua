@@ -12,14 +12,14 @@ local UpdateEventListener = require("events.update-event").Listener
 ---@class TextInput: Control, UpdateEventListener, ButtonEventListener, TextEventListener, Input
 ---@field private _background Rectangle
 ---@field private _caret Rectangle
----@field private _caret_time number
+---@field private _caret_time number|nil
 ---@field private _clip ClippingRectangle
 ---@field private _content Control
 ---@field private _has_new_value boolean
 ---@field private _is_multivalue boolean
 ---@field private _masked boolean
----@field private _on_enter fun()
----@field private _on_input fun()
+---@field private _on_enter fun()|nil
+---@field private _on_input fun()|nil
 ---@field private _padding number
 ---@field private _text_ctrl Text
 local TextInput = class("TextInput", Control, UpdateEventListener, ButtonEventListener, TextEventListener, Input)
@@ -135,7 +135,7 @@ end
 
 ---@private
 function TextInput:_create_text()
-    local font = Consts.USER_INPUT_FONT
+    local font = Consts.USER_INPUT_FONT --[[@as love.Font]]
     local text = Text(self._content, "", Consts.TEXT_INPUT_FOREGROUND_COLOR, font)
     self._text_ctrl = text
 
@@ -159,9 +159,9 @@ end
 ---@param form_screen FormScreen
 ---@param width number
 ---@param height number
----@param masked boolean
----@param on_input fun()
----@param on_enter fun()
+---@param masked boolean|nil
+---@param on_input fun()|nil
+---@param on_enter fun()|nil
 function TextInput:init(parent, form_screen, width, height, masked, on_input, on_enter)
     assert_type(form_screen, FormScreen)
     Control.init(self, parent, width, height)
@@ -218,7 +218,7 @@ function TextInput:on_click()
     self:_update_view()
 end
 
----@param ... vararg
+---@param ... any
 function TextInput:on_edit(...)
     if self._is_multivalue then
         self._has_new_value = true

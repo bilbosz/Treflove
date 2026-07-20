@@ -133,7 +133,7 @@ function table.to_string(source)
 end
 
 ---@param str string
----@return table
+---@return table|nil
 function table.from_string(str)
     local chunk = loadstring(str)
     local no_error, result = pcall(chunk)
@@ -176,10 +176,12 @@ function table.is_empty(tab)
     return not next(tab)
 end
 
----@overload fun(table:table):any
----@param table table
----@param index any
----@return any
+---Iterator step function used by `ripairs`; returns the previous index and value.
+---@generic V
+---@param t table<number, V>|V[]
+---@param i number
+---@return number|nil
+---@return V|nil
 function prev(t, i)
     if i <= 1 then
         return nil, nil
@@ -190,28 +192,35 @@ end
 
 ---@generic V
 ---@param t table<number, V>|V[]
----@return fun(tbl: table<number, V>):number, V
+---@return fun(tbl: table<number, V>|V[], i: number):(number|nil, V|nil)
+---@return table<number, V>|V[]
+---@return number
 function ripairs(t)
     return prev, t, #t + 1
 end
 
 ---@generic K, V
 ---@param t table<K, V>|V[]
----@return fun(tbl: table<K, V>):K, V
+---@return fun(tbl: table<K, V>, key: K|nil):(K, V)
+---@return table<K, V>
 function cpairs(t)
     return pairs(table.copy(t))
 end
 
 ---@generic V
 ---@param t table<number, V>|V[]
----@return fun(tbl: table<number, V>):number, V
+---@return fun(tbl: V[], i: number|nil):(number, V)
+---@return V[]
+---@return number
 function cipairs(t)
     return ipairs(table.copy(t))
 end
 
 ---@generic V
 ---@param t table<number, V>|V[]
----@return fun(tbl: table<number, V>):number, V
+---@return fun(tbl: table<number, V>|V[], i: number):(number|nil, V|nil)
+---@return table<number, V>|V[]
+---@return number
 function cripairs(t)
     return ripairs(table.copy(t))
 end

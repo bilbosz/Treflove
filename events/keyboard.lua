@@ -1,20 +1,25 @@
 local EventManager = require("events.event-manager")
 
 ---@class KeyboardEventListener
+---@field private _ignore_text_events boolean|nil
 local KeyboardEventListener = class("KeyboardEventListener")
 
+---@param ignore_text_events boolean|nil When true, key events are delivered even during text input
 function KeyboardEventListener:init(ignore_text_events)
     self._ignore_text_events = ignore_text_events
 end
 
+---@param key love.KeyConstant
 function KeyboardEventListener:on_key_pressed(key)
 
 end
 
+---@param key love.KeyConstant
 function KeyboardEventListener:on_key_released(key)
 
 end
 
+---@return boolean|nil
 function KeyboardEventListener:ignore_text_events()
     return self._ignore_text_events
 end
@@ -26,14 +31,18 @@ function KeyboardManager:init()
     EventManager.init(self, KeyboardEventListener)
 end
 
+---@param key love.KeyConstant
 function KeyboardManager:key_pressed(key)
     self:invoke_event(KeyboardEventListener.on_key_pressed, key)
 end
 
+---@param key love.KeyConstant
 function KeyboardManager:key_released(key)
     self:invoke_event(KeyboardEventListener.on_key_released, key)
 end
 
+---@param method function Listener class method identifying the event
+---@param ... any Arguments forwarded to each listener
 function KeyboardManager:invoke_event(method, ...)
     assert(not self._lock)
     self._lock = true
@@ -46,6 +55,8 @@ function KeyboardManager:invoke_event(method, ...)
     self:handle_postponed()
 end
 
+---@param key love.KeyConstant
+---@return boolean
 function KeyboardManager:is_key_down(key)
     return love.keyboard.isDown(key)
 end

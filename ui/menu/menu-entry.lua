@@ -6,10 +6,10 @@ function MenuEntry:init()
     self.control = nil
 end
 
----@field parent Control
+---@param parent Control
 ---@return Control
 function MenuEntry:create_control(parent)
-    abstract()
+    return abstract()
 end
 
 ---@return nil|Control

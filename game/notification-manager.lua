@@ -19,7 +19,7 @@ function NotificationManager:init()
 end
 
 ---@param message string
----@param duration number
+---@param duration number|nil Defaults to `Consts.NOTIFICATION_DURATION`
 function NotificationManager:notify(message, duration)
     table.insert(self._notifications, {
         message = message,
@@ -29,7 +29,7 @@ function NotificationManager:notify(message, duration)
     self._panel:update_notifications()
 end
 
----@private
+---Internal to the notification subsystem — used by NotificationPanel.
 ---@return Notification[]
 function NotificationManager:_get_notifications()
     return self._notifications

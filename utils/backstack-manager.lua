@@ -13,11 +13,13 @@ function BackstackManager:init()
     app.keyboard_manager:register_listener(self)
 end
 
+---@param cb BackstackManagerCb
 function BackstackManager:push(cb)
     assert_type(cb, "function")
     table.insert(self._stack, cb)
 end
 
+---@param cb BackstackManagerCb
 function BackstackManager:pop(cb)
     assert(cb)
     if cb == self:get_top() then
@@ -25,6 +27,7 @@ function BackstackManager:pop(cb)
     end
 end
 
+---@return BackstackManagerCb|nil
 function BackstackManager:get_top()
     return self._stack[#self._stack]
 end
@@ -37,6 +40,7 @@ function BackstackManager:back()
     end
 end
 
+---@param key love.KeyConstant
 function BackstackManager:on_key_pressed(key)
     if key == Consts.BACKSTACK_KEY then
         self:back()

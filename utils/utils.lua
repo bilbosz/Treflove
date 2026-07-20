@@ -1,6 +1,7 @@
 local Consts = require("app.consts")
 local Socket = require("socket")
 
+---@class Utils
 local Utils = {}
 
 ---@param ctrl Control
@@ -44,7 +45,7 @@ function Utils.dump_controls(ctrl, indent)
 end
 
 ---@param obj table
----@param black_functions table
+---@param black_functions function[]|nil
 function Utils.monitor_object(obj, black_functions)
     black_functions = black_functions or {}
     local mt = getmetatable(obj)
@@ -95,13 +96,13 @@ function Utils.generate_salt(len)
     for _ = 1, len do
         table.insert(salt, string.char(rng:random(0, 255)))
     end
-    return love.data.encode("string", "base64", table.concat(salt))
+    return love.data.encode("string", "base64", table.concat(salt)) --[[@as string]]
 end
 
 ---@param str string
 ---@return string
 function Utils.hash(str)
-    return love.data.encode("string", "base64", love.data.hash(Consts.HASH_ALGORITHM, str))
+    return love.data.encode("string", "base64", love.data.hash(Consts.HASH_ALGORITHM, str)) --[[@as string]]
 end
 
 ---@return number
@@ -109,7 +110,7 @@ function Utils.get_time()
     return Socket.gettime()
 end
 
----@param min_level number
+---@param min_level number|nil
 ---@return string
 function Utils.get_stack_trace(min_level)
     min_level = min_level or 1
@@ -143,6 +144,7 @@ end
 ---@return string[]
 function Utils.split_path(path)
     local tab = {}
+    ---@type number, number|nil
     local last_found, found = 1, 0
     while true do
         found = string.find(path, "/", found + 1)
@@ -163,6 +165,7 @@ function Utils.split_path(path)
 end
 
 ---@param module string
+---@return fun(msg: string)
 function Utils.error_handler(module)
     assert_type(module, "string")
     return function(msg)
@@ -177,7 +180,9 @@ function assert_unreachable(msg)
     error(msg)
 end
 
----Use to mark abstract methods
+---Use to mark abstract methods. Always raises an error; the `any` return type
+---lets overridable methods with return values forward it via `return abstract()`.
+---@return any
 function abstract()
     error("Method marked as abstract has no implementation")
 end

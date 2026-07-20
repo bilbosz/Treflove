@@ -74,6 +74,7 @@ function TextButton:on_click()
     self._action()
 end
 
+---@param key love.KeyConstant
 function TextButton:on_key_pressed(key)
     if key == "return" then
         self._action()

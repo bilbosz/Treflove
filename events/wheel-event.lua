@@ -3,6 +3,8 @@ local EventManager = require("events.event-manager")
 ---@class WheelEventListener
 local WheelEventListener = class("WheelEventListener")
 
+---@param x number Horizontal wheel movement
+---@param y number Vertical wheel movement
 function WheelEventListener:on_wheel_moved(x, y)
     abstract()
 end

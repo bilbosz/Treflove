@@ -7,6 +7,7 @@ local UpdateEventListener = require("events.update-event").Listener
 ---@field private _retry_time number
 ---@field private _thread love.Thread
 ---@field private _connection_manager ConnectionManager
+---@field private _last_start number|nil Time of the last connection thread start
 local Connector = class("Connector", UpdateEventListener)
 
 ---@param address string
