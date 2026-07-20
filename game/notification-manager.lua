@@ -13,7 +13,7 @@ local Consts = require("app.consts")
 local NotificationManager = class("NotificationManager", UpdateEventListener)
 
 function NotificationManager:init()
-    self._panel = NotificationPanel(self)
+    self._panel = NotificationPanel()
     self._notifications = {}
     app.update_event_manager:register_listener(self)
 end

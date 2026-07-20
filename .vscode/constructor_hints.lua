@@ -193,6 +193,26 @@ local function get_param_annotation(node)
     return string.match(node.text, PARAM_PATTERN)
 end
 
+---Cut the type expression from the front of a `@param` tail, dropping any
+---trailing description. Spaces inside `table<...>`, `fun(...)`, `{...}` and
+---`[...]` do not end the type.
+---@param annotation_tail string
+---@return string
+local function extract_type(annotation_tail)
+    local depth = 0
+    for i = 1, #annotation_tail do
+        local char = string.sub(annotation_tail, i, i)
+        if char == "<" or char == "(" or char == "{" or char == "[" then
+            depth = depth + 1
+        elseif char == ">" or char == ")" or char == "}" or char == "]" then
+            depth = depth - 1
+        elseif (char == " " or char == "\t") and depth == 0 then
+            return string.sub(annotation_tail, 1, i - 1)
+        end
+    end
+    return annotation_tail
+end
+
 ---@param node parser.object
 ---@return boolean
 local function is_function_node(node)
@@ -259,7 +279,9 @@ local function handle_constructors(raw_comms, all_elems)
 
         local param_name, param_type = get_param_annotation(node)
         if param_name then
-            param_stack[#param_stack + 1] = param_name .. ": " .. param_type
+            -- Parenthesized so union and function types (`fun()|nil`) stay
+            -- unambiguous inside the generated `fun(...)` signature.
+            param_stack[#param_stack + 1] = param_name .. ": (" .. extract_type(param_type) .. ")"
             goto CONTINUE
         end
 

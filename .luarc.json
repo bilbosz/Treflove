@@ -10,15 +10,25 @@
     },
     "workspace.checkThirdParty": false,
     "diagnostics.globals": [
+        "abstract",
         "app",
         "assert_type",
+        "assert_unreachable",
+        "cipairs",
         "class",
         "config",
+        "cpairs",
+        "cripairs",
+        "dump",
         "get_class_name_of",
         "get_class_of",
-        "is_instance_of"
+        "is_instance_of",
+        "prev",
+        "ripairs",
+        "toboolean"
     ],
     "diagnostics.disable": [
-        "param-type-mismatch"
+        "param-type-mismatch",
+        "lowercase-global"
     ]
 }

@@ -23,8 +23,10 @@ local media = require("utils.media")
 ---@field _data_size number|nil
 local AssetsPanel = class("AssetsPanel", Panel)
 
--- Preview component class tables by media type
----@type table<Media.Type, table|nil>
+-- Preview component class tables by media type. The values are class tables
+-- (constructors), which LuaLS cannot type against the instance union — hence
+-- `any`; the instance contract is documented on PreviewArea:set_content.
+---@type table<Media.Type, any>
 local FILE_TYPE_PREVIEW = {
     [media.Type.IMAGE] = PreviewImageArea,
     [media.Type.AUDIO] = PreviewAudioArea,
