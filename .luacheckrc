@@ -20,6 +20,7 @@ std = {
         "loadstring",
         "math",
         "next",
+        "os",
         "pairs",
         "pcall",
         "print",
@@ -37,6 +38,8 @@ std = {
     globals = {
         "abstract",
         "app",
+        -- tests/run.lua installs a socket stub via package.preload
+        "package",
         "assert_type",
         "assert_unreachable",
         "cipairs",

@@ -1,0 +1,98 @@
+local test = require("tests.lib.test")
+local Aabb = require("utils.aabb")
+
+---@param min_x number
+---@param min_y number
+---@param max_x number
+---@param max_y number
+---@return Aabb
+local function make_aabb(min_x, min_y, max_x, max_y)
+    local aabb = Aabb()
+    aabb:add_point(min_x, min_y)
+    aabb:add_point(max_x, max_y)
+    return aabb
+end
+
+test.suite("Aabb")
+
+test.case("add_point grows the box to contain all points", function()
+    local aabb = Aabb()
+    aabb:add_point(2, 3)
+    aabb:add_point(-1, 7)
+    aabb:add_point(5, 4)
+    local min_x, min_y, max_x, max_y = aabb:get_bounds()
+    test.assert_eq(min_x, -1)
+    test.assert_eq(min_y, 3)
+    test.assert_eq(max_x, 5)
+    test.assert_eq(max_y, 7)
+end)
+
+test.case("set_position_and_size round-trips through get_position_and_size", function()
+    local aabb = Aabb()
+    aabb:set_position_and_size(10, 20, 30, 40)
+    local x, y, w, h = aabb:get_position_and_size()
+    test.assert_eq(x, 10)
+    test.assert_eq(y, 20)
+    test.assert_eq(w, 30)
+    test.assert_eq(h, 40)
+    test.assert_eq(aabb:get_width(), 30)
+    test.assert_eq(aabb:get_height(), 40)
+end)
+
+test.case("add_aabb merges bounds", function()
+    local a = make_aabb(0, 0, 10, 10)
+    local b = make_aabb(5, -5, 20, 8)
+    a:add_aabb(b)
+    local min_x, min_y, max_x, max_y = a:get_bounds()
+    test.assert_eq(min_x, 0)
+    test.assert_eq(min_y, -5)
+    test.assert_eq(max_x, 20)
+    test.assert_eq(max_y, 10)
+end)
+
+test.case("is_point_inside includes edges and excludes outside", function()
+    local aabb = make_aabb(0, 0, 10, 10)
+    test.assert_true(aabb:is_point_inside(5, 5))
+    test.assert_true(aabb:is_point_inside(0, 0), "min corner is inside")
+    test.assert_true(aabb:is_point_inside(10, 10), "max corner is inside")
+    test.assert_false(aabb:is_point_inside(10.001, 5))
+    test.assert_false(aabb:is_point_inside(5, -0.001))
+end)
+
+test.case("is_intersecting detects overlap", function()
+    local a = make_aabb(0, 0, 10, 10)
+    test.assert_true(a:is_intersecting(make_aabb(5, 5, 15, 15)), "partial overlap")
+    test.assert_true(a:is_intersecting(make_aabb(2, 2, 8, 8)), "containment")
+    test.assert_true(make_aabb(2, 2, 8, 8):is_intersecting(a), "containment, reversed")
+    test.assert_true(a:is_intersecting(a), "self intersection")
+end)
+
+test.case("is_intersecting treats touching edges as intersecting", function()
+    local a = make_aabb(0, 0, 10, 10)
+    test.assert_true(a:is_intersecting(make_aabb(10, 0, 20, 10)), "shared vertical edge")
+    test.assert_true(a:is_intersecting(make_aabb(10, 10, 20, 20)), "shared corner")
+end)
+
+test.case("is_intersecting is false when separated on either axis", function()
+    local a = make_aabb(0, 0, 10, 10)
+    test.assert_false(a:is_intersecting(make_aabb(11, 0, 20, 10)), "separated on x")
+    test.assert_false(a:is_intersecting(make_aabb(0, 11, 10, 20)), "separated on y")
+    test.assert_false(a:is_intersecting(make_aabb(-20, -20, -11, -11)), "separated diagonally")
+    test.assert_false(a:is_intersecting(make_aabb(11, 11, 20, 20)), "close corners, no overlap")
+end)
+
+test.case("is_intersecting_circle covers center, edge and corner cases", function()
+    local aabb = make_aabb(0, 0, 10, 10)
+    test.assert_true(aabb:is_intersecting_circle(5, 5, 1), "center inside")
+    test.assert_true(aabb:is_intersecting_circle(12, 5, 2), "touching the right edge")
+    test.assert_false(aabb:is_intersecting_circle(12, 5, 1.9), "just off the right edge")
+    test.assert_true(aabb:is_intersecting_circle(11, 11, 1.5), "reaching the corner")
+    test.assert_false(aabb:is_intersecting_circle(11, 11, 1.4), "just missing the corner")
+end)
+
+test.case("reset restores the empty state", function()
+    local aabb = make_aabb(0, 0, 10, 10)
+    aabb:reset()
+    test.assert_eq(aabb:get_min_x(), math.huge)
+    test.assert_eq(aabb:get_max_x(), -math.huge)
+end)

@@ -1,5 +1,10 @@
 require("app.globals")
 
+-- Test mode: run the suite inside LÖVE (real love.*) and exit. See test-code.sh.
+if arg[2] == "test" then
+    require("tests.run")
+end
+
 local Consts = require("app.consts")
 local Utils = require("utils.utils")
 

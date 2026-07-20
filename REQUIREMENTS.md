@@ -8,6 +8,7 @@
 - `lua-language-server` - `sudo apt install lua-language-server`
 - `jq` - `sudo apt install jq`
 - `rg` (ripgrep) - `sudo apt install ripgrep`
+- `luajit` (optional, for fast headless tests) - `sudo apt install luajit`
 
 ### Standard Unix Utilities
 - `bash`, `find`, `xargs`, `jobs`, `kill`, `sleep`, `mktemp`, `readlink`
@@ -31,3 +32,7 @@
 - `mktemp`
 - `readlink`
 - `jq`
+
+## test-code.sh
+- `bash`
+- `luajit` (preferred) or `love` (fallback)
