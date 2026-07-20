@@ -34,6 +34,13 @@ Format all Lua code (uses lua-format, excludes [annotations/](annotations/)):
 ./format-code.sh
 ```
 
+Lint Lua code (uses luacheck, config in [.luacheckrc](.luacheckrc)):
+```bash
+./lint-code.sh [target_path]
+```
+
+The `lint-code.sh` script accepts an optional `target_path` (file or directory) and defaults to linting the entire project.
+
 Diagnose all Lua code (uses lua-language-server):
 ```bash
 ./diagnose-code.sh [target_path]
@@ -60,7 +67,7 @@ The project uses:
 - `luacheck` for linting (config in [.luacheckrc](.luacheckrc))
 - `lua-language-server` for diagnosis report (config in [.luarc.json](.luarc.json))
 
-Verify changes with `./test-code.sh`, `./diagnose-code.sh`, and by running the app (`./run.sh`).
+Verify changes with `./test-code.sh`, `./lint-code.sh`, `./diagnose-code.sh`, and by running the app (`./run.sh`).
 
 ## Tests
 

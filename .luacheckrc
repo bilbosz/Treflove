@@ -64,6 +64,8 @@ std = {
 
 exclude_files = {
     "doc/**",
+    -- third-party type annotation packages (see annotations/CLAUDE.md)
+    "annotations/**",
     -- lua-language-server plugin, runs inside the language server's own
     -- environment (parser.guide, cli.visualize), not inside the app
     ".vscode/**"
