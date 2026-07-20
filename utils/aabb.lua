@@ -111,7 +111,7 @@ function Aabb:is_intersecting(other)
     assert_type(other, Aabb)
     local a_min_x, a_min_y, a_max_x, a_max_y = self[1], self[2], self[3], self[4]
     local b_min_x, b_min_y, b_max_x, b_max_y = other[1], other[2], other[3], other[4]
-    return a_min_x <= b_max_x and a_min_y <= b_max_y or a_max_x >= b_min_x and a_max_y >= b_min_y
+    return a_min_x <= b_max_x and a_max_x >= b_min_x and a_min_y <= b_max_y and a_max_y >= b_min_y
 end
 
 ---@return number, number
