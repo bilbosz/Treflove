@@ -12,6 +12,8 @@
   - **Modules**: Tables with static functions (no instances created)
     - Use snake_case naming: `arg_parser`, `utils`, etc.
     - Return the table directly: `return arg_parser`
+    - Annotate the module table with a PascalCase `---@class` so the language server can type it - e.g., `---@class Media` above `local media = {}` in [utils/media.lua](../utils/media.lua), `---@class Utils` in [utils/utils.lua](../utils/utils.lua)
+    - Constant tables acting as enums are annotated `---@enum` - e.g., `---@enum Media.Type` in [utils/media.lua](../utils/media.lua)
     - Example: [app/arg-parser.lua](../app/arg-parser.lua)
   - **Classes**: Use custom class system for object-oriented code
     - Use PascalCase naming: `Client`, `Server`, `Session`
@@ -19,6 +21,11 @@
     - Example: [app/client.lua](../app/client.lua)
 - **Privacy**: Prefix private members with underscore (`_method`, `_field`)
 - **Callbacks**: Named with `on_` prefix (`on_connect`, `on_disconnect`)
+- **Dynamic dispatch (factory-like)**: When the concrete type of a value must be determined at runtime, follow the pattern in [utils/media.lua](../utils/media.lua) (`media.get_type_and_medium`):
+  - Wrap each fallible constructor in a local `_try_`-prefixed function with a strict signature (e.g., `_try_create_image_file`)
+  - List the candidates in an ordered dispatch table of `{constructor, tag}` pairs (e.g., `MATCH_FILE`), ordered so ambiguous data resolves to the preferred type
+  - Iterate the table with `pcall`; the first constructor that succeeds determines the result - return the tag together with the constructed value
+  - Tag results with an `---@enum` table on the module (e.g., `media.Type`) instead of magic strings or numbers
 - **Type annotations**: Mandatory and strict - see [type-annotations.md](type-annotations.md) for the full rules
 
 ## Global Variables and Functions

@@ -31,6 +31,8 @@ A bare `table` or `any` defeats the type checker; always use the most specific t
 - **Fields**: Class fields should be documented with `---@field name Type`
   - For constants/configuration tables with literal values, the Lua language server can infer types automatically - explicit field annotations are optional
 - **Variadic functions**: Functions using `...` should document the variadic parameter with `---@param ... Type`
+- **Enums**: Constant tables used as enums are annotated with `---@enum Name` so values can be typed as the enum instead of `number`/`string` - e.g., `---@enum Media.Type` in [utils/media.lua](../utils/media.lua)
+- **Module tables**: Modules (snake_case tables, not instantiated) still get a PascalCase `---@class` annotation so the language server can type them - e.g., `---@class Media` in [utils/media.lua](../utils/media.lua)
 
 ## LÖVE Framework Types
 
