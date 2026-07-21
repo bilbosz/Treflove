@@ -59,6 +59,13 @@ The project uses:
 
 Verify changes with `./test-code.sh`, `./lint-code.sh`, `./diagnose-code.sh`, and by running the app (`./run.sh`).
 
+## Continuous Integration
+
+GitHub Actions ([.github/workflows/ci.yml](../.github/workflows/ci.yml)) runs on every push:
+
+- **Test, lint, diagnose**: `./test-code.sh` (LuaJIT), `./lint-code.sh`, and `./diagnose-code.sh` (fails if the diagnostics JSON is non-empty; lua-language-server version is pinned in the workflow)
+- **Test (LÖVE)**: the same suite via `love . test`, headless with dummy SDL video/audio drivers
+
 ## Tests
 
 The suite lives in [tests/](../tests/) and has no external dependencies:
