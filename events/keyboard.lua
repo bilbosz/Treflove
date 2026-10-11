@@ -1,58 +1,30 @@
-local EventManager = require("events.event-manager")
+local Event = require("events.event")
 
----@class KeyboardEventListener
----@field private _ignore_text_events boolean|nil
-local KeyboardEventListener = class("KeyboardEventListener")
-
----@param ignore_text_events boolean|nil When true, key events are delivered even during text input
-function KeyboardEventListener:init(ignore_text_events)
-    self._ignore_text_events = ignore_text_events
-end
-
----@param key love.KeyConstant
-function KeyboardEventListener:on_key_pressed(key)
-
-end
-
----@param key love.KeyConstant
-function KeyboardEventListener:on_key_released(key)
-
-end
-
----@return boolean|nil
-function KeyboardEventListener:ignore_text_events()
-    return self._ignore_text_events
-end
-
----@class KeyboardManager: EventManager
-local KeyboardManager = class("KeyboardManager", EventManager)
+---Dispatches key presses and releases as the `key_pressed` / `key_released`
+---events. Both are always delivered, also while text input is active, so
+---navigation keeps working while typing (backstack, form focus, button
+---activation); text editing keys are routed separately by `TextEventManager`.
+---
+---Handlers receive `(owner, key)`; e.g.
+---`app.keyboard_manager.key_pressed:register(self, self.on_key_pressed)`.
+---@class KeyboardManager
+---@field public key_pressed Event Triggered with (key)
+---@field public key_released Event Triggered with (key)
+local KeyboardManager = class("KeyboardManager")
 
 function KeyboardManager:init()
-    EventManager.init(self, KeyboardEventListener)
+    self.key_pressed = Event()
+    self.key_released = Event()
 end
 
 ---@param key love.KeyConstant
-function KeyboardManager:key_pressed(key)
-    self:invoke_event(KeyboardEventListener.on_key_pressed, key)
+function KeyboardManager:dispatch_key_pressed(key)
+    self.key_pressed:trigger(key)
 end
 
 ---@param key love.KeyConstant
-function KeyboardManager:key_released(key)
-    self:invoke_event(KeyboardEventListener.on_key_released, key)
-end
-
----@param method function Listener class method identifying the event
----@param ... any Arguments forwarded to each listener
-function KeyboardManager:invoke_event(method, ...)
-    assert(not self._lock)
-    self._lock = true
-    for listener, listener_method in pairs(self._methods[method]) do
-        if not self._to_remove[listener] and (listener:ignore_text_events() or not app.text_event_manager:is_text_input()) then
-            listener_method(listener, ...)
-        end
-    end
-    self._lock = false
-    self:handle_postponed()
+function KeyboardManager:dispatch_key_released(key)
+    self.key_released:trigger(key)
 end
 
 ---@param key love.KeyConstant
@@ -61,7 +33,4 @@ function KeyboardManager:is_key_down(key)
     return love.keyboard.isDown(key)
 end
 
-return {
-    Listener = KeyboardEventListener,
-    Manager = KeyboardManager
-}
+return KeyboardManager

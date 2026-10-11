@@ -1,17 +1,16 @@
 local ClippingRectangle = require("controls.clipping-rectangle")
-local FileSystemDropEventListener = require("events.file-drop-event").Listener
 local Control = require("controls.control")
 local Text = require("controls.text")
 local Consts = require("app.consts")
 local Rectangle = require("controls.rectangle")
 
----@class PreviewArea: ClippingRectangle, FileSystemDropEventListener
+---@class PreviewArea: ClippingRectangle
 ---@field parent AssetsPanel
 ---@field _preview_labels Control
 ---@field _drop_file_labels Control
 ---@field content_parent Control Parent for preview components, centered in the area
 ---@field _preview PreviewImageArea|PreviewAudioArea|nil
-local PreviewArea = class("PreviewArea", ClippingRectangle, FileSystemDropEventListener)
+local PreviewArea = class("PreviewArea", ClippingRectangle)
 
 local PREVIEW_STRING = "Preview"
 local DROP_FILE_STRING = "Drop File Here"
@@ -88,13 +87,13 @@ end
 ---@param height number
 function PreviewArea:init(parent, width, height)
     ClippingRectangle.init(self, parent, width, height)
-    FileSystemDropEventListener.init(self, true)
     _create_background(self)
     _create_content_parent(self)
 
     self._preview = nil
 
-    app.file_system_drop_event_manager:register_listener(self)
+    app.file_system_drop_event_manager.file_dropped:register(self, self.on_file_system_drop)
+    app.file_system_drop_event_manager:set_receive_through(self, true)
 end
 
 ---@param x number
@@ -123,7 +122,8 @@ function PreviewArea:reset()
 end
 
 function PreviewArea:release()
-    app.file_system_drop_event_manager:unregister_listener(self)
+    app.file_system_drop_event_manager.file_dropped:unregister(self)
+    app.file_system_drop_event_manager:set_receive_through(self, false)
 end
 
 return PreviewArea

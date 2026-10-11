@@ -5,17 +5,10 @@ local BackstackManager = require("utils.backstack-manager")
 
 test.suite("BackstackManager")
 
-test.case("registers itself with the keyboard manager", function()
-    local registered
-    mocks.install_app({
-        keyboard_manager = {
-            register_listener = function(_, listener)
-                registered = listener
-            end
-        }
-    })
+test.case("registers itself on the key pressed event", function()
+    local app_mock = mocks.install_app()
     local manager = BackstackManager()
-    test.assert_eq(registered, manager)
+    test.assert_eq(app_mock.keyboard_manager.key_pressed:get_handler(manager), BackstackManager.on_key_pressed)
 end)
 
 test.case("back invokes and pops callbacks in LIFO order", function()
@@ -77,5 +70,22 @@ test.case("the backstack key triggers back", function()
     test.assert_eq(calls, 0, "other keys are ignored")
 
     manager:on_key_pressed(Consts.BACKSTACK_KEY)
+    test.assert_eq(calls, 1)
+end)
+
+test.case("the backstack key dispatched by the keyboard manager triggers back", function()
+    local app_mock = mocks.install_app()
+    local manager = BackstackManager()
+    local calls = 0
+    local function _count()
+        calls = calls + 1
+    end
+    manager:push(_count)
+    manager:push(_count)
+
+    app_mock.keyboard_manager:dispatch_key_pressed("a")
+    test.assert_eq(calls, 0, "other keys are ignored")
+
+    app_mock.keyboard_manager:dispatch_key_pressed(Consts.BACKSTACK_KEY)
     test.assert_eq(calls, 1)
 end)

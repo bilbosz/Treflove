@@ -1,14 +1,12 @@
-local UpdateEventListener = require("events.update-event").Listener
-local ResizeEventListener = require("events.resize").Listener
 local ClippingRectangle = require("controls.clipping-rectangle")
 local Consts = require("app.consts")
 local Text = require("controls.text")
 
----@class NotificationPanel: UpdateEventListener, ResizeEventListener
+---@class NotificationPanel
 ---@field private _anchor Control
 ---@field private _width number
 ---@field private _height number
-local NotificationPanel = class("NotificationPanel", UpdateEventListener, ResizeEventListener)
+local NotificationPanel = class("NotificationPanel")
 
 ---@private
 function NotificationPanel:_center_anchor()
@@ -62,8 +60,8 @@ end
 function NotificationPanel:init()
     self:_center_anchor()
     self:_position_anchor()
-    app.update_event_manager:register_listener(self)
-    app.resize_manager:register_listener(self)
+    app.update_event:register(self, self.on_update)
+    app.resize_manager.resized:register(self, self.on_resize)
 end
 
 function NotificationPanel:update_notifications()

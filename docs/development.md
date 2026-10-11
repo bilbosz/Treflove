@@ -72,7 +72,8 @@ The suite lives in [tests/](../tests/) and has no external dependencies:
 
 - [tests/run.lua](../tests/run.lua) — entry point; lists test modules in `TEST_MODULES` (add new files there)
 - [tests/lib/test.lua](../tests/lib/test.lua) — assertion framework: `test.suite(name)`, `test.case(name, fn)`, `assert_eq`, `assert_true/false`, `assert_near`, `assert_error`, `assert_deep_eq`
-- [tests/lib/mocks.lua](../tests/lib/mocks.lua) — test doubles: `install_app()` (fake global `app` with a controllable clock and captured logs), `make_channel()`/`make_thread()` (in-memory LÖVE channel/thread stand-ins), `ensure_love_data()` (real `love.data` under LÖVE, reversible fake under plain LuaJIT)
+- [tests/lib/mocks.lua](../tests/lib/mocks.lua) — test doubles: `install_app()` (fake global `app` with a controllable clock and captured logs), `make_channel()`/`make_thread()` (in-memory LÖVE channel/thread stand-ins), `make_keyboard()` (fake `love.keyboard` backend for `TextEventManager`), `ensure_love_data()` (real `love.data` under LÖVE, reversible fake under plain LuaJIT)
+- [tests/lib/utf8-shim.lua](../tests/lib/utf8-shim.lua) — pure-Lua `utf8.len/offset/codes`, preloaded by `tests/run.lua` under plain LuaJIT (LÖVE bundles the real `utf8`)
 - Test files are named `test-<module>.lua`, one per module under test
 
 Conventions: pure calculation modules (`utils/aabb.lua`, `utils/table.lua`, `utils/class.lua`, `app/arg-parser.lua`) are tested with plain asserts; modules with runtime dependencies (event managers, `DeferManager`, `BackstackManager`, `Connection`/`RemoteProcedure`) get mocks from `tests/lib/mocks.lua` instead of the real `app`/LÖVE objects. Classes defined inside test files use a `Test` name prefix (e.g. `TestEchoRp`) so they can't collide with production class names.

@@ -2,8 +2,6 @@ local Image = require("controls.image")
 local Control = require("controls.control")
 local Model = require("data.model")
 local ClippingRectangle = require("controls.clipping-rectangle")
-local PointerEventListener = require("events.pointer-event").Listener
-local WheelEventListener = require("events.wheel-event").Listener
 local Selection = require("game.page.selection")
 local Token = require("game.token.token")
 local Consts = require("app.consts")
@@ -15,7 +13,7 @@ local Consts = require("app.consts")
 ---@field image string Path of the background image asset
 ---@field tokens string[] Names of the tokens placed on the page
 
----@class Page: Model, ClippingRectangle, PointerEventListener, WheelEventListener
+---@class Page: Model, ClippingRectangle
 ---@field _background Image
 ---@field _page_coordinates Control Coordinate system scaled to page meters
 ---@field _name string
@@ -26,7 +24,7 @@ local Consts = require("app.consts")
 ---@field _selection Selection
 ---@field _tokens Token[]
 ---@field _select_set_start_pos table<Token, number[]>|nil
-local Page = class("Page", Model, ClippingRectangle, PointerEventListener, WheelEventListener)
+local Page = class("Page", Model, ClippingRectangle)
 
 ---@private
 ---@param path string
@@ -58,7 +56,6 @@ function Page:init(data, game_screen, width, height)
 
     Model.init(self, data)
     ClippingRectangle.init(self, game_screen:get_control(), width, height)
-    PointerEventListener.init(self, true)
     self._name = data.name
     self._pixel_per_meter = data.pixel_per_meter
     self._page_width = data.width
@@ -74,8 +71,13 @@ function Page:init(data, game_screen, width, height)
         table.insert(self._tokens, Token(app.data.tokens[name], self._page_coordinates))
     end
 
-    app.pointer_event_manager:register_listener(self)
-    app.wheel_event_manager:register_listener(self)
+    local pointer_event_manager = app.pointer_event_manager
+    pointer_event_manager.pointer_down:register(self, self.on_pointer_down)
+    pointer_event_manager.pointer_up:register(self, self.on_pointer_up)
+    pointer_event_manager.pointer_move:register(self, self.on_pointer_move)
+    -- tokens on the page consume pointer events, the page still has to see them
+    pointer_event_manager:set_receive_through(self, true)
+    app.wheel_event:register(self, self.on_wheel_moved)
 end
 
 ---@return Control

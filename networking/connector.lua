@@ -1,6 +1,4 @@
-local UpdateEventListener = require("events.update-event").Listener
-
----@class Connector: UpdateEventListener
+---@class Connector
 ---@field private _address string
 ---@field private _port string
 ---@field private _channel love.Channel
@@ -8,7 +6,7 @@ local UpdateEventListener = require("events.update-event").Listener
 ---@field private _thread love.Thread
 ---@field private _connection_manager ConnectionManager
 ---@field private _last_start number|nil Time of the last connection thread start
-local Connector = class("Connector", UpdateEventListener)
+local Connector = class("Connector")
 
 ---@param address string
 ---@param port string
@@ -26,7 +24,7 @@ function Connector:start(connection_manager)
     self._connection_manager = connection_manager
     self:_try_restart_connection()
 
-    app.update_event_manager:register_listener(self)
+    app.update_event:register(self, self.on_update)
 end
 
 ---@private

@@ -1,14 +1,13 @@
 local Rectangle = require("controls.rectangle")
-local UpdateEventListener = require("events.update-event").Listener
 local Aabb = require("utils.aabb")
 local Consts = require("app.consts")
 
----@class Selection: Rectangle, UpdateEventListener
+---@class Selection: Rectangle
 ---@field _page Page
 ---@field _start_point number[]
 ---@field _end_point number[]
 ---@field _select_set table<Token, boolean> Currently selected tokens
-local Selection = class("Selection", Rectangle, UpdateEventListener)
+local Selection = class("Selection", Rectangle)
 
 ---@param self Selection
 local function _update_rectangle(self)
@@ -34,7 +33,7 @@ function Selection:init(page)
         0
     }
     self._select_set = {}
-    app.update_event_manager:register_listener(self)
+    app.update_event:register(self, self.on_update)
 end
 
 function Selection:show()

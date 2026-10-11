@@ -4,15 +4,14 @@ local Logo = require("game.logo")
 local Rectangle = require("controls.rectangle")
 local Screen = require("screens.screen")
 local Text = require("controls.text")
-local UpdateEventListener = require("events.update-event").Listener
 
----@class WaitingScreen: Screen, UpdateEventListener
+---@class WaitingScreen: Screen
 ---@field private _background Rectangle
 ---@field private _layout Control
 ---@field private _logo Logo
 ---@field private _message string
 ---@field private _text Text
-local WaitingScreen = class("WaitingScreen", Screen, UpdateEventListener)
+local WaitingScreen = class("WaitingScreen", Screen)
 
 ---@private
 function WaitingScreen:_create_background()
@@ -60,7 +59,7 @@ function WaitingScreen:init(message)
     self:_create_layout()
     self:_create_logo()
     self:_create_text()
-    app.update_event_manager:register_listener(self)
+    app.update_event:register(self, self.on_update)
 end
 
 function WaitingScreen:show()

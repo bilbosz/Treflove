@@ -1,4 +1,3 @@
-local UpdateEventListener = require("events.update-event").Listener
 local NotificationPanel = require("panels.notification-panel")
 local Consts = require("app.consts")
 
@@ -7,15 +6,15 @@ local Consts = require("app.consts")
 ---@field public start_time number
 ---@field public duration number
 
----@class NotificationManager: UpdateEventListener
+---@class NotificationManager
 ---@field private _panel NotificationPanel
 ---@field private _notifications Notification[]
-local NotificationManager = class("NotificationManager", UpdateEventListener)
+local NotificationManager = class("NotificationManager")
 
 function NotificationManager:init()
     self._panel = NotificationPanel()
     self._notifications = {}
-    app.update_event_manager:register_listener(self)
+    app.update_event:register(self, self.on_update)
 end
 
 ---@param message string

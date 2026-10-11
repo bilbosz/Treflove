@@ -1,6 +1,5 @@
 local Model = require("data.model")
 local Control = require("controls.control")
-local PointerEventListener = require("events.pointer-event").Listener
 local ClippingMask = require("controls.clipping-mask")
 local Image = require("controls.image")
 local Consts = require("app.consts")
@@ -13,7 +12,7 @@ local Text = require("controls.text")
 ---@field position number[]
 ---@field avatar string Path of the avatar image asset
 
----@class Token: Model, Control, PointerEventListener
+---@class Token: Model, Control
 ---@field _diameter number
 ---@field _clip ClippingMask
 ---@field _image Image
@@ -23,7 +22,7 @@ local Text = require("controls.text")
 ---@field _drag_mouse_button number
 ---@field _prev_drag_mouse_x number|nil
 ---@field _prev_drag_mouse_y number|nil
-local Token = class("Token", Model, Control, PointerEventListener)
+local Token = class("Token", Model, Control)
 
 ---@param self Token
 ---@param path string Avatar image asset path
@@ -78,7 +77,6 @@ end
 function Token:init(data, parent)
     Model.init(self, data)
     Control.init(self, parent)
-    PointerEventListener.init(self)
 
     self._drag_mouse_button = 1
     self._prev_drag_mouse_x, self._prev_drag_mouse_y = nil, nil
@@ -91,7 +89,19 @@ function Token:init(data, parent)
 
     self._is_selected = false
 
-    app.pointer_event_manager:register_listener(self)
+    local pointer_event_manager = app.pointer_event_manager
+    pointer_event_manager.pointer_down:register(self, self.on_pointer_event)
+    pointer_event_manager.pointer_up:register(self, self.on_pointer_event)
+    pointer_event_manager.pointer_move:register(self, self.on_pointer_event)
+end
+
+---Consumes pointer events over the token, so controls below it do not react;
+---receive-through controls such as the Page still get them.
+---@param x number
+---@param y number
+---@param id PointerId
+function Token:on_pointer_event(x, y, id)
+
 end
 
 ---@return number

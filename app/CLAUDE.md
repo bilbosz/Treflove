@@ -35,13 +35,13 @@ The `app/` directory contains the application layer that bootstraps and manages 
 - Initializes time tracking (`_start_time`, `_time`)
 - Creates Logger instance
 - Stores parsed arguments
-- Creates UpdateEventManager and DeferManager
+- Creates the `update_event` (`Event`) and DeferManager
 - Calls `register_love_callbacks()` to wire up LÖVE
 
 **LÖVE Callback Registration**:
 - `love.load()` → calls `self:load()` (implemented by Client/Server)
 - `love.draw()` → renders `self.root` control hierarchy (if window enabled)
-- `love.update(dt)` → updates defer manager, checks for quit, updates time, invokes update events, runs GC step
+- `love.update(dt)` → updates defer manager, checks for quit, updates time, triggers `update_event`, runs GC step
 - `love.errorhandler()` → prints error and stack trace in debug mode, silent otherwise
 - `love.keypressed()` → handles F2 (toggle AABB drawing), F4 (quit)
 
@@ -73,7 +73,8 @@ The `app/` directory contains the application layer that bootstraps and manages 
 ### Fields (see @field annotations)
 
 The App class declares all manager fields that may exist in Client or Server:
-- Event managers: pointer, keyboard, wheel, button, text, resize, file-drop, update
+- Event managers: pointer, keyboard, button, text, resize, file-drop
+- Plain events: `update_event`, `wheel_event`
 - Core managers: connection, screen, asset, backstack, notification, options
 - Session and data
 - Dimensions: width, height
@@ -92,7 +93,8 @@ Creates all UI-related managers:
 - **ConnectionManager**: Connects to server
 - **ResizeManager**: Handles window resizing
 - **ScreenManager**: Manages screen transitions
-- **Event Managers**: Pointer, Wheel, Button, Keyboard, Text, FileDropEvent
+- **Event Managers**: Pointer, Button, Keyboard, Text, FileDropEvent
+- **Wheel event**: plain `Event` (`wheel_event`)
 - **NotificationManager**: Shows notifications
 - **OptionsManager**: Client settings
 - **AssetManager**: Asset download/upload
@@ -111,14 +113,14 @@ Creates all UI-related managers:
 
 Client overrides `register_love_callbacks()` and extends it with:
 - **F11**: Toggle fullscreen
-- **Escape**: Backstack navigation (handled in keyboard_manager)
-- **Mouse events**: mousepressed, mousereleased, mousemoved → dispatched to pointer_event_manager and button_event_manager
-- **Touch events**: touchpressed, touchreleased, touchmoved → dispatched to pointer_event_manager and button_event_manager
-- **Wheel**: wheelmoved → wheel_event_manager
-- **Keyboard**: keypressed, keyreleased → keyboard_manager and text_event_manager
-- **Text**: textinput → text_event_manager
-- **File drop**: filedropped → file_system_drop_event_manager
-- **Resize**: resize → resize_manager
+- **Escape**: Backstack navigation (BackstackManager listens on `keyboard_manager.key_pressed`)
+- **Mouse events**: mousepressed, mousereleased, mousemoved → `dispatch_pointer_down/up/move` on pointer_event_manager and button_event_manager
+- **Touch events**: touchpressed, touchreleased, touchmoved → `dispatch_pointer_down/up/move` on pointer_event_manager and button_event_manager
+- **Wheel**: wheelmoved → `wheel_event:trigger(x, y)`
+- **Keyboard**: keypressed → `keyboard_manager:dispatch_key_pressed` and `text_event_manager:key_pressed`; keyreleased → `keyboard_manager:dispatch_key_released`
+- **Text**: textinput → `text_event_manager:text_input`
+- **File drop**: filedropped → `file_system_drop_event_manager:file_drop`
+- **Resize**: resize → `resize_manager:resize`
 
 ### Event Flow
 

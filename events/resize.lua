@@ -1,21 +1,15 @@
-local EventManager = require("events.event-manager")
+local Event = require("events.event")
 
----@class ResizeEventListener
-local ResizeEventListener = class("ResizeEventListener")
+---Tracks the window size and fullscreen state. Consumers register on the
+---`resized` event: `app.resize_manager.resized:register(self, self.on_resize)`.
+---@class ResizeManager
+---@field public resized Event Triggered with (width, height) of the rescaled root after every resize
+---@field private _width number Remembered non-fullscreen window width
+---@field private _height number Remembered non-fullscreen window height
+local ResizeManager = class("ResizeManager")
 
----@param width number
----@param height number
-function ResizeEventListener:on_resize(width, height)
-
-end
-
----@class ResizeManager: EventManager
----@field _width number Remembered non-fullscreen window width
----@field _height number Remembered non-fullscreen window height
-local ResizeManager = class("ResizeManager", EventManager)
-
----@param self ResizeManager
-local function _update_non_fs_size(self)
+---@private
+function ResizeManager:_update_non_fs_size()
     if not self:get_fullscreen() then
         self._width, self._height = self:get_dimensions()
     end
@@ -24,14 +18,14 @@ end
 function ResizeManager:init()
     self._width = config.window.width or 0
     self._height = config.window.height or 0
-    _update_non_fs_size(self)
-    EventManager.init(self, ResizeEventListener)
+    self:_update_non_fs_size()
+    self.resized = Event()
 end
 
 function ResizeManager:resize()
-    _update_non_fs_size(self)
+    self:_update_non_fs_size()
     app:rescale_root()
-    self:invoke_event(ResizeEventListener.on_resize, app.width, app.height)
+    self.resized:trigger(app.width, app.height)
 end
 
 ---@return number, number
@@ -57,7 +51,4 @@ function ResizeManager:get_fullscreen()
     return (love.window.getFullscreen())
 end
 
-return {
-    Listener = ResizeEventListener,
-    Manager = ResizeManager
-}
+return ResizeManager

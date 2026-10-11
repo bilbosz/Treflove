@@ -1,8 +1,7 @@
 local Consts = require("app.consts")
 local Control = require("controls.control")
 local DeferManager = require("events.defer-manager")
-local UpdateEventListener = require("events.update-event").Listener
-local UpdateEventManager = require("events.update-event").Manager
+local Event = require("events.event")
 local Logger = require("utils.logger")
 local Utils = require("utils.utils")
 
@@ -27,8 +26,8 @@ local Utils = require("utils.utils")
 ---@field public screen_manager ScreenManager
 ---@field public session Session
 ---@field public text_event_manager TextEventManager
----@field public update_event_manager UpdateEventManager
----@field public wheel_event_manager WheelEventManager
+---@field public update_event Event Triggered with (dt) every frame
+---@field public wheel_event Event Triggered with (x, y) wheel movement (client only)
 ---@field public width number
 ---@field protected load fun(self:App)
 ---@field protected params string[]
@@ -98,7 +97,7 @@ function App:register_love_callbacks()
             love.event.quit(Consts.APP_SUCCESS_EXIT_CODE)
         end
         self._time = Utils.get_time() - self._start_time
-        self.update_event_manager:invoke_event(UpdateEventListener.on_update, dt)
+        self.update_event:trigger(dt)
         collectgarbage("step")
     end
 end
@@ -151,7 +150,7 @@ function App:init(params)
     self.width = nil
     self.height = nil
     self.root = nil
-    self.update_event_manager = UpdateEventManager()
+    self.update_event = Event()
     self.defer_manager = DeferManager()
 
     self:register_love_callbacks()
