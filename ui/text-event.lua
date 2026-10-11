@@ -1,136 +1,67 @@
-local EventManager = require("events.event-manager")
-local utf8 = require("utf8")
+local Event = require("events.event")
 
----@class TextEventListener
----@field private _text string
-local TextEventListener = class("TextEventListener")
+---Turns LÖVE text input and editing keys into events for the focused text
+---field. A field registers its methods while it has focus, e.g.
+---`app.text_event_manager.text_appended:register(self, self.on_append_text)`,
+---and applies them to its own `TextBuffer` (the manager holds no text).
+---
+---- `text_input(text)` (from `love.textinput`) triggers `text_appended` (text);
+---- `key_pressed(key)` (from `love.keypressed`), only while text input is
+---  active: backspace triggers `characters_removed` (1), ctrl+backspace
+---  `word_removed`, return `entered`.
+---
+---`set_text_input`/`is_text_input` switch and query LÖVE text input, which
+---`KeyboardManager` also consults to suppress plain key events while typing.
+---All keyboard access goes through the injected `love.keyboard` backend so
+---tests can pass a fake.
+---@class TextEventManager
+---@field public text_appended Event Triggered with (text) typed by the user
+---@field public characters_removed Event Triggered with (character_number) to remove from the end
+---@field public word_removed Event Triggered when the last word should be removed
+---@field public entered Event Triggered when return is pressed
+---@field private _keyboard love.keyboard
+local TextEventManager = class("TextEventManager")
 
----@type number[]
-local WHITESPACE_CODES = {
-    0x9,
-    0xA,
-    0xB,
-    0xC,
-    0xD,
-    0x20,
-    0x85,
-    0xA0,
-    0x1680,
-    0x2000,
-    0x2001
-}
-
-function TextEventListener:init()
-    self._text = ""
-end
-
----@param text string
-function TextEventListener:on_edit(text)
-
-end
-
-function TextEventListener:on_enter()
-
-end
-
-function TextEventListener:on_remove_empty()
-
-end
-
----@param character_number number
-function TextEventListener:on_remove_characters(character_number)
-    local offset = utf8.offset(self._text, -character_number)
-    if self._text == "" and character_number > 0 then
-        self:on_remove_empty()
-    elseif offset then
-        self._text = string.sub(self._text, 1, offset - 1)
-        self:on_edit(self._text)
-    end
-end
-
-function TextEventListener:on_remove_word()
-    if self._text == "" then
-        self:on_remove_empty()
-    else
-        local last_space = nil
-        for i, code in utf8.codes(self._text) do
-            for _, wcode in ipairs(WHITESPACE_CODES) do
-                if code == wcode then
-                    last_space = i
-                end
-            end
-        end
-        if last_space then
-            self._text = string.sub(self._text, 1, last_space - 1)
-        else
-            self._text = ""
-        end
-        self:on_edit(self._text)
-    end
-end
-
----@param text string
-function TextEventListener:on_append_text(text)
-    self._text = self._text .. text
-    self:on_edit(self._text)
-end
-
----@return string
-function TextEventListener:get_text()
-    return self._text
-end
-
----@param text string
-function TextEventListener:set_text(text)
-    self._text = text
-end
-
----@return number
-function TextEventListener:get_text_length()
-    return utf8.len(self._text)
-end
-
----@class TextEventManager: EventManager
-local TextEventManager = class("TextEventManager", EventManager)
-
-function TextEventManager:init()
-    EventManager.init(self, TextEventListener)
+---@param keyboard love.keyboard|nil Keyboard backend; defaults to `love.keyboard`
+function TextEventManager:init(keyboard)
+    self.text_appended = Event()
+    self.characters_removed = Event()
+    self.word_removed = Event()
+    self.entered = Event()
+    self._keyboard = keyboard or love.keyboard
     self:set_text_input(false)
-    love.keyboard.setKeyRepeat(true)
+    self._keyboard.setKeyRepeat(true)
 end
 
 ---@param text string
 function TextEventManager:text_input(text)
-    self:invoke_event(TextEventListener.on_append_text, text)
+    self.text_appended:trigger(text)
 end
 
----@param key string
+---@param key love.KeyConstant
 function TextEventManager:key_pressed(key)
     if not self:is_text_input() then
         return
     end
     if key == "backspace" then
-        if love.keyboard.isDown("lctrl", "rctrl") then
-            self:invoke_event(TextEventListener.on_remove_word)
+        if self._keyboard.isDown("lctrl", "rctrl") then
+            self.word_removed:trigger()
         else
-            self:invoke_event(TextEventListener.on_remove_characters, 1)
+            self.characters_removed:trigger(1)
         end
     elseif key == "return" then
-        self:invoke_event(TextEventListener.on_enter)
+        self.entered:trigger()
     end
 end
 
 ---@param value boolean
 function TextEventManager:set_text_input(value)
-    love.keyboard.setTextInput(value)
+    self._keyboard.setTextInput(value)
 end
 
 ---@return boolean
 function TextEventManager:is_text_input()
-    return love.keyboard.hasTextInput()
+    return self._keyboard.hasTextInput()
 end
 
-return {
-    Listener = TextEventListener,
-    Manager = TextEventManager
-}
+return TextEventManager

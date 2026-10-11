@@ -60,13 +60,20 @@ The class name is used as the RPC identifier. Examples: LoginRp, UploadAssetRp, 
 
 ## Event System
 
-Event managers follow a consistent pattern in [events/](../events/):
-- Managers maintain lists of listeners
-- Listeners register/unregister with managers
-- Events are dispatched to all registered listeners
-- Multiple event types: PointerEvent, WheelEvent, ButtonEvent, TextEvent, Keyboard, FileDropEvent, ResizeEvent, UpdateEvent
+Events are composed, not inherited: a single [Event](../events/event.lua) class is instantiated by managers (or by `app` directly) and consumers register handlers on it:
+- `Event` API: `register(owner, handler)`, `unregister(owner)`, `release()`, `trigger(...)`, `get_handler(owner)`; handlers are called as `handler(owner, ...)`
+- Owners are weak keys, so a collected owner drops out without unregistering; handlers are held strongly, so register methods, never closures capturing the owner: `app.update_event:register(self, self.on_update)`
+- Registering during a trigger is deferred until it finishes; unregistering takes effect immediately
+- Unregistering is optional, since owners are weak keys; consumers with an explicit lifecycle unregister when it ends - Connection and PreviewArea in `release()`, FormScreen in `hide()`, Input, TextInput and TextButton in `on_screen_hide()`, TextInput and TextButton also in `on_focus_lost()`
 
-Client sets up all event managers in its `init` and wires them to LÖVE callbacks in `register_love_callbacks`.
+Events by source:
+- Broadcast events: `app.update_event` (dt), `app.wheel_event` (x, y, client only), `app.resize_manager.resized` (width, height)
+- [KeyboardManager](../events/keyboard.lua): `key_pressed`/`key_released` (key), always delivered, also during text input (backstack, form navigation, button activation)
+- [PointerEventManager](../events/pointer-event.lua) (`pointer_down/up/move`) and [FileSystemDropEventManager](../events/file-drop-event.lua) (`file_dropped`): owners are Controls; dispatch is hit-tested by [hit-test.lua](../events/hit-test.lua) instead of `trigger` - only visible controls under the point, top-most first, a falsy return consumes the event, `set_receive_through` opts a control into events consumed above it
+- [ButtonEventManager](../ui/button-event.lua): drives the [Button](../ui/button.lua) helper owned by every [Input](../ui/input.lua) (hover/selection state, events `clicked`, `selected`, `unselected`, `pointer_entered`, `pointer_left`); controls register with `register(ctrl, button)`
+- [TextEventManager](../ui/text-event.lua): `text_appended`, `characters_removed`, `word_removed`, `entered` go to the focused text field, which applies them to its [TextBuffer](../ui/text-buffer.lua) helper (UTF-8 aware editing, events `edited`, `removed_empty`); `set_text_input`/`is_text_input` toggle LÖVE text input
+
+Client creates the managers in its `init` and wires them to LÖVE callbacks in `register_love_callbacks`: `dispatch_*` methods for keyboard and pointer input, `text_input`/`key_pressed` on TextEventManager, `file_drop`, `resize`, and `wheel_event:trigger`.
 
 ## UI Control Hierarchy
 
@@ -124,7 +131,7 @@ The [server/](../server/) directory contains server data, not source code: [serv
 
 **Manager Pattern**: Centralized managers coordinate subsystems (ConnectionManager, ScreenManager, AssetManager, event managers, etc.).
 
-**Event Listeners**: Components implement listener interfaces and register with managers.
+**Composed Events**: Managers expose `Event` fields; components register their methods on them instead of inheriting listener classes.
 
 **Remote Procedures**: Request-response pattern over network connections using class names as identifiers.
 

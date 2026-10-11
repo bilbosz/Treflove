@@ -1,77 +1,38 @@
-local Control = require("controls.control")
-local EventManager = require("events.event-manager")
+local Event = require("events.event")
+local hit_test = require("events.hit-test")
 
----@class FileSystemDropEventListener: Control
----@field receive_through boolean|nil When true, the listener also receives events consumed by a listener above it
-local FileSystemDropEventListener = class("FileSystemDropEventListener", Control)
+---@alias FileDroppedHandler fun(ctrl: Control, x: number, y: number, dropped_file: love.DroppedFile): boolean|nil Return truthy to let the event through to controls below
 
----@param receive_through boolean|nil
-function FileSystemDropEventListener:init(receive_through)
-    self.receive_through = receive_through
-end
-
----@param x number
----@param y number
----@param dropped_file love.DroppedFile
----@return boolean|nil pass_through True lets the event through to listeners below
-function FileSystemDropEventListener:on_file_system_drop(x, y, dropped_file)
-
-end
-
----@class FileSystemDropEventManager: EventManager
-local FileSystemDropEventManager = class("FileSystemDropEventManager", EventManager)
-
----@param ctrl Control
----@param listeners table<FileSystemDropEventListener, function> Registered listener methods indexed by control
----@param x number
----@param y number
----@param list FileSystemDropEventListener[] Output list of hit listeners, in tree order
-local function _get_listener_list(ctrl, listeners, x, y, list)
-    if not ctrl:is_visible() or not ctrl:get_global_recursive_aabb():is_point_inside(x, y) then
-        return nil
-    end
-    if listeners[ctrl] then
-        table.insert(list, ctrl)
-    end
-    for _, child in ipairs(ctrl:get_children()) do
-        _get_listener_list(child, listeners, x, y, list)
-    end
-end
+---Dispatches files dropped onto the window to Controls under the pointer.
+---Owners of the `file_dropped` event are always Controls and their handlers
+---(see `FileDroppedHandler`) receive `(ctrl, x, y, dropped_file)`:
+---`app.file_system_drop_event_manager.file_dropped:register(self, self.on_file_system_drop)`.
+---
+---Dispatch is hit-tested exactly like pointer events (see
+---`events/hit-test.lua`): top-most control first, a falsy return consumes the
+---drop. A control that must also receive drops consumed above it opts in with
+---`app.file_system_drop_event_manager:set_receive_through(self, true)`.
+---@class FileSystemDropEventManager
+---@field public file_dropped Event Hit-tested with (x, y, dropped_file) at the pointer position
+---@field private _receive_through ReceiveThroughSet
+local FileSystemDropEventManager = class("FileSystemDropEventManager")
 
 function FileSystemDropEventManager:init()
-    EventManager.init(self, FileSystemDropEventListener)
+    self.file_dropped = Event()
+    self._receive_through = hit_test.make_receive_through_set()
+end
+
+---Let `ctrl` also receive file drops consumed by a control above it.
+---@param ctrl Control
+---@param value boolean
+function FileSystemDropEventManager:set_receive_through(ctrl, value)
+    self._receive_through[ctrl] = value or nil
 end
 
 ---@param dropped_file love.DroppedFile
 function FileSystemDropEventManager:file_drop(dropped_file)
     local x, y = app.pointer_event_manager:get_position()
-    self:invoke_event(FileSystemDropEventListener.on_file_system_drop, x, y, dropped_file)
+    hit_test.dispatch(self.file_dropped, self._receive_through, x, y, dropped_file)
 end
 
----@param method function Listener class method identifying the event
----@param x number
----@param y number
----@param dropped_file love.DroppedFile
-function FileSystemDropEventManager:invoke_event(method, x, y, dropped_file)
-    local listeners = self._methods[method]
-    ---@type FileSystemDropEventListener[]
-    local list = {}
-    _get_listener_list(app.root, listeners, x, y, list)
-    local top_to_be_called = true
-    for _, ctrl in ripairs(list) do
-        local listener = listeners[ctrl]
-        if top_to_be_called then
-            local pass_through = listener(ctrl, x, y, dropped_file)
-            if not pass_through then
-                top_to_be_called = false
-            end
-        elseif ctrl.receive_through then
-            listener(ctrl, x, y, dropped_file)
-        end
-    end
-end
-
-return {
-    Listener = FileSystemDropEventListener,
-    Manager = FileSystemDropEventManager
-}
+return FileSystemDropEventManager

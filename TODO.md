@@ -89,9 +89,3 @@ Missing areas:
 - Serialization round-trips of real game data (pages, tokens, players)
 - RPC classes beyond Connection (login, asset transfer, game data)
 - Session lifecycle (login → screen transitions → logout/disconnect)
-
-### 12. Continuous integration
-
-No CI exists. Add a workflow that runs `./test-code.sh`, `./lint-code.sh`, and
-`./diagnose-code.sh` on every push, so regressions surface without relying on
-local discipline.

@@ -3,7 +3,6 @@ local Control = require("controls.control")
 local TextInput = require("ui.text-input")
 local Consts = require("app.consts")
 local Text = require("controls.text")
-local TextEventListener = require("ui.text-event").Listener
 
 ---@class MenuTextInput: MenuEntry
 ---@field private _field_name string
@@ -47,7 +46,7 @@ end
 
 ---@return string
 function MenuTextInput:get_text()
-    return TextEventListener.get_text(self._input)
+    return self._input:get_text()
 end
 
 return MenuTextInput

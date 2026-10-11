@@ -1,12 +1,87 @@
 ---Test doubles for the parts of the runtime that tests must control:
 ---the global `app`, LÖVE channels/threads, and `love.data` compression.
+local Event = require("events.event")
+local FileSystemDropEventManager = require("events.file-drop-event")
+local KeyboardManager = require("events.keyboard")
+local PointerEventManager = require("events.pointer-event")
+
 local mocks = {}
+
+-- The real pointer manager with the pointer position under test control
+-- instead of `love.mouse` (file drops are dispatched at this position).
+---@class TestPointerEventManager: PointerEventManager
+---@field position [number, number]
+local TestPointerEventManager = class("TestPointerEventManager", PointerEventManager)
+
+function TestPointerEventManager:init()
+    PointerEventManager.init(self)
+    self.position = {
+        0,
+        0
+    }
+end
+
+---@return number, number
+function TestPointerEventManager:get_position()
+    return self.position[1], self.position[2]
+end
+
+---Stand-in for the `love.keyboard` module (what `TextEventManager` talks to):
+---text input state and held keys are plain fields tests can set.
+---@return FakeKeyboard
+function mocks.make_keyboard()
+    ---@class FakeKeyboard
+    ---@field text_input boolean
+    ---@field key_repeat boolean
+    ---@field down table<love.KeyConstant, boolean> Keys reported as held by `isDown`
+    local keyboard = {
+        text_input = false,
+        key_repeat = false,
+        down = {}
+    }
+
+    ---@param enable boolean
+    function keyboard.setTextInput(enable)
+        keyboard.text_input = enable
+    end
+
+    ---@return boolean
+    function keyboard.hasTextInput()
+        return keyboard.text_input
+    end
+
+    ---@param enable boolean
+    function keyboard.setKeyRepeat(enable)
+        keyboard.key_repeat = enable
+    end
+
+    ---@param ... love.KeyConstant
+    ---@return boolean
+    function keyboard.isDown(...)
+        for _, key in ipairs({
+            ...
+        }) do
+            if keyboard.down[key] then
+                return true
+            end
+        end
+        return false
+    end
+
+    return keyboard
+end
 
 ---@param overrides table|nil Fields merged over the defaults
 ---@return AppMock
 function mocks.make_app(overrides)
     ---@class AppMock: App
     ---@field logs any[][] Arguments of every `app:log` call, in order
+    ---@field update_event Event Real event instance, triggerable by tests
+    ---@field wheel_event Event Real event instance, triggerable by tests
+    ---@field keyboard_manager KeyboardManager Real manager
+    ---@field resize_manager ResizeManagerMock Only the `resized` event (no window behind it)
+    ---@field pointer_event_manager TestPointerEventManager Real manager, position set by `set_pointer_position`
+    ---@field file_system_drop_event_manager FileSystemDropEventManager Real manager
     ---@field private _time number
     local app_mock = {
         is_client = true,
@@ -33,18 +108,25 @@ function mocks.make_app(overrides)
         })
     end
 
-    ---@return table
-    local function _stub_event_manager()
-        return {
-            register_listener = function()
-            end,
-            unregister_listener = function()
-            end
-        }
+    ---Move the fake pointer (what `pointer_event_manager:get_position()` returns).
+    ---@param x number
+    ---@param y number
+    function app_mock:set_pointer_position(x, y)
+        self.pointer_event_manager.position[1], self.pointer_event_manager.position[2] = x, y
     end
 
-    app_mock.update_event_manager = _stub_event_manager()
-    app_mock.keyboard_manager = _stub_event_manager()
+    ---@class ResizeManagerMock
+    ---@field resized Event
+    local resize_manager = {
+        resized = Event()
+    }
+
+    app_mock.update_event = Event()
+    app_mock.wheel_event = Event()
+    app_mock.keyboard_manager = KeyboardManager()
+    app_mock.resize_manager = resize_manager
+    app_mock.pointer_event_manager = TestPointerEventManager()
+    app_mock.file_system_drop_event_manager = FileSystemDropEventManager()
 
     if overrides then
         table.merge(app_mock, overrides)

@@ -1,5 +1,4 @@
 local Consts = require("app.consts")
-local UpdateEventListener = require("events.update-event").Listener
 
 ---@class RequestBody
 
@@ -18,7 +17,7 @@ local UpdateEventListener = require("events.update-event").Listener
 ---@alias ConnectionResponseHandler fun(body: table) Processes the body of a received response
 ---@alias ConnectionRequestHandler fun(body: table): table Handles a request body and returns the response body
 
----@class Connection: UpdateEventListener
+---@class Connection
 ---@field private _queue ConnectionResponseHandler[] Handlers awaiting responses, in request order
 ---@field private _in_channel love.Channel
 ---@field private _in_thread love.Thread
@@ -26,7 +25,7 @@ local UpdateEventListener = require("events.update-event").Listener
 ---@field private _out_thread love.Thread
 ---@field private _source string
 ---@field private _requests_handlers table<string, ConnectionRequestHandler>
-local Connection = class("Connection", UpdateEventListener)
+local Connection = class("Connection")
 
 ---@param message table
 ---@return string
@@ -54,7 +53,7 @@ function Connection:init(in_channel, in_thread, out_channel, out_thread)
     self._source = app.is_client and "c" or "s"
     self._requests_handlers = {}
 
-    app.update_event_manager:register_listener(self)
+    app.update_event:register(self, self.on_update)
 end
 
 ---@param id string
@@ -111,7 +110,7 @@ function Connection:on_update()
 end
 
 function Connection:release()
-    app.update_event_manager:unregister_listener(self)
+    app.update_event:unregister(self)
     self._in_thread:release()
     self._in_channel:release()
     self._out_thread:release()

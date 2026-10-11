@@ -1,12 +1,11 @@
-local KeyboardEventListener = require("events.keyboard").Listener
 local Screen = require("screens.screen")
 
----@class FormScreen: Screen, KeyboardEventListener
+---@class FormScreen: Screen
 ---@field private _focus number
 ---@field private _inputs Input[]
 ---@field private _is_showed boolean
 ---@field private _prev_focus number
-local FormScreen = class("FormScreen", Screen, KeyboardEventListener)
+local FormScreen = class("FormScreen", Screen)
 
 ---@private
 function FormScreen:_notify_listeners()
@@ -57,7 +56,6 @@ end
 
 function FormScreen:init()
     Screen.init(self)
-    KeyboardEventListener.init(self, true)
     self._inputs = {}
     self._prev_focus = nil
     self._focus = nil
@@ -67,16 +65,17 @@ end
 ---@param ... any Arguments forwarded to `Screen.show`
 function FormScreen:show(...)
     Screen.show(self, ...)
+    -- set before notifying the inputs, so they see the screen as shown (`hide` clears it first)
+    self._is_showed = true
     for _, input in ipairs(self._inputs) do
         input:on_screen_show()
     end
-    app.keyboard_manager:register_listener(self)
-    self._is_showed = true
+    app.keyboard_manager.key_pressed:register(self, self.on_key_pressed)
 end
 
 function FormScreen:hide()
     self._is_showed = false
-    app.keyboard_manager:unregister_listener(self)
+    app.keyboard_manager.key_pressed:unregister(self)
     for _, input in ipairs(self._inputs) do
         input:on_screen_hide()
     end

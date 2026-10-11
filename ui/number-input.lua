@@ -1,4 +1,3 @@
-local TextEventListener = require("ui.text-event").Listener
 local TextInput = require("ui.text-input")
 
 ---@class NumberInput: TextInput
@@ -29,22 +28,22 @@ end
 
 ---@param text string
 function NumberInput:on_append_text(text)
-    if TextEventListener.get_text(self) == "" and text == "-" then
+    if self:get_text() == "" and text == "-" then
         self._number = 0
-        TextEventListener.on_append_text(self, text)
+        TextInput.on_append_text(self, text)
         return
     end
-    local n = tonumber(TextEventListener.get_text(self) .. text)
+    local n = tonumber(self:get_text() .. text)
     if n then
         self._number = n
-        TextEventListener.on_append_text(self, text)
+        TextInput.on_append_text(self, text)
     end
 end
 
 ---@param character_number number
 function NumberInput:on_remove_characters(character_number)
-    TextEventListener.on_remove_characters(self, character_number)
-    self._number = tonumber(TextEventListener.get_text(self))
+    TextInput.on_remove_characters(self, character_number)
+    self._number = tonumber(self:get_text())
 end
 
 ---@param text string

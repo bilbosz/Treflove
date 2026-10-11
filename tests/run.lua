@@ -13,6 +13,15 @@ if not has_socket then
     end
 end
 
+-- Plain LuaJIT has no `utf8` library either (LÖVE bundles one); the text
+-- editing code only needs `len`, `offset` and `codes`.
+local has_utf8 = pcall(require, "utf8")
+if not has_utf8 then
+    package.preload["utf8"] = function()
+        return require("tests.lib.utf8-shim")
+    end
+end
+
 require("app.globals")
 
 local test = require("tests.lib.test")
@@ -21,11 +30,15 @@ local TEST_MODULES = {
     "tests.test-aabb",
     "tests.test-arg-parser",
     "tests.test-backstack-manager",
+    "tests.test-button-event",
     "tests.test-class",
     "tests.test-connection",
     "tests.test-defer-manager",
-    "tests.test-event-manager",
-    "tests.test-table"
+    "tests.test-event",
+    "tests.test-keyboard",
+    "tests.test-pointer-event",
+    "tests.test-table",
+    "tests.test-text-event"
 }
 
 for _, module_name in ipairs(TEST_MODULES) do

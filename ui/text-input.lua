@@ -1,4 +1,3 @@
-local ButtonEventListener = require("ui.button-event").Listener
 local ClippingRectangle = require("controls.clipping-rectangle")
 local Consts = require("app.consts")
 local Control = require("controls.control")
@@ -6,11 +5,18 @@ local FormScreen = require("ui.form-screen")
 local Input = require("ui.input")
 local Rectangle = require("controls.rectangle")
 local Text = require("controls.text")
-local TextEventListener = require("ui.text-event").Listener
-local UpdateEventListener = require("events.update-event").Listener
+local TextBuffer = require("ui.text-buffer")
 
----@class TextInput: Control, UpdateEventListener, ButtonEventListener, TextEventListener, Input
+---Single-line text field. Pointer hover/click come from the `Button` owned by
+---`Input`; the text lives in an owned `TextBuffer`. While focused and on a
+---shown form screen, the field registers its `on_append_text`/
+---`on_remove_characters`/`on_remove_word`/`on_enter` methods on
+---`app.text_event_manager` and applies them to the buffer (subclasses override
+---them to filter edits, see `NumberInput`). A focused field keeps its focus
+---while the screen is hidden, but receives no text until it is shown again.
+---@class TextInput: Control, Input
 ---@field private _background Rectangle
+---@field private _buffer TextBuffer
 ---@field private _caret Rectangle
 ---@field private _caret_time number|nil
 ---@field private _clip ClippingRectangle
@@ -22,7 +28,7 @@ local UpdateEventListener = require("events.update-event").Listener
 ---@field private _on_input fun()|nil
 ---@field private _padding number
 ---@field private _text_ctrl Text
-local TextInput = class("TextInput", Control, UpdateEventListener, ButtonEventListener, TextEventListener, Input)
+local TextInput = class("TextInput", Control, Input)
 
 ---@private
 function TextInput:_upload_background_view()
@@ -100,11 +106,30 @@ end
 function TextInput:_update_view()
     self:_upload_background_view()
     self:_update_content_view()
+    self:_update_text_events_registration()
+end
 
-    if self:is_focused() then
-        app.text_event_manager:register_listener(self)
+---Text events go to the field only while it is focused and its form screen is
+---shown; a hidden focused field must not receive typing.
+---@private
+function TextInput:_update_text_events_registration()
+    self:_set_text_events_registered(self:is_focused() and self:get_form_screen():is_showed())
+end
+
+---@private
+---@param value boolean
+function TextInput:_set_text_events_registered(value)
+    local manager = app.text_event_manager
+    if value then
+        manager.text_appended:register(self, self.on_append_text)
+        manager.characters_removed:register(self, self.on_remove_characters)
+        manager.word_removed:register(self, self.on_remove_word)
+        manager.entered:register(self, self.on_enter)
     else
-        app.text_event_manager:unregister_listener(self)
+        manager.text_appended:unregister(self)
+        manager.characters_removed:unregister(self)
+        manager.word_removed:unregister(self)
+        manager.entered:unregister(self)
     end
 end
 
@@ -165,8 +190,7 @@ end
 function TextInput:init(parent, form_screen, width, height, masked, on_input, on_enter)
     assert_type(form_screen, FormScreen)
     Control.init(self, parent, width, height)
-    ButtonEventListener.init(self)
-    TextEventListener.init(self)
+    self._buffer = TextBuffer()
     Input.init(self, form_screen)
     self._padding = 10
     self._masked = masked or false
@@ -175,6 +199,12 @@ function TextInput:init(parent, form_screen, width, height, masked, on_input, on
     self._caret_time = nil
     self._is_multivalue = false
     self._has_new_value = false
+    local button = self:get_button()
+    button.pointer_entered:register(self, self._update_view)
+    button.pointer_left:register(self, self._update_view)
+    button.clicked:register(self, self.on_click)
+    self._buffer.edited:register(self, self.on_edit)
+    self._buffer.removed_empty:register(self, self.on_remove_empty)
     self:_create_background()
     self:_create_clip()
     self:_create_content()
@@ -183,12 +213,13 @@ end
 
 function TextInput:on_screen_show()
     Input.on_screen_show(self)
-    app.update_event_manager:register_listener(self)
+    app.update_event:register(self, self.on_update)
+    self:_update_text_events_registration()
 end
 
 function TextInput:on_screen_hide()
-    app.update_event_manager:unregister_listener(self)
-    app.text_event_manager:unregister_listener(self)
+    app.update_event:unregister(self)
+    self:_set_text_events_registered(false)
     Input.on_screen_hide(self)
 end
 
@@ -202,24 +233,13 @@ function TextInput:on_update(dt)
     end
 end
 
-function TextInput:on_pointer_enter()
-    ButtonEventListener.on_pointer_enter(self)
-    self:_update_view()
-end
-
-function TextInput:on_pointer_leave()
-    ButtonEventListener.on_pointer_leave(self)
-    self:_update_view()
-end
-
 function TextInput:on_click()
-    ButtonEventListener.on_click(self)
     self:get_form_screen():focus(self)
     self:_update_view()
 end
 
----@param ... any
-function TextInput:on_edit(...)
+---@param text string
+function TextInput:on_edit(text)
     if self._is_multivalue then
         self._has_new_value = true
     end
@@ -243,11 +263,21 @@ function TextInput:on_remove_empty()
     self:_update_view()
 end
 
+---@param text string
+function TextInput:on_append_text(text)
+    self._buffer:append_text(text)
+end
+
+---@param character_number number
+function TextInput:on_remove_characters(character_number)
+    self._buffer:remove_characters(character_number)
+end
+
 function TextInput:on_remove_word()
     if self._masked then
         self:set_text("")
     else
-        TextEventListener.on_remove_word(self)
+        self._buffer:remove_word()
     end
 end
 
@@ -264,16 +294,26 @@ function TextInput:on_focus_lost()
     self:_update_view()
 end
 
+---@return string
+function TextInput:get_text()
+    return self._buffer:get_text()
+end
+
+---@return number
+function TextInput:get_text_length()
+    return self._buffer:get_text_length()
+end
+
 ---@param text string
 function TextInput:set_text(text)
-    TextEventListener.set_text(self, text)
+    self._buffer:set_text(text)
     self:_update_view()
 end
 
 ---@param value boolean
 function TextInput:set_multivalue(value)
     if value then
-        TextEventListener.set_text(self, "")
+        self._buffer:set_text("")
     end
     self._is_multivalue = value
     self._has_new_value = false

@@ -1,13 +1,11 @@
-local ResizeEventListener = require("events.resize").Listener
-
----@class ScreenManager: ResizeEventListener
+---@class ScreenManager
 ---@field private _screen Screen|nil
-local ScreenManager = class("ScreenManager", ResizeEventListener)
+local ScreenManager = class("ScreenManager")
 
 function ScreenManager:init()
     self._screen = nil
     if app.resize_manager then
-        app.resize_manager:register_listener(self)
+        app.resize_manager.resized:register(self, self.on_resize)
     end
 end
 

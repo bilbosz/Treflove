@@ -1,15 +1,14 @@
 local Logo = require("game.logo")
 local Rectangle = require("controls.rectangle")
 local Screen = require("screens.screen")
-local UpdateEventListener = require("events.update-event").Listener
 
----@class ScreenSaver: Screen, UpdateEventListener
+---@class ScreenSaver: Screen
 ---@field private _background Rectangle
 ---@field private _dir_rot number
 ---@field private _dir_x number
 ---@field private _dir_y number
 ---@field private _logo Logo
-local ScreenSaver = class("ScreenSaver", Screen, UpdateEventListener)
+local ScreenSaver = class("ScreenSaver", Screen)
 
 function ScreenSaver:init()
     Screen.init(self)
@@ -32,7 +31,7 @@ function ScreenSaver:show()
     self._dir_rot = 1
     self._dir_x, self._dir_y = 1, 1
 
-    app.update_event_manager:register_listener(self)
+    app.update_event:register(self, self.on_update)
 end
 
 ---@param dt number

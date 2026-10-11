@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Test, lint, diagnose
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      # .gitmodules uses SSH URLs; rewrite to HTTPS so the public
+      # annotations submodule can be fetched without deploy keys.
+      - name: Check out submodules
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git submodule update --init --recursive
+
+      - name: Install luajit and luacheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y luajit lua-check
+
+      - name: Install lua-language-server
+        run: |
+          version=3.18.2
+          curl -fsSL -o /tmp/luals.tar.gz \
+            "https://github.com/LuaLS/lua-language-server/releases/download/${version}/lua-language-server-${version}-linux-x64.tar.gz"
+          mkdir -p "$HOME/luals"
+          tar -xzf /tmp/luals.tar.gz -C "$HOME/luals"
+          echo "$HOME/luals/bin" >> "$GITHUB_PATH"
+
+      - name: Test (LuaJIT)
+        run: ./test-code.sh
+
+      - name: Lint
+        run: ./lint-code.sh
+
+      # diagnose-code.sh prints a JSON object of diagnostics per file
+      # (and nothing at all if lua-language-server itself failed); fail
+      # unless the output is a present-but-empty object.
+      - name: Diagnose
+        run: |
+          ./diagnose-code.sh | tee diagnostics.json
+          test -s diagnostics.json
+          jq -e 'length == 0' diagnostics.json > /dev/null
+
+  love-test:
+    name: Test (LÖVE)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install LÖVE
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y love
+
+      # Dummy SDL drivers let LÖVE run without a display or audio device.
+      - name: Test
+        run: love . test
+        env:
+          SDL_VIDEODRIVER: dummy
+          SDL_AUDIODRIVER: dummy

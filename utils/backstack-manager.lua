@@ -1,16 +1,14 @@
 local Consts = require("app.consts")
-local KeyboardEventListener = require("events.keyboard").Listener
 
 ---@alias BackstackManagerCb fun()
 
----@class BackstackManager: KeyboardEventListener
+---@class BackstackManager
 ---@field private _stack BackstackManagerCb[]
-local BackstackManager = class("BackstackManager", KeyboardEventListener)
+local BackstackManager = class("BackstackManager")
 
 function BackstackManager:init()
     self._stack = {}
-    KeyboardEventListener.init(self, true)
-    app.keyboard_manager:register_listener(self)
+    app.keyboard_manager.key_pressed:register(self, self.on_key_pressed)
 end
 
 ---@param cb BackstackManagerCb
