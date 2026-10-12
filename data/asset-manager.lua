@@ -2,6 +2,7 @@ local Asset = require("data.asset")
 local DownloadAssetRp = require("data.download-asset-rp")
 local DownloadMissingAssetsRp = require("data.download-missing-assets-rp")
 local UploadAssetRp = require("data.upload-asset-rp")
+local lifetime = require("lifetime")
 
 ---@class AssetManager
 ---@field private _download_asset_rp table<Session, DownloadAssetRp>
@@ -136,13 +137,13 @@ end
 
 ---@param session Session
 function AssetManager:unregister_session(session)
-    self._upload_asset_rp[session]:release()
+    lifetime.destroy(self._upload_asset_rp[session])
     self._upload_asset_rp[session] = nil
 
-    self._download_asset_rp[session]:release()
+    lifetime.destroy(self._download_asset_rp[session])
     self._download_asset_rp[session] = nil
 
-    self._download_missing_assets_rp[session]:release()
+    lifetime.destroy(self._download_missing_assets_rp[session])
     self._download_missing_assets_rp[session] = nil
 end
 

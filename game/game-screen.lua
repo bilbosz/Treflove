@@ -7,6 +7,7 @@ local QuickAccessPanel = require("game.quick-access-panel")
 local Consts = require("app.consts")
 local UserMenuScreen = require("screens.user-menu-screen")
 local table_utils = require("utils.table")
+local lifetime = require("lifetime")
 
 ---@class GameScreen: Model, FormScreen
 ---@field _page Page
@@ -25,7 +26,9 @@ function GameScreen:init(data)
     self._page = Page(app.data.pages[data.page], self, app.width * 0.8, app.height)
 
     self._token_panel = TokenPanel(self, app.width * 0.2, app.height)
-    self._assets_panel = AssetsPanel(self, app.width * 0.2, app.height)
+    -- owned: its release runs while it is alive, before the panel's own
+    -- (`AssetsPanel(...) @ self`; docs/lifetime.md)
+    self._assets_panel = lifetime.attach(AssetsPanel(self, app.width * 0.2, app.height), false, self)
 
     self._panel = self._assets_panel
     local panels = {

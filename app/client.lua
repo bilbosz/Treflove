@@ -15,6 +15,7 @@ local ScreenManager = require("screens.screen-manager")
 local BackstackManager = require("utils.backstack-manager")
 local ButtonEventManager = require("ui.button-event")
 local TextEventManager = require("ui.text-event")
+local lifetime = require("lifetime")
 
 ---@class Client: App
 local Client = class("Client", App)
@@ -51,7 +52,7 @@ function Client:load()
         self.session = Session(connection)
     end, function()
         self.screen_manager:show(connecting_screen)
-        self.session:release()
+        lifetime.destroy(self.session)
         self.session = nil
         self.data = nil
     end)

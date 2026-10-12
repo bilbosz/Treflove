@@ -3,6 +3,7 @@ local Login = require("login.login")
 local LoginScreen = require("login.login-screen")
 local UserMenuScreen = require("screens.user-menu-screen")
 local WaitingScreen = require("screens.waiting-screen")
+local lifetime = require("lifetime")
 
 ---@class Session
 ---@field _user string|nil Logged-in user name
@@ -10,7 +11,7 @@ local WaitingScreen = require("screens.waiting-screen")
 ---@field _login Login|nil
 ---@field _game_data_rp GameDataRp
 ---@field _user_menu_screen UserMenuScreen|nil
----@field _backstack_cb BackstackManagerCb|nil
+---@field _backstack_entry BackstackEntry|nil
 local Session = class("Session")
 
 ---@param self Session
@@ -22,11 +23,9 @@ local function _on_login(self, user)
         app.text_event_manager:set_text_input(false)
         self._user_menu_screen = UserMenuScreen(self)
         app.screen_manager:show(self._user_menu_screen)
-        self._backstack_cb = function()
+        self._backstack_entry = app.backstack_manager:push(function()
             self:logout()
-        end
-
-        app.backstack_manager:push(self._backstack_cb)
+        end)
     end
 end
 
@@ -35,8 +34,8 @@ local function _on_logout(self)
     assert(self._user)
     self._user = nil
     if app.is_client then
-        app.backstack_manager:pop(self._backstack_cb)
-        self._backstack_cb = nil
+        lifetime.destroy(self._backstack_entry)
+        self._backstack_entry = nil
         self._user_menu_screen = nil
         app.screen_manager:show(LoginScreen(self._login))
     end
@@ -97,11 +96,13 @@ end
 function Session:release()
     app.asset_manager:unregister_session(self)
     if app.is_client then
-        app.backstack_manager:pop(self._backstack_cb)
-        self._backstack_cb = nil
+        lifetime.destroy(self._backstack_entry)
+        self._backstack_entry = nil
     end
-    self._login:release()
+    lifetime.destroy(self._login)
     self._login = nil
+    lifetime.destroy(self._game_data_rp)
+    self._game_data_rp = nil
     self._connection = nil
 end
 

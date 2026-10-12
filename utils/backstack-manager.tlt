@@ -1,0 +1,54 @@
+local Consts = require("app.consts")
+local table_utils = require("utils.table")
+
+-- A stack of callbacks for back navigation (like browser history): the back
+-- key runs the top one.
+local BackstackManager: BackstackManager = class("BackstackManager")
+
+BackstackManager.init = function(self: BackstackManager)
+    self._stack = {}
+    app.keyboard_manager.key_pressed:register(self, self.on_key_pressed as EventHandler)
+end
+
+-- Push `cb` and return its entry for the caller to anchor: the entry
+-- removes itself from the stack when it dies, while it is dying and still
+-- findable by identity (lua-lifetime docs/02-semantics.md, "Hooks: the `!@`
+-- operator"; idiom C of lua-lifetime trial/treflove/README.md).
+function BackstackManager:push(cb: BackstackManagerCb): BackstackEntry
+    assert_type(cb, "function")
+    local entry: BackstackEntry = {
+        cb = cb
+    }
+    local stack = self._stack
+    table.insert(stack, entry)
+    function()
+        local i = table_utils.find_array_idx(stack, entry)
+        if i then
+            table.remove(stack, i)
+        end
+    end !@ entry
+    return entry
+end
+
+function BackstackManager:get_top(): BackstackEntry
+    return self._stack[#self._stack]
+end
+
+-- The top entry is destroyed (and so leaves the stack) before its callback
+-- runs.
+function BackstackManager:back()
+    local top = self:get_top()
+    if top then
+        local cb = top.cb
+        lifetime.destroy(top)
+        cb()
+    end
+end
+
+function BackstackManager:on_key_pressed(key: love.KeyConstant)
+    if key == Consts.BACKSTACK_KEY then
+        self:back()
+    end
+end
+
+return BackstackManager

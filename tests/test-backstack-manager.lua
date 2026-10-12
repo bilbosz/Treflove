@@ -2,6 +2,7 @@ local test = require("tests.lib.test")
 local mocks = require("tests.lib.mocks")
 local Consts = require("app.consts")
 local BackstackManager = require("utils.backstack-manager")
+local lifetime = require("lifetime")
 
 test.suite("BackstackManager")
 
@@ -33,21 +34,74 @@ test.case("back invokes and pops callbacks in LIFO order", function()
     test.assert_eq(manager:get_top(), nil)
 end)
 
-test.case("pop removes only the top callback and only when it matches", function()
+test.case("push returns the entry, which get_top returns while it is on top", function()
     mocks.install_app()
     local manager = BackstackManager()
-    local bottom = function()
+    local cb = function()
     end
-    local top = function()
-    end
-    manager:push(bottom)
-    manager:push(top)
+    local entry = manager:push(cb)
+    test.assert_eq(entry.cb, cb)
+    test.assert_eq(manager:get_top(), entry)
+end)
 
-    manager:pop(bottom)
-    test.assert_eq(manager:get_top(), top, "popping a non-top callback is a no-op")
+test.case("back destroys the top entry before running its callback", function()
+    mocks.install_app()
+    local manager = BackstackManager()
+    local bottom = manager:push(function()
+    end)
+    local seen = {}
+    local top
+    top = manager:push(function()
+        table.insert(seen, lifetime.alive(top))
+        table.insert(seen, manager:get_top() == bottom)
+    end)
 
-    manager:pop(top)
-    test.assert_eq(manager:get_top(), bottom)
+    manager:back()
+    test.assert_deep_eq(seen, {
+        false,
+        true
+    }, "inside the callback the entry is dead and off the stack")
+    test.assert_false(lifetime.alive(top))
+    test.assert_true(lifetime.alive(bottom))
+end)
+
+test.case("destroying an entry removes it from the stack wherever it is", function()
+    mocks.install_app()
+    local manager = BackstackManager()
+    local bottom = manager:push(function()
+    end)
+    local middle = manager:push(function()
+    end)
+    local top = manager:push(function()
+    end)
+
+    lifetime.destroy(middle)
+    test.assert_eq(#manager._stack, 2)
+    test.assert_eq(manager._stack[1], bottom)
+    test.assert_eq(manager._stack[2], top)
+end)
+
+test.case("destroying an anchored entry's owner removes the entry from the stack", function()
+    mocks.install_app()
+    local manager = BackstackManager()
+    local calls = 0
+    local bottom = manager:push(function()
+        calls = calls + 1
+    end)
+    local period = lifetime.token("period")
+    -- `manager:push(cb) @ period`
+    local entry = lifetime.attach(manager:push(function()
+        calls = calls + 10
+    end), false, period)
+    test.assert_eq(manager:get_top(), entry)
+
+    lifetime.destroy(period)
+    test.assert_false(lifetime.alive(entry), "the entry died with its owner")
+    test.assert_eq(manager:get_top(), bottom, "and left the stack")
+    test.assert_eq(calls, 0, "without running its callback")
+
+    manager:back()
+    test.assert_eq(calls, 1)
 end)
 
 test.case("push accepts only functions", function()

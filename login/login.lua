@@ -1,6 +1,7 @@
 local LoginRp = require("login.login-rp")
 local LogoutRp = require("login.logout-rp")
 local Utils = require("utils.utils")
+local lifetime = require("lifetime")
 
 ---@class Login
 ---@field private _connection Connection
@@ -40,8 +41,8 @@ function Login:logout()
 end
 
 function Login:release()
-    self._login_rp:release()
-    self._logout_rp:release()
+    lifetime.destroy(self._login_rp)
+    lifetime.destroy(self._logout_rp)
 end
 
 return Login

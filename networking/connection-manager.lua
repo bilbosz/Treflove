@@ -1,5 +1,6 @@
 local Connector = require("networking.connector")
 local Connection = require("networking.connection")
+local lifetime = require("lifetime")
 
 ---@alias ConnectionManagerOnConnect fun(connection:Connection)
 ---@alias ConnectionManagerOnDisconnect fun(connection:Connection)
@@ -63,7 +64,7 @@ function ConnectionManager:remove(connection)
     if app.is_client then
         self._connector:remove_thread()
     end
-    connection:release()
+    lifetime.destroy(connection)
 end
 
 ---@return table<Connection, boolean>

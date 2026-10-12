@@ -6,6 +6,7 @@ local ConnectionManager = require("networking.connection-manager")
 local ScreenManager = require("screens.screen-manager")
 local ScreenSaver = require("screens.screen-saver")
 local table_utils = require("utils.table")
+local lifetime = require("lifetime")
 
 ---@class Server: App
 ---@field private _save_file Asset
@@ -34,7 +35,7 @@ function Server:load()
     self.connection_manager:start(function(connection)
         self._sessions[connection] = Session(connection)
     end, function(connection)
-        self._sessions[connection]:release()
+        lifetime.destroy(self._sessions[connection])
         self._sessions[connection] = nil
     end)
 end

@@ -7,6 +7,7 @@ local Text = require("controls.text")
 local TextInput = require("ui.text-input")
 local TextButton = require("ui.text-button")
 local Utils = require("utils.utils")
+local lifetime = require("lifetime")
 
 local media = require("utils.media")
 
@@ -38,7 +39,9 @@ local FILE_TYPE_PREVIEW = {
 ---@param self AssetsPanel
 local function _create_preview_area(self)
     local w = self:get_size() - 2 * Consts.PADDING
-    self._preview_area = PreviewArea(self, w, w)
+    -- owned: its release runs while it is alive, before the area's own
+    -- (`PreviewArea(...) @ self`; docs/lifetime.md)
+    self._preview_area = lifetime.attach(PreviewArea(self, w, w), false, self)
     self._preview_area:set_position(Consts.PADDING, Consts.PADDING)
 end
 
