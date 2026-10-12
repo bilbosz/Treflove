@@ -17,13 +17,14 @@ fragment and every module sees every global type. Rules:
   it names global types, `lifetime.*` (the environment file starts with
   `local lifetime = require("lifetime")`) and `love.*`.
 - Other type names may be used before their declaration (Teal resolves them
-  lazily within the one file); the bases of an interface (`is A, B`) may
-  not, so the build orders fragments by their `is` clauses.
+  lazily within the one file); the interfaces a type is (`is A, B`, on an
+  interface or a record) may not, so the build orders fragments by their
+  `is` clauses, and within a fragment a base comes first.
 - An error in a fragment is reported at the fragment's own line.
-- A fragment of a module that is still Lua may be **partial**: it declares
-  only what converted modules use and says so in a comment
-  ([controls/control.d.tl](../controls/control.d.tl)); the phase that
-  converts the module completes it.
+- Every module has its fragment, also while its implementation is still
+  Lua: the fragment then says so in its first line (`controls/control.lua
+  (still Lua)`) and describes the Lua as it is, with the members the
+  conversion adds or removes marked `-- lifetime:`.
 
 ## Classes
 
@@ -133,6 +134,37 @@ fields to the standard `table`. The iterators (`ripairs`, `cipairs`,
   dumping, event arguments), and every `any` carries a comment saying why.
 - An interface with an array part puts it first: `global interface Aabb is
   {number}, Object`.
+
+## What the Checker Takes and Refuses
+
+Found while declaring the whole codebase; the build reports each at the
+fragment's line.
+
+- A subinterface may **redeclare** an inherited field with a narrower type:
+  a field (`parent: Control` in `Control is Tree`), a method parameter
+  (`add_child: function(self, child: Control)`), or a method's body records
+  (each remote procedure redeclares `send_request`, `send_response` and
+  `receive_response` with its own `RequestBody`/`ResponseBody` records,
+  [networking/remote-procedure.d.tl](../networking/remote-procedure.d.tl)).
+- A redeclared field is compared with the inherited one **nominally where an
+  alias is involved**: two different function aliases never match, and a
+  record never matches a map alias. Spell the inherited type out
+  (`Model.data: {string: any}`, the callback of a redeclared `send_request`
+  written `function(response: LoginResponse)`).
+- A record is a subtype of `{string: any}`, but not of `{string | number:
+  any}`; `ModelData` is therefore keyed by strings, so `Token.data` narrows
+  to `TokenData`.
+- Two bases of a multiple-inheritance class must agree on every field they
+  both declare (`field 'x' does not match definition in interface B`).
+- An interface may exist only as a type: `Input is Control` (the mixin is
+  always mixed into a control), `PreviewComponent` (what `PreviewImageArea`
+  and `PreviewAudioArea` have in common, since a union may hold one table
+  type only). Such a type has no class table, so `is_instance_of` cannot
+  take it.
+- `userdata` is a type (`PointerId = number | userdata`: a mouse button or a
+  touch id).
+- A love-api "table" result (`love.filesystem.getInfo`) is `{any: any}`;
+  read a field with a cast (`info.type as love.FileType`).
 
 ## LÖVE and Host Types
 
