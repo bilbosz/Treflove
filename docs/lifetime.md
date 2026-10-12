@@ -206,13 +206,17 @@ A [FormScreen](../ui/form-screen.tlt) keeps its inputs in a list, and each
 `Input:init` attaches `function() if not form_screen:is_released() then
 form_screen:remove_input(self) end end !@ (form_screen, self)`, and
 `FormScreen:release`, the form's destructor, sets the flag `is_released`
-reads. A hook runs after its anchor's destructor, among its dependents
-("Hooks: the `!@` operator"), and learns only the reason, not which anchor
-died, so the flag tells the two orders apart: an input that dies first is
-removed from the list while it is dying and still findable; a form that
-dies first has said so, and the hooks do nothing (the inputs live on);
-when the inputs are the form's dependents, one cascade runs the form's
-`release` first and nothing is unlinked
+reads. When one of the two is destroyed (`lifetime.destroy`, or a
+cascade from an owner), a hook runs after its anchor's destructor, among
+its dependents ("Hooks: the `!@` operator"), and learns only the reason,
+not which anchor died, so the flag tells the two orders apart: an input
+that dies first is removed from the list while it is dying and still
+findable; a form that dies first has said so, and the hooks do nothing
+(the inputs live on); when the inputs are the form's dependents, one
+cascade runs the form's `release` first and nothing is unlinked. A
+collection gives no such order (see "Dropped and collected" above): the
+inputs may go first and unlink themselves from a form about to die,
+harmlessly
 ([tests/test-form-screen.lua](../tests/test-form-screen.lua) asserts the
 three logs, and the removal by hand below). The input keeps the hook in `_unlink_hook`, and
 `remove_input` discards it, so an input removed by hand (TokenPanel drops

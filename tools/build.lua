@@ -28,7 +28,8 @@
 --
 -- Errors are printed as `FILE:LINE:COL: message` (for a `.tlt` the line is
 -- the source line and the column the generated Teal's) and the build exits
--- with status 1. Success prints one line, `N modules built`.
+-- with status 1. A `tl` warning (an unused variable, a hint) is an error
+-- too, except the two the class recipe causes (see is_expected_warning). Success prints one line, `N modules built`.
 
 local RUN_PATH = "lib/lua-lifetime/?.lua;lib/lua-lifetime/?/init.lua;lib/tl/?.lua;"
 package.path = RUN_PATH .. package.path
@@ -243,7 +244,21 @@ end
 
 local reported = {}
 
--- Report the syntax and type errors of a check result, once per result.
+-- Warnings the class recipe causes everywhere (docs/types.md, "Classes"),
+-- which are therefore not reported: a class table shadowing the global
+-- type of its name (`local Control: Control = require("controls.control")`)
+-- and a super call (`Base.init(self)`).
+local function is_expected_warning(w)
+    if w.tag == "redeclaration" then
+        -- tl names the position of the shadowed variable only for a local
+        return not w.msg:find("originally declared at", 1, true)
+    end
+    return w.tag == "hint" and w.msg:find("invoked method as a regular function", 1, true) ~= nil
+end
+
+-- Report the syntax and type errors and the warnings of a check result,
+-- once per result. The tree is clean of warnings, so a warning fails the
+-- build like an error.
 local function report_result(result, filename)
     if reported[result] then
         return
@@ -252,6 +267,16 @@ local function report_result(result, filename)
     for _, list in ipairs({result.syntax_errors or {}, result.type_errors or {}}) do
         for _, e in ipairs(list) do
             report(format_error(e, filename))
+        end
+    end
+    for _, w in ipairs(result.warnings or {}) do
+        if not is_expected_warning(w) then
+            report(format_error({
+                filename = w.filename,
+                y = w.y,
+                x = w.x,
+                msg = "warning (" .. w.tag .. "): " .. w.msg
+            }, filename))
         end
     end
 end

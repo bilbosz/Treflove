@@ -141,12 +141,6 @@ function FormScreen:focus(input: Input)
     self:_notify_listeners()
 end
 
-function FormScreen:remove_all_inputs()
-    self._inputs = {}
-    self._prev_focus = nil
-    self._focus = nil
-end
-
 -- The destructor. It runs before the form's dependents, the hooks of its
 -- inputs among them (lua-lifetime docs/02-semantics.md, "Cascading death"),
 -- and a hook learns only the reason, not which of its anchors died, so this

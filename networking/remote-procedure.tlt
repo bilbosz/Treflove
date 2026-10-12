@@ -43,10 +43,14 @@ function RemoteProcedure:receive_response(_response: ResponseBody)
     abstract()
 end
 
--- The connection is alive, or dying and still usable (lua-lifetime
--- docs/02-semantics.md, "Tombstones": a dying object is not dead), so
--- `stop` reaches it. Idempotent: `_connection` stays set, and a second
--- release only unregisters an id that is gone already.
+-- Invariant: a procedure never outlives its connection. Every procedure is
+-- anchored under its connection, directly or through its owner (the
+-- session, the login; docs/lifetime.md, "The Tree"), so it dies before the
+-- connection or in the connection's cascade, while the connection is
+-- dying and still usable (lua-lifetime docs/02-semantics.md, "Tombstones":
+-- a dying object is not dead); `stop` would raise on a dead connection's
+-- tombstone. Idempotent: `_connection` stays set, and a second release
+-- only unregisters an id that is gone already.
 function RemoteProcedure:release(_reason?: LifetimeReason)
     self:stop()
 end

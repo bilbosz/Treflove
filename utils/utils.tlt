@@ -51,13 +51,15 @@ end
 -- except reads made from inside `black_functions`.
 function Utils.monitor_object(obj: Object, black_functions?: {function})
     black_functions = black_functions or {}
+    -- as: the instance metatable (utils/class.tlt), whose __index is the
+    -- class's merged method table; MonitorMeta types the replacements.
     local mt = getmetatable(obj) as MonitorMeta
     local old_index = (mt as {string: AnyIndex}).__index
-    mt.__index = function(_: Object, k: string): any
+    mt.__index = function(_: Object, k: string): any -- any: see AnyIndex
         local level = 1
         local info = debug.getinfo(level, "f")
         while info do
-            local f = info.func as function
+            local f = info.func as function -- as: the "f" option fills func
             if table_utils.find_array_idx(black_functions, f) then
                 return old_index[k]
             end
@@ -68,7 +70,7 @@ function Utils.monitor_object(obj: Object, black_functions?: {function})
         return old_index[k]
     end
 
-    mt.__newindex = function(_: Object, k: string, v: any)
+    mt.__newindex = function(_: Object, k: string, v: any) -- any: see AnyIndex
         old_index[k] = v
         app:log("write on " .. k)
     end
@@ -87,8 +89,11 @@ function Utils.generate_salt(len: integer): string
     local rng = love.math.newRandomGenerator()
     rng:setSeed(app.is_server and Consts.SERVER_SEED or Consts.CLIENT_SEED)
     for _ = 1, len do
+        -- as: random(min, max) returns an integer in [min, max]
         table.insert(salt, string.char(rng:random(0, 255) as integer))
     end
+    -- as (here and in hash): the container "string" makes encode return a
+    -- string.
     return love.data.encode("string", "base64", table.concat(salt)) as string
 end
 

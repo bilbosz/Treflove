@@ -20,6 +20,5 @@ global interface FormScreen is Screen
     remove_input: function(self, input: Input)
     read_only_change: function(self, input: Input)
     focus: function(self, input: Input)
-    remove_all_inputs: function(self)
     -- release (Object): the destructor; sets _is_released.
 end

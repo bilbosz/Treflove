@@ -69,7 +69,7 @@ local function _dump_generator(config: DumpConfig): Dumper
         assert(not dump_config.table_unfold_repeated or dump_config.table_max_level ~= math.huge)
 
         local function get_glob_var_name(val: any, tab?: {any: any}, recursion_check?: {any: boolean}, is_first_layer?: boolean): string
-            tab = tab or _G as {any: any}
+            tab = tab or _G as {any: any} -- as: the globals table, walked like any table
             recursion_check = recursion_check or {}
             is_first_layer = is_first_layer == nil and true
 
@@ -217,7 +217,7 @@ local default_dump_config: DumpConfig = {
         end,
         separator = ",\n"
     },
-    text_processor = print as function(string): any
+    text_processor = print as function(string): any -- as: print takes the one string
 }
 
 dump = _dump_generator(default_dump_config)

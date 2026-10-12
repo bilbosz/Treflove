@@ -179,8 +179,7 @@ end
 function AssetsPanel:set_file(file: love.DroppedFile)
     -- as: LÖVE returns a love.FileData for the "data" container; every
     -- consumer (media.get_type_and_medium, love.data.encode in
-    -- AssetManager:upload_asset) takes it where it takes a string, as the
-    -- Lua annotation (`--[[@as string]]`) did.
+    -- AssetManager:upload_asset) takes it where it takes a string.
     local data = file:read("data") as string
     local size = file:getSize()
     self._data = data

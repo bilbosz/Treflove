@@ -36,7 +36,7 @@ main_channel:push(added)
 local msg = out_channel:demand() as string | boolean
 while msg ~= false do
     assert_type(msg, "string")
-    local text = msg as string
+    local text = msg as string -- as: asserted just above
     local n = #text
     local _, size_err = out_client:send(tostring(n) .. "\n")
     if size_err then
@@ -49,7 +49,7 @@ while msg ~= false do
         break
     end
     logger:log("Send data with size of " .. n)
-    msg = out_channel:demand() as string | boolean
+    msg = out_channel:demand() as string | boolean -- as: see above
 end
 local closed: ConnectorMessage = {
     "o",

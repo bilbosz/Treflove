@@ -15,6 +15,8 @@ local AssetManager: AssetManager = class("AssetManager")
 -- session's connection through the request handler, so a strong value
 -- would keep its weak key alive. The procedures stay alive through those
 -- handlers while their session lives.
+-- as: setmetatable is typed for one table type; the empty table and the
+-- metatable take the element type of the table being made.
 local function _make_weak_table<V>(): {Session: V}
     return setmetatable({} as {Session: V}, {
         __mode = "kv"

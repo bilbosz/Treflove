@@ -23,6 +23,8 @@ local record InstanceMeta
     class: Object
 end
 
+-- as (both): class() sets these metatables on every class table and
+-- every instance.
 local function _class_meta(cls: Object): ClassMeta
     return getmetatable(cls) as ClassMeta
 end
@@ -74,13 +76,15 @@ global function class<T>(name: string, ...: Object): T
     local obj_mt: InstanceMeta = {
         __index = index,
         __destroy = _destroy,
-        class = cls as Object
+        class = cls as Object -- as: the class table is typed by its interface
     }
 
     local class_metatable: ClassMeta = {
         __index = index,
         __newindex = index,
-        __call = function(_: Object, ...: any): Object
+        __call = function(_: Object, ...: any): Object -- any: constructor arguments
+            -- as: the new table is an instance of the class, obj_mt its
+            -- metatable
             local obj = setmetatable({} as Object, obj_mt as metatable<Object>)
             if obj.init then
                 obj:init(...)
@@ -97,9 +101,10 @@ global function class<T>(name: string, ...: Object): T
             return obj
         end,
         name = name,
-        bases = _create_bases(cls as Object, ...)
+        bases = _create_bases(cls as Object, ...) -- as: see `class` above
     }
 
+    -- as: the class table is typed by the interface the caller names (T)
     return setmetatable(cls, class_metatable as metatable<Index>) as T
 end
 
@@ -115,7 +120,7 @@ global function is_instance_of(obj: Object, cls: Object): boolean
     return _is_instance_of(get_class_of(obj), cls)
 end
 
-global function assert_type(obj: any, typ: string | Object)
+global function assert_type(obj: any, typ: string | Object) -- any: checks a value of any type
     local msg = "Expected %s got %s"
     if typ is string then
         assert(type(obj) == typ, string.format(msg, typ, type(obj)))
@@ -124,6 +129,7 @@ global function assert_type(obj: any, typ: string | Object)
         assert(class_mt)
         local class_name = class_mt.name
         assert(class_name)
+        -- as: a value with a class metatable is an instance
         if getmetatable(obj) and get_class_of(obj as Object) then
             assert(is_instance_of(obj as Object, typ), string.format(msg, class_name, get_class_name_of(obj as Object)))
         else

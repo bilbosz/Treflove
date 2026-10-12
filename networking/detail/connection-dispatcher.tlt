@@ -29,7 +29,7 @@ while true do
     in_thread:start(logger_data, address, dispatcher_channel, channel, in_thread)
 
     -- as: server-in pushes the port it bound, or false when it failed.
-    local in_port = dispatcher_channel:demand() as integer
+    local in_port = dispatcher_channel:demand() as integer | boolean
     if in_port then
         local in_port_string = tostring(in_port)
         logger:log("Received receiver port " .. in_port_string)
@@ -41,5 +41,7 @@ while true do
     dispatcher_channel:release()
 
     client:close()
-    logger:log("Dispatcher connection closed for client with port " .. in_port)
+    -- as: known fault (TODO.md): when server-in failed, in_port is false
+    -- and the concatenation raises, ending the dispatcher.
+    logger:log("Dispatcher connection closed for client with port " .. (in_port as integer))
 end

@@ -13,6 +13,8 @@ local function _compress(serialized: string): string
     return love.data.compress("string", Consts.NETWORK_COMPRESSION, serialized) as string
 end
 
+-- any: a message is whatever the other side serialized (a Request or a
+-- Response; _process_queue tells them apart by `source`).
 local function _decompress(payload: string): {any: any}
     -- as: the container "string" makes decompress return a string.
     local serialized = love.data.decompress("string", Consts.NETWORK_COMPRESSION, payload) as string

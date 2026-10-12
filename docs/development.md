@@ -75,9 +75,15 @@ clone: `git submodule update --init`.
 
 Errors read `FILE:LINE:COL: message` - for a `.tlt` the line is the source
 line and the column the generated Teal's; for a fragment, the fragment's
-own line - and the build exits 1. Success prints one line (`N modules
-built`). The build is the type checker: there is no separate diagnose step.
-A full build takes under a second.
+own line - and the build exits 1. `tl`'s warnings (an unused variable, a
+hint such as `pairs` on an array) are errors too, read `FILE:LINE:COL:
+warning (TAG): message`, since the tree is clean of them; the two warnings
+the class recipe causes in every class are not reported: a class table
+shadowing the global type of its name (`local Control: Control =
+require("controls.control")`) and a super call (`Base.init(self)`)
+([types.md](types.md), "Classes"). Success prints one line (`N modules
+built`). The build is the type checker: there is no separate check step.
+A full build takes a few seconds.
 
 `types/love.d.tl` is generated from `lib/love-api` and committed; to
 regenerate it after changing [tools/gen-love-types.lua](../tools/gen-love-types.lua):

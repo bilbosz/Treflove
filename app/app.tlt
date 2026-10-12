@@ -97,12 +97,12 @@ function App:quit()
     self._mark_for_quit = true
 end
 
-function App:log(...: any)
+function App:log(...: any) -- any: values of any type, each formatted with %s
     local format = string.rep("%s", select("#", ...), " ")
     self.logger:log_up(format, 1, ...)
 end
 
-function App:log_fun(...: any)
+function App:log_fun(...: any) -- any: see log
     local format = ""
     if debug then
         local info = debug.getinfo(2, "n")

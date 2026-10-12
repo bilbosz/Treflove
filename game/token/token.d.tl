@@ -8,7 +8,7 @@ global record TokenData
     diameter: number -- in meters
     position: {number} -- x, y in page meters
     avatar: string -- the path of the avatar image asset
-    owners: {string} -- logins (absent from the Lua annotation; in save.lua)
+    owners: {string} -- the logins of its owners (server/save.lua)
 end
 
 global interface Token is Model, Control

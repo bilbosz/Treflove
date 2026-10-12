@@ -14,10 +14,13 @@
 -- dispatch.
 local Event: Event = class("Event")
 
+-- any: shared by the tables of handlers and of flags
 local WEAK_KEYS: metatable<{Object: any}> = {
     __mode = "k"
 }
 
+-- as: setmetatable is typed for one table type; the empty table and the
+-- shared metatable take the element type of the table being made.
 local function _make_weak_table<V>(): {Object: V}
     return setmetatable({} as {Object: V}, WEAK_KEYS as metatable<{Object: V}>)
 end
@@ -47,7 +50,7 @@ end
 
 -- Register `handler` to be called as `handler(owner, ...)` on trigger.
 -- Registering the same owner again replaces its handler.
-function Event:register<O is Object>(owner: O, handler: function(owner: O, ...: any))
+function Event:register<O is Object>(owner: O, handler: function(owner: O, ...: any)) -- any: see EventHandler
     assert_type(owner, "table")
     assert_type(handler, "function")
     -- The tables hold the handlers of owners of every type; each handler is
@@ -85,7 +88,7 @@ function Event:release(_reason?: LifetimeReason)
 end
 
 -- Call every registered handler with `owner` plus the given arguments.
-function Event:trigger(...: any)
+function Event:trigger(...: any) -- any: see EventHandler
     assert(not self._lock, "Event triggered while already being triggered")
     self._lock = true
     for owner, handler in pairs(self._handlers) do

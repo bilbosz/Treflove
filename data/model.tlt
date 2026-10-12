@@ -10,7 +10,7 @@ function Model:get_data(): ModelData
     return self.data
 end
 
-function Model:set_data(key: string, value: any)
+function Model:set_data(key: string, value: any) -- any: model data holds values of any type
     self.data[key] = value
 end
 

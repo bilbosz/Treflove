@@ -26,6 +26,7 @@ local WEAK_KEYS: metatable<{Control: Button}> = {
 }
 
 ButtonEventManager.init = function(self: ButtonEventManager)
+    -- as: an empty table literal takes the type of the weak table
     self._buttons = setmetatable({} as {Control: Button}, WEAK_KEYS)
     self._hover = nil
     self._selection = nil

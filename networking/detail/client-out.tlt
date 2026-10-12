@@ -26,13 +26,13 @@ do
     end
     local port_err: string
     out_port, port_err = client:receive("*l")
-    -- math.floor: "%05i" takes an integer (Lua 5.1 would coerce the string).
-    logger:set_name(string.format("client-out-%05i", math.floor(tonumber(out_port))))
     if port_err or not tonumber(out_port) then
         client:close()
         logger:log("Could not receive client sender port")
         return
     end
+    -- math.floor: "%05i" takes an integer (Lua 5.1 would coerce the string).
+    logger:set_name(string.format("client-out-%05i", math.floor(tonumber(out_port))))
     client:close()
     logger:log("Dispatchee connection closed")
 end
@@ -70,7 +70,7 @@ do
     local msg = out_channel:demand() as string | boolean
     while msg ~= false do
         assert_type(msg, "string")
-        local text = msg as string
+        local text = msg as string -- as: asserted just above
         local n = #text
         local _, size_err = out_client:send(tostring(n) .. "\n")
         if size_err then
@@ -91,7 +91,7 @@ do
             break
         end
         logger:log("Send data with size of " .. n)
-        msg = out_channel:demand() as string | boolean
+        msg = out_channel:demand() as string | boolean -- as: see above
     end
     local closed: ConnectorMessage = {
         "o",

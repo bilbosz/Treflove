@@ -46,6 +46,8 @@ function table_utils.deep_copy<K, V>(source: {K: V}): {K: V}
     for k, v in pairs(source) do
         if not is_state(k) then
             if type(v) == "table" then
+                -- as: `type` has just said v is a table, and its copy has
+                -- v's type
                 copy[k] = table_utils.deep_copy(v as {any: any}) as V
             else
                 copy[k] = v
@@ -58,12 +60,13 @@ end
 -- any: the displays below take values of any type.
 local type Display = function(v: any): string
 
-function table_utils.to_string(source: any): string
+function table_utils.to_string(source: any): string -- any: see the declaration
     local table_display: function(t: {any: any}): string
     local value_display: {string: Display} = {
         ["nil"] = tostring,
         ["boolean"] = tostring,
         ["number"] = tostring,
+        -- as (string, table): each display is looked up by type(v)
         ["string"] = function(v: any): string
             return "\"" .. string.gsub(v as string, "\n", "\\n") .. "\""
         end,
@@ -99,6 +102,8 @@ function table_utils.to_string(source: any): string
         local prefix = string.rep("    ", depth)
         local result = "{"
         local last = 0
+        -- as: one array of the three key groups (an array of arrays of
+        -- one element type)
         for _, group in ipairs({
             nums as {any},
             strings as {any},
@@ -133,13 +138,15 @@ function table_utils.to_string(source: any): string
     return "return " .. self_display(source)
 end
 
-function table_utils.from_string(str: string): {any: any}
+function table_utils.from_string(str: string): {any: any} -- any: see the declaration
     local chunk = loadstring(str)
     local no_error, result = pcall(chunk)
     if not no_error then
         app:log("Error when creating table.", tostring(result))
         return nil
     end
+    -- as: a serialized table reads back as a table (to_string writes
+    -- `return {...}` for one)
     return result as {any: any}
 end
 
@@ -185,6 +192,8 @@ global function cpairs<K, V>(t: {K: V}): (function({K: V}, K): (K, V), {K: V}, K
     return pairs(table_utils.copy(t))
 end
 
+-- as (cipairs, cripairs): a copy of an array is an array (copy is typed
+-- for maps)
 global function cipairs<V>(t: {V}): (function({V}, integer): (integer, V), {V}, integer)
     return ipairs(table_utils.copy(t) as {V})
 end
@@ -193,7 +202,7 @@ global function cripairs<V>(t: {V}): (function({V}, integer): (integer, V), {V},
     return ripairs(table_utils.copy(t) as {V})
 end
 
-global function toboolean(value: any): boolean
+global function toboolean(value: any): boolean -- any: any value has a truth value
     return not not value
 end
 

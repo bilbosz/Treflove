@@ -15,7 +15,7 @@ DeferManager.init = function(self: DeferManager)
     self._to_add_defers = {}
 end
 
-function DeferManager:call_defered(t: number, f: DeferCallback, ...: any)
+function DeferManager:call_defered(t: number, f: DeferCallback, ...: any) -- any: f's own arguments
     assert_type(t, "number")
     assert_type(f, "function")
     table.insert(self._to_add_defers, {
