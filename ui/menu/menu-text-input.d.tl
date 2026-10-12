@@ -1,4 +1,4 @@
--- ui/menu/menu-text-input.lua (still Lua)
+-- ui/menu/menu-text-input.tlt
 global interface MenuTextInput is MenuEntry
     _field_name: string
     _input: TextInput -- nil until create_control

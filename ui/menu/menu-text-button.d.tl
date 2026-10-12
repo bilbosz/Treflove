@@ -1,4 +1,4 @@
--- ui/menu/menu-text-button.lua (still Lua)
+-- ui/menu/menu-text-button.tlt
 global interface MenuTextButton is MenuEntry
     _screen: MenuScreen
     _label: string

@@ -1,4 +1,4 @@
--- screens/waiting-screen.lua (still Lua): a message under a spinning logo.
+-- screens/waiting-screen.tlt: a message under a spinning logo.
 global interface WaitingScreen is Screen
     _background: Rectangle
     _layout: Control

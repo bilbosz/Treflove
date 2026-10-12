@@ -1,4 +1,4 @@
--- ui/menu/menu-entry.lua (still Lua): an entry of a MenuScreen, which
+-- ui/menu/menu-entry.tlt: an entry of a MenuScreen, which
 -- creates its control when the menu is laid out.
 global interface MenuEntry is Object
     control: Control -- nil until create_control

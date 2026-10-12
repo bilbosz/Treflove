@@ -1,22 +1,13 @@
-local MenuEntry = require("ui.menu.menu-entry")
-local Control = require("controls.control")
-local TextInput = require("ui.text-input")
+local MenuEntry: MenuEntry = require("ui.menu.menu-entry")
+local Control: Control = require("controls.control")
+local TextInput: TextInput = require("ui.text-input")
 local Consts = require("app.consts")
-local Text = require("controls.text")
+local Text: Text = require("controls.text")
 
----@class MenuTextInput: MenuEntry
----@field private _field_name string
----@field private _input TextInput
----@field private _masked boolean
----@field private _on_enter fun()
----@field private _screen MenuScreen
-local MenuTextInput = class("MenuTextInput", MenuEntry)
+-- A menu entry that is a text field with its name on the left.
+local MenuTextInput: MenuTextInput = class("MenuTextInput", MenuEntry)
 
----@param screen MenuScreen
----@param field_name string
----@param masked boolean
----@param on_enter fun()
-function MenuTextInput:init(screen, field_name, masked, on_enter)
+MenuTextInput.init = function(self: MenuTextInput, screen: MenuScreen, field_name: string, masked: boolean, on_enter: TextInputCallback)
     MenuEntry.init(self)
     self._screen = screen
     self._field_name = field_name
@@ -24,9 +15,7 @@ function MenuTextInput:init(screen, field_name, masked, on_enter)
     self._on_enter = on_enter
 end
 
----@param parent Control
----@return Control
-function MenuTextInput:create_control(parent)
+function MenuTextInput:create_control(parent: Control): Control
     local ctrl = Control(parent)
     self.control = ctrl
 
@@ -44,8 +33,7 @@ function MenuTextInput:create_control(parent)
     return ctrl
 end
 
----@return string
-function MenuTextInput:get_text()
+function MenuTextInput:get_text(): string
     return self._input:get_text()
 end
 

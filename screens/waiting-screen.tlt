@@ -1,36 +1,30 @@
 local Consts = require("app.consts")
-local Control = require("controls.control")
-local Logo = require("game.logo")
-local Rectangle = require("controls.rectangle")
-local Screen = require("screens.screen")
-local Text = require("controls.text")
+local Control: Control = require("controls.control")
+local Rectangle: Rectangle = require("controls.rectangle")
+local Screen: Screen = require("screens.screen")
+local Text: Text = require("controls.text")
 
----@class WaitingScreen: Screen
----@field private _background Rectangle
----@field private _layout Control
----@field private _logo Logo
----@field private _message string
----@field private _text Text
-local WaitingScreen = class("WaitingScreen", Screen)
+-- game/logo is still Lua (see screens/menu-screen.tlt).
+local LOGO_MODULE = "game.logo"
+local Logo = require(LOGO_MODULE) as Logo
 
----@private
+-- A message under a spinning logo.
+local WaitingScreen: WaitingScreen = class("WaitingScreen", Screen)
+
 function WaitingScreen:_create_background()
     self._background = Rectangle(self.screen, app.width, app.height, Consts.BACKGROUND_COLOR)
 end
 
----@private
 function WaitingScreen:_create_layout()
     self._layout = Control(self.screen)
 end
 
----@private
 function WaitingScreen:_create_logo()
     local logo = Logo(self._layout)
     self._logo = logo
     logo:set_position(0, -15)
 end
 
----@private
 function WaitingScreen:_create_text()
     local text = Text(self._layout, self._message, Consts.FOREGROUND_COLOR)
     self._text = text
@@ -40,7 +34,6 @@ function WaitingScreen:_create_text()
     text:set_scale(Consts.MENU_TITLE_SCALE)
 end
 
----@private
 function WaitingScreen:_center_layout()
     local layout = self._layout
     local aabb = layout:get_global_recursive_aabb()
@@ -50,8 +43,7 @@ function WaitingScreen:_center_layout()
     layout:set_origin(0, h * 0.5 / s)
 end
 
----@param message string
-function WaitingScreen:init(message)
+WaitingScreen.init = function(self: WaitingScreen, message: string)
     Screen.init(self)
     self._message = message
 
@@ -67,15 +59,12 @@ function WaitingScreen:show()
     self:on_resize(app.width, app.height)
 end
 
----@param w number
----@param h number
-function WaitingScreen:on_resize(w, h)
+function WaitingScreen:on_resize(w: number, h: number)
     self._background:set_size(w, h)
     self:_center_layout()
 end
 
----@param dt number
-function WaitingScreen:on_update(dt)
+function WaitingScreen:on_update(dt: number)
     local logo = self._logo
     logo:set_rotation(logo:get_rotation() + dt)
 end

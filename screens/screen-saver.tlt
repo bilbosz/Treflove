@@ -1,16 +1,15 @@
-local Logo = require("game.logo")
-local Rectangle = require("controls.rectangle")
-local Screen = require("screens.screen")
+local Rectangle: Rectangle = require("controls.rectangle")
+local Screen: Screen = require("screens.screen")
 
----@class ScreenSaver: Screen
----@field private _background Rectangle
----@field private _dir_rot number
----@field private _dir_x number
----@field private _dir_y number
----@field private _logo Logo
-local ScreenSaver = class("ScreenSaver", Screen)
+-- game/logo is still Lua (see screens/menu-screen.tlt).
+local LOGO_MODULE = "game.logo"
+local Logo = require(LOGO_MODULE) as Logo
 
-function ScreenSaver:init()
+-- The server's screen when it has a window: the logo bouncing off the edges,
+-- changing colour and spin at every bounce.
+local ScreenSaver: ScreenSaver = class("ScreenSaver", Screen)
+
+ScreenSaver.init = function(self: ScreenSaver)
     Screen.init(self)
 end
 
@@ -34,8 +33,7 @@ function ScreenSaver:show()
     app.update_event:register(self, self.on_update)
 end
 
----@param dt number
-function ScreenSaver:on_update(dt)
+function ScreenSaver:on_update(dt: number)
     local logo = self._logo
     logo:set_rotation(logo:get_rotation() + dt * self._dir_rot)
 

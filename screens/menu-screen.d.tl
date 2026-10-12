@@ -1,4 +1,4 @@
--- screens/menu-screen.lua (still Lua): a form of menu entries under the
+-- screens/menu-screen.tlt: a form of menu entries under the
 -- logo and a title.
 global interface MenuScreen is FormScreen
     _background: Rectangle

@@ -1,4 +1,4 @@
--- screens/screen-saver.lua (still Lua): the server's screen when it has a
+-- screens/screen-saver.tlt: the server's screen when it has a
 -- window.
 global interface ScreenSaver is Screen
     _background: Rectangle

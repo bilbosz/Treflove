@@ -1,0 +1,19 @@
+local MenuScreen: MenuScreen = require("screens.menu-screen")
+local MenuTextButton: MenuTextButton = require("ui.menu.menu-text-button")
+
+-- The options menu, reached from the user menu; "Back" goes back to it
+-- through the back stack.
+local OptionsMenuScreen: OptionsMenuScreen = class("OptionsMenuScreen", MenuScreen)
+
+OptionsMenuScreen.init = function(self: OptionsMenuScreen)
+    MenuScreen.init(self, "Options", {
+        MenuTextButton(self, "Toggle Fullscreen", function()
+            app.options_manager:toggle_fullscreen()
+        end),
+        MenuTextButton(self, "Back", function()
+            app.backstack_manager:back()
+        end)
+    })
+end
+
+return OptionsMenuScreen

@@ -1,3 +1,3 @@
--- screens/options-menu-screen.lua (still Lua)
+-- screens/options-menu-screen.tlt
 global interface OptionsMenuScreen is MenuScreen
 end
