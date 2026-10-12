@@ -47,16 +47,14 @@ function GameScreen:init(data)
     self._quick_access_panel:add_entry("Assets", self._assets_panel)
 end
 
-function GameScreen:release()
-    self._assets_panel:release()
-end
-
 function GameScreen:show()
     self:on_resize(app.width, app.height)
     FormScreen.show(self)
     app.backstack_manager:push(function()
-        self:release()
         app.screen_manager:show(UserMenuScreen(app.session))
+        -- The screen owns its panels (`@ self`): one destroy releases the
+        -- whole tree, owner first (docs/lifetime.md).
+        lifetime.destroy(self)
     end)
 end
 

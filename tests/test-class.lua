@@ -1,7 +1,7 @@
 local test = require("tests.lib.test")
 
 -- Base classes must be fully defined before deriving from them: `class()`
--- copies base methods at creation time (see _create_index in utils/class.lua).
+-- copies base methods at creation time (see _create_index in utils/class.tlt).
 local Animal = class("TestAnimal")
 
 ---@param name string

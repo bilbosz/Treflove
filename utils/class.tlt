@@ -82,15 +82,17 @@ global function class<T>(name: string, ...: Object): T
         __newindex = index,
         __call = function(_: Object, ...: any): Object
             local obj = setmetatable({} as Object, obj_mt as metatable<Object>)
+            if obj.init then
+                obj:init(...)
+            end
             -- Registration, so that a collected instance still runs its
             -- release (lua-lifetime docs/05-decisions.md, "Registration is
-            -- `x @ lifetime.reachable`"). An instance of a class without a
+            -- `x @ lifetime.reachable`"), after `init`, so that a
+            -- constructor that raises leaves no half-built object for the
+            -- collector to finalize. An instance of a class without a
             -- release has nothing to run, and is left unregistered.
             if obj.release then
                 obj @ lifetime.reachable
-            end
-            if obj.init then
-                obj:init(...)
             end
             return obj
         end,

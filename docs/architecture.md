@@ -56,7 +56,7 @@ The class name is used as the RPC identifier. Examples: LoginRp, UploadAssetRp, 
 - Coordinates screen transitions (connecting → login → user menu → game)
 - Integrates with asset manager and backstack navigation
 - Server maintains `_sessions` table mapping Connection → Session
-- **Note**: Client auto-logs in with hardcoded credentials "adam"/"krause" at [game/session.lua:56](../game/session.lua#L56)
+- **Note**: Client auto-logs in with hardcoded credentials "adam"/"krause" at [game/session.lua:61](../game/session.lua#L61)
 
 ## Event System
 

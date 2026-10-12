@@ -3,7 +3,7 @@
 ---Both need the build (`./build-code.sh`): the modules are required from build/.
 package.path = "build/?.lua;build/?/init.lua;" .. package.path
 
--- Plain LuaJIT has no bundled luasocket; utils/utils.lua only needs
+-- Plain LuaJIT has no bundled luasocket; utils/utils.tlt only needs
 -- `socket.gettime`, so provide a stub before anything requires it.
 local has_socket = pcall(require, "socket")
 if not has_socket then

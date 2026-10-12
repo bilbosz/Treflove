@@ -298,7 +298,10 @@ local function main(argv)
     -- 2. transpile every module (a required module must exist as Teal
     -- even when only some files were named)
     for _, m in ipairs(all_modules) do
-        local teal, err = cli.build(read_file(m), m, "teal")
+        local ok, teal, err = pcall(cli.build, read_file(m), m, "teal")
+        if not ok then
+            teal, err = nil, m .. ": " .. tostring(teal)
+        end
         if teal then
             write_file(BUILD .. "/tl/" .. m:gsub("%.tlt$", ".tl"), teal)
         else
@@ -372,8 +375,13 @@ local function main(argv)
         end
     end
     -- Modules checked only because a named one required them.
-    for _, result in pairs(env.loaded) do
-        report_result(result, "?")
+    local loaded = {}
+    for name in pairs(env.loaded) do
+        loaded[#loaded + 1] = name
+    end
+    table.sort(loaded)
+    for _, name in ipairs(loaded) do
+        report_result(env.loaded[name], "?")
     end
     if failed then
         return 1

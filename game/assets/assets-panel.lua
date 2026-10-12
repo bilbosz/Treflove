@@ -258,8 +258,4 @@ function AssetsPanel:cancel()
     self:reset()
 end
 
-function AssetsPanel:release()
-    self._preview_area:release()
-end
-
 return AssetsPanel

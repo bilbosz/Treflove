@@ -28,9 +28,10 @@ and shows the teardown order the ported code must have.
 - The instance metatable's `__destroy` calls the object's `release(reason)`
   if it has one, so `release` bodies are the destructors.
 - Every instance of a class that has a `release` is registered
-  (`obj @ lifetime.reachable`) before `init`, so a collected instance still
-  runs its `release` (reason `"unreachable"`). An instance of a class with
-  no `release` has nothing to run and is not registered.
+  (`obj @ lifetime.reachable`) right after `init`, so a collected instance
+  still runs its `release` (reason `"unreachable"`); a constructor that
+  raises leaves nothing registered. An instance of a class with no
+  `release` has nothing to run and is not registered.
 - `App` defines `love.quit` to call `lifetime.set_exiting(true)`, so what
   the closing state finalizes dies with the reason `"exit"`.
 
@@ -45,7 +46,10 @@ and shows the teardown order the ported code must have.
   collected; Lua code not converted yet therefore ends the lifetime of what
   it owns with `lifetime.destroy(x)` (`local lifetime = require("lifetime")`)
   and anchors with `lifetime.attach(x, false, owner)`, which is what
-  `x @ owner` compiles to.
+  `x @ owner` compiles to. Until they are converted, `Session:release` and
+  `Login:release` still end their dependents' lifetimes by hand (through
+  `lifetime.destroy`, which is a no-op on a dying object, so the cascade
+  does not release them twice).
 - Objects in one ownership tree are anchored to their owner, so that the
   collector (and program end) finalizes the owner before them: within one
   collection anchors are finalized first, otherwise newest first.
