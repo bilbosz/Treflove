@@ -1,4 +1,4 @@
--- panels/notification-panel.lua (still Lua): draws the notifications of
+-- panels/notification-panel.tlt: draws the notifications of
 -- app.notification_manager in the bottom right corner.
 global interface NotificationPanel is Object
     _anchor: Control
