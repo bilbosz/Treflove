@@ -95,7 +95,7 @@ luajit tools/gen-love-types.lua
 
 ## Development Commands
 
-Lint the Lua files - `main.lua`, `conf.lua`, `tests/run.lua`, `tools/` (uses luacheck, config in [.luacheckrc](../.luacheckrc); `build/` and `lib/` excluded):
+Lint the Lua files - `main.lua`, `conf.lua`, `tests/run.lua`, `tools/` and the data file `server/save.lua` (uses luacheck, config in [.luacheckrc](../.luacheckrc); `build/` and `lib/` excluded):
 ```bash
 ./lint-code.sh [target_path]
 ```
