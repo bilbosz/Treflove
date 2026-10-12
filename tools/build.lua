@@ -123,9 +123,10 @@ local ENV_HEADER = "local lifetime = require(\"lifetime\")"
 -- `markers[i] = {line = L, path = P}`: the fragment P starts after line L.
 local markers = {}
 
--- Fragments ordered so that a type named in an `is` clause is declared in
--- an earlier fragment (or earlier in the same one): Teal resolves other
--- type names lazily within the file, but not the bases of an interface.
+-- Fragments ordered so that a type named in an `is` clause (of an
+-- interface or a record) is declared in an earlier fragment (or earlier in
+-- the same one): Teal resolves other type names lazily within the file,
+-- but not the interfaces a type is declared to be.
 -- Otherwise sorted by path.
 local function order_fragments(fragments)
     local declared_in = {}
@@ -143,11 +144,13 @@ local function order_fragments(fragments)
     local deps = {}
     for _, path in ipairs(fragments) do
         local list = {}
-        for bases in texts[path]:gmatch("global%s+interface%s+[%w_]+%s+is%s+([^\n]*)") do
-            for name in bases:gmatch("[%a_][%w_%.]*") do
-                local from = declared_in[name]
-                if from and from ~= path then
-                    list[#list + 1] = from
+        for _, kind in ipairs({"interface", "record"}) do
+            for bases in texts[path]:gmatch("global%s+" .. kind .. "%s+[%w_]+%s+is%s+([^\n]*)") do
+                for name in bases:gmatch("[%a_][%w_%.]*") do
+                    local from = declared_in[name]
+                    if from and from ~= path then
+                        list[#list + 1] = from
+                    end
                 end
             end
         end
