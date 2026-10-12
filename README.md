@@ -6,7 +6,7 @@ The aim of the project is to create or prototype a multiplayer game for several 
 
 ## Prerequisites
 
-[LÖVE](https://love2d.org/) is the only requirement for this project and the author makes sure to deliver.
+[LÖVE](https://love2d.org/) is the only runtime requirement for this project and the author makes sure to deliver. The source is Teal with the [lua-lifetime](https://github.com/bilbosz/lua-lifetime) extension, built into plain Lua with `luajit` and the submodules under `lib/` (`git submodule update --init`); see [REQUIREMENTS.md](REQUIREMENTS.md).
 
 ## Architectural goals
 
@@ -16,6 +16,10 @@ No external requirements other than what vanilla love2d framework offers.
 
 ## Running
 
+Build first (the app runs from `build/`):
+
+    ./build-code.sh
+
 To run server use command:
 
     love . server localhost 8080
@@ -24,7 +28,7 @@ To run client instance run command:
 
     love . client localhost 8080
 
-To run single instance of client and server use:
+To build and run single instance of client and server use:
 
     ./run.sh
 

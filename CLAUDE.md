@@ -4,20 +4,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Treflove is a multiplayer turn-based tabletop game engine built on LÖVE (love2d). The game master creates rules in Lua and can dynamically modify game state during gameplay. The project follows a server-client uniform architecture where many classes work in both server and client contexts. Only vanilla love2d is used - no external dependencies.
+Treflove is a multiplayer turn-based tabletop game engine built on LÖVE (love2d). The game master creates rules in Lua and can dynamically modify game state during gameplay. The project follows a server-client uniform architecture where many classes work in both server and client contexts. Only vanilla love2d is used at runtime - no external dependencies.
+
+The source is being migrated from Lua to Teal with the lua-lifetime extension (`.tlt` files with `.d.tl` declaration fragments), compiled by `./build-code.sh` into plain Lua under `build/`, which the app runs. Converted so far: the class system, `utils/`, `data/model`, `app/consts`, `app/arg-parser`, `app/globals`, `events/event`, `events/defer-manager`, `events/keyboard`; everything else is still `.lua`.
 
 ## Prerequisites
 
-External tools required by the dev scripts (`love`, `lua-format`, `lua-language-server`, `jq`, `rg`) are listed with installation instructions in [REQUIREMENTS.md](REQUIREMENTS.md).
+External tools required by the dev scripts (`luajit`, `love`, `luacheck`) are listed with installation instructions in [REQUIREMENTS.md](REQUIREMENTS.md). The Teal compiler, lua-lifetime and the LÖVE API description are submodules under `lib/` (`git submodule update --init`).
 
 ## Documentation
 
-Detailed guidance is split into topic files, imported below. To address one topic selectively, reference its file directly (e.g., `@docs/type-annotations.md` in a prompt):
+Detailed guidance is split into topic files, imported below. To address one topic selectively, reference its file directly (e.g., `@docs/types.md` in a prompt):
 
-- [docs/development.md](docs/development.md) - running the app, dev commands (format/lint/diagnose), test suite
+- [docs/development.md](docs/development.md) - running the app, the build, dev commands (build/test/lint), test suite
 - [docs/architecture.md](docs/architecture.md) - subsystems, design patterns, LÖVE integration
 - [docs/conventions.md](docs/conventions.md) - naming, modules vs classes, globals
-- [docs/type-annotations.md](docs/type-annotations.md) - LuaDoc annotation rules, strict typing, LÖVE types, annotation packages
+- [docs/types.md](docs/types.md) - Teal types: declaration fragments, the class recipe, modules, LÖVE types
+- [docs/lifetime.md](docs/lifetime.md) - the lifetime extension: destructors, ownership, hooks, tombstones
 
 @docs/development.md
 
@@ -25,7 +28,9 @@ Detailed guidance is split into topic files, imported below. To address one topi
 
 @docs/conventions.md
 
-@docs/type-annotations.md
+@docs/types.md
+
+@docs/lifetime.md
 
 ## Project Status
 

@@ -12,35 +12,34 @@
   - **Modules**: Tables with static functions (no instances created)
     - Use snake_case naming: `arg_parser`, `utils`, etc.
     - Return the table directly: `return arg_parser`
-    - Annotate the module table with a PascalCase `---@class` so the language server can type it - e.g., `---@class Media` above `local media = {}` in [utils/media.lua](../utils/media.lua), `---@class Utils` in [utils/utils.lua](../utils/utils.lua)
-    - Constant tables acting as enums are annotated `---@enum` - e.g., `---@enum Media.Type` in [utils/media.lua](../utils/media.lua)
-    - Example: [app/arg-parser.lua](../app/arg-parser.lua)
+    - Type the module table with a PascalCase `global record` - e.g., `global record Media` for `local media: Media = {}` in [utils/media.tlt](../utils/media.tlt) (still-Lua modules: a PascalCase `---@class`)
+    - Enums are Teal enums nested in the module's record - e.g., `Media.Type` in [utils/media.d.tl](../utils/media.d.tl)
+    - Example: [app/arg-parser.tlt](../app/arg-parser.tlt)
   - **Classes**: Use custom class system for object-oriented code
     - Use PascalCase naming: `Client`, `Server`, `Session`
     - Create instances with `ClassName()`
     - Example: [app/client.lua](../app/client.lua)
 - **Privacy**: Prefix private members with underscore (`_method`, `_field`)
 - **Callbacks**: Named with `on_` prefix (`on_connect`, `on_disconnect`)
-- **Dynamic dispatch (factory-like)**: When the concrete type of a value must be determined at runtime, follow the pattern in [utils/media.lua](../utils/media.lua) (`media.get_type_and_medium`):
+- **Dynamic dispatch (factory-like)**: When the concrete type of a value must be determined at runtime, follow the pattern in [utils/media.tlt](../utils/media.tlt) (`media.get_type_and_medium`):
   - Wrap each fallible constructor in a local `_try_`-prefixed function with a strict signature (e.g., `_try_create_image_file`)
   - List the candidates in an ordered dispatch table of `{constructor, tag}` pairs (e.g., `MATCH_FILE`), ordered so ambiguous data resolves to the preferred type
   - Iterate the table with `pcall`; the first constructor that succeeds determines the result - return the tag together with the constructed value
-  - Tag results with an `---@enum` table on the module (e.g., `media.Type`) instead of magic strings or numbers
-- **Type annotations**: Mandatory and strict - see [type-annotations.md](type-annotations.md) for the full rules
+  - Tag results with an enum of the module (e.g., `Media.Type`) instead of magic strings or numbers
+- **Types**: Mandatory and strict - see [types.md](types.md) for the full rules; ownership and destructors: [lifetime.md](lifetime.md)
 
 ## Global Variables and Functions
 
-Defined in [.luacheckrc](../.luacheckrc) and loaded via [app/globals.lua](../app/globals.lua):
+Declared in the modules' `.d.tl` fragments, listed for the remaining Lua in [.luacheckrc](../.luacheckrc), and loaded via [app/globals.tlt](../app/globals.tlt):
 
 - `app` - global Client or Server instance
 - `config` - LÖVE config table, set in [conf.lua](../conf.lua)
 - `class()` - class constructor; `abstract()` - marks abstract methods
 - `is_instance_of()`, `get_class_name_of()`, `get_class_of()` - reflection
 - `assert_type()`, `assert_unreachable()` - assertions
-- `table.*` - extended table utilities (merge, find, serialization)
-- `ripairs()`, `cipairs()`, `cripairs()`, `cpairs()`, `prev()` - reverse/cyclic iterators ([utils/table.lua](../utils/table.lua))
+- `ripairs()`, `cipairs()`, `cripairs()`, `cpairs()`, `prev()` - reverse/cyclic iterators ([utils/table.tlt](../utils/table.tlt))
 - `toboolean()` - value-to-boolean conversion
 - `love.*` - LÖVE framework API
 - `dump()` - debug dumping (only in debug mode)
 
-Note: `Utils.get_time()`, `Utils.get_stack_trace()`, `Utils.draw_aabbs()` live in the [utils/utils.lua](../utils/utils.lua) module (required locally, not global). See [.luacheckrc](../.luacheckrc) for the authoritative globals list.
+Not globals: the table helpers (merge, find, copy, serialization) are the module `table_utils` (`local table_utils = require("utils.table")`); `Utils.get_time()`, `Utils.get_stack_trace()`, `Utils.draw_aabbs()` live in the [utils/utils.tlt](../utils/utils.tlt) module; `lifetime` is required (`local lifetime = require("lifetime")`; generated code binds it itself). See [.luacheckrc](../.luacheckrc) for the authoritative globals list.

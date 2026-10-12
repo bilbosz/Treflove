@@ -10,7 +10,7 @@ Both inherit from [App](../app/app.lua) and register LÖVE callbacks.
 
 ## Custom Class System
 
-The project implements a custom class system in [utils/class.lua](../utils/class.lua) with **multiple inheritance** support:
+The project implements a custom class system in [utils/class.tlt](../utils/class.tlt) with **multiple inheritance** support (typed as described in [types.md](types.md); `release` is the destructor, see [lifetime.md](lifetime.md)):
 
 ```lua
 local MyClass = class("MyClass", BaseClass1, BaseClass2)
@@ -114,8 +114,8 @@ RPCs: DownloadAssetRp, DownloadMissingAssetsRp, UploadAssetRp
 ## Data Persistence
 
 Server persists game state to `save.lua` in human-readable format:
-- `table.to_string()` serializes Lua tables to string ([utils/table.lua](../utils/table.lua))
-- `table.from_string()` deserializes back to tables
+- `table_utils.to_string()` serializes Lua tables to string ([utils/table.tlt](../utils/table.tlt))
+- `table_utils.from_string()` deserializes back to tables
 - `Server:save_data()` writes to file
 - `Server:_load_data()` reads on startup
 
@@ -123,7 +123,7 @@ The [server/](../server/) directory contains server data, not source code: [serv
 
 ## Backstack Navigation
 
-[BackstackManager](../utils/backstack-manager.lua) maintains a stack of callbacks for back navigation (similar to browser history). When user presses back, the top callback is invoked and popped.
+[BackstackManager](../utils/backstack-manager.tlt) maintains a stack of callbacks for back navigation (similar to browser history). `push(cb)` returns an entry that removes itself from the stack when it dies; the caller anchors or destroys it ([lifetime.md](lifetime.md), "Back Navigation"). When user presses back, the top entry is destroyed and its callback invoked.
 
 ## Key Design Patterns
 
