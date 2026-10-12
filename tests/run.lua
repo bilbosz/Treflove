@@ -43,6 +43,7 @@ local TEST_MODULES = {
     "tests.test-keyboard",
     "tests.test-lifetime-class",
     "tests.test-pointer-event",
+    "tests.test-session",
     "tests.test-table",
     "tests.test-text-event"
 }

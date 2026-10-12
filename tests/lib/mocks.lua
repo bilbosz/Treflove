@@ -239,4 +239,46 @@ function mocks.ensure_love_math()
     }
 end
 
+---Make sure what a login and a connector need of LÖVE exists: `love.data.hash`
+---and `love.data.encode` (Utils.hash, Utils.generate_salt), the seeded
+---`love.math.newRandomGenerator` (Utils.generate_salt) and
+---`love.thread.newChannel` (the Connector made by a ConnectionManager). Under
+---`love . test` the real modules are used; under plain LuaJIT deterministic
+---stand-ins are added next to whatever `ensure_love_data` and
+---`ensure_love_math` installed (hex for base64, a djb2 hash, a Park-Miller
+---generator, `make_channel`).
+function mocks.ensure_love_login()
+    mocks.ensure_love_data()
+    mocks.ensure_love_math()
+    if love.data.hash then
+        return
+    end
+    love.data.encode = function(_, _, s)
+        return (s:gsub(".", function(c)
+            return string.format("%02x", c:byte())
+        end))
+    end
+    love.data.hash = function(_, s)
+        local h = 5381
+        for i = 1, #s do
+            h = (h * 33 + s:byte(i)) % 4294967296
+        end
+        return string.format("%08x", h)
+    end
+    love.math.newRandomGenerator = function()
+        local state = 1
+        return {
+            setSeed = function(_, seed)
+                state = seed % 2147483647
+            end,
+            random = function(_, lo, hi)
+                state = (state * 16807) % 2147483647
+                return lo + state % (hi - lo + 1)
+            end
+        }
+    end
+    love.thread = love.thread or {}
+    love.thread.newChannel = love.thread.newChannel or mocks.make_channel
+end
+
 return mocks
