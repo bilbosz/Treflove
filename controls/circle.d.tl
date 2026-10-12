@@ -1,4 +1,4 @@
--- controls/circle.lua (still Lua): a circle outline.
+-- controls/circle.tlt: a circle outline.
 global interface Circle is DrawableControl
     _color: {number}
     _diameter: number

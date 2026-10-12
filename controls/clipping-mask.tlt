@@ -1,17 +1,9 @@
-local Control = require("controls.control")
+local Control: Control = require("controls.control")
 
----@alias StencilCallback fun()
----@alias DrawMaskCallback fun()
+-- Clips its children to the stencil a callback draws.
+local ClippingMask: ClippingMask = class("ClippingMask", Control)
 
----@class ClippingMask: Control
----@field private _stencil_cb StencilCallback
-local ClippingMask = class("ClippingMask", Control)
-
----@param parent Control|nil
----@param width number
----@param height number
----@param draw_mask_cb DrawMaskCallback
-function ClippingMask:init(parent, width, height, draw_mask_cb)
+ClippingMask.init = function(self: ClippingMask, parent: Control, width: number, height: number, draw_mask_cb: DrawMaskCallback)
     assert(width and height and draw_mask_cb)
     Control.init(self, parent, width, height)
     self:set_draw_mask_callback(draw_mask_cb)
@@ -24,8 +16,7 @@ function ClippingMask:draw()
     love.graphics.setStencilTest()
 end
 
----@param draw_mask_cb DrawMaskCallback
-function ClippingMask:set_draw_mask_callback(draw_mask_cb)
+function ClippingMask:set_draw_mask_callback(draw_mask_cb: DrawMaskCallback)
     self._stencil_cb = function()
         love.graphics.push()
         love.graphics.replaceTransform(self.global_transform)

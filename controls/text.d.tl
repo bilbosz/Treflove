@@ -1,4 +1,4 @@
--- controls/text.lua (still Lua): a single-font text, sized to fit it.
+-- controls/text.tlt: a single-font text, sized to fit it.
 global interface Text is DrawableControl
     _text: string
     _font: love.Font

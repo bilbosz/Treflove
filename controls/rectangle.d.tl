@@ -1,4 +1,4 @@
--- controls/rectangle.lua (still Lua): a filled or outlined rectangle.
+-- controls/rectangle.tlt: a filled or outlined rectangle.
 global interface Rectangle is Control
     _color: {number}
     _mode: love.DrawMode

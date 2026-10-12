@@ -1,4 +1,4 @@
--- controls/clipping-mask.lua (still Lua): clips its children to the
+-- controls/clipping-mask.tlt: clips its children to the
 -- stencil a callback draws.
 global type StencilCallback = function()
 global type DrawMaskCallback = function()

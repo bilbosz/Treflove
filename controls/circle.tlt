@@ -1,17 +1,9 @@
-local DrawableControl = require("controls.drawable-control")
+local DrawableControl: DrawableControl = require("controls.drawable-control")
 
----@class Circle: DrawableControl
----@field private _color number[]
----@field private _diameter number
----@field private _line_width number
----@field private _radius number
-local Circle = class("Circle", DrawableControl)
+-- A circle outline.
+local Circle: Circle = class("Circle", DrawableControl)
 
----@param parent Control|nil
----@param radius number
----@param color number[]
----@param line_width number
-function Circle:init(parent, radius, color, line_width)
+Circle.init = function(self: Circle, parent: Control, radius: number, color: {number}, line_width: number)
     local r = radius
     local d = r * 2
     local w = line_width
@@ -28,8 +20,7 @@ function Circle:init(parent, radius, color, line_width)
     self._color = color
 end
 
----@param radius number
-function Circle:set_radius(radius)
+function Circle:set_radius(radius: number)
     local r = radius
     local d = r * 2
     local w = self._line_width
