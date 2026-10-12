@@ -19,6 +19,9 @@ local Input: Input = require("ui.input")
 --
 -- Registration: `app.button_event_manager:register(ctrl, button)`; controls are
 -- held as weak keys, so a collected control drops out without unregistering.
+-- `unregister` also ends the button's hover and selection, which the manager
+-- keeps between dispatches: a hidden input's button must not get its leave
+-- from a later move, when its input may be a tombstone (events/event.tlt).
 local ButtonEventManager: ButtonEventManager = class("ButtonEventManager")
 
 local WEAK_KEYS: metatable<{Control: Button}> = {
@@ -39,7 +42,16 @@ function ButtonEventManager:register(ctrl: Control, button: Button)
 end
 
 function ButtonEventManager:unregister(ctrl: Control)
+    local button = self._buttons[ctrl]
     self._buttons[ctrl] = nil
+    if button and button == self._selection then
+        button:unselect()
+        self._selection = nil
+    end
+    if button and button == self._hover then
+        button:leave()
+        self._hover = nil
+    end
 end
 
 local function _is_read_only_input(ctrl: Control): boolean

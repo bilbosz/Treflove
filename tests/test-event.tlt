@@ -281,3 +281,34 @@ test.case("owners are held weakly", function()
     event:trigger()
     test.assert_eq(calls, 1, "collected owner no longer receives triggers")
 end)
+
+-- An owner with a release is registered with the lifetime runtime and dies
+-- into a tombstone, which stays a key of the weak handler table until a
+-- later collection (events/event.tlt).
+local interface TestDyingOwner is Object
+end
+
+local TestDyingOwner: TestDyingOwner = class("TestDyingOwner")
+
+function TestDyingOwner:release(_reason?: LifetimeReason)
+end
+
+test.case("a dead owner is skipped and dropped, by trigger and get_handler", function()
+    local event = Event()
+    local calls = 0
+    local function _count(_owner: TestDyingOwner)
+        calls = calls + 1
+    end
+    local owner = TestDyingOwner()
+    event:register(owner, _count)
+    event:trigger()
+    test.assert_eq(calls, 1, "owner receives triggers while alive")
+
+    lifetime.destroy(owner)
+    test.assert_false(lifetime.alive(owner))
+    test.assert_eq(event:get_handler(owner), nil, "a tombstone has no handler")
+    event:trigger()
+    test.assert_eq(calls, 1, "a tombstone is not called")
+    -- as: `next` refuses a map keyed by an interface (docs/types.md)
+    test.assert_eq(next(event._handlers as {any: any}), nil, "a tombstone is dropped")
+end)

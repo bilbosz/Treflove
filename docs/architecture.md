@@ -87,7 +87,7 @@ the order of every teardown and the rules: [lifetime.md](lifetime.md),
 
 Events are composed, not inherited: a single [Event](../events/event.tlt) class is instantiated by managers (or by `app` directly) and consumers register handlers on it:
 - `Event` API: `register(owner, handler)`, `unregister(owner)`, `release()`, `trigger(...)`, `get_handler(owner)`; handlers are called as `handler(owner, ...)`
-- Owners are weak keys, so a collected owner drops out without unregistering; handlers are held strongly, so register methods, never closures capturing the owner: `app.update_event:register(self, self.on_update)`
+- Owners are weak keys, so a collected owner drops out without unregistering (an owner the lifetime runtime has seen stays a weak key as a tombstone for one more collection, so `trigger` and `get_handler` skip and drop a dead owner); handlers are held strongly, so register methods, never closures capturing the owner: `app.update_event:register(self, self.on_update)`
 - Registering during a trigger is deferred until it finishes; unregistering takes effect immediately
 - Unregistering is optional, since owners are weak keys; consumers with an explicit lifecycle unregister when it ends - Connection and PreviewArea in `release()`, FormScreen in `hide()`, Input, TextInput and TextButton in `on_screen_hide()`, TextInput and TextButton also in `on_focus_lost()`
 

@@ -295,3 +295,23 @@ test.case("unregistered controls are not reached", function()
 
     test.assert_deep_eq(tree.log, {})
 end)
+
+test.case("unregistering the hovered or selected control ends its hover and selection", function()
+    local tree = _make_tree()
+
+    tree.manager:dispatch_pointer_move(20, 20, nil)
+    tree.manager:dispatch_pointer_down(20, 20, 1)
+    tree.manager:unregister(as_control(tree.a))
+    test.assert_false(tree.a.button:is_hovered())
+    test.assert_false(tree.a.button:is_selected())
+    -- a later move or release reaches nothing of `a`
+    tree.manager:dispatch_pointer_move(45, 45, nil)
+    tree.manager:dispatch_pointer_up(45, 45, 1)
+
+    test.assert_deep_eq(tree.log, {
+        "a:entered",
+        "a:selected",
+        "a:unselected",
+        "a:left"
+    })
+end)

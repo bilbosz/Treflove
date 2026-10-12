@@ -5,7 +5,11 @@
 -- `app.update_event:register(self, self.on_update)`.
 --
 -- Owners are held as weak keys, so an owner that is garbage collected silently
--- drops out without unregistering. Handlers are held strongly, so a handler
+-- drops out without unregistering. An owner the lifetime runtime has seen (one
+-- with a release or a hook) is finalized into a tombstone first, and under Lua
+-- 5.1 a key resurrected by a finalizer stays in a weak table for one more
+-- collection, so `trigger` and `get_handler` treat a dead owner as gone
+-- (docs/lifetime.md, "Tombstones"). Handlers are held strongly, so a handler
 -- must not be a closure that captures its own owner (that would keep the owner
 -- alive) - pass a method and let the owner arrive as the first argument.
 --
@@ -92,7 +96,10 @@ function Event:trigger(...: any) -- any: see EventHandler
     assert(not self._lock, "Event triggered while already being triggered")
     self._lock = true
     for owner, handler in pairs(self._handlers) do
-        if not self._to_remove[owner] then
+        if not lifetime.alive(owner) then
+            -- a tombstone (see above): dropped, as a collected owner would be
+            self._handlers[owner] = nil
+        elseif not self._to_remove[owner] then
             handler(owner, ...)
         end
     end
@@ -103,7 +110,7 @@ end
 -- Handler registered for `owner`, or nil. Used by managers that dispatch in
 -- their own order (hit-tested control trees) instead of calling `trigger`.
 function Event:get_handler(owner: Object): EventHandler
-    if self._to_remove[owner] then
+    if self._to_remove[owner] or not lifetime.alive(owner) then
         return nil
     end
     return self._handlers[owner]

@@ -154,11 +154,12 @@ channels are LÖVE userdata, whose `__destroy` the runtime looks up on the
 shared per-type metatable, which LÖVE's objects do not have ("`__destroy`
 and reasons", rule 1), so an anchor would release nothing, and a hook per
 object would restate the body in four closures; the update registration
-must end in the body, because a destroyed connection stays a key of the
-event's weak table until it is collected, and the next frame would call
-`on_update` on its tombstone (lua-lifetime `trial/treflove/README.md`,
-finding 7). The body runs before the dependents, which still reach the
-connection: a dying object is not dead ("Tombstones").
+ends in the body with them: a destroyed connection stays a key of the
+event's weak table until it is collected (lua-lifetime
+`trial/treflove/README.md`, finding 7; `Event:trigger` skips and drops a
+dead owner, so a tombstone left there is harmless, but a registration is
+undone where it was made). The body runs before the dependents, which
+still reach the connection: a dying object is not dead ("Tombstones").
 
 Remote procedures are anchored to their owner (`LoginRp(...) @ self`) and
 `RemoteProcedure:release` is `self:stop()` only, so a second release is
