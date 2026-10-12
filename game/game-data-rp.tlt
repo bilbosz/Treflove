@@ -1,0 +1,48 @@
+local GameScreen: GameScreen = require("game.game-screen")
+local RemoteProcedure: RemoteProcedure = require("networking.remote-procedure")
+local WaitingScreen: WaitingScreen = require("screens.waiting-screen")
+
+-- The client asks for the game state, then downloads the assets of the
+-- current page and shows the game. Anchored to its session
+-- (`GameDataRp(...) @ self` in game/session.tlt).
+local GameDataRp: GameDataRp = class("GameDataRp", RemoteProcedure)
+
+-- The asset paths the current page needs.
+local function _list_required_assets(): {string}
+    local list: {string} = {}
+    local data = app.data
+    local page = data.pages[data.game.page]
+    table.insert(list, page.image)
+    for _, v in ipairs(page.tokens) do
+        table.insert(list, data.tokens[v].avatar)
+    end
+    return list
+end
+
+GameDataRp.init = function(self: GameDataRp, connection: Connection)
+    RemoteProcedure.init(self, connection)
+end
+
+function GameDataRp:send_response(_request: EmptyBody): GameDataResponse
+    return {
+        data = app.data
+    }
+end
+
+-- The game screen belongs to this procedure, and so to the session
+-- (lua-lifetime docs/02-semantics.md, "Cascading death"): its own back
+-- entry destroys it when the user leaves the game, and a disconnect in the
+-- game destroys it with the session, after the disconnect callback has
+-- shown the connecting screen (docs/lifetime.md, "Screens"). The screen
+-- manager and the back entry refer to it, so the implicit `reachable`
+-- term does not end it early.
+function GameDataRp:receive_response(response: GameDataResponse)
+    app.data = response.data
+    app.screen_manager:show(WaitingScreen("Synchronizing Assets..."))
+    local list = _list_required_assets()
+    app.asset_manager:download_missing_assets(list, function()
+        app.screen_manager:show(GameScreen(app.data.game) @ self)
+    end)
+end
+
+return GameDataRp

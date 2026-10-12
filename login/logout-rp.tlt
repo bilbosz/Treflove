@@ -1,0 +1,22 @@
+local RemoteProcedure: RemoteProcedure = require("networking.remote-procedure")
+
+-- Logs the user out on both sides.
+local LogoutRp: LogoutRp = class("LogoutRp", RemoteProcedure)
+
+LogoutRp.init = function(self: LogoutRp, connection: Connection, on_logout: LoginOnLogout)
+    RemoteProcedure.init(self, connection)
+    self.on_logout = on_logout
+end
+
+function LogoutRp:send_response(_request: EmptyBody): EmptyBody
+    assert(app.is_server)
+    self.on_logout()
+    return {}
+end
+
+function LogoutRp:receive_response(_response: EmptyBody)
+    assert(app.is_client)
+    self.on_logout()
+end
+
+return LogoutRp

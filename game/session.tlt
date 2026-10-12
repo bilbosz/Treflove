@@ -1,0 +1,104 @@
+local GameDataRp: GameDataRp = require("game.game-data-rp")
+local Login: Login = require("login.login")
+local LoginScreen: LoginScreen = require("login.login-screen")
+local UserMenuScreen: UserMenuScreen = require("screens.user-menu-screen")
+local WaitingScreen: WaitingScreen = require("screens.waiting-screen")
+
+-- A connection's user state: its login, its procedures and, on the client,
+-- its screens. Anchored to its connection (`Session(connection) @
+-- connection` in app/client.tlt and app/server.tlt), it dies in the
+-- connection's cascade, and what it owns dies after it, most recently
+-- attached first (lua-lifetime docs/02-semantics.md, "Cascading death"),
+-- so it has no destructor of its own (idiom A of lua-lifetime
+-- trial/treflove/README.md).
+local Session: Session = class("Session")
+
+-- Being logged in is a token (idiom C; lua-lifetime docs/02-semantics.md,
+-- "Tokens: `lifetime.token`"), kept in `_period` (a token anchored with
+-- `@` dies early if nothing refers to it). The user menu and the back
+-- entry that logs out die with it, the entry first. The menu replaces
+-- whatever was shown (the connecting or the login screen), and nothing is
+-- destroyed here: a login screen shown before is anchored to the session
+-- and left to the collector once replaced (docs/lifetime.md, "Screens").
+local function _on_login(self: Session, user: string)
+    assert(not self._user)
+    self._user = user
+    if app.is_client then
+        app.text_event_manager:set_text_input(false)
+        local period = lifetime.token("period") @ self
+        self._period = period
+        self._user_menu_screen = UserMenuScreen(self) @ period
+        app.screen_manager:show(self._user_menu_screen)
+        app.backstack_manager:push(function()
+            self:logout()
+        end) @ period
+    end
+end
+
+-- The login screen is shown first and the period destroyed after: a screen
+-- dies only after it has been replaced (docs/lifetime.md, "Screens"). The
+-- period's cascade then takes the back entry off the stack (unless the
+-- back key, which ran it, has destroyed it already: `lifetime.destroy` of
+-- a dead object is a no-op, "Explicit destruction") and runs the menu
+-- screen's release. The fields are cleared for clarity: a dead object is
+-- a tombstone, not nil ("Tombstones").
+local function _on_logout(self: Session)
+    assert(self._user)
+    self._user = nil
+    if app.is_client then
+        app.screen_manager:show(LoginScreen(self._login) @ self)
+        lifetime.destroy(self._period)
+        self._period = nil
+        self._user_menu_screen = nil
+    end
+end
+
+Session.init = function(self: Session, connection: Connection)
+    self._connection = connection
+    self._user = nil
+    -- What the session owns is written where it is made (idiom A).
+    local login = Login(self, function(user: string)
+        _on_login(self, user)
+        if app.is_client then
+            self._user_menu_screen:join_game()
+        end
+    end, function()
+        _on_logout(self)
+    end) @ self
+    self._login = login
+    self._game_data_rp = GameDataRp(self._connection) @ self
+    app.asset_manager:register_session(self)
+
+    if app.is_client then
+        -- TODO (TODO.md, item 7): the hardcoded development login.
+        login:login("adam", "krause")
+    end
+end
+
+function Session:get_user(): string
+    return self._user
+end
+
+function Session:get_connection(): Connection
+    return self._connection
+end
+
+function Session:login(user: string, password: string)
+    self._login:login(user, password)
+end
+
+function Session:logout()
+    self._login:logout()
+end
+
+function Session:is_logged_in(): boolean
+    return not not self._user
+end
+
+function Session:join_game()
+    assert(app.is_client)
+    app.screen_manager:show(WaitingScreen("Loading..."))
+    self._game_data_rp:send_request({})
+end
+
+return Session

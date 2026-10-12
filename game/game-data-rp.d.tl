@@ -1,5 +1,7 @@
--- game/game-data-rp.lua (still Lua): the client asks for the game state,
--- then downloads the assets of the current page and shows the game.
+-- game/game-data-rp.tlt: the client asks for the game state,
+-- then downloads the assets of the current page and shows the game
+-- (constructor: `GameDataRp(connection: Connection)`). Anchored to its
+-- session; owns the GameScreen it shows.
 
 -- The persisted game state: server/save.lua, app.data on both sides.
 global record GameState

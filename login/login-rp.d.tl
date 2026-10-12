@@ -1,4 +1,6 @@
--- login/login-rp.lua (still Lua): authenticates a user on the server.
+-- login/login-rp.tlt: authenticates a user on the server (constructor:
+-- `LoginRp(connection: Connection, on_login: LoginOnLogin)`). Anchored to
+-- its Login.
 
 -- A player of the persisted state (GameState.players).
 global record PlayerData

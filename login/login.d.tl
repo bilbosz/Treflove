@@ -1,7 +1,8 @@
--- login/login.lua (still Lua): the login and logout procedures of a
--- session. lifetime: anchored to its session (`Login(...) @ self`); its
--- procedures are anchored to it (`LoginRp(...) @ self`), so its `release`
--- needs not release them (docs/lifetime.md).
+-- login/login.tlt: the login and logout procedures of a session
+-- (constructor: `Login(session: Session, on_login: LoginOnLogin,
+-- on_logout: LoginOnLogout)`). Anchored to its session (`Login(...) @
+-- self`); its procedures are anchored to it (`LoginRp(...) @ self`) and die
+-- in the same cascade, so it has no `release` (docs/lifetime.md).
 global type LoginOnLogin = function(user: string)
 global type LoginOnLogout = function()
 
