@@ -8,7 +8,7 @@ The `app/` directory contains the application layer that bootstraps and manages 
 
 ## File Structure
 
-- **[globals.tlt](globals.tlt)**: Loads global utilities (table, utils, class, dump in debug mode)
+- **[globals.tlt](globals.tlt)**: Loads the modules that define the globals (utils/table, utils/utils, utils/class; utils/dump in debug mode); it has no fragment, since it defines nothing itself
 - **[arg-parser.tlt](arg-parser.tlt)** / [arg-parser.d.tl](arg-parser.d.tl): Parses command-line arguments
 - **[consts.tlt](consts.tlt)** / [consts.d.tl](consts.d.tl): Application-wide constants (colors, fonts, dimensions, keybindings)
 - **[app.tlt](app.tlt)** / [app.d.tl](app.d.tl): Base App class with common functionality; the fragment declares its type `App`, the global `app` and the LÖVE `config`
@@ -43,7 +43,7 @@ The `app/` directory contains the application layer that bootstraps and manages 
 - `love.draw()` → renders `self.root` control hierarchy (if window enabled)
 - `love.update(dt)` → updates defer manager, checks for quit, updates time, triggers `update_event`, runs GC step
 - `love.errorhandler()` → prints error and stack trace in debug mode, silent otherwise
-- `love.keypressed()` → handles F2 (toggle AABB drawing), F4 (quit)
+- `love.keypressed()` → handles F2 (toggle AABB drawing), F4 (quit) (if window enabled; the Client wraps it)
 - `love.quit()` → announces program end to the lifetime runtime (`lifetime.set_exiting(true)`)
 
 **Root Control Management**:
@@ -104,7 +104,7 @@ Creates all UI-related managers:
 
 ### Load Flow
 
-1. Pushes the quit callback onto the backstack (escape key quits), anchored to the app (`push(...) @ self`: it lives as long as the program)
+1. Pushes the quit callback onto the backstack (escape key quits), anchored to the app (`push(...) @ self`: it lives as long as the program, and at program end dies in the app's cascade with the reason "anchor")
 2. Shows ConnectingScreen
 3. Starts connection via ConnectionManager
 4. On connection: creates the Session anchored to its connection (`Session(connection) @ connection`)
@@ -275,10 +275,10 @@ app = self
 This makes the app instance accessible everywhere without requiring imports. Check `app.is_client` or `app.is_server` to branch behavior in shared code.
 
 **Manager access pattern**:
-```lua
-app.screen_manager:show(SomeScreen())
-app.asset_manager:download_asset(...)
-local entry = app.backstack_manager:push(callback) -- anchor it, or lifetime.destroy(entry)
+```teal
+app.screen_manager:show(WaitingScreen("Loading..."))
+app.asset_manager:download_asset(path)
+app.backstack_manager:push(callback) @ owner -- or keep the entry and lifetime.destroy(entry)
 ```
 
 ## Debug Mode
@@ -319,9 +319,9 @@ end
 ```
 
 **Accessing managers from anywhere**:
-```lua
-app.notification_manager:show_notification("Hello")
-app.screen_manager:show(GameScreen())
+```teal
+app.notification_manager:notify("Hello")
+app.session:show_user_menu() -- client, logged in: the menu belongs to the session's period
 ```
 
 **Checking context**:

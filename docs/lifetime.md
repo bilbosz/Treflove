@@ -1,10 +1,12 @@
 # Lifetimes
 
-Converted modules use the lua-lifetime extension: owned and scoped objects
+Every module uses the lua-lifetime extension: owned and scoped objects
 with destructors ([lib/lua-lifetime](../lib/lua-lifetime), the semantics in
-`lib/lua-lifetime/docs/02-semantics.md`). The earlier trial
+`lib/lua-lifetime/docs/02-semantics.md`). The trial
 `lib/lua-lifetime/trial/treflove/README.md` ported a slice of Treflove to it
-and shows the teardown order the ported code must have.
+first; its idioms (A: owners written where objects are made, B: hooks that
+unlink, C: periods as tokens) are the ones used here, and the comments cite
+them by letter.
 
 ## The Extension in One Screen
 
@@ -32,8 +34,10 @@ and shows the teardown order the ported code must have.
   still runs its `release` (reason `"unreachable"`); a constructor that
   raises leaves nothing registered. An instance of a class with no
   `release` has nothing to run and is not registered.
-- `App` defines `love.quit` to call `lifetime.set_exiting(true)`, so what
-  the closing state finalizes dies with the reason `"exit"`.
+- `App` defines `love.quit` to call `lifetime.set_exiting(true)`, so an
+  object the closing state finalizes dies with the reason `"exit"`, and
+  its dependents in that cascade with `"anchor"` (the quit entry, in the
+  app's).
 
 ## Ownership
 
@@ -44,9 +48,11 @@ and shows the teardown order the ported code must have.
   second release).
 - A registered object released by hand would run its `release` again when
   it dies, so nothing calls `release` by hand: an object that must end now
-  is destroyed (`lifetime.destroy(x)`), which runs its `release` once. A
-  Lua test writes `x @ owner` as `lifetime.attach(x, false, owner)`, which
-  is what `x @ owner` compiles to.
+  is destroyed (`lifetime.destroy(x)`), which runs its `release` once. (Two
+  tests call a `release` body on purpose, to check that it is harmless to
+  repeat or what it undoes: `Event:release` in
+  [tests/test-event.tlt](../tests/test-event.tlt), `RemoteProcedure:release`
+  in [tests/test-connection.tlt](../tests/test-connection.tlt).)
 - Objects in one ownership tree are anchored to their owner, so that the
   collector (and program end) finalizes the owner before them: within one
   collection anchors are finalized first, otherwise newest first.
@@ -140,7 +146,7 @@ itself), runs the disconnect callback and ends with
 `lifetime.destroy(connection)`: `Connection:release` runs first, then
 whatever is anchored to the connection, most recently attached first
 (lua-lifetime `docs/02-semantics.md`, "Cascading death";
-[tests/test-connection.lua](../tests/test-connection.lua) asserts the
+[tests/test-connection.tlt](../tests/test-connection.tlt) asserts the
 sequence). `Connection:release` keeps releasing what the connection holds
 - the two threads, the two channels and its `app.update_event`
 registration - instead of anchoring them `@ self`: the threads and
@@ -162,7 +168,7 @@ per-session tables are weak in keys and values (5.1 has no ephemerons,
 and a procedure refers back to its session's connection through its
 request handler), and a hook on the session removes its three entries as
 it dies, so a reconnected client never picks a dead procedure from them
-([tests/test-asset-manager.lua](../tests/test-asset-manager.lua)).
+([tests/test-asset-manager.tlt](../tests/test-asset-manager.tlt)).
 
 ### Screens
 
@@ -223,7 +229,7 @@ cascade runs the form's `release` first and nothing is unlinked. A
 collection gives no such order (see "Dropped and collected" above): the
 inputs may go first and unlink themselves from a form about to die,
 harmlessly
-([tests/test-form-screen.lua](../tests/test-form-screen.lua) asserts the
+([tests/test-form-screen.tlt](../tests/test-form-screen.tlt) asserts the
 three logs, and the removal by hand below). The input keeps the hook in `_unlink_hook`, and
 `remove_input` discards it, so an input removed by hand (TokenPanel drops
 and replaces its inputs) is not pinned to the form by its hook; from the
@@ -252,4 +258,7 @@ Any other walk over a seen table skips it the same way.
 A test asserts the **order** of deaths and the statement that caused them,
 not only that something died. A death by the collector is pinned with
 `collectgarbage("collect")`, twice when a weak table must have cleared,
-never with timing. See [tests/test-lifetime-class.lua](../tests/test-lifetime-class.lua).
+never with timing. Tests write ownership with the extension's own syntax
+(`x @ owner`, `f !@ x`). See
+[tests/test-lifetime-class.tlt](../tests/test-lifetime-class.tlt) and the
+whole tree in [tests/test-session.tlt](../tests/test-session.tlt).

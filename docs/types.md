@@ -1,8 +1,9 @@
 # Types
 
 Every module is Teal (`.tlt`, Teal plus the lifetime extension of
-[lifetime.md](lifetime.md)), except the bootstraps `main.lua` and
-`conf.lua`, the tests and the tools; the modules' types live in declaration fragments
+[lifetime.md](lifetime.md)), the test modules and helpers included; only
+the bootstraps `main.lua` and `conf.lua`, the test entry `tests/run.lua`
+and the tools are Lua. The modules' types live in declaration fragments
 (`.d.tl`). The build ([development.md](development.md), "The Build")
 type-checks everything; untyped code is not acceptable.
 
@@ -11,7 +12,9 @@ type-checks everything; untyped code is not acceptable.
 Every module `<dir>/<module>.tlt` has a fragment `<dir>/<module>.d.tl`
 holding its public types and the globals it defines (the LÖVE thread
 scripts of [networking/detail/](../networking/detail/), which nothing
-requires and which define nothing, have none). The build concatenates
+requires and which define nothing, [app/globals.tlt](../app/globals.tlt),
+which only requires the modules that define the globals, and the test
+modules, whose types are local, have none). The build concatenates
 all fragments into one predefined file, `build/types/env.tl`, so every
 fragment and every module sees every global type. Rules:
 
@@ -24,7 +27,7 @@ fragment and every module sees every global type. Rules:
   interface or a record) may not, so the build orders fragments by their
   `is` clauses, and within a fragment a base comes first.
 - An error in a fragment is reported at the fragment's own line.
-- Every module has its fragment; its first line names the module
+- Every other module has its fragment; its first line names the module
   (`-- game/session.tlt: ...`) and, where the constructor takes arguments
   the checker cannot see at call sites, spells them in a comment
   (`constructor: Token(data: TokenData, parent: Control)`).
@@ -96,6 +99,16 @@ return Rectangle
 - `class`, `is_instance_of`, `get_class_of`, `get_class_name_of`,
   `assert_type`, `assert_unreachable` and `abstract` are globals declared
   in [utils/class.d.tl](../utils/class.d.tl).
+- A class only a test needs is typed by a `local interface` in the test
+  module (`local interface TestEchoRp is RemoteProcedure ... end`, then
+  `local TestEchoRp: TestEchoRp = class("TestEchoRp", RemoteProcedure)`);
+  annotations after the class table still resolve to the interface. `tl`
+  warns that the class table shadows the type (and calls the type unused);
+  the build does not report those two warnings for this shape, as it does
+  not report the shadowing of a global class type. Types a test helper
+  exports are nested in its module record
+  ([tests/lib/mocks.tlt](../tests/lib/mocks.tlt): `mocks.AppMock`,
+  `mocks.FakeChannel`) and named through the required module.
 
 ## Modules
 
@@ -214,6 +227,27 @@ fragment's line.
   ([app/app.tlt](../app/app.tlt)).
 - Teal's standard library is Lua 5.4's, which has no `math.pow`: write
   `x ^ y`.
+- A cast (`x as T`) is accepted between any two types, unrelated ones
+  included (`"soon" as number`, a test stand-in `as Control`); that is why
+  every cast carries a comment.
+- A function cannot be defined for a field declared with several variants
+  (`love.Channel.demand`, with and without a timeout; `type signature does
+  not match declaration: field has multiple function definitions`), nor
+  assigned to one (`cannot match against all alternatives of the
+  polymorphic type`). A test double of such a type is built as a record of
+  its own and cast once ([tests/lib/mocks.tlt](../tests/lib/mocks.tlt),
+  `make_channel`).
+- `pcall`/`xpcall` type their results by the called function's: calling a
+  function that returns nothing, `local ok, err = pcall(fn)` is
+  `assignment in declaration did not produce an initial value for variable
+  'err'`. Keep the error from the message handler of `xpcall` instead
+  ([tests/lib/test.tlt](../tests/lib/test.tlt)).
+- `next` on a map keyed by an interface (`next(t)` with `t: {Session:
+  V}`) is refused (`in map key: got <any type>`); cast the map (`next(t as
+  {any: any})`).
+- `_G` is typed as the record of declared globals, so an undeclared one
+  (`destroyerror`, the lifetime runtime's error hook) is reached through
+  a cast of `_G` to a map.
 - The lifetime transpiler (not `tl`) takes a method call that opens a
   table constructor for a typed field: `{token:get_position()}` is the
   syntax error `'=' expected near '('`. Bind the results to locals first
@@ -242,3 +276,7 @@ fragment's line.
   so write `table.unpack`, not `unpack`.
 - The global `app` is `App` ([app/app.d.tl](../app/app.d.tl)); `config`
   (the LÖVE configuration table kept by `conf.lua`) is `LoveConfig`.
+
+## History
+
+The codebase was migrated from LuaDoc-annotated Lua.

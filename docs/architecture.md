@@ -10,10 +10,10 @@ Both inherit from [App](../app/app.tlt) and register LÖVE callbacks.
 
 ## Custom Class System
 
-The project implements a custom class system in [utils/class.tlt](../utils/class.tlt) with **multiple inheritance** support (typed as described in [types.md](types.md); `release` is the destructor, see [lifetime.md](lifetime.md)):
+The project implements a custom class system in [utils/class.tlt](../utils/class.tlt) with **multiple inheritance** support (typed as described in [types.md](types.md), "Classes"; `release` is the destructor, see [lifetime.md](lifetime.md)):
 
-```lua
-local MyClass = class("MyClass", BaseClass1, BaseClass2)
+```teal
+local MyClass: MyClass = class("MyClass", BaseClass1, BaseClass2)
 ```
 
 Key functions:
@@ -23,7 +23,7 @@ Key functions:
 - `get_class_of(obj)` - get class table
 - `assert_type(obj, typ)` - runtime validation
 
-Classes define an `init` method that acts as a constructor. Multiple inheritance merges methods from all base classes in reverse order.
+Classes define an `init` method that acts as a constructor (assigned, `MyClass.init = function(self: MyClass, ...) ... end`). Multiple inheritance merges methods from all base classes in reverse order. Every instance of a class with a `release` is registered with the lifetime runtime after `init`, and `release` runs when it dies.
 
 ## Global App Instance
 
@@ -56,11 +56,32 @@ The class name is used as the RPC identifier. Examples: LoginRp, UploadAssetRp, 
 - Coordinates screen transitions (connecting → login → user menu → game)
 - Integrates with asset manager and backstack navigation
 - Owns its login, its procedures and, on the client, the logged-in period
-  (a token owning the user menu and the logout back entry) and the login
+  (a token owning every user menu and the logout back entry) and the login
   screen; it is anchored to its connection and dies when the connection is
   removed (the whole tree: [lifetime.md](lifetime.md), "The Tree")
 - Server maintains `_sessions` table mapping Connection → Session
-- **Note**: Client auto-logs in with hardcoded credentials "adam"/"krause" at [game/session.tlt:74](../game/session.tlt#L74)
+- **Note**: Client auto-logs in with hardcoded credentials "adam"/"krause" at [game/session.tlt:73](../game/session.tlt#L73)
+
+## Ownership
+
+Who owns what is written where an object is made, with the lua-lifetime
+extension: `x @ owner` anchors `x` to its owner, `f !@ x` attaches a hook
+that runs as `x` dies, and a class's `release` is its destructor. A
+connection is a root of the ownership tree: its session is anchored to it,
+and the session owns its login, its remote procedures and, on the client,
+the logged-in period (a token owning every user menu and the logout back
+entry) and the login screen; the game screen belongs to the session's
+`GameDataRp`. Roots die by `lifetime.destroy`: the connection in
+`ConnectionManager:remove`, the period on logout, a game screen by its own
+back entry, a back entry in `BackstackManager:back`. The runtime then runs
+the owner's `release` first and its dependents most recently attached
+first. Hooks unlink objects from lists as they die (an input from its
+form, a back entry from the stack, a session's entries from the
+AssetManager). At program end `App` sets `love.quit` to announce it
+(`lifetime.set_exiting(true)`), and what the closing state finalizes runs
+its cascade. The control tree is not an ownership tree. The whole tree,
+the order of every teardown and the rules: [lifetime.md](lifetime.md),
+"The Tree".
 
 ## Event System
 
@@ -139,7 +160,7 @@ The [server/](../server/) directory contains server data, not source code: [serv
 
 **Remote Procedures**: Request-response pattern over network connections using class names as identifiers.
 
-**Resource Cleanup**: A class's `release()` is its destructor: the lifetime runtime runs it when the object dies (destroyed, with its owner, collected, or at program end); nothing calls it by hand ([lifetime.md](lifetime.md)).
+**Resource Cleanup**: A class's `release(reason)` is its destructor: `class()` forwards the instance's `__destroy` to it, and the lifetime runtime runs it once when the object dies - destroyed (`lifetime.destroy`), with its owner (a cascade), collected, or at program end - with the reason. It undoes only what the object holds itself (threads and channels, event registrations, a request handler); what the object owns is anchored to it and dies in the cascade after it, so a destructor never releases its dependents, and no call site releases an object someone else owns ([lifetime.md](lifetime.md), "Ownership").
 
 ## LÖVE Framework Integration
 
@@ -147,5 +168,5 @@ The [server/](../server/) directory contains server data, not source code: [serv
 - Config: [conf.lua](../conf.lua)
 - Callbacks registered in `App:register_love_callbacks()` and overridden in Client/Server
 - Client uses love.graphics, love.window, love.keyboard, love.mouse, love.touch
-- Both use love.thread and love.channel for networking
+- Both use love.thread (threads and channels) for networking
 - Server can run headless (no graphics) or with minimal UI
