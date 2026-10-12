@@ -1,0 +1,89 @@
+local Button: Button = require("ui.button")
+local FormScreen: FormScreen = require("ui.form-screen")
+
+-- A focusable form element. Not a Control subclass at runtime, but always
+-- mixed into Control-derived classes (see TextInput, TextButton), which the
+-- `is Control` of its interface reflects.
+--
+-- Every input is clickable: it owns a `Button` (hover/selection state and
+-- pointer events) that is registered with `app.button_event_manager` while the
+-- form screen is shown. Subclasses register their methods on its events, e.g.
+-- `self:get_button().clicked:register(self, self.on_click)`.
+local Input: Input = class("Input")
+
+Input.init = function(self: Input, form_screen: FormScreen)
+    assert_type(form_screen, FormScreen)
+    self._button = Button()
+    self._form_screen = form_screen
+    self._is_focused = false
+    self._is_read_only = false
+    form_screen:add_input(self)
+    -- Unlinking (lua-lifetime trial/treflove/README.md, idiom B): the hook
+    -- dies when either side dies, after that side's own destructor
+    -- (lua-lifetime docs/02-semantics.md, "Hooks: the `!@` operator"). If
+    -- the input went first, it is removed while it is dying and still
+    -- findable by identity (a dead input would stay in the list as a
+    -- tombstone, "Tombstones"); if the form went first, its `release` has
+    -- said so and there is nothing to unlink.
+    function()
+        if not form_screen:is_released() then
+            form_screen:remove_input(self)
+        end
+    end !@ (form_screen, self)
+    if form_screen:is_showed() then
+        self:on_screen_show()
+    end
+end
+
+function Input:get_button(): Button
+    return self._button
+end
+
+function Input:is_hovered(): boolean
+    return self._button:is_hovered()
+end
+
+function Input:is_selected(): boolean
+    return self._button:is_selected()
+end
+
+function Input:get_form_screen(): FormScreen
+    return self._form_screen
+end
+
+function Input:set_read_only(value: boolean)
+    if self._is_read_only ~= value then
+        self._is_read_only = value
+        self:on_read_only_change()
+    end
+end
+
+function Input:is_read_only(): boolean
+    return self._is_read_only
+end
+
+function Input:on_read_only_change()
+    self._form_screen:read_only_change(self)
+end
+
+function Input:on_screen_show()
+    app.button_event_manager:register(self, self._button)
+end
+
+function Input:on_screen_hide()
+    app.button_event_manager:unregister(self)
+end
+
+function Input:on_focus()
+    self._is_focused = true
+end
+
+function Input:on_focus_lost()
+    self._is_focused = false
+end
+
+function Input:is_focused(): boolean
+    return self._is_focused
+end
+
+return Input

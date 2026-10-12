@@ -216,4 +216,27 @@ function mocks.ensure_love_data()
     }
 end
 
+---Make sure `love.math.newTransform` exists, for code that constructs a
+---`Control` (a `Screen` makes one). Under `love . test` the real module is
+---used; under plain LuaJIT a transform that ignores every operation is
+---installed instead (enough for constructing controls, not for geometry).
+function mocks.ensure_love_math()
+    if love and love.math then
+        return
+    end
+    local transform_mt = {}
+    transform_mt.__index = function()
+        return function(transform)
+            return transform
+        end
+    end
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    love = love or {}
+    love.math = {
+        newTransform = function()
+            return setmetatable({}, transform_mt)
+        end
+    }
+end
+
 return mocks

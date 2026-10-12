@@ -1,0 +1,28 @@
+local ClippingRectangle: ClippingRectangle = require("controls.clipping-rectangle")
+local Consts = require("app.consts")
+local Control: Control = require("controls.control")
+local Rectangle: Rectangle = require("controls.rectangle")
+
+-- A clipped panel with a background that follows its size.
+local Panel: Panel = class("Panel", ClippingRectangle)
+
+function Panel:_create_background()
+    local w, h = self:get_size()
+    self._background = Rectangle(self, w, h, Consts.BACKGROUND_COLOR)
+end
+
+function Panel:set_size(w: number, h: number)
+    Control.set_size(self, w, h)
+    self._background:set_size(w, h)
+end
+
+Panel.init = function(self: Panel, parent: Control, width: number, height: number)
+    ClippingRectangle.init(self, parent, width, height)
+    self:_create_background()
+end
+
+function Panel:on_resize(w: number, h: number)
+    self:set_size(w, h)
+end
+
+return Panel

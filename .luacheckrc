@@ -25,6 +25,7 @@ std = {
         "pcall",
         "print",
         "rawget",
+        "rawset",
         "require",
         "select",
         "setmetatable",

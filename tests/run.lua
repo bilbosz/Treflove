@@ -39,6 +39,7 @@ local TEST_MODULES = {
     "tests.test-connection",
     "tests.test-defer-manager",
     "tests.test-event",
+    "tests.test-form-screen",
     "tests.test-keyboard",
     "tests.test-lifetime-class",
     "tests.test-pointer-event",

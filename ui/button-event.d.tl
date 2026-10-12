@@ -1,4 +1,4 @@
--- ui/button-event.lua (still Lua): drives the Button of the control under
+-- ui/button-event.tlt: drives the Button of the control under
 -- the pointer from raw pointer input.
 global interface ButtonEventManager is Object
     _buttons: {Control: Button} -- the registered button per control (weak keys)

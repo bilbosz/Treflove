@@ -1,38 +1,23 @@
-local ClippingRectangle = require("controls.clipping-rectangle")
+local ClippingRectangle: ClippingRectangle = require("controls.clipping-rectangle")
 local Consts = require("app.consts")
-local Control = require("controls.control")
-local FormScreen = require("ui.form-screen")
-local Input = require("ui.input")
-local Rectangle = require("controls.rectangle")
-local Text = require("controls.text")
-local TextBuffer = require("ui.text-buffer")
+local Control: Control = require("controls.control")
+local FormScreen: FormScreen = require("ui.form-screen")
+local Input: Input = require("ui.input")
+local Rectangle: Rectangle = require("controls.rectangle")
+local Text: Text = require("controls.text")
+local TextBuffer: TextBuffer = require("ui.text-buffer")
 
----Single-line text field. Pointer hover/click come from the `Button` owned by
----`Input`; the text lives in an owned `TextBuffer`. While focused and on a
----shown form screen, the field registers its `on_append_text`/
----`on_remove_characters`/`on_remove_word`/`on_enter` methods on
----`app.text_event_manager` and applies them to the buffer (subclasses override
----them to filter edits, see `NumberInput`). A focused field keeps its focus
----while the screen is hidden, but receives no text until it is shown again.
----@class TextInput: Control, Input
----@field private _background Rectangle
----@field private _buffer TextBuffer
----@field private _caret Rectangle
----@field private _caret_time number|nil
----@field private _clip ClippingRectangle
----@field private _content Control
----@field private _has_new_value boolean
----@field private _is_multivalue boolean
----@field private _masked boolean
----@field private _on_enter fun()|nil
----@field private _on_input fun()|nil
----@field private _padding number
----@field private _text_ctrl Text
-local TextInput = class("TextInput", Control, Input)
+-- Single-line text field. Pointer hover/click come from the `Button` owned by
+-- `Input`; the text lives in an owned `TextBuffer`. While focused and on a
+-- shown form screen, the field registers its `on_append_text`/
+-- `on_remove_characters`/`on_remove_word`/`on_enter` methods on
+-- `app.text_event_manager` and applies them to the buffer (subclasses override
+-- them to filter edits, see `NumberInput`). A focused field keeps its focus
+-- while the screen is hidden, but receives no text until it is shown again.
+local TextInput: TextInput = class("TextInput", Control, Input)
 
----@private
 function TextInput:_upload_background_view()
-    local color
+    local color: {number}
     if self:is_focused() then
         if self:is_multivalue_default() then
             color = Consts.BUTTON_MULTIVALUE_SELECT_COLOR
@@ -62,7 +47,6 @@ function TextInput:_upload_background_view()
     self._background:set_color(color)
 end
 
----@private
 function TextInput:_update_text_view()
     local text = self._text_ctrl
     if self._masked then
@@ -72,7 +56,6 @@ function TextInput:_update_text_view()
     end
 end
 
----@private
 function TextInput:_upload_caret_view()
     local caret = self._caret
     local is_focused = self:is_focused()
@@ -86,7 +69,6 @@ function TextInput:_upload_caret_view()
     caret:set_position(w)
 end
 
----@private
 function TextInput:_update_content_view()
     self:_update_text_view()
     self:_upload_caret_view()
@@ -102,23 +84,19 @@ function TextInput:_update_content_view()
     end
 end
 
----@private
 function TextInput:_update_view()
     self:_upload_background_view()
     self:_update_content_view()
     self:_update_text_events_registration()
 end
 
----Text events go to the field only while it is focused and its form screen is
----shown; a hidden focused field must not receive typing.
----@private
+-- Text events go to the field only while it is focused and its form screen is
+-- shown; a hidden focused field must not receive typing.
 function TextInput:_update_text_events_registration()
     self:_set_text_events_registered(self:is_focused() and self:get_form_screen():is_showed())
 end
 
----@private
----@param value boolean
-function TextInput:_set_text_events_registered(value)
+function TextInput:_set_text_events_registered(value: boolean)
     local manager = app.text_event_manager
     if value then
         manager.text_appended:register(self, self.on_append_text)
@@ -133,13 +111,11 @@ function TextInput:_set_text_events_registered(value)
     end
 end
 
----@private
 function TextInput:_create_background()
     local width, height = self:get_size()
     self._background = Rectangle(self, width, height, Consts.BUTTON_NORMAL_COLOR)
 end
 
----@private
 function TextInput:_create_clip()
     local width, height = self:get_size()
     local clip = ClippingRectangle(self, width - 2 * self._padding, height)
@@ -148,7 +124,6 @@ function TextInput:_create_clip()
     clip:set_position(self._padding, 0)
 end
 
----@private
 function TextInput:_create_caret()
     local _, height = self:get_size()
     local caret_height = height - 2 * self._padding
@@ -158,9 +133,8 @@ function TextInput:_create_caret()
     caret:set_origin(0, caret_height * 0.5)
 end
 
----@private
 function TextInput:_create_text()
-    local font = Consts.USER_INPUT_FONT --[[@as love.Font]]
+    local font = Consts.USER_INPUT_FONT
     local text = Text(self._content, "", Consts.TEXT_INPUT_FOREGROUND_COLOR, font)
     self._text_ctrl = text
 
@@ -168,7 +142,6 @@ function TextInput:_create_text()
     text:set_scale(Consts.MENU_FIELD_SCALE)
 end
 
----@private
 function TextInput:_create_content()
     local content = Control(self._clip)
     self._content = content
@@ -180,14 +153,7 @@ function TextInput:_create_content()
     self:_create_text()
 end
 
----@param parent Control
----@param form_screen FormScreen
----@param width number
----@param height number
----@param masked boolean|nil
----@param on_input fun()|nil
----@param on_enter fun()|nil
-function TextInput:init(parent, form_screen, width, height, masked, on_input, on_enter)
+TextInput.init = function(self: TextInput, parent: Control, form_screen: FormScreen, width: number, height: number, masked?: boolean, on_input?: TextInputCallback, on_enter?: TextInputCallback)
     assert_type(form_screen, FormScreen)
     Control.init(self, parent, width, height)
     self._buffer = TextBuffer()
@@ -223,8 +189,7 @@ function TextInput:on_screen_hide()
     Input.on_screen_hide(self)
 end
 
----@param dt number
-function TextInput:on_update(dt)
+function TextInput:on_update(dt: number)
     local caret = self._caret
     if self:is_focused() then
         local time = self._caret_time + dt
@@ -238,8 +203,7 @@ function TextInput:on_click()
     self:_update_view()
 end
 
----@param text string
-function TextInput:on_edit(text)
+function TextInput:on_edit(_text: string)
     if self._is_multivalue then
         self._has_new_value = true
     end
@@ -263,13 +227,11 @@ function TextInput:on_remove_empty()
     self:_update_view()
 end
 
----@param text string
-function TextInput:on_append_text(text)
+function TextInput:on_append_text(text: string)
     self._buffer:append_text(text)
 end
 
----@param character_number number
-function TextInput:on_remove_characters(character_number)
+function TextInput:on_remove_characters(character_number: integer)
     self._buffer:remove_characters(character_number)
 end
 
@@ -294,24 +256,20 @@ function TextInput:on_focus_lost()
     self:_update_view()
 end
 
----@return string
-function TextInput:get_text()
+function TextInput:get_text(): string
     return self._buffer:get_text()
 end
 
----@return number
-function TextInput:get_text_length()
+function TextInput:get_text_length(): integer
     return self._buffer:get_text_length()
 end
 
----@param text string
-function TextInput:set_text(text)
+function TextInput:set_text(text: string)
     self._buffer:set_text(text)
     self:_update_view()
 end
 
----@param value boolean
-function TextInput:set_multivalue(value)
+function TextInput:set_multivalue(value: boolean)
     if value then
         self._buffer:set_text("")
     end
@@ -320,13 +278,11 @@ function TextInput:set_multivalue(value)
     self:_update_view()
 end
 
----@return boolean
-function TextInput:is_multivalue()
+function TextInput:is_multivalue(): boolean
     return self._is_multivalue
 end
 
----@return boolean
-function TextInput:is_multivalue_default()
+function TextInput:is_multivalue_default(): boolean
     return self._is_multivalue and not self._has_new_value
 end
 

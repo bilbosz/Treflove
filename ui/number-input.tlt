@@ -1,0 +1,45 @@
+local TextInput: TextInput = require("ui.text-input")
+
+-- A text field that accepts numbers only; `get_number` is nil while the text
+-- is not a valid number.
+local NumberInput: NumberInput = class("NumberInput", TextInput)
+
+NumberInput.init = function(self: NumberInput, parent: Control, form_screen: FormScreen, width: number, height: number, on_input?: TextInputCallback, on_enter?: TextInputCallback)
+    TextInput.init(self, parent, form_screen, width, height, false, on_input, on_enter)
+    self._number = 0
+end
+
+function NumberInput:set_number(number: number)
+    self._number = number
+    self:set_text(tostring(number))
+end
+
+function NumberInput:get_number(): number
+    return self._number
+end
+
+function NumberInput:on_append_text(text: string)
+    if self:get_text() == "" and text == "-" then
+        self._number = 0
+        TextInput.on_append_text(self, text)
+        return
+    end
+    local n = tonumber(self:get_text() .. text)
+    if n then
+        self._number = n
+        TextInput.on_append_text(self, text)
+    end
+end
+
+function NumberInput:on_remove_characters(character_number: integer)
+    TextInput.on_remove_characters(self, character_number)
+    self._number = tonumber(self:get_text())
+end
+
+function NumberInput:set_text(text: string)
+    local n = tonumber(text)
+    self._number = n
+    TextInput.set_text(self, text)
+end
+
+return NumberInput

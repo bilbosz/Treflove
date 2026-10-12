@@ -1,9 +1,10 @@
--- ui/input.lua (still Lua): a focusable form element. At runtime a mixin
+-- ui/input.tlt: a focusable form element. At runtime a mixin
 -- with no base (`class("Input")`), always mixed into a Control-derived
 -- class (TextButton is Text, Input; TextInput is Control, Input), which
--- `is Control` reflects. lifetime: `Input:init` attaches a hook
+-- `is Control` reflects. `Input:init` attaches a hook
 -- `!@ (form_screen, self)` that removes the input from its form unless the
--- form was released first (docs/lifetime.md; FormScreen.is_released).
+-- form was released first (docs/lifetime.md, "Screens";
+-- FormScreen.is_released).
 global interface Input is Control
     _button: Button
     _form_screen: FormScreen

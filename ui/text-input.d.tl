@@ -1,4 +1,4 @@
--- ui/text-input.lua (still Lua): a single-line text field.
+-- ui/text-input.tlt: a single-line text field.
 global type TextInputCallback = function()
 
 global interface TextInput is Control, Input
