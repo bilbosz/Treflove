@@ -6,6 +6,7 @@ local AssetsPanel = require("game.assets.assets-panel")
 local QuickAccessPanel = require("game.quick-access-panel")
 local Consts = require("app.consts")
 local UserMenuScreen = require("screens.user-menu-screen")
+local table_utils = require("utils.table")
 
 ---@class GameScreen: Model, FormScreen
 ---@field _page Page
@@ -93,7 +94,7 @@ end
 
 ---@param panel Panel
 function GameScreen:select_panel(panel)
-    assert(table.find_array_idx(self._panels, panel))
+    assert(table_utils.find_array_idx(self._panels, panel))
     self:disable_panel()
     self._panel = panel
     panel:set_enabled(true)

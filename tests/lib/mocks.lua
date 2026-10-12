@@ -4,6 +4,7 @@ local Event = require("events.event")
 local FileSystemDropEventManager = require("events.file-drop-event")
 local KeyboardManager = require("events.keyboard")
 local PointerEventManager = require("events.pointer-event")
+local table_utils = require("utils.table")
 
 local mocks = {}
 
@@ -129,7 +130,7 @@ function mocks.make_app(overrides)
     app_mock.file_system_drop_event_manager = FileSystemDropEventManager()
 
     if overrides then
-        table.merge(app_mock, overrides)
+        table_utils.merge(app_mock, overrides)
     end
     return app_mock
 end

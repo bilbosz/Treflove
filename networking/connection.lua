@@ -1,4 +1,5 @@
 local Consts = require("app.consts")
+local table_utils = require("utils.table")
 
 ---@class RequestBody
 
@@ -30,14 +31,14 @@ local Connection = class("Connection")
 ---@param message table
 ---@return string
 local function _compress(message)
-    return love.data.compress("string", Consts.NETWORK_COMPRESSION, table.to_string(message)) --[[@as string]]
+    return love.data.compress("string", Consts.NETWORK_COMPRESSION, table_utils.to_string(message)) --[[@as string]]
 end
 
 ---@param payload string
 ---@return table
 local function _decompress(payload)
     local serialized = love.data.decompress("string", Consts.NETWORK_COMPRESSION, payload) --[[@as string]]
-    return table.from_string(serialized) --[[@as table]]
+    return table_utils.from_string(serialized) --[[@as table]]
 end
 
 ---@param in_channel love.Channel

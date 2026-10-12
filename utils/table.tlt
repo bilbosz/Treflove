@@ -1,0 +1,200 @@
+-- Table utilities: the module `table_utils` (Treflove's former `table.*`
+-- extensions; Teal does not allow adding fields to the standard `table`),
+-- the global iterators and `toboolean`.
+--
+-- A table the lifetime runtime has seen carries its state record in one
+-- extra field under a private table key; `copy`, `deep_copy`, `is_empty`
+-- and the copying iterators skip it (`lifetime.is_state`), so that a copy
+-- never carries another object's record and a seen empty table is empty.
+-- `to_string` skips it anyway: it writes no table keys.
+local is_state = lifetime.is_state
+
+local table_utils: TableUtils = {}
+
+function table_utils.is_identifier(str: string): boolean
+    local l = #str
+    local b, e = string.find(str, "[%a_][%w_]*")
+    return b == 1 and e == l
+end
+
+function table_utils.merge<K, V>(destination: {K: V}, source: {K: V})
+    for k, v in pairs(source) do
+        if not is_state(k) then
+            destination[k] = v
+        end
+    end
+end
+
+function table_utils.merge_array<V>(destination: {V}, source: {V})
+    for _, v in ipairs(source) do
+        table.insert(destination, v)
+    end
+end
+
+function table_utils.copy<K, V>(source: {K: V}): {K: V}
+    local copy: {K: V} = {}
+    for k, v in pairs(source) do
+        if not is_state(k) then
+            copy[k] = v
+        end
+    end
+    return copy
+end
+
+function table_utils.deep_copy<K, V>(source: {K: V}): {K: V}
+    local copy: {K: V} = {}
+    for k, v in pairs(source) do
+        if not is_state(k) then
+            if type(v) == "table" then
+                copy[k] = table_utils.deep_copy(v as {any: any}) as V
+            else
+                copy[k] = v
+            end
+        end
+    end
+    return copy
+end
+
+-- any: the displays below take values of any type.
+local type Display = function(v: any): string
+
+function table_utils.to_string(source: any): string
+    local table_display: function(t: {any: any}): string
+    local value_display: {string: Display} = {
+        ["nil"] = tostring,
+        ["boolean"] = tostring,
+        ["number"] = tostring,
+        ["string"] = function(v: any): string
+            return "\"" .. string.gsub(v as string, "\n", "\\n") .. "\""
+        end,
+        ["table"] = function(v: any): string
+            return table_display(v as {any: any})
+        end
+    }
+    local key_display = table_utils.copy(value_display)
+    key_display["nil"] = nil
+    key_display["table"] = nil
+
+    local depth = 0
+    local visited: {{any: any}: boolean} = {}
+    table_display = function(t: {any: any}): string
+        assert(type(t) == "table")
+        assert(not visited[t])
+        visited[t] = true
+        depth = depth + 1
+        local nums: {number} = {}
+        local strings: {string} = {}
+        local others: {any} = {}
+        for k in pairs(t) do
+            if k is number then
+                table.insert(nums, k)
+            elseif k is string then
+                table.insert(strings, k)
+            else
+                table.insert(others, k)
+            end
+        end
+        table.sort(strings)
+
+        local prefix = string.rep("    ", depth)
+        local result = "{"
+        local last = 0
+        for _, group in ipairs({
+            nums as {any},
+            strings as {any},
+            others
+        }) do
+            for _, k in ipairs(group) do
+                local v = t[k]
+                local k_type = type(k)
+                local v_type = type(v)
+                local v_display = value_display[v_type]
+                if v_display then
+                    local k_display = key_display[k_type]
+                    if k is number and k == last + 1 then
+                        result = result .. "\n" .. prefix .. v_display(v) .. ","
+                        last = k
+                    elseif k is string and table_utils.is_identifier(k) then
+                        result = result .. "\n" .. prefix .. k .. " = " .. v_display(v) .. ","
+                    elseif k_display then
+                        result = result .. "\n" .. prefix .. "[" .. k_display(k) .. "] = " .. v_display(v) .. ","
+                    end
+                end
+            end
+        end
+        depth = depth - 1
+        prefix = string.rep("    ", depth)
+        return result .. "\n" .. prefix .. "}"
+    end
+
+    local self_type = type(source)
+    local self_display = value_display[self_type]
+    assert(self_display)
+    return "return " .. self_display(source)
+end
+
+function table_utils.from_string(str: string): {any: any}
+    local chunk = loadstring(str)
+    local no_error, result = pcall(chunk)
+    if not no_error then
+        app:log("Error when creating table.", tostring(result))
+        return nil
+    end
+    return result as {any: any}
+end
+
+function table_utils.find_table_key<K, V>(tab: {K: V}, value: V): K
+    for k, v in pairs(tab) do
+        if v == value then
+            return k
+        end
+    end
+    return nil
+end
+
+function table_utils.find_array_idx<V>(array: {V}, value: V): integer
+    for i, v in ipairs(array) do
+        if v == value then
+            return i
+        end
+    end
+    return nil
+end
+
+function table_utils.is_empty<K, V>(tab: {K: V}): boolean
+    local k = next(tab)
+    if k ~= nil and is_state(k) then
+        k = next(tab, k)
+    end
+    return k == nil
+end
+
+global function prev<V>(t: {V}, i: integer): integer, V
+    if i <= 1 then
+        return nil, nil
+    else
+        return i - 1, t[i - 1]
+    end
+end
+
+global function ripairs<V>(t: {V}): (function({V}, integer): (integer, V), {V}, integer)
+    return prev, t, #t + 1
+end
+
+global function cpairs<K, V>(t: {K: V}): (function({K: V}, K): (K, V), {K: V}, K)
+    return pairs(table_utils.copy(t))
+end
+
+global function cipairs<V>(t: {V}): (function({V}, integer): (integer, V), {V}, integer)
+    return ipairs(table_utils.copy(t) as {V})
+end
+
+global function cripairs<V>(t: {V}): (function({V}, integer): (integer, V), {V}, integer)
+    return ripairs(table_utils.copy(t) as {V})
+end
+
+global function toboolean(value: any): boolean
+    return not not value
+end
+
+return table_utils

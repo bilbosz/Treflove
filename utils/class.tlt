@@ -1,0 +1,142 @@
+-- The class system: `class(name, base...)` with multiple inheritance by
+-- merging the bases' method indexes, `init` as the constructor, and
+-- reflection. Every instance is registered with the lifetime runtime and
+-- its `release` is its destructor (docs/lifetime.md).
+local table_utils = require("utils.table")
+
+local select = select
+
+-- any: a merged index holds the methods of every class, of every signature.
+local type Index = {string: any}
+
+local record ClassMeta
+    __index: Index
+    __newindex: Index
+    __call: function(cls: Object, ...: any): Object -- any: constructor arguments
+    name: string
+    bases: {Object}
+end
+
+local record InstanceMeta
+    __index: Index
+    __destroy: function(obj: Object, reason: lifetime.Reason)
+    class: Object
+end
+
+local function _class_meta(cls: Object): ClassMeta
+    return getmetatable(cls) as ClassMeta
+end
+
+local function _instance_meta(obj: Object): InstanceMeta
+    return getmetatable(obj) as InstanceMeta
+end
+
+local function _create_index(self: Index, ...: Object): Index
+    local idx: Index = {}
+    for i = select("#", ...), 1, -1 do
+        table_utils.merge(idx, _class_meta((select(i, ...))).__index)
+    end
+    table_utils.merge(idx, self)
+    return idx
+end
+
+local function _create_bases(self: Object, ...: Object): {Object}
+    local bases: {Object} = {
+        self
+    }
+    for i = 1, select("#", ...) do
+        table_utils.merge_array(bases, _class_meta((select(i, ...))).bases)
+    end
+    return bases
+end
+
+local function _is_instance_of(cls: Object, base: Object): boolean
+    return table_utils.find_table_key(_class_meta(cls).bases, base) ~= nil
+end
+
+-- The destructor of every instance: its `release`, if it has one
+-- (docs/lifetime.md; lua-lifetime docs/02-semantics.md, "`__destroy` and
+-- reasons").
+local function _destroy(obj: Object, reason: lifetime.Reason)
+    if obj.release then
+        obj:release(reason)
+    end
+end
+
+global function class<T>(name: string, ...: Object): T
+    local cls: Index = {}
+    assert(name)
+    for i = 1, select("#", ...) do
+        assert(select(i, ...), string.format("Inherited class number %i of %s is not initialized yet", i, name))
+    end
+
+    local index = _create_index(cls, ...)
+    local obj_mt: InstanceMeta = {
+        __index = index,
+        __destroy = _destroy,
+        class = cls as Object
+    }
+
+    local class_metatable: ClassMeta = {
+        __index = index,
+        __newindex = index,
+        __call = function(_: Object, ...: any): Object
+            local obj = setmetatable({} as Object, obj_mt as metatable<Object>)
+            -- Registration, so that a collected instance still runs its
+            -- release (lua-lifetime docs/05-decisions.md, "Registration is
+            -- `x @ lifetime.reachable`"). An instance of a class without a
+            -- release has nothing to run, and is left unregistered.
+            if obj.release then
+                obj @ lifetime.reachable
+            end
+            if obj.init then
+                obj:init(...)
+            end
+            return obj
+        end,
+        name = name,
+        bases = _create_bases(cls as Object, ...)
+    }
+
+    return setmetatable(cls, class_metatable as metatable<Index>) as T
+end
+
+global function get_class_of(obj: Object): Object
+    return _instance_meta(obj).class
+end
+
+global function get_class_name_of(obj: Object): string
+    return _class_meta(get_class_of(obj)).name
+end
+
+global function is_instance_of(obj: Object, cls: Object): boolean
+    return _is_instance_of(get_class_of(obj), cls)
+end
+
+global function assert_type(obj: any, typ: string | Object)
+    local msg = "Expected %s got %s"
+    if typ is string then
+        assert(type(obj) == typ, string.format(msg, typ, type(obj)))
+    else
+        local class_mt = _class_meta(typ)
+        assert(class_mt)
+        local class_name = class_mt.name
+        assert(class_name)
+        if getmetatable(obj) and get_class_of(obj as Object) then
+            assert(is_instance_of(obj as Object, typ), string.format(msg, class_name, get_class_name_of(obj as Object)))
+        else
+            assert_unreachable(string.format(msg, class_name, type(obj)))
+        end
+    end
+end
+
+-- Marks code that must not be reached.
+global function assert_unreachable(msg?: string)
+    error(msg)
+end
+
+-- Marks an abstract method: always raises. Generic, so that `X.m =
+-- abstract()` fits whatever signature `m` is declared with.
+global function abstract<F>(): F
+    error("Method marked as abstract has no implementation")
+end

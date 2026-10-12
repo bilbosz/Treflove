@@ -1,4 +1,5 @@
 local Screen = require("screens.screen")
+local table_utils = require("utils.table")
 
 ---@class FormScreen: Screen
 ---@field private _focus number
@@ -106,7 +107,7 @@ end
 
 ---@param input Input
 function FormScreen:remove_input(input)
-    local found = table.find_array_idx(self._inputs, input)
+    local found = table_utils.find_array_idx(self._inputs, input)
     assert(found)
     table.remove(self._inputs, found)
     if found == self._focus then
@@ -119,7 +120,7 @@ end
 
 ---@param input Input
 function FormScreen:read_only_change(input)
-    local found = table.find_array_idx(self._inputs, input)
+    local found = table_utils.find_array_idx(self._inputs, input)
     assert(found)
     if found == self._focus then
         self:_advance_focus(1)

@@ -1,3 +1,5 @@
+local table_utils = require("utils.table")
+
 ---Minimal zero-dependency test framework. Tests are grouped into suites; each
 ---case runs in protected mode so one failure never stops the run.
 ---@class TestSuite
@@ -128,7 +130,7 @@ end
 ---@param message string|nil
 function test.assert_deep_eq(actual, expected, message)
     if not _deep_eq(actual, expected) then
-        error(string.format("%sdeep equality failed:\n  actual:   %s\n  expected: %s", message and (message .. ": ") or "", table.to_string(actual), table.to_string(expected)), 2)
+        error(string.format("%sdeep equality failed:\n  actual:   %s\n  expected: %s", message and (message .. ": ") or "", table_utils.to_string(actual), table_utils.to_string(expected)), 2)
     end
 end
 

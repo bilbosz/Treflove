@@ -5,6 +5,7 @@ local Session = require("game.session")
 local ConnectionManager = require("networking.connection-manager")
 local ScreenManager = require("screens.screen-manager")
 local ScreenSaver = require("screens.screen-saver")
+local table_utils = require("utils.table")
 
 ---@class Server: App
 ---@field private _save_file Asset
@@ -41,11 +42,11 @@ end
 ---@private
 function Server:_load_data()
     local content = self._save_file:read()
-    self.data = table.from_string(content)
+    self.data = table_utils.from_string(content)
 end
 
 function Server:save_data()
-    local content = table.to_string(self.data)
+    local content = table_utils.to_string(self.data)
     self._save_file:write(content)
 end
 
