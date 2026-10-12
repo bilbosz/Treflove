@@ -1,4 +1,4 @@
--- controls/control.lua (still Lua): the base of every UI element. The
+-- controls/control.tlt: the base of every UI element. The
 -- control tree is not an ownership tree (docs/lifetime.md, "Ownership").
 global interface Control is Tree
     parent: Control

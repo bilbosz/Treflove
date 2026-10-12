@@ -1,4 +1,4 @@
--- controls/drawable-control.lua (still Lua): a control drawn by a callback
+-- controls/drawable-control.tlt: a control drawn by a callback
 -- in its own coordinates.
 global type DrawCb = function()
 

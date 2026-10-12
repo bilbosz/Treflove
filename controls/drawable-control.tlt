@@ -1,0 +1,26 @@
+local Control: Control = require("controls.control")
+
+-- A control drawn by a callback in its own coordinates.
+local DrawableControl: DrawableControl = class("DrawableControl", Control)
+
+DrawableControl.init = function(self: DrawableControl, parent: Control, width: number, height: number, draw_cb: DrawCb)
+    Control.init(self, parent, width, height)
+    assert(draw_cb)
+    self._draw_cb = draw_cb
+end
+
+function DrawableControl:draw()
+    love.graphics.push()
+    love.graphics.replaceTransform(self.global_transform)
+    love.graphics.setColor(1, 1, 1, 1)
+    self._draw_cb()
+    love.graphics.pop()
+    Control.draw(self)
+end
+
+-- Protected: for subclasses that change what they draw.
+function DrawableControl:set_draw_callback(draw_cb: DrawCb)
+    self._draw_cb = draw_cb
+end
+
+return DrawableControl
