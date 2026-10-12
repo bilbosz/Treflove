@@ -15,7 +15,9 @@ global interface FormScreen is Screen
     is_released: function(self): boolean
     on_key_pressed: function(self, key: love.KeyConstant) -- on app.keyboard_manager.key_pressed
     add_input: function(self, input: Input)
-    remove_input: function(self, input: Input) -- by the input's hook as it dies (and by TokenPanel)
+    -- By the input's hook as it dies, or by hand (TokenPanel); discards the
+    -- input's hook.
+    remove_input: function(self, input: Input)
     read_only_change: function(self, input: Input)
     focus: function(self, input: Input)
     remove_all_inputs: function(self)

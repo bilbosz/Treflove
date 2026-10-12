@@ -24,8 +24,10 @@ Input.init = function(self: Input, form_screen: FormScreen)
     -- the input went first, it is removed while it is dying and still
     -- findable by identity (a dead input would stay in the list as a
     -- tombstone, "Tombstones"); if the form went first, its `release` has
-    -- said so and there is nothing to unlink.
-    function()
+    -- said so and there is nothing to unlink. Kept in a field so that
+    -- `FormScreen:remove_input` can end it when a live input is removed by
+    -- hand ("Named hooks": `lifetime.discard` cancels a hook).
+    self._unlink_hook = function()
         if not form_screen:is_released() then
             form_screen:remove_input(self)
         end

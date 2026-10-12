@@ -168,3 +168,48 @@ test.case("form and inputs in one cascade: the form first, nothing unlinked, no 
         "> collectgarbage twice"
     })
 end)
+
+-- A live input removed by hand (as TokenPanel drops its inputs) loses its
+-- hook too, so neither keeps the other: the form no longer pins it, its
+-- later death unlinks nothing, and once dropped the collector takes it
+-- (its release with "unreachable"; docs/02-semantics.md, "Reachability is
+-- the collector's").
+test.case("an input removed by hand loses its hook and is collected once dropped", function()
+    setup()
+    local form = TestFormScreen()
+    local a = TestFormInput(form, "a")
+    local inputs = form._inputs
+    local weak = setmetatable({}, {
+        __mode = "v"
+    })
+    -- In a frame of its own, so that no stack slot still refers to `c`.
+    local function add_and_remove_c()
+        local c = TestFormInput(form, "c")
+        weak[1] = c
+        trace("inputs: " .. names(inputs) .. ", hooks on form: " .. #lifetime.dependents(form))
+        trace("> form:remove_input(c)")
+        form:remove_input(c)
+        trace("inputs: " .. names(inputs) .. ", hooks on form: " .. #lifetime.dependents(form) .. ", on c: " .. #lifetime.dependents(c))
+    end
+    add_and_remove_c()
+    collect()
+    trace("c collected: " .. tostring(weak[1] == nil))
+    trace("> lifetime.destroy(a)")
+    lifetime.destroy(a)
+    trace("> lifetime.destroy(form)")
+    lifetime.destroy(form)
+    test.assert_deep_eq(log, {
+        "inputs: {a, c}, hooks on form: 2",
+        "> form:remove_input(c)",
+        "TestFormScreen:remove_input(c)",
+        "inputs: {a}, hooks on form: 1, on c: 0",
+        "> collectgarbage twice",
+        "TestFormInput:release(unreachable) c",
+        "c collected: true",
+        "> lifetime.destroy(a)",
+        "TestFormInput:release(destroy) a",
+        "TestFormScreen:remove_input(a)",
+        "> lifetime.destroy(form)",
+        "TestFormScreen:release(destroy)"
+    })
+end)

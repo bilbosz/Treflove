@@ -99,10 +99,17 @@ function FormScreen:add_input(input: Input)
 end
 
 -- Called by the input's hook as the input dies (ui/input.tlt), while it is
--- dying and still findable by identity.
+-- dying and still findable by identity, and by a caller that drops a live
+-- input (TokenPanel). The hook is discarded here: a hook is pinned by its
+-- anchors (lua-lifetime docs/02-semantics.md, "Hooks: the `!@` operator")
+-- and refers to the input, so a dropped input's hook would keep it, and
+-- one more hook on the form, alive until the form dies. Called from the
+-- hook itself, the discard is a no-op (the hook is dying: "Explicit
+-- destruction").
 function FormScreen:remove_input(input: Input)
     local found = table_utils.find_array_idx(self._inputs, input)
     assert(found)
+    lifetime.discard(input._unlink_hook)
     table.remove(self._inputs, found)
     if found == self._focus then
         self._focus = nil

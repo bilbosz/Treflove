@@ -10,6 +10,9 @@ global interface Input is Control
     _form_screen: FormScreen
     _is_focused: boolean
     _is_read_only: boolean
+    -- The unlinking hook `!@ (form_screen, self)`; FormScreen:remove_input
+    -- discards it.
+    _unlink_hook: lifetime.Hook
     get_button: function(self): Button
     is_hovered: function(self): boolean
     is_selected: function(self): boolean
