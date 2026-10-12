@@ -103,9 +103,10 @@ local function make_dirs(paths)
     end
 end
 
--- Source files of the tree, sorted: not under lib/, build/ or .git/.
+-- Source files of the tree, sorted: not under lib/, build/ or any hidden
+-- directory (.git/, an editor's or a tool's own tree).
 local function find_sources(pattern)
-    local files = lines_of("find . -name " .. shell_quote(pattern) .. " -not -path './lib/*' -not -path './" .. BUILD .. "/*' -not -path './.git/*' -type f")
+    local files = lines_of("find . -name " .. shell_quote(pattern) .. " -not -path './lib/*' -not -path './" .. BUILD .. "/*' -not -path '*/.*/*' -type f")
     for i, f in ipairs(files) do
         files[i] = f:gsub("^%./", "")
     end
