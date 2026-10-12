@@ -1,3 +1,6 @@
+-- The modules are built into build/ (./build-code.sh); look there first.
+love.filesystem.setRequirePath("build/?.lua;build/?/init.lua;?.lua;?/init.lua")
+
 require("app.globals")
 
 -- Test mode: run the suite inside LÖVE (real love.*) and exit. See test-code.sh.

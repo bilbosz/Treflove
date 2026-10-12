@@ -1,3 +1,6 @@
+-- The modules are built into build/ (./build-code.sh); look there first.
+love.filesystem.setRequirePath("build/?.lua;build/?/init.lua;?.lua;?/init.lua")
+
 local arg_parser = require("app.arg-parser")
 
 ---@class love.ConfigTable

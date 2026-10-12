@@ -1,5 +1,10 @@
 local logger_data, address, out_port, in_channel, out_channel, main_channel, out_thread, in_thread = ...
 
+-- A thread has a Lua state of its own: load love.filesystem (its module
+-- searcher) and look in build/ first, as main.lua does.
+require("love.filesystem")
+love.filesystem.setRequirePath("build/?.lua;build/?/init.lua;?.lua;?/init.lua")
+
 local Socket = require("socket")
 local logger = require("utils.logger")(logger_data, string.format("server-out-%05i", out_port))
 

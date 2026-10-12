@@ -1,5 +1,8 @@
 ---Test suite entry point. Runs under plain LuaJIT (`luajit tests/run.lua` from
 ---the repository root) and inside LÖVE (`love . test`) — see test-code.sh.
+---Both need the build (`./build-code.sh`): the modules are required from build/.
+package.path = "build/?.lua;build/?/init.lua;" .. package.path
+
 -- Plain LuaJIT has no bundled luasocket; utils/utils.lua only needs
 -- `socket.gettime`, so provide a stub before anything requires it.
 local has_socket = pcall(require, "socket")
@@ -36,6 +39,7 @@ local TEST_MODULES = {
     "tests.test-defer-manager",
     "tests.test-event",
     "tests.test-keyboard",
+    "tests.test-lifetime-class",
     "tests.test-pointer-event",
     "tests.test-table",
     "tests.test-text-event"
