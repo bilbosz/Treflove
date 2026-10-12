@@ -1,9 +1,5 @@
 local DrawableControl: DrawableControl = require("controls.drawable-control")
--- data/asset is still Lua on this branch, and the checker resolves only
--- Teal modules: required by a computed name, which it does not resolve.
--- When data/asset.tlt exists: `local Asset: Asset = require("data.asset")`.
-local ASSET_MODULE = "data.asset"
-local Asset = require(ASSET_MODULE) as Asset
+local Asset: Asset = require("data.asset")
 
 -- An image from an asset path or a love.Image.
 local Image: Image = class("Image", DrawableControl)

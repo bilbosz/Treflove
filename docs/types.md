@@ -8,7 +8,9 @@ type-checks everything; untyped code is not acceptable.
 ## Fragments and the Environment File
 
 Every module `<dir>/<module>.tlt` has a fragment `<dir>/<module>.d.tl`
-holding its public types and the globals it defines. The build concatenates
+holding its public types and the globals it defines (the LÖVE thread
+scripts of [networking/detail/](../networking/detail/), which nothing
+requires and which define nothing, have none). The build concatenates
 all fragments into one predefined file, `build/types/env.tl`, so every
 fragment and every module sees every global type. Rules:
 
@@ -86,8 +88,10 @@ return Rectangle
   require("controls.control")`. An inferred local (`local Control =
   require("controls.control")`) shadows the global type of the same name,
   and every later `Control` annotation in the file is an `unknown type`.
-- Abstract methods are declared in the interface and assigned
-  `X.method = abstract()` (`abstract` is generic in its result).
+- Abstract methods are declared in the interface and defined with a body
+  that calls `abstract()`: `function X:method(_a: A): R return abstract()
+  end` (`abstract` is generic in its result). It raises when it runs, so
+  `X.method = abstract()` would raise while the module loads.
 - `class`, `is_instance_of`, `get_class_of`, `get_class_name_of`,
   `assert_type`, `assert_unreachable` and `abstract` are globals declared
   in [utils/class.d.tl](../utils/class.d.tl).
@@ -181,11 +185,19 @@ fragment's line.
   Until it is converted, require it by a computed name, which the checker
   does not resolve, and cast the result to the type its fragment declares
   (`local Asset = require(ASSET_MODULE) as Asset`, with a comment saying
-  so; [controls/image.tlt](../controls/image.tlt)).
+  so); once it is converted, `local Asset: Asset = require("data.asset")`.
 - `table.unpack` of a `{number}` passed straight to a function counts as
   two arguments (`wrong number of arguments (given 2, ...)`); a tuple
   (`{number, number}`) is counted right. Pass the table where the callee
   takes one (`love.graphics.setColor(color)`).
+- A main chunk's `...` is typed as strings (command-line arguments). A
+  LÖVE thread script receives what `Thread:start` passed, so it casts:
+  `local data, channel = ... as (ModelData, love.Channel)`
+  ([networking/detail/](../networking/detail/)). Assigning an uncast `...`
+  value to a local of another type crashes `tl` (an assertion in
+  `errors.at`) instead of reporting the mismatch.
+- `string.format`'s `%i` takes an integer, not a numeric string (Lua 5.1
+  would coerce it): `math.floor(tonumber(port))`.
 - `userdata` is a type (`PointerId = number | userdata`: a mouse button or a
   touch id).
 - A love-api "table" result (`love.filesystem.getInfo`) is `{any: any}`;
@@ -204,7 +216,10 @@ fragment's line.
   "Variant", "light userdata" and "cdata" are `any`.
 - Other host libraries Teal does not know get hand-written declarations in
   [types/](../types/): [socket.d.tl](../types/socket.d.tl) (the module
-  `socket`), [utf8.d.tl](../types/utf8.d.tl) (the module `utf8`),
+  `socket`: the clock and the TCP sockets of the connection threads),
+  [love/filesystem.d.tl](../types/love/filesystem.d.tl) (the module
+  `love.filesystem`, which a thread script requires: a LÖVE thread starts
+  with no LÖVE module loaded), [utf8.d.tl](../types/utf8.d.tl) (the module `utf8`),
   [lua51.d.tl](../types/lua51.d.tl) (`loadstring`). Teal's
   standard library is Lua 5.4's; `tl` generates 5.1 compatibility code,
   so write `table.unpack`, not `unpack`.

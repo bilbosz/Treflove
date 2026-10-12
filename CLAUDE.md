@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Treflove is a multiplayer turn-based tabletop game engine built on LÖVE (love2d). The game master creates rules in Lua and can dynamically modify game state during gameplay. The project follows a server-client uniform architecture where many classes work in both server and client contexts. Only vanilla love2d is used at runtime - no external dependencies.
 
-The source is being migrated from Lua to Teal with the lua-lifetime extension (`.tlt` files with `.d.tl` declaration fragments), compiled by `./build-code.sh` into plain Lua under `build/`, which the app runs. Converted so far: the class system, `utils/`, `data/model`, `app/consts`, `app/arg-parser`, `app/globals`, `events/event`, `events/defer-manager`, `events/keyboard`; everything else is still `.lua`.
+The source is being migrated from Lua to Teal with the lua-lifetime extension (`.tlt` files with `.d.tl` declaration fragments), compiled by `./build-code.sh` into plain Lua under `build/`, which the app runs. Converted so far: the class system, `utils/`, `events/`, `controls/`, `networking/` (with the connection thread scripts), `data/`, `app/consts`, `app/arg-parser`, `app/globals`; everything else is still `.lua`.
 
 ## Prerequisites
 

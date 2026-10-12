@@ -137,8 +137,10 @@ global function assert_unreachable(msg?: string)
     error(msg)
 end
 
--- Marks an abstract method: always raises. Generic, so that `X.m =
--- abstract()` fits whatever signature `m` is declared with.
+-- Marks an abstract method: always raises, so it is called from the
+-- method's body (`function X:m(): R return abstract() end`), never
+-- assigned (`X.m = abstract()` would raise while the module loads).
+-- Generic, so that `return abstract()` fits any result type.
 global function abstract<F>(): F
     error("Method marked as abstract has no implementation")
 end
