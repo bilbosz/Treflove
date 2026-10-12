@@ -1,21 +1,16 @@
 local Event = require("events.event")
 
----Tracks the window size and fullscreen state. Consumers register on the
----`resized` event: `app.resize_manager.resized:register(self, self.on_resize)`.
----@class ResizeManager
----@field public resized Event Triggered with (width, height) of the rescaled root after every resize
----@field private _width number Remembered non-fullscreen window width
----@field private _height number Remembered non-fullscreen window height
-local ResizeManager = class("ResizeManager")
+-- Tracks the window size and fullscreen state. Consumers register on the
+-- `resized` event: `app.resize_manager.resized:register(self, self.on_resize)`.
+local ResizeManager: ResizeManager = class("ResizeManager")
 
----@private
 function ResizeManager:_update_non_fs_size()
     if not self:get_fullscreen() then
         self._width, self._height = self:get_dimensions()
     end
 end
 
-function ResizeManager:init()
+ResizeManager.init = function(self: ResizeManager)
     self._width = config.window.width or 0
     self._height = config.window.height or 0
     self:_update_non_fs_size()
@@ -28,8 +23,7 @@ function ResizeManager:resize()
     self.resized:trigger(app.width, app.height)
 end
 
----@return number, number
-function ResizeManager:get_dimensions()
+function ResizeManager:get_dimensions(): number, number
     return love.graphics.getDimensions()
 end
 
@@ -37,8 +31,7 @@ function ResizeManager:toggle_fullscreen()
     self:set_fullscreen(not self:get_fullscreen())
 end
 
----@param value boolean
-function ResizeManager:set_fullscreen(value)
+function ResizeManager:set_fullscreen(value: boolean)
     love.window.updateMode(self._width, self._height, {
         fullscreen = value,
         fullscreentype = "desktop"
@@ -46,8 +39,7 @@ function ResizeManager:set_fullscreen(value)
     self:resize()
 end
 
----@return boolean
-function ResizeManager:get_fullscreen()
+function ResizeManager:get_fullscreen(): boolean
     return (love.window.getFullscreen())
 end
 

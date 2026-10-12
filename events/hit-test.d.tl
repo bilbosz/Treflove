@@ -1,4 +1,4 @@
--- events/hit-test.lua (still Lua): the hit-tested dispatch shared by
+-- events/hit-test.tlt: the hit-tested dispatch shared by
 -- PointerEventManager and FileSystemDropEventManager (docs/architecture.md,
 -- "Event System").
 

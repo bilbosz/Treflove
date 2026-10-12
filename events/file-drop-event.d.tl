@@ -1,4 +1,4 @@
--- events/file-drop-event.lua (still Lua)
+-- events/file-drop-event.tlt
 
 -- The handler of `file_dropped`, registered by a Control; a truthy return
 -- lets the drop through to the controls below.

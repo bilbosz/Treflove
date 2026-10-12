@@ -1,4 +1,4 @@
--- events/pointer-event.lua (still Lua)
+-- events/pointer-event.tlt
 
 -- A mouse button number, a touch id (light userdata), or nil for a hover
 -- move.

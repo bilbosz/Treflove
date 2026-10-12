@@ -1,4 +1,4 @@
--- events/resize.lua (still Lua): the window size and fullscreen state.
+-- events/resize.tlt: the window size and fullscreen state.
 global interface ResizeManager is Object
     -- Triggered with (width, height) of the rescaled root after every
     -- resize.
