@@ -93,6 +93,59 @@ request handler), and a hook on the session removes its three entries as
 it dies, so a reconnected client never picks a dead procedure from them
 ([tests/test-asset-manager.lua](../tests/test-asset-manager.lua)).
 
+### Screens
+
+The [ScreenManager](../screens/screen-manager.tlt) holds the current
+screen but owns no screen: `show(next)` calls the current screen's
+`hide`, which undoes what its `show` registered (a FormScreen's key
+handler and its inputs' button, update, text and key registrations), and
+then drops the reference. Who makes a screen decides how it ends:
+
+- **Dropped and collected**: a WaitingScreen (`Session:join_game`,
+  `GameDataRp`) and an OptionsMenuScreen (`UserMenuScreen:options`) are
+  held by the manager alone and are collected once replaced. A
+  WaitingScreen has no `release`, so nothing runs; an OptionsMenuScreen
+  runs FormScreen's `release` with the reason `"unreachable"`, and the
+  hooks of its inputs, which die with it, find the flag and do nothing.
+- **Kept**: the client's ConnectingScreen is held by its disconnect
+  callback and shown again on every disconnect; the server's ScreenSaver
+  is shown once. Neither is ever destroyed.
+- **Owned**: a GameScreen (made by `GameDataRp`) is destroyed by its own
+  back entry, after that entry has shown the user menu; it owns its panels
+  (`@ self`). On the client the user menu screen belongs to the logged-in
+  period and the login screen to the session (anchored there once
+  `game/session` is converted).
+  UserMenuScreen anchors the back entry it pushes for the options menu to
+  itself (`push(...) @ self`), since the entry's callback shows it: when
+  the screen dies, the entry dies too and leaves the stack.
+
+A screen dies only **after it has been replaced**: `show` the next screen
+first, then `lifetime.destroy` the old one or what owns it. A screen
+destroyed while shown would leave its root control under `app.root` and
+its registrations live (the control tree is not an ownership tree, and
+`release` does not hide), and the manager would call `hide` on its
+tombstone at the next `show`.
+
+A [FormScreen](../ui/form-screen.tlt) keeps its inputs in a list, and each
+[Input](../ui/input.tlt) unlinks itself (idiom B of the trial):
+`Input:init` attaches `function() if not form_screen:is_released() then
+form_screen:remove_input(self) end end !@ (form_screen, self)`, and
+`FormScreen:release`, the form's destructor, sets the flag `is_released`
+reads. A hook runs after its anchor's destructor, among its dependents
+("Hooks: the `!@` operator"), and learns only the reason, not which anchor
+died, so the flag tells the two orders apart: an input that dies first is
+removed from the list while it is dying and still findable; a form that
+dies first has said so, and the hooks do nothing (the inputs live on);
+when the inputs are the form's dependents, one cascade runs the form's
+`release` first and nothing is unlinked
+([tests/test-form-screen.lua](../tests/test-form-screen.lua) asserts the
+three logs, and the removal by hand below). The input keeps the hook in `_unlink_hook`, and
+`remove_input` discards it, so an input removed by hand (TokenPanel drops
+and replaces its inputs) is not pinned to the form by its hook; from the
+hook itself the discard is a no-op. Inputs have no destructor: an input
+is not destroyed while its form is shown, since its `on_screen_hide`
+registrations would outlive it.
+
 ## Back Navigation
 
 `BackstackManager:push(cb)` returns an entry `{cb = cb}` with a hook that

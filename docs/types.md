@@ -196,6 +196,15 @@ fragment's line.
   ([networking/detail/](../networking/detail/)). Assigning an uncast `...`
   value to a local of another type crashes `tl` (an assertion in
   `errors.at`) instead of reporting the mismatch.
+- A local initialised with an integer literal is an `integer`
+  (`local y = 250`), and a later `number` cannot be assigned to it
+  (`got number, expected integer`); declare it `local y: number = 250`.
+- A function's extra results are not dropped where a single value is
+  returned: `return utf8.len(s)` from a function declared `: integer` is
+  `excess return values` (`utf8.len` also returns a position);
+  parenthesize to keep the first, `return (utf8.len(s))`.
+- A hook kept in a field (`self._unlink_hook = f !@ (a, b)`, a named hook)
+  is a `lifetime.Hook` ([ui/input.d.tl](../ui/input.d.tl)).
 - `string.format`'s `%i` takes an integer, not a numeric string (Lua 5.1
   would coerce it): `math.floor(tonumber(port))`.
 - `userdata` is a type (`PointerId = number | userdata`: a mouse button or a

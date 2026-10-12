@@ -60,7 +60,7 @@ The class name is used as the RPC identifier. Examples: LoginRp, UploadAssetRp, 
 
 ## Event System
 
-Events are composed, not inherited: a single [Event](../events/event.lua) class is instantiated by managers (or by `app` directly) and consumers register handlers on it:
+Events are composed, not inherited: a single [Event](../events/event.tlt) class is instantiated by managers (or by `app` directly) and consumers register handlers on it:
 - `Event` API: `register(owner, handler)`, `unregister(owner)`, `release()`, `trigger(...)`, `get_handler(owner)`; handlers are called as `handler(owner, ...)`
 - Owners are weak keys, so a collected owner drops out without unregistering; handlers are held strongly, so register methods, never closures capturing the owner: `app.update_event:register(self, self.on_update)`
 - Registering during a trigger is deferred until it finishes; unregistering takes effect immediately
@@ -68,16 +68,16 @@ Events are composed, not inherited: a single [Event](../events/event.lua) class 
 
 Events by source:
 - Broadcast events: `app.update_event` (dt), `app.wheel_event` (x, y, client only), `app.resize_manager.resized` (width, height)
-- [KeyboardManager](../events/keyboard.lua): `key_pressed`/`key_released` (key), always delivered, also during text input (backstack, form navigation, button activation)
-- [PointerEventManager](../events/pointer-event.lua) (`pointer_down/up/move`) and [FileSystemDropEventManager](../events/file-drop-event.lua) (`file_dropped`): owners are Controls; dispatch is hit-tested by [hit-test.lua](../events/hit-test.lua) instead of `trigger` - only visible controls under the point, top-most first, a falsy return consumes the event, `set_receive_through` opts a control into events consumed above it
-- [ButtonEventManager](../ui/button-event.lua): drives the [Button](../ui/button.lua) helper owned by every [Input](../ui/input.lua) (hover/selection state, events `clicked`, `selected`, `unselected`, `pointer_entered`, `pointer_left`); controls register with `register(ctrl, button)`
-- [TextEventManager](../ui/text-event.lua): `text_appended`, `characters_removed`, `word_removed`, `entered` go to the focused text field, which applies them to its [TextBuffer](../ui/text-buffer.lua) helper (UTF-8 aware editing, events `edited`, `removed_empty`); `set_text_input`/`is_text_input` toggle LÖVE text input
+- [KeyboardManager](../events/keyboard.tlt): `key_pressed`/`key_released` (key), always delivered, also during text input (backstack, form navigation, button activation)
+- [PointerEventManager](../events/pointer-event.tlt) (`pointer_down/up/move`) and [FileSystemDropEventManager](../events/file-drop-event.tlt) (`file_dropped`): owners are Controls; dispatch is hit-tested by [hit-test.tlt](../events/hit-test.tlt) instead of `trigger` - only visible controls under the point, top-most first, a falsy return consumes the event, `set_receive_through` opts a control into events consumed above it
+- [ButtonEventManager](../ui/button-event.tlt): drives the [Button](../ui/button.tlt) helper owned by every [Input](../ui/input.tlt) (hover/selection state, events `clicked`, `selected`, `unselected`, `pointer_entered`, `pointer_left`); controls register with `register(ctrl, button)`; an Input removes itself from its [FormScreen](../ui/form-screen.tlt) through a hook when it dies ([lifetime.md](lifetime.md), "Screens")
+- [TextEventManager](../ui/text-event.tlt): `text_appended`, `characters_removed`, `word_removed`, `entered` go to the focused text field, which applies them to its [TextBuffer](../ui/text-buffer.tlt) helper (UTF-8 aware editing, events `edited`, `removed_empty`); `set_text_input`/`is_text_input` toggle LÖVE text input
 
 Client creates the managers in its `init` and wires them to LÖVE callbacks in `register_love_callbacks`: `dispatch_*` methods for keyboard and pointer input, `text_input`/`key_pressed` on TextEventManager, `file_drop`, `resize`, and `wheel_event:trigger`.
 
 ## UI Control Hierarchy
 
-[Control](../controls/control.lua) is the base class for all UI elements:
+[Control](../controls/control.tlt) is the base class for all UI elements:
 - Manages parent-child relationships via `add_child`/`remove_child`
 - Handles transforms (position, scale, rotation)
 - Computes axis-aligned bounding boxes (AABBs) for hit testing
@@ -85,15 +85,15 @@ Client creates the managers in its `init` and wires them to LÖVE callbacks in `
 - Can intercept pointer events
 
 Specialized controls:
-- [DrawableControl](../controls/drawable-control.lua): Adds rendering
+- [DrawableControl](../controls/drawable-control.tlt): Adds rendering
 - Primitives: Rectangle, Circle, Text, Image
-- [ClippingMask](../controls/clipping-mask.lua): Clips children to rectangular bounds
+- [ClippingMask](../controls/clipping-mask.tlt): Clips children to rectangular bounds
 
 Higher-level UI components in [ui/](../ui/) like Panel, TextButton, Input, NumberInput build on these primitives.
 
 ## Screen Management
 
-[ScreenManager](../screens/screen-manager.lua) manages active screen via `show(screen)`. Screens are full-screen UI containers. Key screens:
+[ScreenManager](../screens/screen-manager.tlt) manages active screen via `show(screen)`: it hides the current screen and shows the next, holding but not owning it (who owns each screen and destroys it: [lifetime.md](lifetime.md), "Screens"). Screens are full-screen UI containers. Key screens:
 - ConnectingScreen - connection status
 - LoginScreen - authentication
 - UserMenuScreen - post-login menu
