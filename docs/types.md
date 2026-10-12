@@ -147,7 +147,8 @@ fields to the standard `table`. The iterators (`ripairs`, `cipairs`,
   "Variant", "light userdata" and "cdata" are `any`.
 - Other host libraries Teal does not know get hand-written declarations in
   [types/](../types/): [socket.d.tl](../types/socket.d.tl) (the module
-  `socket`), [lua51.d.tl](../types/lua51.d.tl) (`loadstring`). Teal's
+  `socket`), [utf8.d.tl](../types/utf8.d.tl) (the module `utf8`),
+  [lua51.d.tl](../types/lua51.d.tl) (`loadstring`). Teal's
   standard library is Lua 5.4's; `tl` generates 5.1 compatibility code,
   so write `table.unpack`, not `unpack`.
 - The global `app` is `App` ([app/app.d.tl](../app/app.d.tl)); `config`
