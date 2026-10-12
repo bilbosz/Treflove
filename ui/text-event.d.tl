@@ -1,4 +1,4 @@
--- ui/text-event.lua (still Lua): LÖVE text input and editing keys as
+-- ui/text-event.tlt: LÖVE text input and editing keys as
 -- events for the focused text field.
 global interface TextEventManager is Object
     text_appended: Event -- triggered with (text: string) typed by the user

@@ -1,4 +1,4 @@
--- ui/button.lua (still Lua): the pointer button behaviour composed into
+-- ui/button.tlt: the pointer button behaviour composed into
 -- every Input; ButtonEventManager drives its state, and each change is
 -- announced on its events, all triggered with no arguments.
 global interface Button is Object

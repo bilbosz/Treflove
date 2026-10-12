@@ -1,4 +1,4 @@
--- ui/text-buffer.lua (still Lua): editable UTF-8 text composed into a text
+-- ui/text-buffer.tlt: editable UTF-8 text composed into a text
 -- field.
 global interface TextBuffer is Object
     edited: Event -- triggered with (text: string) after an edit changed the text
