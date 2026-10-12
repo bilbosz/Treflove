@@ -1,6 +1,7 @@
--- networking/connector.lua (still Lua): starts the thread that accepts
--- (server) or opens (client) connections and hands each new one, or each
--- closed one, to the ConnectionManager.
+-- networking/connector.tlt: starts the thread that accepts (server) or
+-- opens (client) connections and hands each new one, or each closed one,
+-- to the ConnectionManager. The thread scripts (networking/detail/*.tlt)
+-- have no fragments: nothing requires them; they are started from build/.
 
 -- What a connection thread (networking/detail/*) pushes on the connector's
 -- channel: "a" a new connection, "i"/"o" its input/output side closed.

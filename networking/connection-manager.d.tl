@@ -1,5 +1,5 @@
--- networking/connection-manager.lua (still Lua): every connection, indexed
--- by its channels. `remove` ends a connection with
+-- networking/connection-manager.tlt: every connection, indexed by its
+-- channels. `remove` ends a connection with
 -- `lifetime.destroy(connection)` (docs/lifetime.md, "Ownership").
 global type ConnectionManagerOnConnect = function(connection: Connection)
 global type ConnectionManagerOnDisconnect = function(connection: Connection)

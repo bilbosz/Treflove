@@ -1,4 +1,9 @@
-local logger_data, channel, address, port = ...
+-- The server's dispatcher thread, started by the Connector: accepts every
+-- client on the server's port, starts a server-in for it and tells the
+-- client the port server-in bound.
+-- as: a thread's arguments are what Thread:start passed (Connector);
+-- Teal types a main chunk's `...` as strings.
+local logger_data, channel, address, port = ... as (ModelData, love.Channel, string, string)
 
 -- A thread has a Lua state of its own: load love.filesystem (its module
 -- searcher) and look in build/ first, as main.lua does.
@@ -6,7 +11,8 @@ require("love.filesystem")
 love.filesystem.setRequirePath("build/?.lua;build/?/init.lua;?.lua;?/init.lua")
 
 local Socket = require("socket")
-local logger = require("utils.logger")(logger_data, "connection-dispatcher")
+local Logger = require("utils.logger")
+local logger = Logger(logger_data, "connection-dispatcher")
 
 local server, bind_err = Socket.bind(address, tonumber(port))
 assert(not bind_err, bind_err)
@@ -19,10 +25,11 @@ while true do
     logger:log("New client found")
 
     local dispatcher_channel = love.thread.newChannel()
-    local in_thread = love.thread.newThread("networking/detail/server-in.lua")
+    local in_thread = love.thread.newThread("build/networking/detail/server-in.lua")
     in_thread:start(logger_data, address, dispatcher_channel, channel, in_thread)
 
-    local in_port = dispatcher_channel:demand()
+    -- as: server-in pushes the port it bound, or false when it failed.
+    local in_port = dispatcher_channel:demand() as integer
     if in_port then
         local in_port_string = tostring(in_port)
         logger:log("Received receiver port " .. in_port_string)

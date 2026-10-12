@@ -1,16 +1,9 @@
----@class Connector
----@field private _address string
----@field private _port string
----@field private _channel love.Channel
----@field private _retry_time number
----@field private _thread love.Thread
----@field private _connection_manager ConnectionManager
----@field private _last_start number|nil Time of the last connection thread start
-local Connector = class("Connector")
+-- Starts the thread that accepts (server) or opens (client) connections and
+-- hands each new one, or each closed one, to the ConnectionManager. The
+-- thread scripts are started from build/, where the build puts them.
+local Connector: Connector = class("Connector")
 
----@param address string
----@param port string
-function Connector:init(address, port)
+Connector.init = function(self: Connector, address: string, port: string)
     self._address = address
     self._port = port
     self._channel = love.thread.newChannel()
@@ -19,24 +12,22 @@ function Connector:init(address, port)
     self._connection_manager = nil
 end
 
----@param connection_manager ConnectionManager
-function Connector:start(connection_manager)
+function Connector:start(connection_manager: ConnectionManager)
     self._connection_manager = connection_manager
     self:_try_restart_connection()
 
     app.update_event:register(self, self.on_update)
 end
 
----@private
 function Connector:_try_restart_connection()
     local now = love.timer.getTime()
     if not self._thread or not self._thread:isRunning() and (not self._last_start or now - self._last_start >= self._retry_time) then
         self._last_start = love.timer.getTime()
         if not self._thread then
             if app.is_server then
-                self._thread = love.thread.newThread("networking/detail/connection-dispatcher.lua")
+                self._thread = love.thread.newThread("build/networking/detail/connection-dispatcher.lua")
             else
-                self._thread = love.thread.newThread("networking/detail/client-out.lua")
+                self._thread = love.thread.newThread("build/networking/detail/client-out.lua")
             end
         end
         if app.is_server then
@@ -47,14 +38,14 @@ function Connector:_try_restart_connection()
     end
 end
 
----@private
 function Connector:_handle_connections()
     while true do
-        local msg = self._channel:pop()
+        -- as: the connection threads push only ConnectorMessages here.
+        local msg = self._channel:pop() as ConnectorMessage
         if not msg then
             break
         end
-        local action, channel1, thread1, channel2, thread2 = unpack(msg)
+        local action, channel1, thread1, channel2, thread2 = msg[1], msg[2], msg[3], msg[4], msg[5]
         if action == "a" then
             self._connection_manager:add_connection(channel1, thread1, channel2, thread2)
         elseif action == "i" then

@@ -2,6 +2,7 @@ local test = require("tests.lib.test")
 local mocks = require("tests.lib.mocks")
 local Connection = require("networking.connection")
 local RemoteProcedure = require("networking.remote-procedure")
+local lifetime = require("lifetime")
 
 -- An RPC used by the round-trip test. Class name = wire id.
 local EchoRp = class("TestEchoRp", RemoteProcedure)
@@ -136,6 +137,81 @@ test.case("release frees channels and threads", function()
     local in_channel = client_connection:get_in_channel() --[[@as FakeChannel]]
     local out_channel = client_connection:get_out_channel() --[[@as FakeChannel]]
     client_connection:release()
+    test.assert_true(in_channel._released)
+    test.assert_true(out_channel._released)
+end)
+
+test.case("a second release of a procedure is harmless", function()
+    local client_connection = make_connection_pair()
+    local rp = EchoRp(client_connection)
+    rp:release()
+    rp:release()
+    test.assert_eq(client_connection._requests_handlers["TestEchoRp"], nil, "the handler is gone")
+    test.assert_true(lifetime.alive(rp), "release is the body, not the death")
+end)
+
+-- The order of a connection's death (lua-lifetime docs/02-semantics.md,
+-- "Cascading death"): `log` records each release and each handler a
+-- dying procedure unregisters from the dying connection.
+local log = {}
+
+local LoggingConnection = class("TestLoggingConnection", Connection)
+
+function LoggingConnection:release(reason)
+    table.insert(log, "Connection:release(" .. tostring(reason) .. ")")
+    Connection.release(self, reason)
+end
+
+---@param id string
+function LoggingConnection:unregister_request_handler(id)
+    table.insert(log, "  unregister " .. id)
+    Connection.unregister_request_handler(self, id)
+end
+
+---@param name string
+---@return table
+local function make_logging_rp_class(name)
+    local cls = class(name, RemoteProcedure)
+    function cls:release(reason)
+        table.insert(log, name .. ":release(" .. tostring(reason) .. ")")
+        RemoteProcedure.release(self, reason)
+    end
+    return cls
+end
+
+local LogRpA = make_logging_rp_class("TestLogRpA")
+local LogRpB = make_logging_rp_class("TestLogRpB")
+local LogRpC = make_logging_rp_class("TestLogRpC")
+
+test.case("destroying a connection releases it first, then its procedures newest first", function()
+    mocks.install_app()
+    mocks.ensure_love_data()
+    local in_channel, out_channel = mocks.make_channel(), mocks.make_channel()
+    local connection = LoggingConnection(in_channel, mocks.make_thread(), out_channel, mocks.make_thread())
+    -- `RpX(connection) @ connection`
+    local a = lifetime.attach(LogRpA(connection), false, connection)
+    local b = lifetime.attach(LogRpB(connection), false, connection)
+    local c = lifetime.attach(LogRpC(connection), false, connection)
+    log = {}
+
+    lifetime.destroy(connection)
+
+    -- The root's own body first, with every dependent alive; then its
+    -- dependents, most recently attached first, each reaching the
+    -- connection, which is dying, not dead, until the last one is done.
+    test.assert_deep_eq(log, {
+        "Connection:release(destroy)",
+        "TestLogRpC:release(anchor)",
+        "  unregister TestLogRpC",
+        "TestLogRpB:release(anchor)",
+        "  unregister TestLogRpB",
+        "TestLogRpA:release(anchor)",
+        "  unregister TestLogRpA"
+    })
+    test.assert_false(lifetime.alive(connection))
+    test.assert_false(lifetime.alive(a))
+    test.assert_false(lifetime.alive(b))
+    test.assert_false(lifetime.alive(c))
     test.assert_true(in_channel._released)
     test.assert_true(out_channel._released)
 end)

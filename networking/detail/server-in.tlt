@@ -1,4 +1,10 @@
-local logger_data, address, dispatcher_channel, channel, in_thread = ...
+-- The server's input thread for one client, started by the dispatcher:
+-- binds a port and tells it the dispatcher, accepts the client's sender on
+-- it, starts server-out towards the client's receiver and pushes every
+-- message it receives on `in_channel` until the connection breaks ("i").
+-- as: a thread's arguments are what Thread:start passed
+-- (connection-dispatcher.tlt); Teal types a main chunk's `...` as strings.
+local logger_data, address, dispatcher_channel, channel, in_thread = ... as (ModelData, string, love.Channel, love.Channel, love.Thread)
 
 -- A thread has a Lua state of its own: load love.filesystem (its module
 -- searcher) and look in build/ first, as main.lua does.
@@ -6,7 +12,8 @@ require("love.filesystem")
 love.filesystem.setRequirePath("build/?.lua;build/?/init.lua;?.lua;?/init.lua")
 
 local Socket = require("socket")
-local logger = require("utils.logger")(logger_data, "server-in-?????")
+local Logger = require("utils.logger")
+local logger = Logger(logger_data, "server-in-?????")
 
 local in_server, bind_err = Socket.bind(address, 0)
 if bind_err then
@@ -15,7 +22,7 @@ if bind_err then
     return
 end
 
-local in_port = select(2, in_server:getsockname())
+local _, in_port = in_server:getsockname()
 logger:set_name(string.format("server-in-%05i", in_port))
 logger:log("Bound port " .. in_port .. " for receiver")
 dispatcher_channel:push(in_port)
@@ -32,7 +39,7 @@ end
 logger:log("Received client receiver port " .. out_port)
 
 local in_channel, out_channel = love.thread.newChannel(), love.thread.newChannel()
-local out_thread = love.thread.newThread("networking/detail/server-out.lua")
+local out_thread = love.thread.newThread("build/networking/detail/server-out.lua")
 out_thread:start(logger_data, address, out_port, in_channel, out_channel, channel, out_thread, in_thread)
 
 while true do
@@ -62,7 +69,8 @@ while true do
     logger:log("Received data with size of " .. n)
     in_channel:push(data)
 end
-channel:push({
+local closed: ConnectorMessage = {
     "i",
     in_channel
-})
+}
+channel:push(closed)

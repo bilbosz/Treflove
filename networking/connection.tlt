@@ -1,0 +1,118 @@
+local Consts = require("app.consts")
+local table_utils = require("utils.table")
+
+-- A pair of channels and threads to the other side, with request/response
+-- dispatch. A root of the ownership tree: ConnectionManager:remove destroys
+-- it, its own release first, then what is anchored to it (docs/lifetime.md,
+-- "Networking").
+local Connection: Connection = class("Connection")
+
+-- A serialized message (table_utils.to_string), compressed.
+local function _compress(serialized: string): string
+    -- as: the container "string" makes compress return a string.
+    return love.data.compress("string", Consts.NETWORK_COMPRESSION, serialized) as string
+end
+
+local function _decompress(payload: string): {any: any}
+    -- as: the container "string" makes decompress return a string.
+    local serialized = love.data.decompress("string", Consts.NETWORK_COMPRESSION, payload) as string
+    return table_utils.from_string(serialized)
+end
+
+Connection.init = function(self: Connection, in_channel: love.Channel, in_thread: love.Thread, out_channel: love.Channel, out_thread: love.Thread)
+    self._in_channel = in_channel
+    self._in_thread = in_thread
+    self._out_channel = out_channel
+    self._out_thread = out_thread
+    self._queue = {}
+    self._source = app.is_client and "c" or "s"
+    self._requests_handlers = {}
+
+    app.update_event:register(self, self.on_update)
+end
+
+function Connection:send_request(id: string, body: RequestBody, response_handler: ConnectionResponseHandler)
+    assert_type(body, "table")
+    assert_type(response_handler, "function")
+
+    local request: Request = {
+        source = self._source,
+        id = id,
+        body = body
+    }
+    table.insert(self._queue, response_handler)
+    self._out_channel:push(_compress(table_utils.to_string(request)))
+end
+
+function Connection:register_request_handler(id: string, request_handler: ConnectionRequestHandler)
+    assert(not self._requests_handlers[id])
+    self._requests_handlers[id] = request_handler
+end
+
+function Connection:unregister_request_handler(id: string)
+    self._requests_handlers[id] = nil
+end
+
+function Connection:get_in_channel(): love.Channel
+    return self._in_channel
+end
+
+function Connection:get_out_channel(): love.Channel
+    return self._out_channel
+end
+
+function Connection:on_update()
+    while true do
+        -- as: the connection threads push only strings on the in channel.
+        local payload = self._in_channel:pop() as string
+        if not payload then
+            break
+        end
+        local message = _decompress(payload)
+        -- as: a message is a Request or a Response; `source` tells which
+        -- (our own source: the answer to a request we sent).
+        if message.source == self._source then
+            self:_handle_response(message as Response)
+        else
+            self:_send_response(message as Request)
+        end
+    end
+end
+
+-- What the connection holds is released here, not anchored `@ self`: the
+-- threads and channels are LÖVE userdata, whose `__destroy` the runtime
+-- would look up on their shared per-type metatable, which has none
+-- (lua-lifetime docs/02-semantics.md, "`__destroy` and reasons"), and the
+-- update registration must end before the next frame, since the weak
+-- entry stays until the tombstone is collected (docs/lifetime.md,
+-- "Networking"). This body runs before the connection's dependents die
+-- ("Cascading death"), and they may still unregister their handlers: the
+-- fields stay intact until the tombstone.
+function Connection:release(_reason?: LifetimeReason)
+    app.update_event:unregister(self)
+    self._in_thread:release()
+    self._in_channel:release()
+    self._out_thread:release()
+    self._out_channel:release()
+end
+
+function Connection:_handle_response(message: Response)
+    table.remove(self._queue, 1)(message.body)
+end
+
+function Connection:_send_response(request: Request)
+    assert_type(request, "table")
+    assert_type(request.body, "table")
+    assert_type(request.id, "string")
+
+    local body = self._requests_handlers[request.id](request.body)
+    assert_type(body, "table")
+    local response: Response = {
+        source = request.source,
+        id = request.id,
+        body = body
+    }
+    self._out_channel:push(_compress(table_utils.to_string(response)))
+end
+
+return Connection

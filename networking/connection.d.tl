@@ -1,7 +1,7 @@
--- networking/connection.lua (still Lua): a pair of channels and threads
--- to the other side, with request/response dispatch. A connection is a
--- root of the ownership tree: ConnectionManager:remove destroys it and the
--- session anchored to it dies in the cascade (docs/lifetime.md).
+-- networking/connection.tlt: a pair of channels and threads to the other
+-- side, with request/response dispatch. A connection is a root of the
+-- ownership tree: ConnectionManager:remove destroys it and what is anchored
+-- to it dies in the cascade (docs/lifetime.md, "Networking").
 
 -- The body of a request: each remote procedure declares its own record
 -- `is RequestBody` (DownloadAssetRequest, LoginRequest, ...).
@@ -50,5 +50,6 @@ global interface Connection is Object
     _handle_response: function(self, message: Response)
     _send_response: function(self, request: Request)
     -- release (Object): unregisters from app.update_event and releases the
-    -- threads and channels.
+    -- threads and channels, which are not anchored (docs/lifetime.md,
+    -- "Networking").
 end

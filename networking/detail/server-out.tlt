@@ -1,0 +1,58 @@
+-- The server's output thread for one client, started by server-in:
+-- connects to the client's receiver, announces the connection ("a") and
+-- sends every message of `out_channel` until it gets false or the
+-- connection breaks ("o").
+-- as: a thread's arguments are what Thread:start passed (server-in.tlt);
+-- Teal types a main chunk's `...` as strings.
+local logger_data, address, out_port, in_channel, out_channel, main_channel, out_thread, in_thread = ... as (ModelData, string, string, love.Channel, love.Channel, love.Channel, love.Thread, love.Thread)
+
+-- A thread has a Lua state of its own: load love.filesystem (its module
+-- searcher) and look in build/ first, as main.lua does.
+require("love.filesystem")
+love.filesystem.setRequirePath("build/?.lua;build/?/init.lua;?.lua;?/init.lua")
+
+local Socket = require("socket")
+local Logger = require("utils.logger")
+-- math.floor: "%05i" takes an integer (Lua 5.1 would coerce the string).
+local logger = Logger(logger_data, string.format("server-out-%05i", math.floor(tonumber(out_port))))
+
+local out_client, connect_err = Socket.connect(address, out_port)
+if connect_err then
+    logger:log("Could not connect to client receiver on port " .. out_port)
+    return
+end
+logger:log("Connected to client receiver on port " .. out_port)
+local added: ConnectorMessage = {
+    "a",
+    in_channel,
+    in_thread,
+    out_channel,
+    out_thread
+}
+main_channel:push(added)
+
+-- as: the Connection pushes serialized messages (strings) on the out
+-- channel, and false to stop.
+local msg = out_channel:demand() as string | boolean
+while msg ~= false do
+    assert_type(msg, "string")
+    local text = msg as string
+    local n = #text
+    local _, size_err = out_client:send(tostring(n) .. "\n")
+    if size_err then
+        logger:log("Could not send data size")
+        break
+    end
+    local _, data_err = out_client:send(text)
+    if data_err then
+        logger:log("Could not send data")
+        break
+    end
+    logger:log("Send data with size of " .. n)
+    msg = out_channel:demand() as string | boolean
+end
+local closed: ConnectorMessage = {
+    "o",
+    out_channel
+}
+main_channel:push(closed)
