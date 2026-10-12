@@ -1,0 +1,10 @@
+local WaitingScreen: WaitingScreen = require("screens.waiting-screen")
+
+-- The client's screen while it has no connection.
+local ConnectingScreen: ConnectingScreen = class("ConnectingScreen", WaitingScreen)
+
+ConnectingScreen.init = function(self: ConnectingScreen)
+    WaitingScreen.init(self, "Connecting...")
+end
+
+return ConnectingScreen

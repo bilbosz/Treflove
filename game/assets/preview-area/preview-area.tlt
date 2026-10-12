@@ -1,0 +1,114 @@
+local ClippingRectangle: ClippingRectangle = require("controls.clipping-rectangle")
+local Consts = require("app.consts")
+local Control: Control = require("controls.control")
+local Rectangle: Rectangle = require("controls.rectangle")
+local Text: Text = require("controls.text")
+
+-- The drop target and preview of the assets panel: a file dropped on it is
+-- handed to the panel, which shows its content here.
+local PreviewArea: PreviewArea = class("PreviewArea", ClippingRectangle)
+
+local PREVIEW_STRING = "Preview"
+local DROP_FILE_STRING = "Drop File Here"
+
+local function _create_background_labels(self: PreviewArea, str: string): Control
+    local labels = Control(self)
+
+    local measure_label = Text(nil, str)
+    measure_label:set_scale(Consts.PANEL_FIELD_SCALE)
+    local w, h = measure_label:get_outer_size()
+
+    local area_w, area_h = self:get_size()
+    local desired_w, desired_h = area_w * math.sqrt(2), area_h * math.sqrt(2)
+    local hor = math.ceil(desired_w / (w + Consts.PADDING) + 0.5)
+    local ver = math.ceil(desired_h / (h + Consts.PADDING))
+    local labels_w, labels_h = hor * (w + Consts.PADDING), ver * (h + Consts.PADDING)
+
+    local x, y: number, number = 0, 0
+    for i = 1, ver do
+        for _ = 1, hor do
+            local label = Text(labels, str, Consts.BACKGROUND_COLOR)
+            label:set_scale(Consts.PANEL_FIELD_SCALE)
+            label:set_position(x, y)
+            w, h = label:get_outer_size()
+            x = x + w + Consts.PADDING
+        end
+        x = (i % 2) * 0.5 * w
+        y = y + h + Consts.PADDING
+    end
+
+    labels:set_position(area_w * 0.5, area_h * 0.5)
+    labels:set_origin(labels_w * 0.5, labels_h * 0.5)
+    labels:set_rotation(math.pi * 0.25)
+
+    return labels
+end
+
+local function _set_labels(self: PreviewArea, labels: Control)
+    for _, v in ipairs({
+        self._preview_labels,
+        self._drop_file_labels
+    }) do
+        v:set_enabled(false)
+    end
+    labels:set_enabled(true)
+end
+
+local function _create_background(self: PreviewArea)
+    local w, h = self:get_size()
+    Rectangle(self, w, h, Consts.BUTTON_NORMAL_COLOR)
+    self._preview_labels = _create_background_labels(self, PREVIEW_STRING)
+    self._drop_file_labels = _create_background_labels(self, DROP_FILE_STRING)
+
+    _set_labels(self, self._drop_file_labels)
+end
+
+local function _create_content_parent(self: PreviewArea)
+    local control = Control(self)
+    self.content_parent = control
+
+    local w, h = self:get_size()
+    control:set_position(w * 0.5, h * 0.5)
+end
+
+PreviewArea.init = function(self: PreviewArea, parent: Control, width: number, height: number)
+    ClippingRectangle.init(self, parent, width, height)
+    _create_background(self)
+    _create_content_parent(self)
+
+    self._preview = nil
+
+    app.file_system_drop_event_manager.file_dropped:register(self, self.on_file_system_drop)
+    app.file_system_drop_event_manager:set_receive_through(self, true)
+end
+
+function PreviewArea:on_file_system_drop(_x: number, _y: number, dropped_file: love.DroppedFile)
+    local ok, err = dropped_file:open("r")
+    assert(ok, err)
+    self.parent:set_file(dropped_file)
+    dropped_file:close()
+end
+
+function PreviewArea:set_content(love_content: LoveMedium, preview_component: PreviewComponent)
+    self:reset()
+    _set_labels(self, self._preview_labels)
+    self._preview = preview_component(self, love_content)
+end
+
+function PreviewArea:reset()
+    _set_labels(self, self._drop_file_labels)
+    if self._preview then
+        self._preview:set_parent(nil)
+    end
+end
+
+-- The destructor undoes the area's own drop registration, which `init`
+-- made; the area is anchored to its panel (`PreviewArea(...) @ self` in
+-- game/assets/assets-panel.tlt) and dies with it (docs/lifetime.md,
+-- "Ownership").
+function PreviewArea:release(_reason?: LifetimeReason)
+    app.file_system_drop_event_manager.file_dropped:unregister(self)
+    app.file_system_drop_event_manager:set_receive_through(self, false)
+end
+
+return PreviewArea

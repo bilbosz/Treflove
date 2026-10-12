@@ -1,0 +1,348 @@
+-- Test doubles for the parts of the runtime that tests must control:
+-- the global `app`, LÖVE channels/threads, and `love.data` compression.
+local Event: Event = require("events.event")
+local FileSystemDropEventManager = require("events.file-drop-event")
+local KeyboardManager = require("events.keyboard")
+local PointerEventManager: PointerEventManager = require("events.pointer-event")
+local table_utils = require("utils.table")
+
+local record Mocks
+    -- The real pointer manager with the pointer position under test
+    -- control instead of `love.mouse` (file drops are dispatched at this
+    -- position).
+    interface TestPointerEventManager is PointerEventManager
+        position: {number, number}
+    end
+
+    -- Stand-in for the `love.keyboard` module (what `TextEventManager`
+    -- talks to): text input state and held keys are plain fields tests can
+    -- set. Passed where a `love.keyboard` is expected with a cast.
+    record FakeKeyboard
+        text_input: boolean
+        key_repeat: boolean
+        down: {love.KeyConstant: boolean} -- keys reported as held by `isDown`
+        setTextInput: function(enable: boolean)
+        hasTextInput: function(): boolean
+        setKeyRepeat: function(enable: boolean)
+        isDown: function(...: love.KeyConstant): boolean
+    end
+
+    -- Only the `resized` event of a ResizeManager (no window behind it).
+    record ResizeManagerMock
+        resized: Event
+    end
+
+    -- The fake global `app`: the managers the code under test reaches, a
+    -- controllable clock and the captured logs.
+    interface AppMock is App
+        -- any: the arguments of every `app:log` call, in order
+        logs: {{any}}
+        -- The real manager, position set by `set_pointer_position`.
+        pointer_event_manager: TestPointerEventManager
+        -- Advance the fake clock; `app:get_time()` reflects it immediately.
+        advance_time: function(self, dt: number)
+        -- Move the fake pointer (what `pointer_event_manager:get_position()`
+        -- returns).
+        set_pointer_position: function(self, x: number, y: number)
+    end
+
+    -- In-memory stand-in for a `love.Channel` (no threads involved).
+    interface FakeChannel is love.Channel
+        _queue: {any} -- any: a channel carries values of any type
+        _released: boolean
+    end
+
+    -- Stand-in for a `love.Thread`.
+    interface FakeThread is love.Thread
+        _released: boolean
+    end
+
+    make_keyboard: function(): FakeKeyboard
+    -- any: fields merged over the defaults (other managers, flags)
+    make_app: function(overrides?: {string: any}): AppMock
+    -- Replace the global `app` with a fresh mock and return it.
+    install_app: function(overrides?: {string: any}): AppMock -- any: see make_app
+    make_channel: function(): FakeChannel
+    make_thread: function(): FakeThread
+    ensure_love_data: function()
+    ensure_love_math: function()
+    ensure_love_login: function()
+end
+
+local mocks: Mocks = {}
+
+local TestPointerEventManager: Mocks.TestPointerEventManager = class("TestPointerEventManager", PointerEventManager)
+
+TestPointerEventManager.init = function(self: Mocks.TestPointerEventManager)
+    PointerEventManager.init(self)
+    self.position = {
+        0,
+        0
+    }
+end
+
+function TestPointerEventManager:get_position(): number, number
+    return self.position[1], self.position[2]
+end
+
+function mocks.make_keyboard(): Mocks.FakeKeyboard
+    local keyboard: Mocks.FakeKeyboard = {
+        text_input = false,
+        key_repeat = false,
+        down = {}
+    }
+
+    function keyboard.setTextInput(enable: boolean)
+        keyboard.text_input = enable
+    end
+
+    function keyboard.hasTextInput(): boolean
+        return keyboard.text_input
+    end
+
+    function keyboard.setKeyRepeat(enable: boolean)
+        keyboard.key_repeat = enable
+    end
+
+    function keyboard.isDown(...: love.KeyConstant): boolean
+        for _, key in ipairs({
+            ...
+        }) do
+            if keyboard.down[key] then
+                return true
+            end
+        end
+        return false
+    end
+
+    return keyboard
+end
+
+function mocks.make_app(overrides?: {string: any}): Mocks.AppMock -- any: see Mocks
+    local app_mock: Mocks.AppMock = {
+        is_client = true,
+        is_server = false,
+        logs = {},
+        _time = 0
+    }
+
+    function app_mock:get_time(): number
+        return self._time
+    end
+
+    function app_mock:advance_time(dt: number)
+        self._time = self._time + dt
+    end
+
+    function app_mock:log(...: any) -- any: see Mocks.AppMock.logs
+        table.insert(self.logs, {
+            ...
+        })
+    end
+
+    function app_mock:set_pointer_position(x: number, y: number)
+        self.pointer_event_manager.position[1], self.pointer_event_manager.position[2] = x, y
+    end
+
+    local resize_manager: Mocks.ResizeManagerMock = {
+        resized = Event()
+    }
+
+    app_mock.update_event = Event()
+    app_mock.wheel_event = Event()
+    app_mock.keyboard_manager = KeyboardManager()
+    -- as: the code under test reads only the `resized` event
+    app_mock.resize_manager = resize_manager as ResizeManager
+    app_mock.pointer_event_manager = TestPointerEventManager()
+    app_mock.file_system_drop_event_manager = FileSystemDropEventManager()
+
+    if overrides then
+        -- as: the mock is a table of fields, merged like any other
+        table_utils.merge(app_mock as {string: any}, overrides)
+    end
+    return app_mock
+end
+
+function mocks.install_app(overrides?: {string: any}): Mocks.AppMock -- any: see Mocks
+    local app_mock = mocks.make_app(overrides)
+    app = app_mock
+    return app_mock
+end
+
+-- The channel as mocks.make_channel builds it: love.Channel's `demand` is
+-- overloaded (with and without a timeout), which a function defined in Teal
+-- cannot be, so it is built as this record and returned as a FakeChannel.
+local record ChannelImpl
+    _queue: {any} -- any: see Mocks.FakeChannel
+    _released: boolean
+    push: function(self, value: any): number -- any: see Mocks.FakeChannel
+    pop: function(self): any -- any: see Mocks.FakeChannel
+    demand: function(self, timeout?: number): any -- any: see Mocks.FakeChannel
+    getCount: function(self): number
+    release: function(self): boolean
+end
+
+function mocks.make_channel(): Mocks.FakeChannel
+    local channel: ChannelImpl = {
+        _queue = {}
+    }
+
+    -- Returns the queue's length (LÖVE returns an id of the message).
+    function channel:push(value: any): number -- any: see Mocks.FakeChannel
+        table.insert(self._queue, value)
+        return #self._queue
+    end
+
+    function channel:pop(): any -- any: see Mocks.FakeChannel
+        return table.remove(self._queue, 1)
+    end
+
+    -- The timeout of LÖVE's variant is ignored.
+    function channel:demand(_timeout?: number): any -- any: see Mocks.FakeChannel
+        local value = self:pop()
+        assert(value ~= nil, "demand() on an empty fake channel would block forever")
+        return value
+    end
+
+    function channel:getCount(): number
+        return #self._queue
+    end
+
+    function channel:release(): boolean
+        self._released = true
+        return true
+    end
+
+    -- as: see ChannelImpl
+    return channel as Mocks.FakeChannel
+end
+
+function mocks.make_thread(): Mocks.FakeThread
+    local thread: Mocks.FakeThread = {}
+
+    function thread:release(): boolean
+        self._released = true
+        return true
+    end
+
+    return thread
+end
+
+-- What the ensure_love_* functions install: plain tables where LÖVE's
+-- modules would be. any: a fake module holds functions of every
+-- signature; the checker knows `love` only as LÖVE's declared API.
+local type FakeModule = {string: any}
+
+-- The global `love` as a table of modules, created when missing (plain
+-- LuaJIT has none).
+local function _love_modules(): {string: FakeModule}
+    -- as: see FakeModule
+    local globals = _G as {string: {string: FakeModule}}
+    globals.love = globals.love or {}
+    return globals.love
+end
+
+-- Make sure `love.data.compress`/`decompress` exist. Under `love . test` the
+-- real implementations are used; under plain LuaJIT a reversible
+-- string-passthrough fake is installed instead.
+function mocks.ensure_love_data()
+    if love and love.data then
+        return
+    end
+    local PREFIX = "fake-compressed:"
+    local modules = _love_modules()
+    -- The original replaced the whole `love` table: what ensure_love_math
+    -- installed is dropped the same way.
+    for name in pairs(modules) do
+        modules[name] = nil
+    end
+    modules.data = {
+        compress = function(_: string, _: string, str: string): string
+            return PREFIX .. str
+        end,
+        decompress = function(_: string, _: string, payload: string): string
+            return string.sub(payload, #PREFIX + 1)
+        end
+    }
+end
+
+-- Make sure `love.math.newTransform` exists, for code that constructs a
+-- `Control` (a `Screen` makes one). Under `love . test` the real module is
+-- used; under plain LuaJIT an identity transform is installed instead: the
+-- point methods return their arguments and every other operation is
+-- ignored (enough for constructing and parenting controls, not for
+-- geometry).
+function mocks.ensure_love_math()
+    if love and love.math then
+        return
+    end
+    local function identity(_: FakeModule, x: number, y: number): number, number
+        return x, y
+    end
+    local transform_mt: metatable<FakeModule> = {}
+    -- any: a method of the fake, with the signature of the one asked for
+    transform_mt.__index = function(_: FakeModule, name: string): any
+        if name == "transformPoint" or name == "inverseTransformPoint" then
+            return identity
+        end
+        return function(transform: FakeModule): FakeModule
+            return transform
+        end
+    end
+    _love_modules().math = {
+        newTransform = function(): FakeModule
+            return setmetatable({}, transform_mt)
+        end
+    }
+end
+
+-- A seeded generator: what Utils.generate_salt calls.
+local record FakeRandomGenerator
+    setSeed: function(self, seed: integer)
+    random: function(self, lo: integer, hi: integer): integer
+end
+
+-- Make sure what a login and a connector need of LÖVE exists:
+-- `love.data.hash` and `love.data.encode` (Utils.hash,
+-- Utils.generate_salt), the seeded `love.math.newRandomGenerator`
+-- (Utils.generate_salt) and `love.thread.newChannel` (the Connector made
+-- by a ConnectionManager). Under `love . test` the real modules are used;
+-- under plain LuaJIT deterministic stand-ins are added next to whatever
+-- `ensure_love_data` and `ensure_love_math` installed (hex for base64, a
+-- djb2 hash, a Park-Miller generator, `make_channel`).
+function mocks.ensure_love_login()
+    mocks.ensure_love_data()
+    mocks.ensure_love_math()
+    if love.data.hash then
+        return
+    end
+    local modules = _love_modules()
+    modules.data.encode = function(_: string, _: string, s: string): string
+        return (s:gsub(".", function(c: string): string
+            return string.format("%02x", c:byte())
+        end))
+    end
+    modules.data.hash = function(_: string, s: string): string
+        local h = 5381
+        for i = 1, #s do
+            h = (h * 33 + s:byte(i)) % 4294967296
+        end
+        return string.format("%08x", h)
+    end
+    modules.math.newRandomGenerator = function(): FakeRandomGenerator
+        local state = 1
+        local generator: FakeRandomGenerator = {}
+        function generator:setSeed(seed: integer)
+            state = seed % 2147483647
+        end
+        function generator:random(lo: integer, hi: integer): integer
+            state = (state * 16807) % 2147483647
+            return lo + state % (hi - lo + 1)
+        end
+        return generator
+    end
+    modules.thread = modules.thread or {}
+    modules.thread.newChannel = modules.thread.newChannel or mocks.make_channel
+end
+
+return mocks

@@ -1,0 +1,58 @@
+local Consts = require("app.consts")
+local Input: Input = require("ui.input")
+local Text: Text = require("controls.text")
+
+-- A text that runs its action when clicked, or on return while focused.
+local TextButton: TextButton = class("TextButton", Text, Input)
+
+function TextButton:_update_text_color()
+    self:set_color((self:is_focused() or self:is_selected()) and Consts.BUTTON_SELECT_COLOR or self:is_hovered() and Consts.BUTTON_HOVER_COLOR or Consts.BUTTON_NORMAL_COLOR)
+end
+
+TextButton.init = function(self: TextButton, parent: Control, form_screen: FormScreen, text: string, action: TextButtonAction)
+    Text.init(self, parent, text, Consts.BUTTON_NORMAL_COLOR)
+    Input.init(self, form_screen)
+    self._action = action
+    local button = self:get_button()
+    button.selected:register(self, self._update_text_color)
+    button.unselected:register(self, self._update_text_color)
+    button.pointer_entered:register(self, self._update_text_color)
+    button.pointer_left:register(self, self._update_text_color)
+    button.clicked:register(self, self.on_click)
+end
+
+function TextButton:on_screen_show()
+    Input.on_screen_show(self)
+    if self:is_focused() then
+        app.keyboard_manager.key_pressed:register(self, self.on_key_pressed)
+    end
+end
+
+function TextButton:on_screen_hide()
+    Input.on_screen_hide(self)
+    app.keyboard_manager.key_pressed:unregister(self)
+end
+
+function TextButton:on_focus()
+    Input.on_focus(self)
+    self:_update_text_color()
+    app.keyboard_manager.key_pressed:register(self, self.on_key_pressed)
+end
+
+function TextButton:on_focus_lost()
+    app.keyboard_manager.key_pressed:unregister(self)
+    Input.on_focus_lost(self)
+    self:_update_text_color()
+end
+
+function TextButton:on_click()
+    self._action()
+end
+
+function TextButton:on_key_pressed(key: love.KeyConstant)
+    if key == "return" then
+        self._action()
+    end
+end
+
+return TextButton

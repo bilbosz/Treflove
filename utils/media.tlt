@@ -1,0 +1,54 @@
+local media: Media = {}
+
+local function _try_create_audio_file(data: string): LoveMedium
+    return love.audio.newSource(data, "static")
+end
+
+local function _try_create_image_file(data: string): LoveMedium
+    return love.graphics.newImage(data)
+end
+
+local function _try_create_font_file(data: string): LoveMedium
+    return love.graphics.newFont(data)
+end
+
+local function _try_create_video_file(data: string): LoveMedium
+    return love.graphics.newVideo(data)
+end
+
+local record Match
+    create: function(data: string): LoveMedium
+    type: Media.Type
+end
+
+-- Ordered so that ambiguous data resolves to the preferred type.
+local MATCH_FILE: {Match} = {
+    {
+        create = _try_create_video_file,
+        type = "VIDEO"
+    },
+    {
+        create = _try_create_image_file,
+        type = "IMAGE"
+    },
+    {
+        create = _try_create_audio_file,
+        type = "AUDIO"
+    },
+    {
+        create = _try_create_font_file,
+        type = "FONT"
+    }
+}
+
+function media.get_type_and_medium(data: string): Media.Type, LoveMedium
+    for _, v in ipairs(MATCH_FILE) do
+        local is_ok, medium = pcall(v.create, data)
+        if is_ok then
+            return v.type, medium
+        end
+    end
+    return nil, nil
+end
+
+return media

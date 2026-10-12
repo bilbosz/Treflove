@@ -1,10 +1,7 @@
 {
-    "vscode-lua-format.configPath": "",
-    "vscode-lua-format.binaryPath": "/usr/local/bin/lua-format",
     "files.associations": {
-        "*.luacheckrc": "lua"
+        "*.luacheckrc": "lua",
+        "*.tlt": "teal",
+        "*.d.tl": "teal"
     },
-    "Lua.runtime.plugin": ".vscode/constructor_hints.lua",
-    "Lua.runtime.version": "LuaJIT",
-    "Lua.runtime.pathStrict": true,
 }

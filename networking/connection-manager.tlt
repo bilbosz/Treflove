@@ -1,0 +1,58 @@
+local Connector = require("networking.connector")
+local Connection: Connection = require("networking.connection")
+
+-- Every connection, indexed by its channels.
+local ConnectionManager: ConnectionManager = class("ConnectionManager")
+
+ConnectionManager.init = function(self: ConnectionManager, address: string, port: string)
+    self._connections = {}
+    self._by_in_channel = {}
+    self._by_out_channel = {}
+    self._on_connect = nil
+    self._on_disconnect = nil
+    self._connector = Connector(address, port)
+end
+
+function ConnectionManager:start(on_connect: ConnectionManagerOnConnect, on_disconnect: ConnectionManagerOnDisconnect)
+    self._on_connect = on_connect
+    self._on_disconnect = on_disconnect
+    self._connector:start(self)
+end
+
+function ConnectionManager:add_connection(in_channel: love.Channel, in_thread: love.Thread, out_channel: love.Channel, out_thread: love.Thread)
+    local connection = Connection(in_channel, in_thread, out_channel, out_thread)
+    self._connections[connection] = true
+    self._by_in_channel[in_channel] = connection
+    self._by_out_channel[out_channel] = connection
+    self._on_connect(connection)
+end
+
+function ConnectionManager:remove_by_in_channel(in_channel: love.Channel)
+    self:remove(self._by_in_channel[in_channel])
+end
+
+function ConnectionManager:remove_by_out_channel(out_channel: love.Channel)
+    self:remove(self._by_out_channel[out_channel])
+end
+
+function ConnectionManager:remove(connection: Connection)
+    self._connections[connection] = nil
+    self._by_in_channel[connection:get_in_channel()] = nil
+    self._by_out_channel[connection:get_out_channel()] = nil
+    self._on_disconnect(connection)
+    if app.is_client then
+        self._connector:remove_thread()
+    end
+    -- One cascade ends the connection and everything anchored to it, the
+    -- connection's own release first (lua-lifetime docs/02-semantics.md,
+    -- "Cascading death"). The three table removals above stay: a dead
+    -- connection is a tombstone, not nil, and does not leave a strong
+    -- table by itself ("Tombstones").
+    lifetime.destroy(connection)
+end
+
+function ConnectionManager:get_connections(): {Connection: boolean}
+    return self._connections
+end
+
+return ConnectionManager

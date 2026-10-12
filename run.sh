@@ -4,6 +4,10 @@ function on_exit() {
     jobs -p | xargs -n1 kill -9
 }
 
+cd "$(dirname "$0")" || exit 1
+
+./build-code.sh || exit 1
+
 trap 'on_exit' EXIT
 
 love . server localhost 8080 &

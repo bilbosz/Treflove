@@ -1,0 +1,60 @@
+local App: App = require("app.app")
+local Asset: Asset = require("data.asset")
+local AssetManager: AssetManager = require("data.asset-manager")
+local ConnectionManager: ConnectionManager = require("networking.connection-manager")
+local ScreenManager: ScreenManager = require("screens.screen-manager")
+local ScreenSaver: ScreenSaver = require("screens.screen-saver")
+local Session: Session = require("game.session")
+local table_utils = require("utils.table")
+
+-- The server application: a session per connection, the game state
+-- persisted to save.lua.
+local Server: Server = class("Server", App)
+
+Server.init = function(self: Server, params: ArgParserResult)
+    App.init(self, params)
+    self.logger:set_name("server-main")
+    self.is_server = true
+    self._save_file = Asset("save.lua", true)
+
+    if self.root then
+        self.screen_manager = ScreenManager()
+        self.screen_manager:show(ScreenSaver())
+    end
+    self._sessions = {}
+    self.connection_manager = ConnectionManager(params.address, params.port)
+    self.asset_manager = AssetManager()
+end
+
+-- Each session is anchored to its connection (idiom A of lua-lifetime
+-- trial/treflove/README.md): ConnectionManager:remove destroys the
+-- connection after the disconnect callback, and the session dies in that
+-- cascade (lua-lifetime docs/02-semantics.md, "Cascading death"). The
+-- callback still removes the entry: a dead connection is a tombstone and
+-- would stay a key ("Tombstones"). The table refers to the session, so the
+-- implicit `reachable` term does not end it early.
+function Server:load()
+    self:_load_data()
+    self.connection_manager:start(function(connection: Connection)
+        self._sessions[connection] = Session(connection) @ connection
+    end, function(connection: Connection)
+        self._sessions[connection] = nil
+    end)
+end
+
+function Server:_load_data()
+    local content = self._save_file:read()
+    -- as: save.lua holds the persisted game state (GameState)
+    self.data = table_utils.from_string(content) as GameState
+end
+
+function Server:save_data()
+    local content = table_utils.to_string(self.data)
+    self._save_file:write(content)
+end
+
+function Server:register_love_callbacks()
+    App.register_love_callbacks(self)
+end
+
+return Server

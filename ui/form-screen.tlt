@@ -1,0 +1,164 @@
+local Screen: Screen = require("screens.screen")
+local table_utils = require("utils.table")
+
+-- A screen with focusable inputs: tab moves the focus forward, shift+tab
+-- back. Each Input adds itself in its constructor and is removed by its own
+-- hook when it dies (ui/input.tlt); `release` tells those hooks that the form
+-- went first (docs/lifetime.md, "Screens").
+local FormScreen: FormScreen = class("FormScreen", Screen)
+
+function FormScreen:_notify_listeners()
+    if self._prev_focus == self._focus then
+        return
+    end
+    local old_item = self._inputs[self._prev_focus]
+    if old_item then
+        old_item:on_focus_lost()
+    end
+    local new_item = self._inputs[self._focus]
+    if new_item then
+        new_item:on_focus()
+    end
+end
+
+function FormScreen:_advance_focus(d: integer)
+    assert(d == 1 or d == -1)
+    local inputs = self._inputs
+    self._prev_focus = self._focus
+
+    local n = #inputs
+    if n == 0 then
+        return
+    end
+
+    local count = 0
+    for _, v in ipairs(inputs) do
+        if not v:is_read_only() then
+            count = count + 1
+        end
+    end
+    if count == 0 then
+        return
+    end
+
+    local i = self._focus or 0
+    while true do
+        i = (i + d - 1 + n) % n + 1
+        if inputs[i]:are_all_predecessors_enabled() and not inputs[i]:is_read_only() then
+            break
+        end
+    end
+    self._focus = i
+end
+
+FormScreen.init = function(self: FormScreen)
+    Screen.init(self)
+    self._inputs = {}
+    self._prev_focus = nil
+    self._focus = nil
+    self._is_showed = false
+    self._is_released = false
+end
+
+function FormScreen:show()
+    Screen.show(self)
+    -- set before notifying the inputs, so they see the screen as shown (`hide` clears it first)
+    self._is_showed = true
+    for _, input in ipairs(self._inputs) do
+        input:on_screen_show()
+    end
+    app.keyboard_manager.key_pressed:register(self, self.on_key_pressed)
+end
+
+function FormScreen:hide()
+    self._is_showed = false
+    app.keyboard_manager.key_pressed:unregister(self)
+    for _, input in ipairs(self._inputs) do
+        input:on_screen_hide()
+    end
+    Screen.hide(self)
+end
+
+function FormScreen:is_showed(): boolean
+    return self._is_showed
+end
+
+function FormScreen:on_key_pressed(key: love.KeyConstant)
+    if key == "tab" then
+        if app.keyboard_manager:is_key_down("lshift") then
+            self:_advance_focus(-1)
+        else
+            self:_advance_focus(1)
+        end
+        self:_notify_listeners()
+    end
+end
+
+function FormScreen:add_input(input: Input)
+    table.insert(self._inputs, input)
+end
+
+-- Called by the input's hook as the input dies (ui/input.tlt), while it is
+-- dying and still findable by identity, and by a caller that drops a live
+-- input (TokenPanel). The hook is discarded here: a hook is pinned by its
+-- anchors (lua-lifetime docs/02-semantics.md, "Hooks: the `!@` operator")
+-- and refers to the input, so a dropped input's hook would keep it, and
+-- one more hook on the form, alive until the form dies. Called from the
+-- hook itself, the discard is a no-op (the hook is dying: "Explicit
+-- destruction"). A shown form has called the input's `on_screen_show`
+-- (in `show`, or `Input:init` for an input added later), so it calls its
+-- `on_screen_hide` here: an input dropped while the form is shown would
+-- otherwise stay registered on the events it listens to while shown, and
+-- its collected tombstone would be called from the next update.
+function FormScreen:remove_input(input: Input)
+    local found = table_utils.find_array_idx(self._inputs, input)
+    assert(found)
+    if self._is_showed then
+        input:on_screen_hide()
+    end
+    lifetime.discard(input._unlink_hook)
+    table.remove(self._inputs, found)
+    if found == self._focus then
+        self._focus = nil
+    end
+    if found == self._prev_focus then
+        self._prev_focus = nil
+    end
+end
+
+function FormScreen:read_only_change(input: Input)
+    local found = table_utils.find_array_idx(self._inputs, input)
+    assert(found)
+    if found == self._focus then
+        self:_advance_focus(1)
+    end
+end
+
+function FormScreen:focus(input: Input)
+    local found: integer
+    for i, v in ipairs(self._inputs) do
+        if v == input then
+            found = i
+            break
+        end
+    end
+    assert(found)
+    self._prev_focus = self._focus
+    self._focus = found
+    self:_notify_listeners()
+end
+
+-- The destructor. It runs before the form's dependents, the hooks of its
+-- inputs among them (lua-lifetime docs/02-semantics.md, "Cascading death"),
+-- and a hook learns only the reason, not which of its anchors died, so this
+-- flag tells each input's hook that the form went first and there is
+-- nothing to unlink (lua-lifetime trial/treflove/README.md, idiom B).
+function FormScreen:release(_reason?: LifetimeReason)
+    self._is_released = true
+end
+
+function FormScreen:is_released(): boolean
+    return self._is_released
+end
+
+return FormScreen

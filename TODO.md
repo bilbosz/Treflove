@@ -14,7 +14,7 @@ game state (tokens, objects, maps, sound) live during play.
 
 ### 2. Game state synchronization
 
-[GameDataRp](game/game-data-rp.lua) sends the full state once on login; changes
+[GameDataRp](game/game-data-rp.tlt) sends the full state once on login; changes
 made afterwards do not propagate.
 
 - Push incremental state updates from server to all connected clients
@@ -22,7 +22,7 @@ made afterwards do not propagate.
 
 ### 3. Game objects other than tokens
 
-Only [Token](game/token/token.lua) exists today.
+Only [Token](game/token/token.tlt) exists today.
 
 - Generalize the object model (e.g. areas, cards, dice, drawings, labels)
 - Shared object lifecycle: creation, ownership, persistence, panel UI
@@ -33,7 +33,7 @@ Reusable object templates the GM can instantiate during play.
 
 ### 5. Media other than images
 
-[utils/media.lua](utils/media.lua) already types sources/fonts/videos, but the
+[utils/media.tlt](utils/media.tlt) already types sources/fonts/videos, but the
 asset pipeline and game data handle images only.
 
 - Audio playback (background music, sound effects)
@@ -41,7 +41,7 @@ asset pipeline and game data handle images only.
 
 ### 6. Clipping of controls outside the clipping rectangle
 
-[ClippingMask](controls/clipping-mask.lua) clips drawing via stencil, but
+[ClippingMask](controls/clipping-mask.tlt) clips drawing via stencil, but
 children outside the rectangle still participate in layout/hit testing and are
 fully processed.
 
@@ -52,18 +52,18 @@ fully processed.
 ### 7. Real login flow and user management
 
 - Remove the hardcoded dev auto-login `"adam"/"krause"` at
-  [game/session.lua:62](game/session.lua#L62) (or gate it behind a debug flag)
+  [game/session.tlt:73](game/session.tlt#L73) (or gate it behind a debug flag)
 - Users are currently added by hand-editing [server/save.lua](server/save.lua),
   which also carries plaintext passwords in comments — add a way to create and
   manage accounts
 
 ### 8. Authentication hardening
 
-`Utils.generate_salt` ([utils/utils.lua:92](utils/utils.lua#L92)) is seeded with
+`Utils.generate_salt` ([utils/utils.tlt:87](utils/utils.tlt#L87)) is seeded with
 fixed constants, so the "salt" is a static pepper shared by all users.
 
 - Per-user random salts stored with the account, and a proper KDF for hashing
-- `_find_user_by_client_auth` in [login/login-rp.lua](login/login-rp.lua)
+- `_find_user_by_client_auth` in [login/login-rp.tlt](login/login-rp.tlt)
   scans all players per login attempt — index by auth instead
 
 ### 9. Connection resilience
@@ -82,10 +82,47 @@ fixed constants, so the "salt" is a static pepper shared by all users.
 
 ### 11. Broader test coverage
 
-The suite in [tests/](tests/) covers utilities, events, and networking basics.
-Missing areas:
+The suite in [tests/](tests/) covers utilities, events, networking basics,
+forms and the session's lifecycle (login, logout, disconnect, with the
+screens as test doubles). Missing areas:
 
 - Control hierarchy: transforms, AABB computation, event propagation, clipping
 - Serialization round-trips of real game data (pages, tokens, players)
-- RPC classes beyond Connection (login, asset transfer, game data)
-- Session lifecycle (login → screen transitions → logout/disconnect)
+- Asset transfer RPCs with real payloads; the real screens (they need
+  `love.graphics`, so a windowed LÖVE run)
+
+## Follow-ups from the Teal migration
+
+### 12. Constructor arguments are not checked at call sites
+
+`Object` declares `__call` with `...: any` and each class assigns its own
+`init` ([docs/types.md](docs/types.md), "Classes"), so `Rectangle(1, 2)`
+type-checks whatever the arguments; only constructor bodies are typed.
+Typing `__call` per class (or a typed `new` per class) would close it.
+
+### 13. Page and Token pointer registrations
+
+[Page](game/page/page.tlt) and [Token](game/token/token.tlt) register on
+the pointer manager's events (and Page on `app.wheel_event`) and never
+unregister: they rely on the events' weak keys, so a dropped page or token
+stops receiving only once it is collected. Give them a `release` that
+unregisters, or anchor what holds them.
+
+### 14. TokenPanel drops its inputs instead of destroying them
+
+[TokenPanel](game/token/token-panel.tlt) removes its old inputs from the
+game screen (`remove_input`) and drops them; they die whenever the
+collector finds them. Destroying them would need Input to have a
+destructor that first undoes its `on_screen_hide` registrations (else a
+destroyed input stays a key of `app.update_event` and the next frame
+indexes its tombstone; [docs/lifetime.md](docs/lifetime.md), "Screens").
+
+### 15. Connection thread faults
+
+- [connection-dispatcher](networking/detail/connection-dispatcher.tlt):
+  when server-in fails to bind it pushes `false`, and the dispatcher's
+  closing log line concatenates that `false`, which raises and ends the
+  dispatcher thread (no client can connect afterwards).
+- [client-in](networking/detail/client-in.tlt): when it fails to bind it
+  returns without pushing a port, so client-out waits on `demand()`
+  forever.

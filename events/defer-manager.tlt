@@ -1,0 +1,40 @@
+local table_utils = require("utils.table")
+
+local DeferManager: DeferManager = class("DeferManager")
+
+local function _add_defers(self: DeferManager)
+    table_utils.merge_array(self._queue, self._to_add_defers)
+    self._to_add_defers = {}
+    table.sort(self._queue, function(a: DeferEntry, b: DeferEntry): boolean
+        return a.time < b.time
+    end)
+end
+
+DeferManager.init = function(self: DeferManager)
+    self._queue = {}
+    self._to_add_defers = {}
+end
+
+function DeferManager:call_defered(t: number, f: DeferCallback, ...: any) -- any: f's own arguments
+    assert_type(t, "number")
+    assert_type(f, "function")
+    table.insert(self._to_add_defers, {
+        time = app:get_time() + t,
+        callback = f,
+        args = {
+            ...
+        }
+    })
+end
+
+function DeferManager:update()
+    if #self._to_add_defers > 0 then
+        _add_defers(self)
+    end
+    while #self._queue > 0 and app:get_time() >= self._queue[1].time do
+        local defer = table.remove(self._queue, 1)
+        defer.callback(table.unpack(defer.args))
+    end
+end
+
+return DeferManager

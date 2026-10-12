@@ -1,0 +1,17 @@
+local Control: Control = require("controls.control")
+
+-- Clips its children to its global AABB with the scissor.
+local ClippingRectangle: ClippingRectangle = class("ClippingRectangle", Control)
+
+ClippingRectangle.init = function(self: ClippingRectangle, parent: Control, width: number, height: number)
+    assert(width and height)
+    Control.init(self, parent, width, height)
+end
+
+function ClippingRectangle:draw()
+    love.graphics.setScissor(self:get_global_aabb():get_position_and_size())
+    Control.draw(self)
+    love.graphics.setScissor()
+end
+
+return ClippingRectangle

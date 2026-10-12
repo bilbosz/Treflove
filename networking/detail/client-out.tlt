@@ -1,0 +1,101 @@
+-- The client's output thread, started by the Connector: asks the server's
+-- dispatcher for the port of its sender, connects to it, starts client-in,
+-- announces the connection ("a") and sends every message of `out_channel`
+-- until it gets false or the connection breaks ("o").
+-- as: a thread's arguments are what Thread:start passed (Connector);
+-- Teal types a main chunk's `...` as strings.
+local logger_data, channel, address, port, out_thread = ... as (ModelData, love.Channel, string, string, love.Thread)
+
+-- A thread has a Lua state of its own: load love.filesystem (its module
+-- searcher) and look in build/ first, as main.lua does.
+require("love.filesystem")
+love.filesystem.setRequirePath("build/?.lua;build/?/init.lua;?.lua;?/init.lua")
+
+require("app.globals")
+local Socket = require("socket")
+local Logger = require("utils.logger")
+local logger = Logger(logger_data, "client-out-?????")
+
+local out_port: string
+do
+    logger:log("Trying to connect to port " .. port)
+    local client, connect_err = Socket.connect(address, tonumber(port))
+    if connect_err then
+        logger:log("Could not connect to port " .. port)
+        return
+    end
+    local port_err: string
+    out_port, port_err = client:receive("*l")
+    if port_err or not tonumber(out_port) then
+        client:close()
+        logger:log("Could not receive client sender port")
+        return
+    end
+    -- math.floor: "%05i" takes an integer (Lua 5.1 would coerce the string).
+    logger:set_name(string.format("client-out-%05i", math.floor(tonumber(out_port))))
+    client:close()
+    logger:log("Dispatchee connection closed")
+end
+
+do
+    local get_port_channel = love.thread.newChannel()
+    local in_channel, out_channel = love.thread.newChannel(), love.thread.newChannel()
+    local out_client, connect_err = Socket.connect(address, tonumber(out_port))
+    if connect_err then
+        logger:log("Could not connect to server on port " .. out_port)
+        return
+    end
+    local in_thread = love.thread.newThread("build/networking/detail/client-in.lua")
+    in_thread:start(logger_data, channel, address, get_port_channel, in_channel, out_channel)
+
+    -- as: client-in pushes the port it bound.
+    local in_port = get_port_channel:demand() as integer
+    local _, send_port_err = out_client:send(tostring(in_port) .. "\n")
+    if send_port_err then
+        logger:log("Could not send receiver port")
+        return
+    end
+    local added: ConnectorMessage = {
+        "a",
+        in_channel,
+        in_thread,
+        out_channel,
+        out_thread
+    }
+    channel:push(added)
+    logger:log("Established output connection with host")
+
+    -- as: the Connection pushes serialized messages (strings) on the out
+    -- channel, and false to stop.
+    local msg = out_channel:demand() as string | boolean
+    while msg ~= false do
+        assert_type(msg, "string")
+        local text = msg as string -- as: asserted just above
+        local n = #text
+        local _, size_err = out_client:send(tostring(n) .. "\n")
+        if size_err then
+            if size_err == "closed" then
+                logger:log("Connection closed by host")
+            else
+                logger:log("Connection error when sending data size")
+            end
+            break
+        end
+        local _, data_err = out_client:send(text)
+        if data_err then
+            if data_err == "closed" then
+                logger:log("Connection lost")
+            else
+                logger:log("Connection error when sending data")
+            end
+            break
+        end
+        logger:log("Send data with size of " .. n)
+        msg = out_channel:demand() as string | boolean -- as: see above
+    end
+    local closed: ConnectorMessage = {
+        "o",
+        out_channel
+    }
+    channel:push(closed)
+end

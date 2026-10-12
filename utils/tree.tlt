@@ -1,0 +1,76 @@
+local table_utils = require("utils.table")
+
+local Tree: Tree = class("Tree")
+
+Tree.init = function(self: Tree, parent?: Tree)
+    self.children = {}
+    self.parent = nil
+    if parent then
+        self:set_parent(parent)
+    end
+end
+
+function Tree:set_parent(parent: Tree)
+    if parent then
+        parent:add_child(self)
+    else
+        if self.parent then
+            self.parent:remove_child(self)
+        end
+    end
+end
+
+function Tree:add_child(child: Tree)
+    if child.parent then
+        child.parent:remove_child(child)
+    end
+    child.parent = self
+    table.insert(self.children, child)
+end
+
+function Tree:remove_child(child: Tree)
+    local found: integer
+    for i, v in ipairs(self.children) do
+        if v == child then
+            found = i
+            break
+        end
+    end
+    if found then
+        table.remove(self.children, found)
+        child.parent = nil
+    else
+        assert_unreachable()
+    end
+end
+
+function Tree:get_children(): {Tree}
+    return table_utils.copy(self.children)
+end
+
+function Tree:get_parent(): Tree
+    return self.parent
+end
+
+function Tree:reattach(n?: integer)
+    local children = self.parent.children
+    n = n or #children
+    if children[n] == self then
+        return
+    end
+    local found: integer
+    for i, v in ipairs(children) do
+        if v == self then
+            found = i
+            break
+        end
+    end
+    if found then
+        table.remove(children, found)
+        table.insert(children, n, self)
+    else
+        assert_unreachable()
+    end
+end
+
+return Tree

@@ -1,0 +1,120 @@
+local test = require("tests.lib.test")
+
+-- The class system and the lifetime runtime (docs/lifetime.md): `release` is
+-- the destructor, every instance of a class with a `release` is registered,
+-- and `x @ owner` anchors `x` to `owner`.
+
+local log: {string} = {}
+
+local interface TestOwned is Object
+    name: string
+end
+
+local TestOwned: TestOwned = class("TestOwned")
+
+TestOwned.init = function(self: TestOwned, name: string)
+    self.name = name
+end
+
+function TestOwned:release(reason?: LifetimeReason)
+    table.insert(log, self.name .. " " .. tostring(reason))
+end
+
+local interface TestPlain is Object
+end
+
+local TestPlain: TestPlain = class("TestPlain")
+
+local function _reset()
+    for i = #log, 1, -1 do
+        log[i] = nil
+    end
+end
+
+-- Created in a function of its own, so that no register of the caller
+-- keeps the dependent alive.
+local function _drop_dependent(owner: TestOwned)
+    TestOwned("dropped") @ owner
+end
+
+local function _drop_instance()
+    TestOwned("solo")
+end
+
+test.suite("class + lifetime")
+
+test.case("destroy runs the owner's release first, then its dependents newest first", function()
+    _reset()
+    local owner = TestOwned("owner")
+    local first = TestOwned("first") @ owner
+    local second = TestOwned("second") @ owner
+    test.assert_deep_eq(log, {}, "nothing dies before the destroy")
+
+    lifetime.destroy(owner)
+    test.assert_deep_eq(log, {
+        "owner destroy",
+        "second anchor",
+        "first anchor"
+    })
+    test.assert_false(lifetime.alive(owner))
+    test.assert_false(lifetime.alive(first))
+    test.assert_false(lifetime.alive(second))
+end)
+
+test.case("a dead object is a tombstone that raises on index", function()
+    _reset()
+    local owner = TestOwned("tomb")
+    lifetime.destroy(owner)
+    test.assert_deep_eq(log, {
+        "tomb destroy"
+    })
+    test.assert_false(lifetime.alive(owner))
+    local ok, err = pcall(function(): string
+        return owner.name
+    end)
+    test.assert_false(ok)
+    test.assert_true(string.find(tostring(err), "attempt to index a dead table", 1, true) ~= nil, tostring(err))
+    lifetime.destroy(owner)
+    test.assert_deep_eq(log, {
+        "tomb destroy"
+    }, "destroying a dead object is a no-op")
+end)
+
+test.case("a dependent dropped on the floor dies unreachable at the next collection", function()
+    _reset()
+    local owner = TestOwned("keeper")
+    _drop_dependent(owner)
+    test.assert_deep_eq(log, {}, "alive until the collector finds it")
+    collectgarbage("collect")
+    collectgarbage("collect")
+    test.assert_deep_eq(log, {
+        "dropped unreachable"
+    })
+    test.assert_true(lifetime.alive(owner), "the owner is not affected")
+    lifetime.destroy(owner)
+    test.assert_deep_eq(log, {
+        "dropped unreachable",
+        "keeper destroy"
+    })
+end)
+
+test.case("an instance with a release is registered: collected, it runs its release", function()
+    _reset()
+    _drop_instance()
+    collectgarbage("collect")
+    collectgarbage("collect")
+    test.assert_deep_eq(log, {
+        "solo unreachable"
+    })
+end)
+
+test.case("an instance without a release can be anchored and destroyed", function()
+    _reset()
+    local owner = TestOwned("plain-owner")
+    local plain = TestPlain() @ owner
+    lifetime.destroy(owner)
+    test.assert_deep_eq(log, {
+        "plain-owner destroy"
+    })
+    test.assert_false(lifetime.alive(plain))
+end)

@@ -1,0 +1,36 @@
+local LoginRp: LoginRp = require("login.login-rp")
+local LogoutRp: LogoutRp = require("login.logout-rp")
+local Utils = require("utils.utils")
+
+-- The login and logout procedures of a session. Anchored to its session
+-- (`Login(...) @ self` in game/session.tlt); it owns its two procedures,
+-- which die after it in the session's cascade, so it has no destructor of
+-- its own (lua-lifetime docs/02-semantics.md, "Cascading death").
+local Login: Login = class("Login")
+
+local function _get_client_auth(user_name: string, password: string): string
+    local auth = Utils.hash(user_name .. string.char(0) .. Utils.generate_salt(32) .. string.char(0) .. password)
+    return auth
+end
+
+-- The procedures are kept in fields, so the implicit `reachable` term does
+-- not end them early.
+Login.init = function(self: Login, session: Session, on_login: LoginOnLogin, on_logout: LoginOnLogout)
+    self._connection = session:get_connection()
+    self._login_rp = LoginRp(self._connection, on_login) @ self
+    self._logout_rp = LogoutRp(self._connection, on_logout) @ self
+end
+
+function Login:login(user: string, password: string)
+    assert(app.is_client)
+    self._login_rp:send_request({
+        auth = _get_client_auth(user, password)
+    })
+end
+
+function Login:logout()
+    assert(app.is_client)
+    self._logout_rp:send_request({})
+end
+
+return Login
