@@ -25,8 +25,8 @@ end
 
 local type Dumper = function(...: any): any
 
-local function _dump_generator(config: DumpConfig): Dumper
-    if not config then
+local function _dump_generator(dumper_config: DumpConfig): Dumper
+    if not dumper_config then
         return
     end
 
@@ -59,9 +59,9 @@ local function _dump_generator(config: DumpConfig): Dumper
     end
 
     local node_displays: {NodeType: DumpNodeDisplay} = {
-        ["value"] = config.dump.value_display,
-        ["index"] = config.dump.index_display,
-        ["key"] = config.dump.key_display
+        ["value"] = dumper_config.dump.value_display,
+        ["index"] = dumper_config.dump.index_display,
+        ["key"] = dumper_config.dump.key_display
     }
 
     local function create_dump(dump_config: DumpDisplayConfig, args: {any}, n: integer): string
@@ -139,24 +139,24 @@ local function _dump_generator(config: DumpConfig): Dumper
     return function(...: any): any
         local result = ""
 
-        if config.keyword then
-            result = result .. create_keyword(config.keyword)
+        if dumper_config.keyword then
+            result = result .. create_keyword(dumper_config.keyword)
         end
 
-        if config.stacktrace then
-            result = result .. create_stacktrace(config.stacktrace)
+        if dumper_config.stacktrace then
+            result = result .. create_stacktrace(dumper_config.stacktrace)
         end
 
-        if config.dump then
+        if dumper_config.dump then
             local args = {
                 ...
             }
             local n = select("#", ...)
-            result = result .. create_dump(config.dump, args, n)
+            result = result .. create_dump(dumper_config.dump, args, n)
         end
 
-        if config.text_processor then
-            return config.text_processor(result)
+        if dumper_config.text_processor then
+            return dumper_config.text_processor(result)
         else
             return result
         end

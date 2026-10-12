@@ -27,5 +27,5 @@ global is_instance_of: function(obj: Object, cls: Object): boolean
 -- any: asserts the type of a value of any type (a Lua type name or a class).
 global assert_type: function(obj: any, typ: string | Object)
 global assert_unreachable: function(msg?: string)
--- An implementation that raises, for an abstract method: `X.m = abstract()`.
+-- Raises; the body of an abstract method: `function X:m(): R return abstract() end`.
 global abstract: function<F>(): F

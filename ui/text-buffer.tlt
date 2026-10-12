@@ -1,5 +1,5 @@
 local Event: Event = require("events.event")
-local utf8 = require("utf8")
+local utf8_lib = require("utf8")
 
 -- Editable text composed into a text field (see `TextInput`): holds the text
 -- and the UTF-8 aware editing operations, and announces the result on its own
@@ -33,7 +33,7 @@ end
 
 -- Remove the last `character_number` characters (not bytes).
 function TextBuffer:remove_characters(character_number: integer)
-    local offset = utf8.offset(self._text, -character_number)
+    local offset = utf8_lib.offset(self._text, -character_number)
     if self._text == "" and character_number > 0 then
         self.removed_empty:trigger()
     elseif offset then
@@ -49,7 +49,7 @@ function TextBuffer:remove_word()
         self.removed_empty:trigger()
     else
         local last_space: integer = nil
-        for i, code in utf8.codes(self._text) do
+        for i, code in utf8_lib.codes(self._text) do
             for _, wcode in ipairs(WHITESPACE_CODES) do
                 if code == wcode then
                     last_space = i
@@ -80,7 +80,7 @@ function TextBuffer:set_text(text: string)
 end
 
 function TextBuffer:get_text_length(): integer
-    return (utf8.len(self._text))
+    return (utf8_lib.len(self._text))
 end
 
 return TextBuffer

@@ -105,7 +105,8 @@ return Rectangle
   annotations after the class table still resolve to the interface. `tl`
   warns that the class table shadows the type (and calls the type unused);
   the build does not report those two warnings for this shape, as it does
-  not report the shadowing of a global class type. Types a test helper
+  not report a local shadowing a global type (a value's shadowing it does
+  report). Types a test helper
   exports are nested in its module record
   ([tests/lib/mocks.tlt](../tests/lib/mocks.tlt): `mocks.AppMock`,
   `mocks.FakeChannel`) and named through the required module.

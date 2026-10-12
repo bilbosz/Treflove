@@ -181,11 +181,25 @@ local function order_fragments(fragments)
     return ordered
 end
 
+-- The names of the global types the fragments and the host declarations
+-- declare: a local of such a name (a required class table or module
+-- table, which shares the name of its type) shadows a type, not a value.
+local global_types = {}
+
+local function collect_global_types(text)
+    for kind, name in text:gmatch("global%s+(%a+)%s+([%w_]+)") do
+        if kind == "interface" or kind == "record" or kind == "enum" or kind == "type" then
+            global_types[name] = true
+        end
+    end
+end
+
 local function write_env_file(fragments)
     local parts = {ENV_HEADER}
     local line = 1
     for _, path in ipairs(fragments) do
         local text = read_file(path)
+        collect_global_types(text)
         if text:sub(-1) ~= "\n" then
             text = text .. "\n"
         end
@@ -291,12 +305,18 @@ local function is_expected_warning(w)
     end
     if w.tag == "redeclaration" then
         local name = w.msg:match("shadows previous declaration of '([%w_]+)'")
+        if not name then
+            return false
+        end
         local y = tonumber(w.msg:match("originally declared at (%d+):"))
         if not y then
-            -- tl names the position only when the shadowed name is local
-            return true
+            -- tl names the position only when the shadowed name is local:
+            -- a global is shadowed. A global type, by the required class
+            -- table or module table of its name, is the recipe; a global
+            -- value (`app`, `config`, `dump`, ...) is reported.
+            return global_types[name] == true
         end
-        return name ~= nil and is_local_class_interface(w.filename, y, name)
+        return is_local_class_interface(w.filename, y, name)
     end
     return w.tag == "hint" and w.msg:find("invoked method as a regular function", 1, true) ~= nil
 end
@@ -349,6 +369,9 @@ local function main(argv)
     end
     local host_types = lines_of("ls types/*.d.tl 2>/dev/null")
     table.sort(host_types)
+    for _, t in ipairs(host_types) do
+        collect_global_types(read_file(t))
+    end
 
     -- A full build starts from an empty tree, so nothing stale (the Lua of
     -- a deleted .tlt) can shadow a source; a partial one keeps the rest.

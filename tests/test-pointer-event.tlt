@@ -44,8 +44,8 @@ function TestHitControl:get_children(): {TestHitControl}
     return self._children
 end
 
-function TestHitControl:on_event(x: number, y: number, arg: any): boolean -- any: see the interface
-    table.insert(self.log, string.format("%s:%s,%s,%s", self.name, tostring(x), tostring(y), tostring(arg)))
+function TestHitControl:on_event(x: number, y: number, argument: any): boolean -- any: see the interface
+    table.insert(self.log, string.format("%s:%s,%s,%s", self.name, tostring(x), tostring(y), tostring(argument)))
     return self.result
 end
 

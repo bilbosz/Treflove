@@ -27,16 +27,16 @@ end
 function Utils.dump_controls(ctrl: Control, indent?: string): string
     indent = indent or ""
     local name = get_class_name_of(ctrl)
-    local dump: {string} = {}
-    table.insert(dump, indent .. name .. "[")
-    table.insert(dump, ctrl:is_enabled() and "e" or " ")
-    table.insert(dump, ctrl:is_visible() and "v" or " ")
-    table.insert(dump, ctrl:are_all_predecessors_enabled() and "a" or " ")
-    table.insert(dump, "]\n")
+    local lines: {string} = {}
+    table.insert(lines, indent .. name .. "[")
+    table.insert(lines, ctrl:is_enabled() and "e" or " ")
+    table.insert(lines, ctrl:is_visible() and "v" or " ")
+    table.insert(lines, ctrl:are_all_predecessors_enabled() and "a" or " ")
+    table.insert(lines, "]\n")
     for _, child in ipairs(ctrl:get_children()) do
-        table.insert(dump, Utils.dump_controls(child, indent .. "|   "))
+        table.insert(lines, Utils.dump_controls(child, indent .. "|   "))
     end
-    return table.concat(dump)
+    return table.concat(lines)
 end
 
 -- any: a monitored object's index holds values of every type.

@@ -79,11 +79,13 @@ line and the column the generated Teal's; for a fragment, the fragment's
 own line - and the build exits 1. `tl`'s warnings (an unused variable, a
 hint such as `pairs` on an array) are errors too, read `FILE:LINE:COL:
 warning (TAG): message`, since the tree is clean of them; the two warnings
-the class recipe causes in every class are not reported: a class table
-shadowing the type of its name (`local Control: Control =
-require("controls.control")`; for a local interface in a test, also the
-"unused type" tl then reports for it) and a super call
-(`Base.init(self)`) ([types.md](types.md), "Classes"). Success prints one line (`N modules
+the recipes cause everywhere are not reported: a local shadowing a global
+*type* (every required class table and module table shares the name of its
+type: `local Control: Control = require("controls.control")`, `local Consts
+= require("app.consts")`; for a local interface in a test, also the "unused
+type" tl then reports for it) and a super call (`Base.init(self)`)
+([types.md](types.md), "Classes"). A local shadowing a global *value*
+(`app`, `config`, `dump`) is reported. Success prints one line (`N modules
 built`). The build is the type checker: there is no separate check step.
 A full build takes a few seconds.
 
