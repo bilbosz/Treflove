@@ -1,0 +1,126 @@
+local App: App = require("app.app")
+local AssetManager: AssetManager = require("data.asset-manager")
+local BackstackManager: BackstackManager = require("utils.backstack-manager")
+local ButtonEventManager: ButtonEventManager = require("ui.button-event")
+local ConnectingScreen: ConnectingScreen = require("screens.connecting-screen")
+local ConnectionManager: ConnectionManager = require("networking.connection-manager")
+local Consts = require("app.consts")
+local Event: Event = require("events.event")
+local FileSystemDropEventManager: FileSystemDropEventManager = require("events.file-drop-event")
+local KeyboardManager: KeyboardManager = require("events.keyboard")
+local NotificationManager: NotificationManager = require("game.notification-manager")
+local OptionsManager: OptionsManager = require("game.options-manager")
+local PointerEventManager: PointerEventManager = require("events.pointer-event")
+local ResizeManager: ResizeManager = require("events.resize")
+local ScreenManager: ScreenManager = require("screens.screen-manager")
+local Session: Session = require("game.session")
+local TextEventManager: TextEventManager = require("ui.text-event")
+
+-- The client application: the UI, every event manager, one connection and
+-- its session.
+local Client: Client = class("Client", App)
+
+Client.init = function(self: Client, params: ArgParserResult)
+    App.init(self, params)
+    self.logger:set_name("client-main")
+    self.is_client = true
+    self.connection_manager = ConnectionManager(params.address, params.port)
+    self.resize_manager = ResizeManager()
+    self.screen_manager = ScreenManager()
+    self.pointer_event_manager = PointerEventManager()
+    self.wheel_event = Event()
+    self.button_event_manager = ButtonEventManager()
+    self.keyboard_manager = KeyboardManager()
+    self.text_event_manager = TextEventManager()
+    self.notification_manager = NotificationManager()
+    self.options_manager = OptionsManager()
+    self.asset_manager = AssetManager()
+    self.backstack_manager = BackstackManager()
+    self.file_system_drop_event_manager = FileSystemDropEventManager()
+    self.session = nil
+end
+
+-- The quit entry, the bottom of the back stack, belongs to the app: it is
+-- anchored to it (lua-lifetime docs/02-semantics.md, "Acquiring a
+-- lifetime: the `@` operator"), lives as long as the program, and dies at
+-- program end with the reason "exit". The stack holds it, so the implicit
+-- `reachable` term does not end it early.
+--
+-- The session is anchored to its connection (idiom A of lua-lifetime
+-- trial/treflove/README.md): ConnectionManager:remove destroys the
+-- connection after this disconnect callback, and the session dies in that
+-- cascade ("Cascading death"). The callback shows the connecting screen
+-- first, since a screen dies only after it has been replaced
+-- (docs/lifetime.md, "Screens"), and clears the fields: a dead session is a
+-- tombstone, not nil ("Tombstones").
+function Client:load()
+    self.backstack_manager:push(function()
+        app:quit()
+    end) @ self
+    local connecting_screen = ConnectingScreen()
+    self.screen_manager:show(connecting_screen)
+    self.connection_manager:start(function(connection: Connection)
+        self.session = Session(connection) @ connection
+    end, function()
+        self.screen_manager:show(connecting_screen)
+        self.session = nil
+        self.data = nil
+    end)
+end
+
+function Client:register_love_callbacks()
+    App.register_love_callbacks(self)
+    local app_key_pressed = love.keypressed
+    love.keypressed = function(key: love.KeyConstant, scancode: love.Scancode, isrepeat: boolean)
+        app_key_pressed(key, scancode, isrepeat)
+        if key == Consts.TOGGLE_FULLSCREEN_KEY then
+            self.resize_manager:toggle_fullscreen()
+            return
+        end
+        self.keyboard_manager:dispatch_key_pressed(key)
+        self.text_event_manager:key_pressed(key)
+    end
+    love.keyreleased = function(key: love.KeyConstant)
+        self.keyboard_manager:dispatch_key_released(key)
+    end
+    love.wheelmoved = function(x: number, y: number)
+        self.wheel_event:trigger(x, y)
+    end
+    love.mousepressed = function(x: number, y: number, button: number)
+        self.pointer_event_manager:dispatch_pointer_down(x, y, button)
+        self.button_event_manager:dispatch_pointer_down(x, y, button)
+    end
+    love.mousereleased = function(x: number, y: number, button: number)
+        self.pointer_event_manager:dispatch_pointer_up(x, y, button)
+        self.button_event_manager:dispatch_pointer_up(x, y, button)
+    end
+    love.mousemoved = function(x: number, y: number)
+        self.pointer_event_manager:dispatch_pointer_move(x, y, nil)
+        self.button_event_manager:dispatch_pointer_move(x, y, nil)
+    end
+    -- as (the touch callbacks): love-api types a touch id as any; it is a
+    -- light userdata (PointerId).
+    love.touchpressed = function(id: any, x: number, y: number)
+        self.pointer_event_manager:dispatch_pointer_down(x, y, id as PointerId)
+        self.button_event_manager:dispatch_pointer_down(x, y, id as PointerId)
+    end
+    love.touchreleased = function(id: any, x: number, y: number)
+        self.pointer_event_manager:dispatch_pointer_up(x, y, id as PointerId)
+        self.button_event_manager:dispatch_pointer_up(x, y, id as PointerId)
+    end
+    love.touchmoved = function(id: any, x: number, y: number)
+        self.pointer_event_manager:dispatch_pointer_move(x, y, id as PointerId)
+        self.button_event_manager:dispatch_pointer_move(x, y, id as PointerId)
+    end
+    love.filedropped = function(dropped_file: love.DroppedFile)
+        self.file_system_drop_event_manager:file_drop(dropped_file)
+    end
+    love.textinput = function(text: string)
+        self.text_event_manager:text_input(text)
+    end
+    love.resize = function()
+        self.resize_manager:resize()
+    end
+end
+
+return Client

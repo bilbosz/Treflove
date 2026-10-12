@@ -1,4 +1,4 @@
--- app/app.lua (still Lua): the base of Client (app/client.d.tl) and
+-- app/app.tlt: the base of Client (app/client.d.tl) and
 -- Server (app/server.d.tl). The global `app` is the running one.
 
 global interface App is Object

@@ -1,4 +1,4 @@
--- app/server.lua (still Lua): the server application: a session per
+-- app/server.tlt: the server application: a session per
 -- connection, the game state persisted to save.lua.
 global interface Server is App
     _save_file: Asset
