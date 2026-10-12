@@ -81,6 +81,11 @@ return Rectangle
   checked against the interface, `release` included: it keeps the parameter
   `reason?: LifetimeReason` even when the body ignores it.
 - Super calls are `Base.method(self, ...)` on the required base class table.
+- A required class table whose name the file also uses as a type is
+  declared with that type: `local Control: Control =
+  require("controls.control")`. An inferred local (`local Control =
+  require("controls.control")`) shadows the global type of the same name,
+  and every later `Control` annotation in the file is an `unknown type`.
 - Abstract methods are declared in the interface and assigned
   `X.method = abstract()` (`abstract` is generic in its result).
 - `class`, `is_instance_of`, `get_class_of`, `get_class_name_of`,
@@ -171,6 +176,16 @@ fragment's line.
   owner must be an `Object` and a handler written as a plain function must
   take that owner; a consumer passes its method as it is,
   `app.update_event:register(self, self.on_update)`, with no cast.
+- A module that is still Lua cannot be required by its literal name from
+  a `.tlt` (`module not found`: the checker resolves Teal modules only).
+  Until it is converted, require it by a computed name, which the checker
+  does not resolve, and cast the result to the type its fragment declares
+  (`local Asset = require(ASSET_MODULE) as Asset`, with a comment saying
+  so; [controls/image.tlt](../controls/image.tlt)).
+- `table.unpack` of a `{number}` passed straight to a function counts as
+  two arguments (`wrong number of arguments (given 2, ...)`); a tuple
+  (`{number, number}`) is counted right. Pass the table where the callee
+  takes one (`love.graphics.setColor(color)`).
 - `userdata` is a type (`PointerId = number | userdata`: a mouse button or a
   touch id).
 - A love-api "table" result (`love.filesystem.getInfo`) is `{any: any}`;
