@@ -130,12 +130,24 @@ end
 
 -- The session's procedures die with it: each is anchored to the session
 -- (lua-lifetime docs/02-semantics.md, "Cascading death"), so a session
--- needs no unregistering.
+-- needs no unregistering. A hook on the session removes its entries as it
+-- dies (docs/lifetime.md, "Ownership": lists unlink their elements in
+-- hooks): without it a dead session and its dead procedures would stay in
+-- the weak tables until collected, and `_get_any_rp` could pick one on a
+-- client that reconnects (lua-lifetime trial/treflove/README.md, finding
+-- 7). Attached last, the hook runs first among the session's dependents,
+-- after the session's own release, while the procedures are alive.
 function AssetManager:register_session(session: Session)
     local connection = session:get_connection()
-    self._upload_asset_rp[session] = UploadAssetRp(connection) @ session
-    self._download_asset_rp[session] = DownloadAssetRp(connection) @ session
-    self._download_missing_assets_rp[session] = DownloadMissingAssetsRp(connection) @ session
+    local upload, download, download_missing = self._upload_asset_rp, self._download_asset_rp, self._download_missing_assets_rp
+    upload[session] = UploadAssetRp(connection) @ session
+    download[session] = DownloadAssetRp(connection) @ session
+    download_missing[session] = DownloadMissingAssetsRp(connection) @ session
+    function()
+        upload[session] = nil
+        download[session] = nil
+        download_missing[session] = nil
+    end !@ session
 end
 
 return AssetManager

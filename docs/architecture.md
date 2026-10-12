@@ -33,12 +33,12 @@ The global `app` variable references either the Client or Server instance and is
 
 Thread-based networking using LÖVE's threading system:
 
-- **ConnectionManager** ([networking/connection-manager.lua](../networking/connection-manager.lua)): Tracks all connections, indexed by channels
-- **Connection** ([networking/connection.lua](../networking/connection.lua)): Wraps a pair of channels (in/out) and threads for bidirectional communication
-- **Connector** ([networking/connector.lua](../networking/connector.lua)): Establishes connections
-- **RemoteProcedure** ([networking/remote-procedure.lua](../networking/remote-procedure.lua)): Base class for RPC pattern
+- **ConnectionManager** ([networking/connection-manager.tlt](../networking/connection-manager.tlt)): Tracks all connections, indexed by channels
+- **Connection** ([networking/connection.tlt](../networking/connection.tlt)): Wraps a pair of channels (in/out) and threads for bidirectional communication
+- **Connector** ([networking/connector.tlt](../networking/connector.tlt)): Establishes connections
+- **RemoteProcedure** ([networking/remote-procedure.tlt](../networking/remote-procedure.tlt)): Base class for RPC pattern
 
-Each connection spawns separate threads for sending and receiving. The server maintains multiple connections simultaneously; the client maintains one connection to the server.
+Each connection spawns separate threads for sending and receiving. The thread scripts ([networking/detail/](../networking/detail/)) are `.tlt` modules too; each runs in a Lua state of its own, so the Connector starts them from `build/` (`love.thread.newThread("build/networking/detail/client-out.lua")`) and each puts `build/` first on its require path before requiring anything. The server maintains multiple connections simultaneously; the client maintains one connection to the server.
 
 ## Remote Procedure Pattern
 
@@ -103,11 +103,11 @@ Higher-level UI components in [ui/](../ui/) like Panel, TextButton, Input, Numbe
 
 ## Asset Management
 
-[AssetManager](../data/asset-manager.lua):
+[AssetManager](../data/asset-manager.tlt):
 - Tracks assets per session
 - Downloads missing assets from server on demand
 - Handles asset uploads to server
-- [Asset](../data/asset.lua) wraps LÖVE's filesystem operations
+- [Asset](../data/asset.tlt) wraps LÖVE's filesystem operations
 
 RPCs: DownloadAssetRp, DownloadMissingAssetsRp, UploadAssetRp
 

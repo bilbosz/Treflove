@@ -12,6 +12,7 @@ global interface AssetManager is Object
     upload_asset: function(self, path: string, data: string)
     download_asset: function(self, path: string)
     download_missing_assets: function(self, list: {string}, cb: function())
-    -- Makes the session's procedures, anchored to it: they die with it.
+    -- Makes the session's procedures, anchored to it: they die with it, and
+    -- a hook on the session removes its entries.
     register_session: function(self, session: Session)
 end

@@ -47,7 +47,7 @@ and shows the teardown order the ported code must have.
   it owns with `lifetime.destroy(x)` (`local lifetime = require("lifetime")`)
   and anchors with `lifetime.attach(x, false, owner)`, which is what
   `x @ owner` compiles to. Until they are converted, `Session:release` and
-  `Login:release` still end their dependents' lifetimes by hand (through
+  `Login:release` still end some of their dependents' lifetimes by hand (through
   `lifetime.destroy`, which is a no-op on a dying object, so the cascade
   does not release them twice).
 - Objects in one ownership tree are anchored to their owner, so that the
@@ -60,6 +60,38 @@ and shows the teardown order the ported code must have.
 - Lists unlink their elements in hooks: a dead element stays in an array
   as a tombstone until something removes it by identity, and the hook runs
   while the element is dying and still findable.
+
+### Networking
+
+A connection is a root. `ConnectionManager:remove` takes it out of its
+three tables (a tombstone is not `nil`, so it would not leave them by
+itself), runs the disconnect callback and ends with
+`lifetime.destroy(connection)`: `Connection:release` runs first, then
+whatever is anchored to the connection, most recently attached first
+(lua-lifetime `docs/02-semantics.md`, "Cascading death";
+[tests/test-connection.lua](../tests/test-connection.lua) asserts the
+sequence). `Connection:release` keeps releasing what the connection holds
+- the two threads, the two channels and its `app.update_event`
+registration - instead of anchoring them `@ self`: the threads and
+channels are LÖVE userdata, whose `__destroy` the runtime looks up on the
+shared per-type metatable, which LÖVE's objects do not have ("`__destroy`
+and reasons", rule 1), so an anchor would release nothing, and a hook per
+object would restate the body in four closures; the update registration
+must end in the body, because a destroyed connection stays a key of the
+event's weak table until it is collected, and the next frame would call
+`on_update` on its tombstone (lua-lifetime `trial/treflove/README.md`,
+finding 7). The body runs before the dependents, which still reach the
+connection: a dying object is not dead ("Tombstones").
+
+Remote procedures are anchored to their owner (`LoginRp(...) @ self`) and
+`RemoteProcedure:release` is `self:stop()` only, so a second release is
+harmless. `AssetManager:register_session` anchors the session's three
+procedures `@ session`, and there is no `unregister_session`: the
+per-session tables are weak in keys and values (5.1 has no ephemerons,
+and a procedure refers back to its session's connection through its
+request handler), and a hook on the session removes its three entries as
+it dies, so a reconnected client never picks a dead procedure from them
+([tests/test-asset-manager.lua](../tests/test-asset-manager.lua)).
 
 ## Back Navigation
 

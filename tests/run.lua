@@ -32,6 +32,7 @@ local test = require("tests.lib.test")
 local TEST_MODULES = {
     "tests.test-aabb",
     "tests.test-arg-parser",
+    "tests.test-asset-manager",
     "tests.test-backstack-manager",
     "tests.test-button-event",
     "tests.test-class",
