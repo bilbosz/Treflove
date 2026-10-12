@@ -27,8 +27,7 @@ local function _on_login(self: Session, user: string)
         app.text_event_manager:set_text_input(false)
         local period = lifetime.token("period") @ self
         self._period = period
-        self._user_menu_screen = UserMenuScreen(self) @ period
-        app.screen_manager:show(self._user_menu_screen)
+        self:show_user_menu()
         app.backstack_manager:push(function()
             self:logout()
         end) @ period
@@ -93,6 +92,17 @@ end
 
 function Session:is_logged_in(): boolean
     return not not self._user
+end
+
+-- Every user menu is made here and belongs to the logged-in period, so
+-- it dies with the period (on logout, or with the session), and so does
+-- the back entry its Options pushes (`@` the menu): no back entry can show
+-- a menu of a dead session (docs/lifetime.md, "Screens"). A menu that has
+-- been replaced is left to the collector.
+function Session:show_user_menu()
+    assert(app.is_client and self._period)
+    self._user_menu_screen = UserMenuScreen(self) @ self._period
+    app.screen_manager:show(self._user_menu_screen)
 end
 
 function Session:join_game()

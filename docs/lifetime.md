@@ -83,9 +83,11 @@ connection                          root: ConnectionManager:remove destroys it
    ├─ DownloadMissingAssetsRp @ session
    ├─ hook !@ session               clears the session's AssetManager entries
    ├─ [period] @ session            client, Session _on_login: lifetime.token("period")
-   │  ├─ UserMenuScreen @ period
+   │  ├─ UserMenuScreen @ period    Session:show_user_menu (at login)
    │  │  └─ [options entry] @ menu  UserMenuScreen:options
-   │  └─ [logout entry] @ period
+   │  ├─ [logout entry] @ period
+   │  └─ UserMenuScreen @ period    Session:show_user_menu (each game screen's back entry)
+   │     └─ [options entry] @ menu
    └─ LoginScreen @ session         client, Session _on_logout (one per logout)
 
 app (Client)                        lives as long as the program
@@ -100,14 +102,16 @@ Where roots die:
   clears `app.session` and `app.data`; the server's clears
   `_sessions[connection]` (a tombstone would stay a key). A connection
   nobody refers to any more is collected with its whole tree in the same
-  order (reason `"unreachable"`), and at program end what is left dies with
-  `"exit"`.
+  order (the connection with the reason `"unreachable"`, the tree below it
+  with `"anchor"`), and at program end what is left dies the same way, the
+  root with `"exit"`.
 - **The period** dies in `Session` `_on_logout`, after the login screen
   has replaced the menu (see "Screens"); the back key may have destroyed
   the logout entry already (`back()` destroys the top entry before running
   it), and destroying a dead object is a no-op.
 - **A game screen** is destroyed by its own back entry, after the entry
-  has shown a user menu.
+  has shown a user menu (`Session:show_user_menu`, so the menu belongs to
+  the period).
 - **A back entry** dies when `back()` destroys it, or with its owner.
 
 The asset procedures sit under the session, not under Login or a screen,
@@ -116,7 +120,7 @@ is a control's parent: the controls of a screen are reachable from it and
 go with it, and only what holds a resource of its own (`PreviewArea`'s
 drop registration) or is listed somewhere (inputs, back entries, asset
 entries) needs a `release` or a hook. The whole tree is asserted, order and
-statement of each death, in [tests/test-session.lua](../tests/test-session.lua).
+statement of each death, in [tests/test-session.tlt](../tests/test-session.tlt).
 
 The `release` bodies that remain, and what ends them:
 
@@ -124,7 +128,7 @@ The `release` bodies that remain, and what ends them:
 | --- | --- | --- |
 | `Connection` | its threads, channels, update registration | `ConnectionManager:remove`; the collector; program end |
 | `RemoteProcedure` | `self:stop()`: its request handler | its owner's cascade (Login, Session) |
-| `FormScreen` | sets `_is_released` for its inputs' hooks | the period (UserMenuScreen), the session (LoginScreen), GameDataRp or the game screen's own back entry (GameScreen); the collector for screens nobody owns (OptionsMenuScreen, a replaced LoginScreen, the menu a game screen's back entry makes) |
+| `FormScreen` | sets `_is_released` for its inputs' hooks | the period (every UserMenuScreen), the session (LoginScreen), GameDataRp or the game screen's own back entry (GameScreen); the collector for screens nobody owns or that were replaced (OptionsMenuScreen, a replaced UserMenuScreen or LoginScreen) |
 | `PreviewArea` | its drop registration | its AssetsPanel's cascade, from the GameScreen |
 | `Event` | its handlers | the collector or program end, with its manager |
 
@@ -169,9 +173,10 @@ handler and its inputs' button, update, text and key registrations), and
 then drops the reference. Who makes a screen decides how it ends:
 
 - **Dropped and collected**: a WaitingScreen (`Session:join_game`,
-  `GameDataRp`), an OptionsMenuScreen (`UserMenuScreen:options`) and the
-  UserMenuScreen a game screen's back entry shows are held by the manager
-  alone and are collected once replaced. A WaitingScreen has no
+  `GameDataRp`) and an OptionsMenuScreen (`UserMenuScreen:options`) are
+  held by the manager alone and are collected once replaced; so is a
+  user menu or a login screen once replaced, unless its owner dies first.
+  A WaitingScreen has no
   `release`, so nothing runs; a form runs FormScreen's `release` with the
   reason `"unreachable"`. A collection does not order a form and its
   inputs (each hook has both as anchors, and neither owns the other), so
@@ -184,15 +189,16 @@ then drops the reference. Who makes a screen decides how it ends:
   (`GameScreen(...) @ self`) and destroyed by its own back entry, after
   that entry has shown a user menu; it owns its assets panel and that
   back entry (`@ self`), so a disconnect in the game destroys it with the
-  session and its entry leaves the stack. On the client the user menu
-  screen made at login belongs to the logged-in period (`@ period`, ended
-  by the logout or with the session) and the login screen made at logout
+  session and its entry leaves the stack. On the client every user menu
+  belongs to the logged-in period: `Session:show_user_menu` makes it
+  `@ self._period` (at login, and from a game screen's back entry), so it
+  ends with the logout or with the session; the login screen made at logout
   to the session (`LoginScreen(self._login) @ self`: destroyed with the
   session, or collected once a new login has replaced it, since nothing
   else refers to it). UserMenuScreen anchors the back entry it pushes for
   the options menu to itself (`push(...) @ self`), since the entry's
   callback shows it: when the screen dies, the entry dies too and leaves
-  the stack.
+  the stack, so no entry can show a menu of a dead session.
 
 A screen dies only **after it has been replaced**: `show` the next screen
 first, then `lifetime.destroy` the old one or what owns it. A screen

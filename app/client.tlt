@@ -42,9 +42,10 @@ end
 
 -- The quit entry, the bottom of the back stack, belongs to the app: it is
 -- anchored to it (lua-lifetime docs/02-semantics.md, "Acquiring a
--- lifetime: the `@` operator"), lives as long as the program, and dies at
--- program end with the reason "exit". The stack holds it, so the implicit
--- `reachable` term does not end it early.
+-- lifetime: the `@` operator") and lives as long as the program: at
+-- program end the closing state finalizes the app, whose cascade ends the
+-- entry with the reason "anchor" ("Program end"; "Cascading death"). The
+-- stack holds it, so the implicit `reachable` term does not end it early.
 --
 -- The session is anchored to its connection (idiom A of lua-lifetime
 -- trial/treflove/README.md): ConnectionManager:remove destroys the

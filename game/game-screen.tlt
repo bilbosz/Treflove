@@ -5,7 +5,6 @@ local Model: Model = require("data.model")
 local Page: Page = require("game.page.page")
 local QuickAccessPanel: QuickAccessPanel = require("game.quick-access-panel")
 local TokenPanel: TokenPanel = require("game.token.token-panel")
-local UserMenuScreen: UserMenuScreen = require("screens.user-menu-screen")
 local table_utils = require("utils.table")
 
 -- The game view: the page, the side panels and the quick-access bar. Made
@@ -43,10 +42,11 @@ GameScreen.init = function(self: GameScreen, data: GameScreenData)
     self._quick_access_panel:add_entry("Assets", self._assets_panel)
 end
 
--- The back entry returns to the user menu, then destroys the screen: a
--- screen dies only after it has been replaced (docs/lifetime.md,
--- "Screens"), and the one destroy ends the screen's release, then what it
--- owns ("Cascading death"). The entry is anchored to the screen, so a
+-- The back entry returns to a user menu, which the session makes and
+-- anchors to its logged-in period (Session:show_user_menu), then destroys
+-- the screen: a screen dies only after it has been replaced
+-- (docs/lifetime.md, "Screens"), and the one destroy ends the screen's
+-- release, then what it owns ("Cascading death"). The entry is anchored to the screen, so a
 -- screen that dies otherwise (with its session, on a disconnect) takes
 -- its entry off the back stack ("Back Navigation"); `back()` destroys the
 -- entry before running it.
@@ -54,7 +54,7 @@ function GameScreen:show()
     self:on_resize(app.width, app.height)
     FormScreen.show(self)
     app.backstack_manager:push(function()
-        app.screen_manager:show(UserMenuScreen(app.session))
+        app.session:show_user_menu()
         lifetime.destroy(self)
     end) @ self
 end

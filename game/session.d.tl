@@ -9,7 +9,9 @@ global interface Session is Object
     _connection: Connection
     _login: Login -- anchored to the session
     _game_data_rp: GameDataRp -- anchored to the session
-    _user_menu_screen: UserMenuScreen -- client, while logged in; anchored to _period
+    -- Client, while logged in: the user menu shown last, anchored to
+    -- _period like every user menu.
+    _user_menu_screen: UserMenuScreen
     -- The client's logged-in span, `lifetime.token("period") @ self`; the
     -- user menu screen and the back entry that logs out are anchored to it,
     -- and logging out destroys it. nil while logged out.
@@ -20,4 +22,7 @@ global interface Session is Object
     logout: function(self)
     is_logged_in: function(self): boolean
     join_game: function(self)
+    -- Client, while logged in: shows a new user menu anchored to _period
+    -- (at login, and from the game screen's back entry).
+    show_user_menu: function(self)
 end

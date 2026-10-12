@@ -69,13 +69,26 @@ end
 function TestScreen:on_resize()
 end
 
+-- The real ScreenManager shows a double as it shows a Screen: through
+-- show, hide and on_resize only.
+local function as_screen(screen: TestScreen): Screen
+    return screen as Screen -- as: see above
+end
+
 -- When set, the user menu double's join_game does what the real one does
 -- (screens/user-menu-screen.tlt): the session's join_game.
 local forward_join_game = false
 
+-- Shown by the user menu double's options; never owned, never destroyed.
+local interface TestOptionsMenuScreen is TestScreen
+end
+
+local TestOptionsMenuScreen: TestOptionsMenuScreen = class("TestOptionsMenuScreen", TestScreen)
+
 local interface TestUserMenuScreen is TestScreen
     _session: Session
     join_game: function(self)
+    options: function(self)
 end
 
 local TestUserMenuScreen: TestUserMenuScreen = class("TestUserMenuScreen", TestScreen)
@@ -91,8 +104,17 @@ function TestUserMenuScreen:join_game()
     end
 end
 
--- The depth of the back stack when the menu dies pins whether the logout
--- entry, anchored to the same period after it, went first.
+-- What the real one does (screens/user-menu-screen.tlt): a back entry
+-- anchored to the menu, which shows it again, then the options menu.
+function TestUserMenuScreen:options()
+    app.backstack_manager:push(function()
+        app.screen_manager:show(as_screen(self))
+    end) @ self
+    app.screen_manager:show(as_screen(TestOptionsMenuScreen()))
+end
+
+-- The depth of the back stack when the menu dies pins whether the back
+-- entries anchored to the same period, or to the menu, went first.
 function TestUserMenuScreen:release(_reason?: LifetimeReason)
     trace("back stack depth " .. #app.backstack_manager._stack)
 end
@@ -133,6 +155,17 @@ local TestGameScreen: TestGameScreen = class("TestGameScreen", TestScreen)
 
 TestGameScreen.init = function(self: TestGameScreen, data: GameScreenData)
     self._data = data
+end
+
+-- What the real one does (game/game-screen.tlt): a back entry anchored to
+-- the screen that shows a user menu (Session:show_user_menu), then
+-- destroys the screen.
+function TestGameScreen:show()
+    TestScreen.show(self)
+    app.backstack_manager:push(function()
+        app.session:show_user_menu()
+        lifetime.destroy(self)
+    end) @ self
 end
 
 function TestGameScreen:release(_reason?: LifetimeReason)
@@ -178,6 +211,13 @@ local function load_with_doubles(): LoadedModules
         package.loaded[name] = value
     end
     for _, name in ipairs(LOADED_WITH_DOUBLES) do
+        if saved[name] == nil then
+            package.loaded[name] = nil
+        end
+    end
+    -- A double whose real module was never loaded has nothing saved to put
+    -- back (the loop over `saved` skips it): it is removed.
+    for name in pairs(DOUBLES) do
         if saved[name] == nil then
             package.loaded[name] = nil
         end
@@ -608,9 +648,11 @@ test.case("removing a logged-in client's connection tears its session down in ow
     -- its one dependent the session ("anchor"), whose dependents newest
     -- first are the period (a token, no body: its back entry, attached
     -- last, leaves the stack through its hook, then the menu dies, seeing
-    -- only the quit entry left), the asset procedures, GameDataRp with the
-    -- game screen it owns, and Login with its procedures.
-    assert_log(concat(LOGGED_IN, "hide TestUserMenuScreen", "show TestWaitingScreen", "> server frame", "> client frame", "hide TestWaitingScreen", "show TestWaitingScreen", "> server frame", "> client frame", "hide TestWaitingScreen", "show TestGameScreen", "back stack depth 2", "> client: connection_manager:remove(connection)", "hide TestGameScreen", "show TestConnectingScreen", "Connection:release(destroy)", "Session destroyed (anchor)", "TestUserMenuScreen:release(anchor)", "  back stack depth 1", session_procedures({"TestGameScreen:release(anchor)"}),
+    -- the quit entry and the game screen's entry left), the asset
+    -- procedures, GameDataRp with the game screen it owns (whose back
+    -- entry, anchored to it, then leaves the stack), and Login with its
+    -- procedures.
+    assert_log(concat(LOGGED_IN, "hide TestUserMenuScreen", "show TestWaitingScreen", "> server frame", "> client frame", "hide TestWaitingScreen", "show TestWaitingScreen", "> server frame", "> client frame", "hide TestWaitingScreen", "show TestGameScreen", "back stack depth 3", "> client: connection_manager:remove(connection)", "hide TestGameScreen", "show TestConnectingScreen", "Connection:release(destroy)", "Session destroyed (anchor)", "TestUserMenuScreen:release(anchor)", "  back stack depth 2", session_procedures({"TestGameScreen:release(anchor)"}),
         "alive: connection false, session false, login false, period false, menu false, game screen false", "app.session nil, app.data nil, back stack depth 1", "in channel released true, connections left 0, asset entries left 0",
         -- The server's session has no period and no screens.
         "> server: connection_manager:remove(connection)", "Connection:release(destroy)", "Session destroyed (anchor)", session_procedures(), "> collectgarbage twice"))
@@ -700,6 +742,7 @@ test.case("a dropped session is collected with its connection, its procedures st
         forget(server, in_channel, out_channel)
         trace("> collectgarbage(\"collect\")")
         collectgarbage("collect")
+        trace("asset entries " .. count_asset_entries(server.asset_manager))
         trace("> collectgarbage(\"collect\")")
         collectgarbage("collect")
         trace("asset entries " .. count_asset_entries(server.asset_manager) .. ", in channel released " .. tostring(in_channel._released))
@@ -710,7 +753,50 @@ test.case("a dropped session is collected with its connection, its procedures st
     -- ("Reachability is the collector's"), so the first collection runs
     -- one cascade from the root: the connection "unreachable", everything
     -- below it "anchor", in the teardown's order, every stop() reaching
-    -- the dying connection. The second collection clears the weak
-    -- per-session tables of AssetManager.
-    assert_log(concat("> server: Server.load", "sessions 1, asset entries 3", "> the server forgets the connection and its session, without destroy", "> collectgarbage(\"collect\")", "Connection:release(unreachable)", "Session destroyed (anchor)", session_procedures(), "> collectgarbage(\"collect\")", "asset entries 0, in channel released true", "> collectgarbage twice"))
+    -- the dying connection; the session's hook in AssetManager empties the
+    -- per-session tables in that cascade, as in the destroy of the case
+    -- above. The second collection finds nothing to run.
+    assert_log(concat("> server: Server.load", "sessions 1, asset entries 3", "> the server forgets the connection and its session, without destroy", "> collectgarbage(\"collect\")", "Connection:release(unreachable)", "Session destroyed (anchor)", session_procedures(), "asset entries 0", "> collectgarbage(\"collect\")", "asset entries 0, in channel released true", "> collectgarbage twice"))
+end)
+
+test.case("a user menu shown from the game belongs to the period: a disconnect takes it and its options entry", function()
+    run(function()
+        local client = new_client()
+        local server = new_server()
+        forward_join_game = true
+        local client_connection, server_connection = connect(client, server)
+        frame("server", server)
+        frame("client", client)
+        frame("server", server)
+        frame("client", client)
+        frame("server", server)
+        frame("client", client)
+        local session = client.session
+        -- Held here, so that the replaced first menu is not collected at a
+        -- moment the log cannot pin.
+        local first_menu = session._user_menu_screen
+        trace("back stack depth " .. #client.backstack_manager._stack)
+        trace("> client: backstack_manager:back()")
+        client.backstack_manager:back()
+        trace("back stack depth " .. #client.backstack_manager._stack)
+        -- as: the screen the back entry showed is the user menu double
+        local menu = client.screen_manager:get_screen() as TestUserMenuScreen
+        trace("> client: menu:options()")
+        menu:options()
+        trace("back stack depth " .. #client.backstack_manager._stack)
+        disconnect("client", client, client_connection)
+        trace("alive: menu " .. tostring(lifetime.alive(menu)) .. ", first menu " .. tostring(lifetime.alive(first_menu)) .. ", back stack depth " .. #client.backstack_manager._stack)
+        disconnect("server", server, server_connection)
+    end)
+    -- Written before the first run. The game screen's back entry (back()
+    -- destroys it first) shows a second menu through the session, anchored
+    -- to the period, then destroys the game screen. The menu's options
+    -- push a back entry anchored to that menu. The disconnect's cascade
+    -- reaches the period first among the session's dependents; the
+    -- period's, newest first: the second menu (its release sees quit,
+    -- logout and options entries), whose options entry then leaves the
+    -- stack; the logout entry; the first menu, seeing the quit entry
+    -- alone. GameDataRp's game screen is dead already and skipped.
+    assert_log(concat(LOGGED_IN, "hide TestUserMenuScreen", "show TestWaitingScreen", "> server frame", "> client frame", "hide TestWaitingScreen", "show TestWaitingScreen", "> server frame", "> client frame", "hide TestWaitingScreen", "show TestGameScreen", "back stack depth 3", "> client: backstack_manager:back()", "hide TestGameScreen", "show TestUserMenuScreen", "TestGameScreen:release(destroy)", "back stack depth 2", "> client: menu:options()", "hide TestUserMenuScreen", "show TestOptionsMenuScreen", "back stack depth 3", "> client: connection_manager:remove(connection)", "hide TestOptionsMenuScreen", "show TestConnectingScreen", "Connection:release(destroy)", "Session destroyed (anchor)", "TestUserMenuScreen:release(anchor)", "  back stack depth 3", "TestUserMenuScreen:release(anchor)", "  back stack depth 1", session_procedures(),
+        "alive: menu false, first menu false, back stack depth 1", "> server: connection_manager:remove(connection)", "Connection:release(destroy)", "Session destroyed (anchor)", session_procedures(), "> collectgarbage twice"))
 end)
