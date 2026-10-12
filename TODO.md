@@ -14,7 +14,7 @@ game state (tokens, objects, maps, sound) live during play.
 
 ### 2. Game state synchronization
 
-[GameDataRp](game/game-data-rp.lua) sends the full state once on login; changes
+[GameDataRp](game/game-data-rp.tlt) sends the full state once on login; changes
 made afterwards do not propagate.
 
 - Push incremental state updates from server to all connected clients
@@ -22,7 +22,7 @@ made afterwards do not propagate.
 
 ### 3. Game objects other than tokens
 
-Only [Token](game/token/token.lua) exists today.
+Only [Token](game/token/token.tlt) exists today.
 
 - Generalize the object model (e.g. areas, cards, dice, drawings, labels)
 - Shared object lifecycle: creation, ownership, persistence, panel UI
@@ -33,7 +33,7 @@ Reusable object templates the GM can instantiate during play.
 
 ### 5. Media other than images
 
-[utils/media.lua](utils/media.lua) already types sources/fonts/videos, but the
+[utils/media.tlt](utils/media.tlt) already types sources/fonts/videos, but the
 asset pipeline and game data handle images only.
 
 - Audio playback (background music, sound effects)
@@ -41,7 +41,7 @@ asset pipeline and game data handle images only.
 
 ### 6. Clipping of controls outside the clipping rectangle
 
-[ClippingMask](controls/clipping-mask.lua) clips drawing via stencil, but
+[ClippingMask](controls/clipping-mask.tlt) clips drawing via stencil, but
 children outside the rectangle still participate in layout/hit testing and are
 fully processed.
 
@@ -52,18 +52,18 @@ fully processed.
 ### 7. Real login flow and user management
 
 - Remove the hardcoded dev auto-login `"adam"/"krause"` at
-  [game/session.lua:62](game/session.lua#L62) (or gate it behind a debug flag)
+  [game/session.tlt:74](game/session.tlt#L74) (or gate it behind a debug flag)
 - Users are currently added by hand-editing [server/save.lua](server/save.lua),
   which also carries plaintext passwords in comments — add a way to create and
   manage accounts
 
 ### 8. Authentication hardening
 
-`Utils.generate_salt` ([utils/utils.lua:92](utils/utils.lua#L92)) is seeded with
+`Utils.generate_salt` ([utils/utils.tlt:88](utils/utils.tlt#L88)) is seeded with
 fixed constants, so the "salt" is a static pepper shared by all users.
 
 - Per-user random salts stored with the account, and a proper KDF for hashing
-- `_find_user_by_client_auth` in [login/login-rp.lua](login/login-rp.lua)
+- `_find_user_by_client_auth` in [login/login-rp.tlt](login/login-rp.tlt)
   scans all players per login attempt — index by auth instead
 
 ### 9. Connection resilience

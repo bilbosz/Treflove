@@ -1,7 +1,8 @@
 # Types
 
-Converted modules are Teal (`.tlt`, Teal plus the lifetime extension of
-[lifetime.md](lifetime.md)); their types live in declaration fragments
+Every module is Teal (`.tlt`, Teal plus the lifetime extension of
+[lifetime.md](lifetime.md)), except the bootstraps `main.lua` and
+`conf.lua`, the tests and the tools; the modules' types live in declaration fragments
 (`.d.tl`). The build ([development.md](development.md), "The Build")
 type-checks everything; untyped code is not acceptable.
 
@@ -23,10 +24,10 @@ fragment and every module sees every global type. Rules:
   interface or a record) may not, so the build orders fragments by their
   `is` clauses, and within a fragment a base comes first.
 - An error in a fragment is reported at the fragment's own line.
-- Every module has its fragment, also while its implementation is still
-  Lua: the fragment then says so in its first line (`controls/control.lua
-  (still Lua)`) and describes the Lua as it is, with the members the
-  conversion adds or removes marked `-- lifetime:`.
+- Every module has its fragment; its first line names the module
+  (`-- game/session.tlt: ...`) and, where the constructor takes arguments
+  the checker cannot see at call sites, spells them in a comment
+  (`constructor: Token(data: TokenData, parent: Control)`).
 
 ## Classes
 
@@ -180,12 +181,6 @@ fragment's line.
   owner must be an `Object` and a handler written as a plain function must
   take that owner; a consumer passes its method as it is,
   `app.update_event:register(self, self.on_update)`, with no cast.
-- A module that is still Lua cannot be required by its literal name from
-  a `.tlt` (`module not found`: the checker resolves Teal modules only).
-  Until it is converted, require it by a computed name, which the checker
-  does not resolve, and cast the result to the type its fragment declares
-  (`local Asset = require(ASSET_MODULE) as Asset`, with a comment saying
-  so); once it is converted, `local Asset: Asset = require("data.asset")`.
 - `table.unpack` of a `{number}` passed straight to a function counts as
   two arguments (`wrong number of arguments (given 2, ...)`); a tuple
   (`{number, number}`) is counted right. Pass the table where the callee
@@ -211,6 +206,19 @@ fragment's line.
   touch id).
 - A love-api "table" result (`love.filesystem.getInfo`) is `{any: any}`;
   read a field with a cast (`info.type as love.FileType`).
+- A LÖVE callback is assigned (`love.update = function(dt: number) ...
+  end`), not defined with `function love.update`, for the same reason as a
+  constructor; a function with fewer parameters than the callback field is
+  accepted, one with fewer results is not: `love.errorhandler` is typed to
+  return LÖVE's error loop, so a handler that wants none returns `nil`
+  ([app/app.tlt](../app/app.tlt)).
+- Teal's standard library is Lua 5.4's, which has no `math.pow`: write
+  `x ^ y`.
+- The lifetime transpiler (not `tl`) takes a method call that opens a
+  table constructor for a typed field: `{token:get_position()}` is the
+  syntax error `'=' expected near '('`. Bind the results to locals first
+  (`local x, y = token:get_position()`, then `{x, y}`;
+  [game/page/page.tlt](../game/page/page.tlt)).
 
 ## LÖVE and Host Types
 

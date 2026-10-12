@@ -3,10 +3,10 @@
 ## Dual-Mode Bootstrap
 
 [main.lua](../main.lua) parses arguments and instantiates either Client or Server:
-- **Client** ([app/client.lua](../app/client.lua)): Full UI application with multiple event managers (pointer, keyboard, wheel, button, text, file-drop, resize), screen manager, connection manager, asset manager, backstack navigation, notification system, and session management
-- **Server** ([app/server.lua](../app/server.lua)): Can run headless or with a screen saver, manages multiple sessions (one per connection), persists game state to `save.lua` using human-readable serialization
+- **Client** ([app/client.tlt](../app/client.tlt)): Full UI application with multiple event managers (pointer, keyboard, wheel, button, text, file-drop, resize), screen manager, connection manager, asset manager, backstack navigation, notification system, and session management
+- **Server** ([app/server.tlt](../app/server.tlt)): Can run headless or with a screen saver, manages multiple sessions (one per connection), persists game state to `save.lua` using human-readable serialization
 
-Both inherit from [App](../app/app.lua) and register LÖVE callbacks.
+Both inherit from [App](../app/app.tlt) and register LÖVE callbacks.
 
 ## Custom Class System
 
@@ -51,12 +51,16 @@ The class name is used as the RPC identifier. Examples: LoginRp, UploadAssetRp, 
 
 ## Session Management
 
-[Session](../game/session.lua) ties a connection to user state:
-- Manages login/logout lifecycle via [Login](../login/login.lua)
+[Session](../game/session.tlt) ties a connection to user state:
+- Manages login/logout lifecycle via [Login](../login/login.tlt)
 - Coordinates screen transitions (connecting → login → user menu → game)
 - Integrates with asset manager and backstack navigation
+- Owns its login, its procedures and, on the client, the logged-in period
+  (a token owning the user menu and the logout back entry) and the login
+  screen; it is anchored to its connection and dies when the connection is
+  removed (the whole tree: [lifetime.md](lifetime.md), "The Tree")
 - Server maintains `_sessions` table mapping Connection → Session
-- **Note**: Client auto-logs in with hardcoded credentials "adam"/"krause" at [game/session.lua:61](../game/session.lua#L61)
+- **Note**: Client auto-logs in with hardcoded credentials "adam"/"krause" at [game/session.tlt:74](../game/session.tlt#L74)
 
 ## Event System
 
@@ -135,7 +139,7 @@ The [server/](../server/) directory contains server data, not source code: [serv
 
 **Remote Procedures**: Request-response pattern over network connections using class names as identifiers.
 
-**Resource Cleanup**: Classes implement `release()` methods for cleanup, called when objects are no longer needed.
+**Resource Cleanup**: A class's `release()` is its destructor: the lifetime runtime runs it when the object dies (destroyed, with its owner, collected, or at program end); nothing calls it by hand ([lifetime.md](lifetime.md)).
 
 ## LÖVE Framework Integration
 

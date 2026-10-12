@@ -12,13 +12,13 @@
   - **Modules**: Tables with static functions (no instances created)
     - Use snake_case naming: `arg_parser`, `utils`, etc.
     - Return the table directly: `return arg_parser`
-    - Type the module table with a PascalCase `global record` - e.g., `global record Media` for `local media: Media = {}` in [utils/media.tlt](../utils/media.tlt) (still-Lua modules: a PascalCase `---@class`)
+    - Type the module table with a PascalCase `global record` - e.g., `global record Media` for `local media: Media = {}` in [utils/media.tlt](../utils/media.tlt)
     - Enums are Teal enums nested in the module's record - e.g., `Media.Type` in [utils/media.d.tl](../utils/media.d.tl)
     - Example: [app/arg-parser.tlt](../app/arg-parser.tlt)
   - **Classes**: Use custom class system for object-oriented code
     - Use PascalCase naming: `Client`, `Server`, `Session`
     - Create instances with `ClassName()`
-    - Example: [app/client.lua](../app/client.lua)
+    - Example: [app/client.tlt](../app/client.tlt)
 - **Privacy**: Prefix private members with underscore (`_method`, `_field`)
 - **Callbacks**: Named with `on_` prefix (`on_connect`, `on_disconnect`)
 - **Dynamic dispatch (factory-like)**: When the concrete type of a value must be determined at runtime, follow the pattern in [utils/media.tlt](../utils/media.tlt) (`media.get_type_and_medium`):
@@ -30,7 +30,7 @@
 
 ## Global Variables and Functions
 
-Declared in the modules' `.d.tl` fragments, listed for the remaining Lua in [.luacheckrc](../.luacheckrc), and loaded via [app/globals.tlt](../app/globals.tlt):
+Declared in the modules' `.d.tl` fragments, listed for the Lua bootstraps, tests and tools in [.luacheckrc](../.luacheckrc), and loaded via [app/globals.tlt](../app/globals.tlt):
 
 - `app` - global Client or Server instance
 - `config` - LÖVE config table, set in [conf.lua](../conf.lua)
