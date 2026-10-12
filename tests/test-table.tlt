@@ -5,7 +5,7 @@ local table_utils = require("utils.table")
 test.suite("table utilities")
 
 test.case("merge overwrites destination keys with source keys", function()
-    local destination = {
+    local destination: {string: integer} = {
         a = 1,
         b = 2
     }
@@ -21,7 +21,7 @@ test.case("merge overwrites destination keys with source keys", function()
 end)
 
 test.case("merge_array appends preserving order", function()
-    local destination = {
+    local destination: {integer} = {
         1,
         2
     }
@@ -38,7 +38,7 @@ test.case("merge_array appends preserving order", function()
 end)
 
 test.case("copy is shallow, deep_copy is recursive", function()
-    local source = {
+    local source: {string: {string: integer}} = {
         nested = {
             value = 1
         }
@@ -76,7 +76,8 @@ test.case("is_empty and is_identifier", function()
 end)
 
 test.case("to_string/from_string round-trips nested tables", function()
-    local original = {
+    -- any: a table of every kind of key and value to_string writes
+    local original: {any: any} = {
         1,
         2,
         3,
@@ -102,7 +103,7 @@ test.case("from_string logs and returns nil for invalid input", function()
 end)
 
 test.case("ripairs iterates backwards", function()
-    local visited = {}
+    local visited: {{integer | string}} = {}
     for i, v in ripairs({
         "a",
         "b",
@@ -135,7 +136,7 @@ test.case("cipairs iterates a copy, so removal during iteration is safe", functi
         "b",
         "c"
     }
-    local visited = {}
+    local visited: {string} = {}
     for _, v in cipairs(t) do
         table.insert(visited, v)
         t[#t] = nil
@@ -159,9 +160,10 @@ test.case("prev steps backwards and terminates", function()
 end)
 
 test.case("a table the lifetime runtime has seen: its state record is skipped", function()
-    local lifetime = require("lifetime")
     local owner = lifetime.token("owner")
-    local seen = lifetime.attach({}, false, owner)
+    -- any: a plain table, as table_utils takes them, with the state record
+    -- under its table key
+    local seen: {any: any} = {} @ owner
     local state_key = next(seen)
     test.assert_true(lifetime.is_state(state_key), "the runtime keeps a state record in the table")
     test.assert_true(table_utils.is_empty(seen), "is_empty")
@@ -176,7 +178,7 @@ test.case("a table the lifetime runtime has seen: its state record is skipped", 
     test.assert_eq(visited, 0, "cpairs")
 
     seen.value = 1
-    local target = lifetime.attach({}, false, owner)
+    local target: {any: any} = {} @ owner -- any: see seen
     local target_state = next(target)
     local target_record = rawget(target, target_state)
     table_utils.merge(target, seen)

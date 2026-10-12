@@ -1,30 +1,52 @@
 local test = require("tests.lib.test")
 local mocks = require("tests.lib.mocks")
-local Connection = require("networking.connection")
-local RemoteProcedure = require("networking.remote-procedure")
-local lifetime = require("lifetime")
+local Connection: Connection = require("networking.connection")
+local RemoteProcedure: RemoteProcedure = require("networking.remote-procedure")
+
+-- The bodies the cases send.
+local record ValueRequest is RequestBody
+    value: number
+end
+
+local record DoubledResponse is ResponseBody
+    doubled: number
+end
+
+local record IdBody is RequestBody, ResponseBody
+    id: string
+end
+
+local record EchoRequest is RequestBody
+    inp: number
+end
+
+local record EchoResponse is ResponseBody
+    out: number
+end
 
 -- An RPC used by the round-trip test. Class name = wire id.
-local EchoRp = class("TestEchoRp", RemoteProcedure)
+local interface TestEchoRp is RemoteProcedure
+    got: number
+    send_request: function(self, request: EchoRequest, cb?: function(response: EchoResponse))
+    send_response: function(self, request: EchoRequest): EchoResponse
+    receive_response: function(self, response: EchoResponse)
+end
 
----@param request table
----@return table
-function EchoRp:send_response(request)
+local EchoRp: TestEchoRp = class("TestEchoRp", RemoteProcedure)
+
+function EchoRp:send_response(request: EchoRequest): EchoResponse
     return {
         out = request.inp * 2
     }
 end
 
----@param response table
-function EchoRp:receive_response(response)
+function EchoRp:receive_response(response: EchoResponse)
     self.got = response.out
 end
 
----Create a client/server connection pair wired back-to-back with fake
----channels: what the client sends, the server receives, and vice versa.
----@return Connection client_connection
----@return Connection server_connection
-local function make_connection_pair()
+-- Create a client/server connection pair wired back-to-back with fake
+-- channels: what the client sends, the server receives, and vice versa.
+local function make_connection_pair(): Connection, Connection
     local app_mock = mocks.install_app()
     mocks.ensure_love_data()
     local client_to_server = mocks.make_channel()
@@ -42,9 +64,10 @@ test.suite("Connection + RemoteProcedure")
 
 test.case("send_request puts a compressed request on the out channel", function()
     local client_connection = make_connection_pair()
-    client_connection:send_request("SomeRp", {
+    local request: ValueRequest = {
         value = 7
-    }, function()
+    }
+    client_connection:send_request("SomeRp", request, function()
     end)
 
     local out_channel = client_connection:get_out_channel()
@@ -53,16 +76,17 @@ end)
 
 test.case("an incoming request is answered by the registered handler", function()
     local client_connection, server_connection = make_connection_pair()
-    server_connection:register_request_handler("SomeRp", function(body)
+    server_connection:register_request_handler("SomeRp", function(body: ValueRequest): DoubledResponse
         return {
             doubled = body.value * 2
         }
     end)
 
-    local received
-    client_connection:send_request("SomeRp", {
+    local received: DoubledResponse
+    local request: ValueRequest = {
         value = 21
-    }, function(body)
+    }
+    client_connection:send_request("SomeRp", request, function(body: DoubledResponse)
         received = body
     end)
     server_connection:on_update()
@@ -75,7 +99,7 @@ end)
 
 test.case("register_request_handler rejects duplicate ids", function()
     local client_connection = make_connection_pair()
-    local handler = function()
+    local handler = function(): ResponseBody
         return {}
     end
     client_connection:register_request_handler("Dup", handler)
@@ -89,10 +113,10 @@ test.case("full RPC round-trip: request, server handler, client response", funct
     local client_rp = EchoRp(client_connection)
     local _ = EchoRp(server_connection)
 
-    local cb_response
+    local cb_response: EchoResponse
     client_rp:send_request({
         inp = 21
-    }, function(response)
+    }, function(response: EchoResponse)
         cb_response = response
     end)
 
@@ -105,21 +129,23 @@ end)
 
 test.case("responses are matched to requests in FIFO order", function()
     local client_connection, server_connection = make_connection_pair()
-    server_connection:register_request_handler("OrderRp", function(body)
+    server_connection:register_request_handler("OrderRp", function(body: IdBody): IdBody
         return {
             id = body.id
         }
     end)
 
-    local received = {}
-    client_connection:send_request("OrderRp", {
+    local received: {string} = {}
+    local a: IdBody = {
         id = "a"
-    }, function(body)
+    }
+    client_connection:send_request("OrderRp", a, function(body: IdBody)
         table.insert(received, body.id)
     end)
-    client_connection:send_request("OrderRp", {
+    local b: IdBody = {
         id = "b"
-    }, function(body)
+    }
+    client_connection:send_request("OrderRp", b, function(body: IdBody)
         table.insert(received, body.id)
     end)
 
@@ -132,11 +158,12 @@ test.case("responses are matched to requests in FIFO order", function()
     })
 end)
 
-test.case("release frees channels and threads", function()
+test.case("destroying a connection frees its channels and threads", function()
     local client_connection = make_connection_pair()
-    local in_channel = client_connection:get_in_channel() --[[@as FakeChannel]]
-    local out_channel = client_connection:get_out_channel() --[[@as FakeChannel]]
-    client_connection:release()
+    -- as: make_connection_pair built it on fake channels
+    local in_channel = client_connection:get_in_channel() as mocks.FakeChannel
+    local out_channel = client_connection:get_out_channel() as mocks.FakeChannel
+    lifetime.destroy(client_connection)
     test.assert_true(in_channel._released)
     test.assert_true(out_channel._released)
 end)
@@ -153,26 +180,26 @@ end)
 -- The order of a connection's death (lua-lifetime docs/02-semantics.md,
 -- "Cascading death"): `log` records each release and each handler a
 -- dying procedure unregisters from the dying connection.
-local log = {}
+local log: {string} = {}
 
-local LoggingConnection = class("TestLoggingConnection", Connection)
+local interface TestLoggingConnection is Connection
+end
 
-function LoggingConnection:release(reason)
+local LoggingConnection: TestLoggingConnection = class("TestLoggingConnection", Connection)
+
+function LoggingConnection:release(reason?: LifetimeReason)
     table.insert(log, "Connection:release(" .. tostring(reason) .. ")")
     Connection.release(self, reason)
 end
 
----@param id string
-function LoggingConnection:unregister_request_handler(id)
+function LoggingConnection:unregister_request_handler(id: string)
     table.insert(log, "  unregister " .. id)
     Connection.unregister_request_handler(self, id)
 end
 
----@param name string
----@return table
-local function make_logging_rp_class(name)
-    local cls = class(name, RemoteProcedure)
-    function cls:release(reason)
+local function make_logging_rp_class(name: string): RemoteProcedure
+    local cls: RemoteProcedure = class(name, RemoteProcedure)
+    function cls:release(reason?: LifetimeReason)
         table.insert(log, name .. ":release(" .. tostring(reason) .. ")")
         RemoteProcedure.release(self, reason)
     end
@@ -188,10 +215,9 @@ test.case("destroying a connection releases it first, then its procedures newest
     mocks.ensure_love_data()
     local in_channel, out_channel = mocks.make_channel(), mocks.make_channel()
     local connection = LoggingConnection(in_channel, mocks.make_thread(), out_channel, mocks.make_thread())
-    -- `RpX(connection) @ connection`
-    local a = lifetime.attach(LogRpA(connection), false, connection)
-    local b = lifetime.attach(LogRpB(connection), false, connection)
-    local c = lifetime.attach(LogRpC(connection), false, connection)
+    local a = LogRpA(connection) @ connection
+    local b = LogRpB(connection) @ connection
+    local c = LogRpC(connection) @ connection
     log = {}
 
     lifetime.destroy(connection)

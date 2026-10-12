@@ -1,11 +1,7 @@
 local test = require("tests.lib.test")
 local arg_parser = require("app.arg-parser")
 
----@param app_type string
----@param address string
----@param port string
----@return ArgParserResult|nil
-local function parse(app_type, address, port)
+local function parse(app_type: string, address: string, port: string): ArgParserResult
     return arg_parser.parse({
         "game_dir",
         app_type,

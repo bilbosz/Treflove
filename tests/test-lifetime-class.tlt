@@ -1,29 +1,29 @@
 local test = require("tests.lib.test")
-local lifetime = require("lifetime")
 
 -- The class system and the lifetime runtime (docs/lifetime.md): `release` is
 -- the destructor, every instance of a class with a `release` is registered,
--- and `lifetime.attach(x, false, owner)` is what `x @ owner` compiles to.
+-- and `x @ owner` anchors `x` to `owner`.
 
----@type string[]
-local log = {}
+local log: {string} = {}
 
----@class TestOwned: Object
----@field name string
-local TestOwned = class("TestOwned")
+local interface TestOwned is Object
+    name: string
+end
 
----@param name string
-function TestOwned:init(name)
+local TestOwned: TestOwned = class("TestOwned")
+
+TestOwned.init = function(self: TestOwned, name: string)
     self.name = name
 end
 
----@param reason string
-function TestOwned:release(reason)
+function TestOwned:release(reason?: LifetimeReason)
     table.insert(log, self.name .. " " .. tostring(reason))
 end
 
----@class TestPlain: Object
-local TestPlain = class("TestPlain")
+local interface TestPlain is Object
+end
+
+local TestPlain: TestPlain = class("TestPlain")
 
 local function _reset()
     for i = #log, 1, -1 do
@@ -33,9 +33,8 @@ end
 
 -- Created in a function of its own, so that no register of the caller
 -- keeps the dependent alive.
----@param owner TestOwned
-local function _drop_dependent(owner)
-    lifetime.attach(TestOwned("dropped"), false, owner)
+local function _drop_dependent(owner: TestOwned)
+    TestOwned("dropped") @ owner
 end
 
 local function _drop_instance()
@@ -47,8 +46,8 @@ test.suite("class + lifetime")
 test.case("destroy runs the owner's release first, then its dependents newest first", function()
     _reset()
     local owner = TestOwned("owner")
-    local first = lifetime.attach(TestOwned("first"), false, owner)
-    local second = lifetime.attach(TestOwned("second"), false, owner)
+    local first = TestOwned("first") @ owner
+    local second = TestOwned("second") @ owner
     test.assert_deep_eq(log, {}, "nothing dies before the destroy")
 
     lifetime.destroy(owner)
@@ -70,7 +69,7 @@ test.case("a dead object is a tombstone that raises on index", function()
         "tomb destroy"
     })
     test.assert_false(lifetime.alive(owner))
-    local ok, err = pcall(function()
+    local ok, err = pcall(function(): string
         return owner.name
     end)
     test.assert_false(ok)
@@ -112,7 +111,7 @@ end)
 test.case("an instance without a release can be anchored and destroyed", function()
     _reset()
     local owner = TestOwned("plain-owner")
-    local plain = lifetime.attach(TestPlain(), false, owner)
+    local plain = TestPlain() @ owner
     lifetime.destroy(owner)
     test.assert_deep_eq(log, {
         "plain-owner destroy"

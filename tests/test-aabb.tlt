@@ -1,12 +1,7 @@
 local test = require("tests.lib.test")
-local Aabb = require("utils.aabb")
+local Aabb: Aabb = require("utils.aabb")
 
----@param min_x number
----@param min_y number
----@param max_x number
----@param max_y number
----@return Aabb
-local function make_aabb(min_x, min_y, max_x, max_y)
+local function make_aabb(min_x: number, min_y: number, max_x: number, max_y: number): Aabb
     local aabb = Aabb()
     aabb:add_point(min_x, min_y)
     aabb:add_point(max_x, max_y)

@@ -244,14 +244,59 @@ end
 
 local reported = {}
 
+-- Lines of the generated Teal files, read once, for is_expected_warning.
+local teal_lines = {}
+
+local function teal_line(filename, y)
+    local lines = teal_lines[filename]
+    if not lines then
+        lines = {}
+        local f = io.open(filename, "rb")
+        if f then
+            for line in f:lines() do
+                lines[#lines + 1] = line
+            end
+            f:close()
+        end
+        teal_lines[filename] = lines
+    end
+    return lines[y] or ""
+end
+
+-- Is `name` a local interface (declared on line y) that a class table of
+-- the same name shadows (`local X: X = class("X", ...)`)?
+local function is_local_class_interface(filename, y, name)
+    if not teal_line(filename, y):match("^%s*local%s+interface%s+" .. name .. "%f[^%w_]") then
+        return false
+    end
+    local class_table = "^%s*local%s+" .. name .. "%s*:%s*" .. name .. "%s*=%s*class%("
+    for _, line in ipairs(teal_lines[filename]) do
+        if line:match(class_table) then
+            return true
+        end
+    end
+    return false
+end
+
 -- Warnings the class recipe causes everywhere (docs/types.md, "Classes"),
--- which are therefore not reported: a class table shadowing the global
--- type of its name (`local Control: Control = require("controls.control")`)
+-- which are therefore not reported: a class table shadowing the type of
+-- its name (`local Control: Control = require("controls.control")`; the
+-- type is global, or a local interface in a test, which tl then also
+-- calls unused although the annotations after the class table use it)
 -- and a super call (`Base.init(self)`).
 local function is_expected_warning(w)
+    if w.tag == "unused" then
+        local name = w.msg:match("^unused type ([%w_]+): type interface ")
+        return name ~= nil and is_local_class_interface(w.filename, w.y, name)
+    end
     if w.tag == "redeclaration" then
-        -- tl names the position of the shadowed variable only for a local
-        return not w.msg:find("originally declared at", 1, true)
+        local name = w.msg:match("shadows previous declaration of '([%w_]+)'")
+        local y = tonumber(w.msg:match("originally declared at (%d+):"))
+        if not y then
+            -- tl names the position only when the shadowed name is local
+            return true
+        end
+        return name ~= nil and is_local_class_interface(w.filename, y, name)
     end
     return w.tag == "hint" and w.msg:find("invoked method as a regular function", 1, true) ~= nil
 end

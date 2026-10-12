@@ -1,6 +1,5 @@
 local test = require("tests.lib.test")
 local mocks = require("tests.lib.mocks")
-local lifetime = require("lifetime")
 
 -- The session's ownership tree (game/session.tlt, app/client.tlt,
 -- app/server.tlt; docs/lifetime.md, "Ownership"), driven the way
@@ -25,7 +24,9 @@ local lifetime = require("lifetime")
 -- screens.waiting-screen, screens.connecting-screen, game.game-screen)
 -- are required, and only while game.session, game.game-data-rp, app.client
 -- and app.server are loaded for this file; package.loaded is restored
--- afterwards, so no other test sees them. Each double logs `show`, `hide`
+-- afterwards, so no other test sees them. The doubles are typed by
+-- interfaces of their own; the modules loaded against them are typed as
+-- the real ones, which is what they are, with their screens swapped. Each double logs `show`, `hide`
 -- and its release, so the logs pin that a screen is replaced before it dies
 -- (docs/lifetime.md, "Screens": the real ScreenManager calls `hide` on
 -- the screen it replaces, which raises on a tombstone).
@@ -41,16 +42,21 @@ local lifetime = require("lifetime")
 -- dependent alive, then its dependents most recently attached first, each
 -- by the same rule, a dead one skipped.
 
-local log = {}
+local log: {string} = {}
 local depth = 0
 
----@param line string
-local function trace(line)
+local function trace(line: string)
     table.insert(log, string.rep("  ", depth) .. line)
 end
 
 -- The screen doubles.
-local TestScreen = class("TestScreen")
+local interface TestScreen is Object
+    show: function(self)
+    hide: function(self)
+    on_resize: function(self)
+end
+
+local TestScreen: TestScreen = class("TestScreen")
 
 function TestScreen:show()
     trace("show " .. get_class_name_of(self))
@@ -67,10 +73,14 @@ end
 -- (screens/user-menu-screen.tlt): the session's join_game.
 local forward_join_game = false
 
-local TestUserMenuScreen = class("TestUserMenuScreen", TestScreen)
+local interface TestUserMenuScreen is TestScreen
+    _session: Session
+    join_game: function(self)
+end
 
----@param session Session
-function TestUserMenuScreen:init(session)
+local TestUserMenuScreen: TestUserMenuScreen = class("TestUserMenuScreen", TestScreen)
+
+TestUserMenuScreen.init = function(self: TestUserMenuScreen, session: Session)
     self._session = session
 end
 
@@ -83,41 +93,53 @@ end
 
 -- The depth of the back stack when the menu dies pins whether the logout
 -- entry, anchored to the same period after it, went first.
-function TestUserMenuScreen:release()
+function TestUserMenuScreen:release(_reason?: LifetimeReason)
     trace("back stack depth " .. #app.backstack_manager._stack)
 end
 
-local TestLoginScreen = class("TestLoginScreen", TestScreen)
+local interface TestLoginScreen is TestScreen
+    _login: Login
+end
 
----@param login Login
-function TestLoginScreen:init(login)
+local TestLoginScreen: TestLoginScreen = class("TestLoginScreen", TestScreen)
+
+TestLoginScreen.init = function(self: TestLoginScreen, login: Login)
     self._login = login
 end
 
-function TestLoginScreen:release()
+function TestLoginScreen:release(_reason?: LifetimeReason)
 end
 
-local TestWaitingScreen = class("TestWaitingScreen", TestScreen)
+local interface TestWaitingScreen is TestScreen
+    _message: string
+end
 
----@param message string
-function TestWaitingScreen:init(message)
+local TestWaitingScreen: TestWaitingScreen = class("TestWaitingScreen", TestScreen)
+
+TestWaitingScreen.init = function(self: TestWaitingScreen, message: string)
     self._message = message
 end
 
-local TestConnectingScreen = class("TestConnectingScreen", TestScreen)
+local interface TestConnectingScreen is TestScreen
+end
 
-local TestGameScreen = class("TestGameScreen", TestScreen)
+local TestConnectingScreen: TestConnectingScreen = class("TestConnectingScreen", TestScreen)
 
----@param data GameScreenData
-function TestGameScreen:init(data)
+local interface TestGameScreen is TestScreen
+    _data: GameScreenData
+end
+
+local TestGameScreen: TestGameScreen = class("TestGameScreen", TestScreen)
+
+TestGameScreen.init = function(self: TestGameScreen, data: GameScreenData)
     self._data = data
 end
 
-function TestGameScreen:release()
+function TestGameScreen:release(_reason?: LifetimeReason)
 end
 
 -- Load the session slice against the doubles, then put package.loaded back.
-local DOUBLES = {
+local DOUBLES: {string: Object} = {
     ["screens.user-menu-screen"] = TestUserMenuScreen,
     ["login.login-screen"] = TestLoginScreen,
     ["screens.waiting-screen"] = TestWaitingScreen,
@@ -126,8 +148,17 @@ local DOUBLES = {
 }
 local LOADED_WITH_DOUBLES = {"game.game-data-rp", "game.session", "app.client", "app.server"}
 
-local function load_with_doubles()
-    local saved = {}
+-- The modules loaded against the doubles.
+local record LoadedModules
+    game_data_rp: GameDataRp
+    session: Session
+    client: Client
+    server: Server
+end
+
+local function load_with_doubles(): LoadedModules
+    -- any: package.loaded holds modules of every type
+    local saved: {string: any} = {}
     for name, double in pairs(DOUBLES) do
         saved[name] = package.loaded[name]
         package.loaded[name] = double
@@ -136,10 +167,13 @@ local function load_with_doubles()
         saved[name] = package.loaded[name]
         package.loaded[name] = nil
     end
-    local modules = {}
-    for _, name in ipairs(LOADED_WITH_DOUBLES) do
-        modules[name] = require(name)
-    end
+    -- In the order of LOADED_WITH_DOUBLES.
+    local modules: LoadedModules = {
+        game_data_rp = require("game.game-data-rp"),
+        session = require("game.session"),
+        client = require("app.client"),
+        server = require("app.server")
+    }
     for name, value in pairs(saved) do
         package.loaded[name] = value
     end
@@ -152,17 +186,17 @@ local function load_with_doubles()
 end
 
 local loaded = load_with_doubles()
-local Session = loaded["game.session"]
-local GameDataRp = loaded["game.game-data-rp"]
-local Client = loaded["app.client"]
-local Server = loaded["app.server"]
-local AssetManager = require("data.asset-manager")
+local Session: Session = loaded.session
+local GameDataRp: GameDataRp = loaded.game_data_rp
+local Client: Client = loaded.client
+local Server: Server = loaded.server
+local AssetManager: AssetManager = require("data.asset-manager")
 local BackstackManager = require("utils.backstack-manager")
-local Connection = require("networking.connection")
-local ConnectionManager = require("networking.connection-manager")
+local Connection: Connection = require("networking.connection")
+local ConnectionManager: ConnectionManager = require("networking.connection-manager")
 local DownloadAssetRp = require("data.download-asset-rp")
 local DownloadMissingAssetsRp = require("data.download-missing-assets-rp")
-local Login = require("login.login")
+local Login: Login = require("login.login")
 local LoginRp = require("login.login-rp")
 local LogoutRp = require("login.logout-rp")
 local ScreenManager = require("screens.screen-manager")
@@ -172,7 +206,7 @@ local Utils = require("utils.utils")
 -- The instrumentation: wrapped while a case runs, restored after it. A
 -- class table reads and writes its merged method index (utils/class.tlt),
 -- so plain indexing patches every instance.
-local INSTRUMENTED = {
+local INSTRUMENTED: {{Object, string}} = {
     {Connection, "Connection"},
     {Session, "Session"},
     {Login, "Login"},
@@ -187,17 +221,21 @@ local INSTRUMENTED = {
     {TestGameScreen, "TestGameScreen"}
 }
 
-local originals = {}
+-- A method replaced by `instrument`: the class table, the method's name and
+-- what was there (any: methods of several signatures, or nil).
+local type Original = {Object, string, any}
 
----@param f function
-local function deeper(f, ...)
+local originals: {Original} = {}
+
+-- any (deeper): calls a method of any signature with its arguments.
+local function deeper(f: function(...: any): any..., ...: any): any...
     depth = depth + 1
     local result = {pcall(f, ...)}
     depth = depth - 1
     if not result[1] then
         error(result[2], 0)
     end
-    return unpack(result, 2)
+    return table.unpack(result, 2)
 end
 
 local function instrument()
@@ -205,26 +243,30 @@ local function instrument()
         local cls, name = entry[1], entry[2]
         local release = cls.release
         table.insert(originals, {cls, "release", release})
-        cls.release = function(self, reason)
+        cls.release = function(self: Object, reason?: LifetimeReason)
             if release then
                 trace(name .. ":release(" .. tostring(reason) .. ")")
-                return deeper(release, self, reason)
+                deeper(release, self, reason)
+                return
             end
             trace(name .. " destroyed (" .. tostring(reason) .. ")")
         end
     end
     local unregister = Connection.unregister_request_handler
     table.insert(originals, {Connection, "unregister_request_handler", unregister})
-    Connection.unregister_request_handler = function(self, id)
+    Connection.unregister_request_handler = function(self: Connection, id: string)
         trace("Connection:unregister_request_handler(" .. id .. ")")
-        return deeper(unregister, self, id)
+        deeper(unregister, self, id)
     end
 end
 
 local function restore()
     for i = #originals, 1, -1 do
         local cls, method, value = originals[i][1], originals[i][2], originals[i][3]
-        cls[method] = value
+        -- as: the class table's merged index, written by name (any: see
+        -- Original)
+        local index = cls as {string: any}
+        index[method] = value
     end
     originals = {}
 end
@@ -233,8 +275,13 @@ end
 -- directory (an empty one here), and the client already has every asset,
 -- so its missing-asset list comes out empty. Swapped in while a case runs
 -- (the real love.filesystem under `love . test`), restored after it.
-local FAKE_FILESYSTEM = {
-    getInfo = function(path)
+local record FileInfo
+    type: love.FileType
+end
+
+-- any: functions of several signatures, by name
+local FAKE_FILESYSTEM: {string: any} = {
+    getInfo = function(path: string): FileInfo
         if path == "server" then
             return {
                 type = "directory"
@@ -246,37 +293,46 @@ local FAKE_FILESYSTEM = {
         end
         return nil
     end,
-    createDirectory = function()
+    createDirectory = function(): boolean
         return true
     end,
-    getDirectoryItems = function()
+    getDirectoryItems = function(): {string}
         return {}
     end,
-    remove = function()
+    remove = function(): boolean
         return true
     end
 }
 
-local saved_filesystem
+-- `love` as a table of module tables, so that functions are swapped by
+-- name. as/any: the checker knows `love` only as LÖVE's declared API.
+local function love_modules(): {string: {string: any}}
+    return (_G as {string: {string: {string: any}}}).love
+end
+
+-- What install_filesystem replaced (any: functions of several signatures).
+local saved_filesystem: {string: any}
 
 local function install_filesystem()
+    local modules = love_modules()
     saved_filesystem = {
-        had_module = love.filesystem ~= nil
+        had_module = modules.filesystem ~= nil
     }
-    love.filesystem = love.filesystem or {}
+    modules.filesystem = modules.filesystem or {}
     for name, f in pairs(FAKE_FILESYSTEM) do
-        saved_filesystem[name] = love.filesystem[name]
-        love.filesystem[name] = f
+        saved_filesystem[name] = modules.filesystem[name]
+        modules.filesystem[name] = f
     end
 end
 
 local function restore_filesystem()
+    local modules = love_modules()
     if not saved_filesystem.had_module then
-        love.filesystem = nil
+        modules.filesystem = nil
         return
     end
     for name in pairs(FAKE_FILESYSTEM) do
-        love.filesystem[name] = saved_filesystem[name]
+        modules.filesystem[name] = saved_filesystem[name]
     end
 end
 
@@ -284,7 +340,7 @@ end
 -- token. `auth` is what LoginRp stores for adam/krause, computed with the
 -- same love.data and love.math the login uses (login/login.tlt and
 -- login/login-rp.tlt hash the client's hash again on the server side).
-local function make_game_state()
+local function make_game_state(): GameState
     app = {
         is_client = true,
         is_server = false
@@ -324,7 +380,7 @@ end
 
 -- The connector's thread and sockets are outside the test: connections are
 -- added by hand (`connect`).
-local function stub_connector(connection_manager)
+local function stub_connector(connection_manager: ConnectionManager)
     connection_manager._connector = {
         start = function()
         end,
@@ -334,17 +390,18 @@ local function stub_connector(connection_manager)
 end
 
 -- A client app: the app mock, the managers the session uses, Client:load.
-local function new_client()
+-- as: the mock stands for the Client instance that Client.load runs on.
+local function new_client(): Client
     local client = mocks.install_app({
         is_client = true,
         is_server = false
-    })
+    }) as Client
     client.text_event_manager = {
         set_text_input = function()
         end
     }
     client.notification_manager = {
-        notify = function(_, text)
+        notify = function(_: NotificationManager, text: string)
             trace("notify: " .. text)
         end
     }
@@ -363,12 +420,13 @@ end
 
 -- A server app: the app mock, the managers the session uses, Server:load
 -- (without reading save.lua: the state is make_game_state's).
-local function new_server()
+-- as: the mock stands for the Server instance that Server.load runs on.
+local function new_server(): Server
     local data = make_game_state()
     local server = mocks.install_app({
         is_client = false,
         is_server = true
-    })
+    }) as Server
     server.data = data
     server._sessions = {}
     server._load_data = function()
@@ -384,7 +442,7 @@ end
 -- The server and the client each add their end of a pair of mock
 -- channels, back to back, as the connector would. The client's session
 -- sends the login request (game/session.tlt).
-local function connect(client, server)
+local function connect(client: Client, server: Server): Connection, Connection
     trace("> connect")
     local client_to_server = mocks.make_channel()
     local server_to_client = mocks.make_channel()
@@ -397,19 +455,19 @@ end
 
 -- One frame of `side`: the update event, which runs the connections'
 -- on_update (requests answered, responses received).
-local function frame(name, side)
+local function frame(name: string, side: App)
     trace("> " .. name .. " frame")
     app = side
     side.update_event:trigger(0.016)
 end
 
-local function disconnect(name, side, connection)
+local function disconnect(name: string, side: App, connection: Connection)
     trace("> " .. name .. ": connection_manager:remove(connection)")
     app = side
     side.connection_manager:remove(connection)
 end
 
-local function count_entries(t)
+local function count_entries<K, V>(t: {K: V}): integer
     local n = 0
     for _ in pairs(t) do
         n = n + 1
@@ -417,16 +475,16 @@ local function count_entries(t)
     return n
 end
 
-local function count_asset_entries(asset_manager)
+local function count_asset_entries(asset_manager: AssetManager): integer
     return count_entries(asset_manager._upload_asset_rp) + count_entries(asset_manager._download_asset_rp) + count_entries(asset_manager._download_missing_assets_rp)
 end
 
 -- Compare the log with `expected` line by line; on a mismatch, report the
 -- first difference and the whole log.
-local function assert_log(expected)
+local function assert_log(expected: {string})
     for i = 1, math.max(#log, #expected) do
         if log[i] ~= expected[i] then
-            local lines = {}
+            local lines: {string} = {}
             for j, line in ipairs(log) do
                 table.insert(lines, string.format("  %3d %s", j, line))
             end
@@ -435,11 +493,11 @@ local function assert_log(expected)
     end
 end
 
-local function concat(...)
-    local out = {}
+local function concat(...: string | {string}): {string}
+    local out: {string} = {}
     for i = 1, select("#", ...) do
         local part = select(i, ...)
-        if type(part) == "string" then
+        if part is string then
             table.insert(out, part)
         else
             for _, line in ipairs(part) do
@@ -452,7 +510,7 @@ end
 
 -- A procedure's release and the unregistering its stop() makes on the
 -- dying connection.
-local function rp(name)
+local function rp(name: string): {string}
     return {name .. ":release(anchor)", "  Connection:unregister_request_handler(" .. name .. ")"}
 end
 
@@ -463,14 +521,21 @@ end
 -- attached first: the asset procedures newest first, GameDataRp (and what
 -- it owns: `game_screen`, the game screen it showed, if any), then Login
 -- (its own release first, it has none; then LogoutRp, LoginRp).
-local function session_procedures(game_screen)
+local function session_procedures(game_screen?: {string}): {string}
     return concat(rp("DownloadMissingAssetsRp"), rp("DownloadAssetRp"), rp("UploadAssetRp"), rp("GameDataRp"), game_screen or {}, "Login destroyed (anchor)", rp("LogoutRp"), rp("LoginRp"))
 end
+
+-- `destroyerror` is the global the lifetime runtime calls with an error a
+-- destructor raised where it cannot propagate (lua-lifetime
+-- docs/02-semantics.md, "Errors in destructors and `destroyerror`"); no
+-- module declares it, so it is swapped through the globals table. as/any:
+-- the globals table as a map of values of any type.
+local globals = _G as {string: any}
 
 -- Run `fn` with the fakes and the instrumentation in place, and the
 -- destroyerror handler logging; undo all of it however `fn` ends. Two
 -- collections at the end must log nothing.
-local function run(fn)
+local function run(fn: function())
     -- What an earlier case left behind (when it failed half-way) is
     -- finalized now, outside this case's log.
     collectgarbage("collect")
@@ -481,17 +546,23 @@ local function run(fn)
     forward_join_game = false
     install_filesystem()
     instrument()
-    local previous_destroyerror = rawget(_G, "destroyerror")
-    rawset(_G, "destroyerror", function(_, err)
+    local previous_destroyerror = rawget(globals, "destroyerror")
+    rawset(globals, "destroyerror", function(_: any, err: any) -- any: whatever was raised
         trace("destroyerror: " .. tostring(err))
     end)
-    local ok, err = pcall(fn)
+    -- xpcall keeps the error as the message handler receives it (pcall's
+    -- results are typed by fn's, which has none).
+    local err: any -- any: whatever was raised
+    local ok = xpcall(fn, function(e: any): any -- any: see err
+        err = e
+        return e
+    end)
     if ok then
         trace("> collectgarbage twice")
         collectgarbage("collect")
         collectgarbage("collect")
     end
-    rawset(_G, "destroyerror", previous_destroyerror)
+    rawset(globals, "destroyerror", previous_destroyerror)
     restore()
     restore_filesystem()
     if not ok then
@@ -522,7 +593,8 @@ test.case("removing a logged-in client's connection tears its session down in ow
         local period = session._period
         local menu = session._user_menu_screen
         local game_screen = client.screen_manager:get_screen()
-        local channel = client_connection:get_in_channel()
+        -- as: connect built it on fake channels
+        local channel = client_connection:get_in_channel() as mocks.FakeChannel
         trace("back stack depth " .. #client.backstack_manager._stack)
         disconnect("client", client, client_connection)
         trace("alive: connection " .. tostring(lifetime.alive(client_connection)) .. ", session " .. tostring(lifetime.alive(session)) .. ", login " .. tostring(lifetime.alive(login)) .. ", period " .. tostring(lifetime.alive(period)) .. ", menu " .. tostring(lifetime.alive(menu)) .. ", game screen " .. tostring(lifetime.alive(game_screen)))
@@ -545,7 +617,9 @@ test.case("removing a logged-in client's connection tears its session down in ow
 end)
 
 test.case("logging out shows the login screen, then destroys the period and what hangs on it", function()
-    local session, period, menu
+    local session: Session
+    local period: lifetime.Token
+    local menu: UserMenuScreen
     run(function()
         local client = new_client()
         local server = new_server()
@@ -600,7 +674,7 @@ end)
 -- without destroying them, in a function of its own so that no stack slot
 -- of the caller still refers to them (lua-lifetime docs/02-semantics.md,
 -- "Reachability is the collector's").
-local function forget(server, in_channel, out_channel)
+local function forget(server: Server, in_channel: love.Channel, out_channel: love.Channel)
     local manager = server.connection_manager
     for connection in pairs(manager._connections) do
         server._sessions[connection] = nil
@@ -610,14 +684,14 @@ local function forget(server, in_channel, out_channel)
     manager._by_out_channel[out_channel] = nil
 end
 
-local function add_server_connection(server, in_channel, out_channel)
+local function add_server_connection(server: Server, in_channel: love.Channel, out_channel: love.Channel)
     app = server
     server.connection_manager:add_connection(in_channel, mocks.make_thread(), out_channel, mocks.make_thread())
 end
 
 test.case("a dropped session is collected with its connection, its procedures stopped", function()
     local in_channel, out_channel = mocks.make_channel(), mocks.make_channel()
-    local server
+    local server: Server
     run(function()
         server = new_server()
         add_server_connection(server, in_channel, out_channel)

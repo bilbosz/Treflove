@@ -1,21 +1,25 @@
----Minimal pure-Lua stand-in for the Lua 5.3 `utf8` library, which LÖVE bundles
----but plain LuaJIT lacks. Covers only what the code under test uses (`len`,
----`offset`, `codes`) and only for valid UTF-8 input. Installed by
----`tests/run.lua` when `require("utf8")` fails.
----@class Utf8Shim
-local utf8_shim = {}
+-- Minimal pure-Lua stand-in for the Lua 5.3 `utf8` library, which LÖVE
+-- bundles but plain LuaJIT lacks. Covers only what the code under test uses
+-- (`len`, `offset`, `codes`) and only for valid UTF-8 input. Installed by
+-- `tests/run.lua` when `require("utf8")` fails.
+local record Utf8Shim
+    len: function(s: string): integer
+    -- Byte position where the `n`-th character (counted from byte `i`)
+    -- starts; negative `n` counts backwards from `i` (default: end of
+    -- string + 1); nil when there is no such character.
+    offset: function(s: string, n: integer, i?: integer): integer
+    -- Iterate `(position, code)` over the characters of `s`.
+    codes: function(s: string): (function(string, integer): (integer, integer), string, integer)
+end
 
----@param s string
----@param i number
----@return boolean
-local function _is_continuation(s, i)
+local utf8_shim: Utf8Shim = {}
+
+local function _is_continuation(s: string, i: integer): boolean
     local byte = string.byte(s, i)
     return byte ~= nil and byte >= 0x80 and byte < 0xC0
 end
 
----@param s string
----@return number
-function utf8_shim.len(s)
+function utf8_shim.len(s: string): integer
     local n = 0
     for i = 1, #s do
         if not _is_continuation(s, i) then
@@ -25,13 +29,7 @@ function utf8_shim.len(s)
     return n
 end
 
----Byte position where the `n`-th character (counted from byte `i`) starts;
----negative `n` counts backwards from `i` (default: end of string + 1).
----@param s string
----@param n number
----@param i number|nil
----@return number|nil
-function utf8_shim.offset(s, n, i)
+function utf8_shim.offset(s: string, n: integer, i?: integer): integer
     i = i or (n >= 0 and 1 or #s + 1)
     if n == 0 then
         while i > 1 and _is_continuation(s, i) do
@@ -62,11 +60,9 @@ function utf8_shim.offset(s, n, i)
     return nil
 end
 
----@param s string
----@param i number Byte position of the current character, 0 before the first
----@return number|nil position
----@return number|nil code
-local function _next_code(s, i)
+-- The position and the code of the character after byte position `i` (0
+-- before the first), or nil at the end.
+local function _next_code(s: string, i: integer): integer, integer
     if i > 0 then
         repeat
             i = i + 1
@@ -88,12 +84,7 @@ local function _next_code(s, i)
     return i, (b1 - 0xF0) * 0x40000 + (b2 - 0x80) * 0x1000 + (b3 - 0x80) * 0x40 + (b4 - 0x80)
 end
 
----Iterate `(position, code)` over the characters of `s`.
----@param s string
----@return fun(s: string, i: number): number|nil, number|nil
----@return string
----@return number
-function utf8_shim.codes(s)
+function utf8_shim.codes(s: string): (function(string, integer): (integer, integer), string, integer)
     return _next_code, s, 0
 end
 

@@ -2,16 +2,18 @@ local test = require("tests.lib.test")
 local KeyboardManager = require("events.keyboard")
 
 -- A key event owner; records every key it receives.
----@class TestKeyOwner
----@field keys love.KeyConstant[]
-local TestKeyOwner = class("TestKeyOwner")
+local interface TestKeyOwner is Object
+    keys: {love.KeyConstant}
+    on_key: function(self, key: love.KeyConstant)
+end
 
-function TestKeyOwner:init()
+local TestKeyOwner: TestKeyOwner = class("TestKeyOwner")
+
+TestKeyOwner.init = function(self: TestKeyOwner)
     self.keys = {}
 end
 
----@param key love.KeyConstant
-function TestKeyOwner:on_key(key)
+function TestKeyOwner:on_key(key: love.KeyConstant)
     table.insert(self.keys, key)
 end
 

@@ -7,8 +7,8 @@ test.suite("DeferManager")
 test.case("a defer fires only once its time has come", function()
     local app_mock = mocks.install_app()
     local manager = DeferManager()
-    local calls = {}
-    manager:call_defered(1, function(value)
+    local calls: {string} = {}
+    manager:call_defered(1, function(value: string)
         table.insert(calls, value)
     end, "payload")
 
@@ -34,7 +34,7 @@ end)
 test.case("defers fire ordered by their due time, not insertion order", function()
     local app_mock = mocks.install_app()
     local manager = DeferManager()
-    local order = {}
+    local order: {string} = {}
     manager:call_defered(2, function()
         table.insert(order, "late")
     end)
@@ -53,8 +53,8 @@ end)
 test.case("varargs are forwarded to the callback", function()
     mocks.install_app()
     local manager = DeferManager()
-    local received
-    manager:call_defered(0, function(...)
+    local received: {any} -- any: the arguments forwarded, of several types
+    manager:call_defered(0, function(...: any) -- any: see received
         received = {
             ...
         }
@@ -71,7 +71,7 @@ end)
 test.case("a defer scheduled from a callback runs on a later update", function()
     local app_mock = mocks.install_app()
     local manager = DeferManager()
-    local calls = {}
+    local calls: {string} = {}
     manager:call_defered(0, function()
         table.insert(calls, "outer")
         manager:call_defered(0, function()
@@ -95,11 +95,14 @@ end)
 test.case("call_defered validates its arguments", function()
     mocks.install_app()
     local manager = DeferManager()
+    -- as: deliberately of the wrong types, for the runtime checks
+    local not_a_number = "soon" as number
+    local not_a_function = "not a function" as DeferCallback
     test.assert_error(function()
-        manager:call_defered("soon", function()
+        manager:call_defered(not_a_number, function()
         end)
     end)
     test.assert_error(function()
-        manager:call_defered(1, "not a function")
+        manager:call_defered(1, not_a_function)
     end)
 end)

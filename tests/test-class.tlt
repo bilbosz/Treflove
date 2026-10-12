@@ -1,40 +1,54 @@
 local test = require("tests.lib.test")
 
+local interface TestAnimal is Object
+    name: string
+    describe: function(self): string
+    noise: function(self): string
+end
+
+local interface TestPet is Object
+    describe: function(self): string
+    owner: function(self): string
+end
+
+local interface TestDog is TestAnimal, TestPet
+end
+
+-- An animal with a field its interface does not declare, for the
+-- independence case below.
+local interface TestAnimalWithExtra is TestAnimal
+    extra: boolean
+end
+
 -- Base classes must be fully defined before deriving from them: `class()`
 -- copies base methods at creation time (see _create_index in utils/class.tlt).
-local Animal = class("TestAnimal")
+local Animal: TestAnimal = class("TestAnimal")
 
----@param name string
-function Animal:init(name)
+Animal.init = function(self: TestAnimal, name: string)
     self.name = name
 end
 
----@return string
-function Animal:describe()
+function Animal:describe(): string
     return "animal " .. self.name
 end
 
----@return string
-function Animal:noise()
+function Animal:noise(): string
     return "..."
 end
 
-local Pet = class("TestPet")
+local Pet: TestPet = class("TestPet")
 
----@return string
-function Pet:describe()
+function Pet:describe(): string
     return "pet"
 end
 
----@return string
-function Pet:owner()
+function Pet:owner(): string
     return "adam"
 end
 
-local Dog = class("TestDog", Animal, Pet)
+local Dog: TestDog = class("TestDog", Animal, Pet)
 
----@return string
-function Dog:noise()
+function Dog:noise(): string
     return "woof"
 end
 
@@ -92,6 +106,8 @@ test.case("instances of the same class are independent", function()
     local a, b = Animal("a"), Animal("b")
     test.assert_eq(a.name, "a")
     test.assert_eq(b.name, "b")
-    a.extra = true
-    test.assert_eq(b.extra, nil)
+    -- as: a field the class does not declare, set on one instance only
+    local a_extra, b_extra = a as TestAnimalWithExtra, b as TestAnimalWithExtra
+    a_extra.extra = true
+    test.assert_eq(b_extra.extra, nil)
 end)

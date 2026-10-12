@@ -1,6 +1,7 @@
----Test suite entry point. Runs under plain LuaJIT (`luajit tests/run.lua` from
----the repository root) and inside LÖVE (`love . test`) — see test-code.sh.
----Both need the build (`./build-code.sh`): the modules are required from build/.
+-- Test suite entry point. Runs under plain LuaJIT (`luajit tests/run.lua` from
+-- the repository root) and inside LÖVE (`love . test`) — see test-code.sh.
+-- Both need the build (`./build-code.sh`): the modules, the test modules and
+-- tests/lib are Teal, required from build/.
 package.path = "build/?.lua;build/?/init.lua;" .. package.path
 
 -- Plain LuaJIT has no bundled luasocket; utils/utils.tlt only needs

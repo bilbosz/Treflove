@@ -2,7 +2,6 @@ local test = require("tests.lib.test")
 local mocks = require("tests.lib.mocks")
 local Consts = require("app.consts")
 local BackstackManager = require("utils.backstack-manager")
-local lifetime = require("lifetime")
 
 test.suite("BackstackManager")
 
@@ -15,7 +14,7 @@ end)
 test.case("back invokes and pops callbacks in LIFO order", function()
     mocks.install_app()
     local manager = BackstackManager()
-    local calls = {}
+    local calls: {string} = {}
     manager:push(function()
         table.insert(calls, "first")
     end)
@@ -49,8 +48,8 @@ test.case("back destroys the top entry before running its callback", function()
     local manager = BackstackManager()
     local bottom = manager:push(function()
     end)
-    local seen = {}
-    local top
+    local seen: {boolean} = {}
+    local top: BackstackEntry
     top = manager:push(function()
         table.insert(seen, lifetime.alive(top))
         table.insert(seen, manager:get_top() == bottom)
@@ -89,10 +88,9 @@ test.case("destroying an anchored entry's owner removes the entry from the stack
         calls = calls + 1
     end)
     local period = lifetime.token("period")
-    -- `manager:push(cb) @ period`
-    local entry = lifetime.attach(manager:push(function()
+    local entry = manager:push(function()
         calls = calls + 10
-    end), false, period)
+    end) @ period
     test.assert_eq(manager:get_top(), entry)
 
     lifetime.destroy(period)
@@ -107,8 +105,10 @@ end)
 test.case("push accepts only functions", function()
     mocks.install_app()
     local manager = BackstackManager()
+    -- as: deliberately not a function, for the runtime check
+    local not_a_function = "not a function" as BackstackManagerCb
     test.assert_error(function()
-        manager:push("not a function")
+        manager:push(not_a_function)
     end)
 end)
 

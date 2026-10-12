@@ -1,32 +1,39 @@
 local test = require("tests.lib.test")
 local mocks = require("tests.lib.mocks")
-local TextBuffer = require("ui.text-buffer")
-local TextEventManager = require("ui.text-event")
+local TextBuffer: TextBuffer = require("ui.text-buffer")
+local TextEventManager: TextEventManager = require("ui.text-event")
 
 -- Owns a TextBuffer the way TextInput does: buffer events are logged, manager
 -- events are applied to the buffer by methods registered on the manager.
----@class TestTextField
----@field buffer TextBuffer
----@field log string[] Entries are "edited:<text>", "removed_empty" or "entered"
-local TestTextField = class("TestTextField")
+local interface TestTextField is Object
+    buffer: TextBuffer
+    log: {string} -- entries are "edited:<text>", "removed_empty" or "entered"
+    register: function(self, manager: TextEventManager)
+    on_edit: function(self, text: string)
+    on_remove_empty: function(self)
+    on_enter: function(self)
+    on_append_text: function(self, text: string)
+    on_remove_characters: function(self, character_number: integer)
+    on_remove_word: function(self)
+end
 
-function TestTextField:init()
+local TestTextField: TestTextField = class("TestTextField")
+
+TestTextField.init = function(self: TestTextField)
     self.log = {}
     self.buffer = TextBuffer()
     self.buffer.edited:register(self, self.on_edit)
     self.buffer.removed_empty:register(self, self.on_remove_empty)
 end
 
----@param manager TextEventManager
-function TestTextField:register(manager)
+function TestTextField:register(manager: TextEventManager)
     manager.text_appended:register(self, self.on_append_text)
     manager.characters_removed:register(self, self.on_remove_characters)
     manager.word_removed:register(self, self.on_remove_word)
     manager.entered:register(self, self.on_enter)
 end
 
----@param text string
-function TestTextField:on_edit(text)
+function TestTextField:on_edit(text: string)
     table.insert(self.log, "edited:" .. text)
 end
 
@@ -38,18 +45,22 @@ function TestTextField:on_enter()
     table.insert(self.log, "entered")
 end
 
----@param text string
-function TestTextField:on_append_text(text)
+function TestTextField:on_append_text(text: string)
     self.buffer:append_text(text)
 end
 
----@param character_number number
-function TestTextField:on_remove_characters(character_number)
+function TestTextField:on_remove_characters(character_number: integer)
     self.buffer:remove_characters(character_number)
 end
 
 function TestTextField:on_remove_word()
     self.buffer:remove_word()
+end
+
+-- as: a FakeKeyboard has the part of the `love.keyboard` module that
+-- TextEventManager calls.
+local function as_keyboard(keyboard: mocks.FakeKeyboard): love.keyboard
+    return keyboard as love.keyboard
 end
 
 test.suite("TextBuffer")
@@ -135,7 +146,7 @@ test.case("init turns text input off and key repeat on", function()
     local keyboard = mocks.make_keyboard()
     keyboard.text_input = true
 
-    local manager = TextEventManager(keyboard --[[@as love.keyboard]] )
+    local manager = TextEventManager(as_keyboard(keyboard))
 
     test.assert_false(manager:is_text_input())
     test.assert_true(keyboard.key_repeat)
@@ -145,7 +156,7 @@ test.case("init turns text input off and key repeat on", function()
 end)
 
 test.case("text input is appended to registered fields", function()
-    local manager = TextEventManager(mocks.make_keyboard() --[[@as love.keyboard]] )
+    local manager = TextEventManager(as_keyboard(mocks.make_keyboard()))
     local field, other = TestTextField(), TestTextField()
     field:register(manager)
 
@@ -158,7 +169,7 @@ end)
 
 test.case("editing keys are routed only while text input is active", function()
     local keyboard = mocks.make_keyboard()
-    local manager = TextEventManager(keyboard --[[@as love.keyboard]] )
+    local manager = TextEventManager(as_keyboard(keyboard))
     local field = TestTextField()
     field:register(manager)
     field.buffer:set_text("one two")
@@ -183,7 +194,7 @@ test.case("editing keys are routed only while text input is active", function()
 end)
 
 test.case("unregistered fields stop receiving", function()
-    local manager = TextEventManager(mocks.make_keyboard() --[[@as love.keyboard]] )
+    local manager = TextEventManager(as_keyboard(mocks.make_keyboard()))
     local field = TestTextField()
     field:register(manager)
     manager.text_appended:unregister(field)

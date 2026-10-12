@@ -2,16 +2,18 @@ local test = require("tests.lib.test")
 local Event = require("events.event")
 
 -- An event owner for the tests; records every trigger it receives.
----@class TestEventOwner
----@field received any[]
-local TestEventOwner = class("TestEventOwner")
+local interface TestEventOwner is Object
+    received: {any} -- any: the values triggered, of several types
+    on_ping: function(self, value: any) -- any: see received
+end
 
-function TestEventOwner:init()
+local TestEventOwner: TestEventOwner = class("TestEventOwner")
+
+TestEventOwner.init = function(self: TestEventOwner)
     self.received = {}
 end
 
----@param value any
-function TestEventOwner:on_ping(value)
+function TestEventOwner:on_ping(value: any) -- any: see received
     table.insert(self.received, value)
 end
 
@@ -20,11 +22,13 @@ test.suite("Event")
 test.case("registered handlers receive the owner and trigger arguments", function()
     local event = Event()
     local first, second = TestEventOwner(), TestEventOwner()
-    local calls = {}
-    ---@param owner TestEventOwner
-    ---@param a number
-    ---@param b string
-    local function _record(owner, a, b)
+    local record Call
+        owner: TestEventOwner
+        a: number
+        b: string
+    end
+    local calls: {Call} = {}
+    local function _record(owner: TestEventOwner, a: number, b: string)
         table.insert(calls, {
             owner = owner,
             a = a,
@@ -37,7 +41,7 @@ test.case("registered handlers receive the owner and trigger arguments", functio
     event:trigger(42, "x")
 
     test.assert_eq(#calls, 2)
-    local seen = {}
+    local seen: {TestEventOwner: boolean} = {}
     for _, call in ipairs(calls) do
         seen[call.owner] = true
         test.assert_eq(call.a, 42)
@@ -76,7 +80,7 @@ test.case("registering an owner again replaces its handler", function()
     local event = Event()
     local owner = TestEventOwner()
     event:register(owner, owner.on_ping)
-    event:register(owner, function(o, value)
+    event:register(owner, function(o: TestEventOwner, value: string)
         table.insert(o.received, "replaced " .. value)
     end)
 
@@ -92,11 +96,11 @@ test.case("an owner unregistered during dispatch is skipped immediately", functi
     local a, b = TestEventOwner(), TestEventOwner()
     -- Whichever runs first unregisters the other (pairs order is unspecified),
     -- so exactly one of them may fire in the first trigger and ever after.
-    event:register(a, function(o, value)
+    event:register(a, function(o: TestEventOwner, value: string)
         table.insert(o.received, value)
         event:unregister(b)
     end)
-    event:register(b, function(o, value)
+    event:register(b, function(o: TestEventOwner, value: string)
         table.insert(o.received, value)
         event:unregister(a)
     end)
@@ -120,7 +124,7 @@ end)
 test.case("an owner can unregister itself during dispatch", function()
     local event = Event()
     local owner = TestEventOwner()
-    event:register(owner, function(o, value)
+    event:register(owner, function(o: TestEventOwner, value: string)
         table.insert(o.received, value)
         event:unregister(o)
     end)
@@ -137,7 +141,7 @@ end)
 test.case("an owner registered during dispatch is active from the next trigger", function()
     local event = Event()
     local late, trigger = TestEventOwner(), TestEventOwner()
-    event:register(trigger, function(o, value)
+    event:register(trigger, function(o: TestEventOwner, value: string)
         table.insert(o.received, value)
         event:register(late, late.on_ping)
     end)
@@ -188,7 +192,7 @@ test.case("release during dispatch drops handlers and pending registrations", fu
         event:register(late, late.on_ping)
         event:release()
     end)
-    event:register(other, function(o, value)
+    event:register(other, function(o: TestEventOwner, value: string)
         -- may run before the releaser (pairs order is unspecified), never after
         table.insert(o.received, value)
     end)
@@ -249,12 +253,11 @@ end)
 test.case("owners are held weakly", function()
     local event = Event()
     local calls = 0
-    ---@param owner TestEventOwner
-    local function _count(owner)
+    local function _count(_owner: TestEventOwner)
         calls = calls + 1
     end
     -- Weak-valued probe to confirm the owner was really collected.
-    local probe = setmetatable({}, {
+    local probe: {string: TestEventOwner} = setmetatable({}, {
         __mode = "v"
     })
 

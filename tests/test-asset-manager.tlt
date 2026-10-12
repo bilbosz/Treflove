@@ -1,20 +1,24 @@
 local test = require("tests.lib.test")
 local mocks = require("tests.lib.mocks")
-local AssetManager = require("data.asset-manager")
-local Connection = require("networking.connection")
-local lifetime = require("lifetime")
+local AssetManager: AssetManager = require("data.asset-manager")
+local Connection: Connection = require("networking.connection")
+
+-- What AssetManager needs of a session: a Session by type, with only its
+-- connection behind it.
+local interface TestSession is Session
+end
 
 -- `log` records the session's release and every handler a dying procedure
 -- unregisters, with the number of entries the manager still holds for the
 -- session at that moment.
-local log = {}
-local manager, session
+local log: {string} = {}
+local manager: AssetManager
+local session: TestSession
 
----@param s table
----@return integer
-local function count_entries(s)
+local function count_entries(s: Session): integer
     local n = 0
-    for _, rps in ipairs({manager._upload_asset_rp, manager._download_asset_rp, manager._download_missing_assets_rp}) do
+    -- as: three tables of procedures by session, counted alike
+    for _, rps in ipairs({manager._upload_asset_rp as {Session: RemoteProcedure}, manager._download_asset_rp as {Session: RemoteProcedure}, manager._download_missing_assets_rp as {Session: RemoteProcedure}}) do
         if rps[s] ~= nil then
             n = n + 1
         end
@@ -22,26 +26,27 @@ local function count_entries(s)
     return n
 end
 
-local TestLoggingConnection = class("TestAssetLoggingConnection", Connection)
+local interface TestAssetLoggingConnection is Connection
+end
 
----@param id string
-function TestLoggingConnection:unregister_request_handler(id)
+local TestLoggingConnection: TestAssetLoggingConnection = class("TestAssetLoggingConnection", Connection)
+
+function TestLoggingConnection:unregister_request_handler(id: string)
     table.insert(log, "  unregister " .. id .. ", entries " .. count_entries(session))
     Connection.unregister_request_handler(self, id)
 end
 
--- What AssetManager needs of a session.
-local TestSession = class("TestSession")
+local TestSession: TestSession = class("TestSession")
 
-function TestSession:init(connection)
+TestSession.init = function(self: TestSession, connection: Connection)
     self._connection = connection
 end
 
-function TestSession:get_connection()
+function TestSession:get_connection(): Connection
     return self._connection
 end
 
-function TestSession:release(reason)
+function TestSession:release(reason?: LifetimeReason)
     table.insert(log, "TestSession:release(" .. tostring(reason) .. "), entries " .. count_entries(self))
 end
 
@@ -54,7 +59,7 @@ test.case("a session's procedures die with it, newest first, after its entries a
     manager = AssetManager()
     session = TestSession(connection)
     manager:register_session(session)
-    local procedures = {manager._upload_asset_rp[session], manager._download_asset_rp[session], manager._download_missing_assets_rp[session]}
+    local procedures: {RemoteProcedure} = {manager._upload_asset_rp[session], manager._download_asset_rp[session], manager._download_missing_assets_rp[session]}
     log = {}
 
     lifetime.destroy(session)
@@ -71,8 +76,10 @@ test.case("a session's procedures die with it, newest first, after its entries a
     for _, rp in ipairs(procedures) do
         test.assert_false(lifetime.alive(rp))
     end
-    test.assert_eq(next(manager._upload_asset_rp), nil)
-    test.assert_eq(next(manager._download_asset_rp), nil)
-    test.assert_eq(next(manager._download_missing_assets_rp), nil)
+    -- as: tl rejects `next` on these maps (`in map key: got <any type>`);
+    -- the emptiness check is the same on any table
+    test.assert_eq(next(manager._upload_asset_rp as {any: any}), nil)
+    test.assert_eq(next(manager._download_asset_rp as {any: any}), nil)
+    test.assert_eq(next(manager._download_missing_assets_rp as {any: any}), nil)
     test.assert_true(lifetime.alive(connection), "the connection does not depend on the session")
 end)
