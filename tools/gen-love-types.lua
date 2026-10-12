@@ -27,7 +27,6 @@
 --   "Variant", "any", "light userdata", "cdata"
 --                          any: these are LÖVE's dynamically typed values
 --                          (channel messages, event arguments, touch ids)
-
 package.path = "lib/love-api/?.lua;" .. package.path
 
 local api = require("love_api")

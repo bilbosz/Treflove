@@ -1,7 +1,50 @@
 {
+    // .tlt is Teal with the lifetime extension (docs/types.md,
+    // docs/lifetime.md). It is associated with Lua, as .lt is in
+    // lua-lifetime: the Lua language server (sumneko.lua) reads it through
+    // the plugin below, so .tlt files get completion, hover, go to
+    // definition and diagnostics, untyped. .d.tl, the declaration
+    // fragments, are Teal (the "Teal" extension, pdesaulniers.vscode-teal,
+    // highlights them). Neither checker knows the whole: ./build-code.sh is
+    // the type checker (docs/development.md, "Editor Support").
     "files.associations": {
         "*.luacheckrc": "lua",
-        "*.tlt": "teal",
+        "*.tlt": "lua",
         "*.d.tl": "teal"
     },
+
+    // lua-format (koihik.vscode-lua-format) formats the Lua files with the
+    // config in .lua-format (./format-code.sh formats them all). It reads
+    // Lua only, and .tlt is Teal: never format a .tlt file with it.
+    "vscode-lua-format.configPath": "",
+    "vscode-lua-format.binaryPath": "/usr/local/bin/lua-format",
+    "[lua]": {
+        "editor.defaultFormatter": "koihik.vscode-lua-format",
+        "editor.formatOnSave": false
+    },
+
+    // sumneko.lua (lua-language-server). The server cannot parse Teal or
+    // `@`: editor/luals/plugin.lua rewrites a .tlt file into plain Lua of
+    // the same shape before the server parses it (the extension asks once
+    // whether to trust the plugin). Teal's standard library is Lua 5.4's
+    // (docs/types.md), hence the version; the few Lua 5.1 builtins the
+    // Lua files use are listed as globals.
+    "Lua.runtime.version": "Lua 5.4",
+    "Lua.runtime.plugin": "editor/luals/plugin.lua",
+
+    // A `require("a.b")` resolves to the source a/b.tlt (the build's
+    // build/a/b.lua is ignored below), and `require("lifetime")` to the
+    // runtime in the lua-lifetime submodule, loaded as a library.
+    "Lua.runtime.path": ["?.lua", "?/init.lua", "?.tlt"],
+    "Lua.runtime.pathStrict": false,
+    "Lua.workspace.library": ["lib/lua-lifetime/lifetime"],
+    "Lua.workspace.ignoreDir": ["build", "lib"],
+    "Lua.workspace.checkThirdParty": false,
+
+    // The globals of the declaration fragments (app/app.d.tl, utils/class.d.tl,
+    // utils/table.d.tl, utils/dump.d.tl; conf.lua keeps `config`), so that
+    // neither their definitions (`global function class`, rewritten to a
+    // plain `function class`) nor their uses are reported; LÖVE; and Lua
+    // 5.1's builtins the Lua files use.
+    "Lua.diagnostics.globals": ["app", "config", "dump", "love", "class", "abstract", "assert_type", "assert_unreachable", "get_class_of", "get_class_name_of", "is_instance_of", "prev", "ripairs", "cipairs", "cripairs", "cpairs", "toboolean", "loadstring", "setfenv", "unpack"]
 }

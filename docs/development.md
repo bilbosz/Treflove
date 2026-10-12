@@ -37,7 +37,9 @@ files:
 A module is required by its dotted path (`require("utils.class")`), which
 resolves to the built `build/utils/class.lua`. The only Lua sources are
 `main.lua`, `conf.lua` and `tests/run.lua`, which put `build/` first on the
-require path, and the build tools under `tools/`; every module, test
+require path, the build tools under `tools/`, and the editor support
+(`.vscode/launch.lua`, the debugger script, and `editor/luals/`, the
+language server plugin; "Editor Support" below); every module, test
 module and test helper is a `.tlt`. The submodules under `lib/` are the toolchain:
 [lib/tl](../lib/tl) (the Teal compiler, pinned to master `c6b986e`, since
 the 0.24.8 release needs compat53 under Lua 5.1 and crashes without it),
@@ -109,12 +111,94 @@ Build, then run the automated test suite:
 ./test-code.sh
 ```
 
-The `test-code.sh` script builds, then prefers plain `luajit` (fast, headless) and falls back to `love . test` (runs the same suite inside LÖVE with the real `love.*` APIs). Both must pass; after a build, run the LÖVE one with:
+The `test-code.sh` script builds, checks that the language server plugin rewrites every `.tlt` file into valid Lua (`editor/luals/check.lua`, "Editor Support"), then prefers plain `luajit` (fast, headless) and falls back to `love . test` (runs the same suite inside LÖVE with the real `love.*` APIs). Both must pass; after a build, run the LÖVE one with:
 ```bash
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy love . test
 ```
 
+Format the Lua files in place - `main.lua`, `conf.lua`, `tests/run.lua`, `tools/` and `.vscode/launch.lua` - with [lua-format](https://github.com/Koihik/LuaFormatter) (config in [.lua-format](../.lua-format); `build/`, `lib/` and the data file `server/save.lua` are left alone):
+```bash
+./format-code.sh [FILE.lua...]
+```
+
+Nothing formats the Teal sources: `lua-format` reads Lua only, and no formatter reads Teal with `@` and `!@`. The build and the lint do not check formatting.
+
 Verify changes with `./build-code.sh`, `./test-code.sh`, `love . test`, `./lint-code.sh`, and by running the app (`./run.sh`; headless server: `SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 5 love . server localhost 8080`; the client needs a window, so without a display run it under Xvfb: `xvfb-run -a love . client localhost 8080`).
+
+## Editor Support
+
+For VS Code; [.vscode/extensions.json](../.vscode/extensions.json) lists
+the extensions, [.vscode/settings.json](../.vscode/settings.json) the
+settings. Nothing under `.vscode/` is part of the app or the build. The
+same shape as lua-lifetime's editor support
+(`lib/lua-lifetime/editor/README.md`), adapted to Teal and LÖVE.
+
+- **Reading `.tlt`.** `.tlt` is associated with Lua, as `.lt` is in
+  lua-lifetime, and the Lua language server (`sumneko.lua`) reads it
+  through [editor/luals/plugin.lua](../editor/luals/plugin.lua): the
+  server parses Lua only, so the plugin's `OnSetText` rewrites a `.tlt`
+  file into plain Lua of the same shape before the server parses it, as
+  diffs the server maps every position back through, and `.tlt` files
+  get completion, hover, go to definition and diagnostics. The rewrite is
+  lua-lifetime's for `.lt` (`@` and `!@` become `or`, a statement-form
+  anchor `local _ = ...`, the `lifetime` header is inserted) plus the
+  stripping of Teal's types: the plugin parses the file with the
+  transpiler's own parser and Teal dialect (`lib/lua-lifetime/lifetime/`),
+  through a dialect that records every token the Teal dialect reads as a
+  type, and deletes them; a type declaration becomes `Name = {}`,
+  `global` goes, a cast goes with its `as`. The rewrite is for analysis
+  only and is never run; the plugin's header lists every rule. The
+  analysis is Lua's, untyped: the `.d.tl` fragments are not read, and
+  `./build-code.sh` is the type checker. While a line is being typed the
+  parser rejects the file and the server sees it raw, until the line is
+  complete. The server resolves `require("a.b")` to `a/b.tlt`
+  (`Lua.runtime.path`) and `require("lifetime")` to the runtime in the
+  submodule, loaded as a library; `build/` and the rest of `lib/` are
+  ignored. The first time the extension loads the plugin it asks whether
+  to trust it. [editor/luals/check.lua](../editor/luals/check.lua) runs
+  the rewrite over `.tlt` files and checks that each result compiles
+  (`./test-code.sh` runs it over all of them; `--print` shows a rewrite).
+  `.d.tl` stays associated with Teal, which the "Teal" extension
+  (`pdesaulniers.vscode-teal`) highlights; its checker reads a fragment
+  alone, so what it reports there is not the build's verdict either.
+- **Formatting.** `koihik.vscode-lua-format` is the formatter of the Lua
+  files, with the config in [.lua-format](../.lua-format) and the
+  `lua-format` binary of [REQUIREMENTS.md](../REQUIREMENTS.md);
+  `./format-code.sh` (the task "Format Lua files") formats them all. The
+  Teal sources have no formatter ("Development Commands").
+- **Building.** The task "Build" runs `./build-code.sh`; its problem
+  matcher turns the `FILE:LINE:COL: message` lines into Problems entries,
+  one per error, on the `.tlt` or `.d.tl` line.
+- **Running.** "Launch" ([.vscode/launch.json](../.vscode/launch.json))
+  runs `./run.sh` in a terminal through `discretegames.f5anything`: a
+  build, then a server and a client, with no debugger.
+- **Debugging.** The "Debug ..." configurations run under the "Local Lua
+  Debugger" extension (`tomblind.local-lua-debugger-vscode`), each after
+  the Build task: "Debug tests (LuaJIT)" is `luajit tests/run.lua`,
+  "Debug tests (LÖVE)" is `love . test`, "Debug server" and "Debug
+  client" are the two halves of `./run.sh` (start the server, then the
+  client, as two sessions; they are not a compound, since two builds at
+  once would race in `build/`). A breakpoint set in a `.tlt` file stops
+  there, in a method called from a coroutine too; the stack and the
+  tracebacks name the `.tlt` files and the locals shown are the generated
+  chunk's. How: with the extension's variable set
+  (`LOCAL_LUA_DEBUGGER_VSCODE=1`), `conf.lua` (the first chunk LÖVE runs)
+  and `tests/run.lua` load [.vscode/launch.lua](../.vscode/launch.lua)
+  before anything else. It starts the debugger, puts back the host's
+  `error`, `assert`, `debug.traceback`, `coroutine.resume` and
+  `coroutine.wrap` (the debugger's replacements stop at every raise,
+  caught or not, which the lifetime runtime and the `_try_` constructors
+  of `utils/media.tlt` do not survive; the script says so in full), and
+  inserts a `package.loaders` searcher that loads each built module under
+  the name of its source (`build/utils/tree.lua` as `@utils/tree.tlt`,
+  the copied runtime as `lib/lua-lifetime/lifetime/init.lua`), which the
+  build keeps line for line. Three limits follow: the debugger does not
+  stop on an error (LÖVE's error handler or the test runner reports it,
+  with its traceback, as always), `"breakInCoroutines"` must stay
+  `false`, and the networking threads (`networking/detail/`, Lua states
+  of their own started from `build/`) are not debugged. On Windows, the
+  extension needs `t.console = false`, which `conf.lua` sets to `true`
+  for the server; elsewhere the setting has no effect.
 
 ## Continuous Integration
 

@@ -12,11 +12,14 @@ std = {
         "arg",
         "assert",
         "collectgarbage",
+        "coroutine",
         "debug",
+        "dofile",
         "error",
         "getmetatable",
         "io",
         "ipairs",
+        "loadfile",
         "loadstring",
         "math",
         "next",
@@ -38,9 +41,9 @@ std = {
         "xpcall",
     },
 
-    -- What the Lua files (main.lua, conf.lua, tests/run.lua, tools/) use
-    -- beyond the standard library; the Teal modules are checked by
-    -- ./build-code.sh.
+    -- What the Lua files (main.lua, conf.lua, tests/run.lua, tools/,
+    -- .vscode/launch.lua, editor/) use beyond the standard library; the
+    -- Teal modules are checked by ./build-code.sh.
     globals = {
         "assert_unreachable",
         -- conf.lua keeps LÖVE's configuration table
@@ -49,6 +52,19 @@ std = {
         -- tests/run.lua installs a socket stub via package.preload
         "package"
     }
+}
+
+files["editor/luals/plugin.lua"] = {
+    -- The language server's plugin (docs/development.md, "Editor
+    -- Support"): OnSetText is the global the server looks up; log is the
+    -- server's logger.
+    globals = {"OnSetText"},
+    read_globals = {"log"}
+}
+
+files["editor/luals/check.lua"] = {
+    -- Runs under Lua 5.1 (setfenv) and the server's Lua 5.4 (load).
+    read_globals = {"setfenv", "load"}
 }
 
 -- `lifetime` is not a global: the code the transpiler generates binds it

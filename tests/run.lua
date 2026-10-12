@@ -4,6 +4,14 @@
 -- tests/lib are Teal, required from build/.
 package.path = "build/?.lua;build/?/init.lua;" .. package.path
 
+-- Under the debugger of VS Code's "Local Lua Debugger" extension
+-- (.vscode/launch.json): start it and load every module under its source's
+-- name, so breakpoints in .tlt files stop there (.vscode/launch.lua). Under
+-- LÖVE, conf.lua has done it already.
+if os.getenv("LOCAL_LUA_DEBUGGER_VSCODE") == "1" and not love then
+    dofile(".vscode/launch.lua")
+end
+
 -- Plain LuaJIT has no bundled luasocket; utils/utils.tlt only needs
 -- `socket.gettime`, so provide a stub before anything requires it.
 local has_socket = pcall(require, "socket")

@@ -1,5 +1,13 @@
 {
     "recommendations": [
+        // Teal: highlights .tlt and .d.tl (see settings.json)
+        "pdesaulniers.vscode-teal",
+        // running and debugging: the "Debug ..." configurations of launch.json
+        "tomblind.local-lua-debugger-vscode",
+        // lua language server, for the Lua files
+        "sumneko.lua",
+        // lua formatter, requires /usr/local/bin/lua-format (REQUIREMENTS.md)
+        "koihik.vscode-lua-format",
         // running ./run.sh as launch configuration
         "discretegames.f5anything",
         // AI support

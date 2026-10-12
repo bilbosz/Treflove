@@ -7,6 +7,7 @@
 - `love` - `sudo apt install love` or download from https://love2d.org/
 - `luacheck` - `sudo apt install lua-check` (lints the few `.lua` files; the Teal sources are checked by the build)
 - `git` - the build needs the submodules: `git submodule update --init`
+- `lua-format` (optional) - `luarocks install --server=https://luarocks.org/dev luaformatter` (formats the few `.lua` files, `./format-code.sh` and the VS Code formatter; the Teal sources have no formatter)
 
 The Teal compiler (`lib/tl`) and the lifetime transpiler and runtime
 (`lib/lua-lifetime`) are submodules the build runs from the checkout; the
@@ -33,6 +34,10 @@ LÖVE API description (`lib/love-api`) is a submodule only
 ## lint-code.sh
 - `bash`
 - `luacheck`
+
+## format-code.sh
+- `bash`
+- `lua-format`
 
 ## test-code.sh
 - `bash`

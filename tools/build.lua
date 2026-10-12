@@ -30,7 +30,6 @@
 -- the source line and the column the generated Teal's) and the build exits
 -- with status 1. A `tl` warning (an unused variable, a hint) is an error
 -- too, except the two the class recipe causes (see is_expected_warning). Success prints one line, `N modules built`.
-
 local RUN_PATH = "lib/lua-lifetime/?.lua;lib/lua-lifetime/?/init.lua;lib/tl/?.lua;"
 package.path = RUN_PATH .. package.path
 
@@ -146,7 +145,10 @@ local function order_fragments(fragments)
     local deps = {}
     for _, path in ipairs(fragments) do
         local list = {}
-        for _, kind in ipairs({"interface", "record"}) do
+        for _, kind in ipairs({
+            "interface",
+            "record"
+        }) do
             for bases in texts[path]:gmatch("global%s+" .. kind .. "%s+[%w_]+%s+is%s+([^\n]*)") do
                 for name in bases:gmatch("[%a_][%w_%.]*") do
                     local from = declared_in[name]
@@ -195,7 +197,9 @@ local function collect_global_types(text)
 end
 
 local function write_env_file(fragments)
-    local parts = {ENV_HEADER}
+    local parts = {
+        ENV_HEADER
+    }
     local line = 1
     for _, path in ipairs(fragments) do
         local text = read_file(path)
@@ -329,7 +333,10 @@ local function report_result(result, filename)
         return
     end
     reported[result] = true
-    for _, list in ipairs({result.syntax_errors or {}, result.type_errors or {}}) do
+    for _, list in ipairs({
+        result.syntax_errors or {},
+        result.type_errors or {}
+    }) do
         for _, e in ipairs(list) do
             report(format_error(e, filename))
         end
@@ -378,7 +385,10 @@ local function main(argv)
     if #argv == 0 then
         os.execute("rm -rf " .. shell_quote(BUILD))
     end
-    local outputs = {ENV_FILE, BUILD .. "/lifetime/init.lua"}
+    local outputs = {
+        ENV_FILE,
+        BUILD .. "/lifetime/init.lua"
+    }
     for _, m in ipairs(all_modules) do
         local base = m:gsub("%.tlt$", "")
         outputs[#outputs + 1] = BUILD .. "/tl/" .. base .. ".tl"
