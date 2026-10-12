@@ -1,0 +1,33 @@
+-- Shows one screen at a time: `show` hides the current screen and shows the
+-- next. It holds the current screen but does not own it: a screen is dropped
+-- (and collected) or destroyed by whoever made it, after it was replaced
+-- (docs/lifetime.md, "Screens").
+local ScreenManager: ScreenManager = class("ScreenManager")
+
+ScreenManager.init = function(self: ScreenManager)
+    self._screen = nil
+    if app.resize_manager then
+        app.resize_manager.resized:register(self, self.on_resize)
+    end
+end
+
+function ScreenManager:show(screen: Screen)
+    if self._screen then
+        self._screen:hide()
+    end
+    self._screen = screen
+    screen:show()
+end
+
+function ScreenManager:on_resize(w: number, h: number)
+    if not self._screen then
+        return
+    end
+    self._screen:on_resize(w, h)
+end
+
+function ScreenManager:get_screen(): Screen
+    return self._screen
+end
+
+return ScreenManager

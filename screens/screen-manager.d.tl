@@ -1,4 +1,4 @@
--- screens/screen-manager.lua (still Lua): shows one screen at a time.
+-- screens/screen-manager.tlt: shows one screen at a time.
 global interface ScreenManager is Object
     _screen: Screen
     show: function(self, screen: Screen)
