@@ -2,7 +2,7 @@
 
 #==============================================================================
 # Script: test-code.sh
-# Purpose: Run the automated test suite in tests/
+# Purpose: Build, then run the automated test suite in tests/
 # Usage: ./test-code.sh
 #
 # Prefers plain LuaJIT (fast, headless); falls back to running the suite
@@ -10,6 +10,8 @@
 #==============================================================================
 
 cd "$(dirname "$0")" || exit 1
+
+./build-code.sh || exit 1
 
 if command -v luajit > /dev/null 2>&1; then
     exec luajit tests/run.lua

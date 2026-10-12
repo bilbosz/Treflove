@@ -2,7 +2,9 @@
 
 #==============================================================================
 # Script: lint-code.sh
-# Purpose: Run luacheck linting (config in .luacheckrc)
+# Purpose: Run luacheck over the remaining .lua files (config in .luacheckrc;
+#          build/ and lib/ are excluded there). Teal (.tlt) is checked by
+#          ./build-code.sh.
 # Usage: ./lint-code.sh [target_path]
 #        target_path defaults to the whole project if not specified
 # Examples:

@@ -1,1 +1,0 @@
-find -type f -iname '*.lua' | rg -vP -e 'annotations/' |  xargs -n1 lua-format -i

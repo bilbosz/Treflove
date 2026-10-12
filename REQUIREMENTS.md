@@ -3,36 +3,30 @@
 ## Installation
 
 ### External Tools
-- `lua-format` - `npm install -g lua-format`
+- `luajit` - `sudo apt install luajit` (runs the build and the headless tests; `lua5.1` works for the build too)
 - `love` - `sudo apt install love` or download from https://love2d.org/
-- `lua-language-server` - `sudo apt install lua-language-server`
 - `luacheck` - `sudo apt install lua-check`
-- `jq` - `sudo apt install jq`
-- `rg` (ripgrep) - `sudo apt install ripgrep`
-- `luajit` (optional, for fast headless tests) - `sudo apt install luajit`
+- `git` - the build needs the submodules: `git submodule update --init`
+
+The Teal compiler (`lib/tl`), the lifetime transpiler and runtime
+(`lib/lua-lifetime`) and the LÖVE API description (`lib/love-api`) are
+submodules; nothing else is installed.
 
 ### Standard Unix Utilities
-- `bash`, `find`, `xargs`, `jobs`, `kill`, `sleep`, `mktemp`, `readlink`
+- `bash`, `find`, `ls`, `mkdir`, `rm`, `xargs`, `jobs`, `kill`, `sleep`
 
-## format-code.sh
-- `find`
-- `xargs`
-- `rg`
-- `lua-format`
+## build-code.sh
+- `bash`
+- `luajit` (or `lua5.1`)
+- `find`, `ls`, `mkdir`, `rm`
 
 ## run.sh
 - `bash`
+- `luajit` (the build)
 - `love`
 - `jobs`
 - `kill`
 - `sleep`
-
-## diagnose-code.sh
-- `bash`
-- `lua-language-server`
-- `mktemp`
-- `readlink`
-- `jq`
 
 ## lint-code.sh
 - `bash`
@@ -40,4 +34,7 @@
 
 ## test-code.sh
 - `bash`
-- `luajit` (preferred) or `love` (fallback)
+- `luajit` (the build; also preferred for the tests) and `love` (fallback for the tests)
+
+## tools/gen-love-types.lua
+- `luajit` (regenerates `types/love.d.tl` from `lib/love-api`)
