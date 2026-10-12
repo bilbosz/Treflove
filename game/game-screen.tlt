@@ -1,37 +1,33 @@
-local Model = require("data.model")
-local FormScreen = require("ui.form-screen")
-local Page = require("game.page.page")
-local TokenPanel = require("game.token.token-panel")
-local AssetsPanel = require("game.assets.assets-panel")
-local QuickAccessPanel = require("game.quick-access-panel")
+local AssetsPanel: AssetsPanel = require("game.assets.assets-panel")
 local Consts = require("app.consts")
-local UserMenuScreen = require("screens.user-menu-screen")
+local FormScreen: FormScreen = require("ui.form-screen")
+local Model: Model = require("data.model")
+local Page: Page = require("game.page.page")
+local QuickAccessPanel: QuickAccessPanel = require("game.quick-access-panel")
+local TokenPanel: TokenPanel = require("game.token.token-panel")
+local UserMenuScreen: UserMenuScreen = require("screens.user-menu-screen")
 local table_utils = require("utils.table")
-local lifetime = require("lifetime")
 
----@class GameScreen: Model, FormScreen
----@field _page Page
----@field _token_panel TokenPanel
----@field _assets_panel AssetsPanel
----@field _panel Panel|nil Currently selected side panel
----@field _panels Panel[]
----@field _quick_access_panel QuickAccessPanel
-local GameScreen = class("GameScreen", Model, FormScreen)
+-- The game view: the page, the side panels and the quick-access bar. Made
+-- and owned by the session's GameDataRp (`GameScreen(...) @ self`), and
+-- destroyed by its own back entry once the user menu is shown again
+-- (docs/lifetime.md, "Screens").
+local GameScreen: GameScreen = class("GameScreen", Model, FormScreen)
 
----@param data table Game data (a `game` entry of the persisted state)
-function GameScreen:init(data)
+GameScreen.init = function(self: GameScreen, data: GameScreenData)
     Model.init(self, data)
     FormScreen.init(self)
 
     self._page = Page(app.data.pages[data.page], self, app.width * 0.8, app.height)
 
     self._token_panel = TokenPanel(self, app.width * 0.2, app.height)
-    -- owned: its release runs while it is alive, before the panel's own
-    -- (`AssetsPanel(...) @ self`; docs/lifetime.md)
-    self._assets_panel = lifetime.attach(AssetsPanel(self, app.width * 0.2, app.height), false, self)
+    -- Owned (lua-lifetime docs/02-semantics.md, "Cascading death"): the
+    -- panel's preview area undoes its drop registration in its release,
+    -- which runs when the screen dies, after the screen's own release.
+    self._assets_panel = AssetsPanel(self, app.width * 0.2, app.height) @ self
 
     self._panel = self._assets_panel
-    local panels = {
+    local panels: {Panel} = {
         self._token_panel,
         self._assets_panel
     }
@@ -47,24 +43,27 @@ function GameScreen:init(data)
     self._quick_access_panel:add_entry("Assets", self._assets_panel)
 end
 
+-- The back entry returns to the user menu, then destroys the screen: a
+-- screen dies only after it has been replaced (docs/lifetime.md,
+-- "Screens"), and the one destroy ends the screen's release, then what it
+-- owns ("Cascading death"). The entry is anchored to the screen, so a
+-- screen that dies otherwise (with its session, on a disconnect) takes
+-- its entry off the back stack ("Back Navigation"); `back()` destroys the
+-- entry before running it.
 function GameScreen:show()
     self:on_resize(app.width, app.height)
     FormScreen.show(self)
     app.backstack_manager:push(function()
         app.screen_manager:show(UserMenuScreen(app.session))
-        -- The screen owns its panels (`@ self`): one destroy releases the
-        -- whole tree, owner first (docs/lifetime.md).
         lifetime.destroy(self)
-    end)
+    end) @ self
 end
 
 function GameScreen:on_selection_change()
     self._token_panel:on_selection_change()
 end
 
----@param w number
----@param h number
-function GameScreen:on_resize(w, h)
+function GameScreen:on_resize(w: number, h: number)
     self._page:set_position(0, Consts.QUICK_ACCESS_PANEL_HEIGHT)
     self._page:set_size(w * 0.8, h - Consts.QUICK_ACCESS_PANEL_HEIGHT)
 
@@ -78,23 +77,19 @@ function GameScreen:on_resize(w, h)
     self._assets_panel:on_resize(w * 0.2, h)
 end
 
----@return Page
-function GameScreen:get_page()
+function GameScreen:get_page(): Page
     return self._page
 end
 
----@return Selection
-function GameScreen:get_selection()
+function GameScreen:get_selection(): Selection
     return self._page:get_selection()
 end
 
----@return TokenPanel
-function GameScreen:get_token_panel()
+function GameScreen:get_token_panel(): TokenPanel
     return self._token_panel
 end
 
----@param panel Panel
-function GameScreen:select_panel(panel)
+function GameScreen:select_panel(panel: Panel)
     assert(table_utils.find_array_idx(self._panels, panel))
     self:disable_panel()
     self._panel = panel

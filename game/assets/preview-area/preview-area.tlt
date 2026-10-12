@@ -1,24 +1,17 @@
-local ClippingRectangle = require("controls.clipping-rectangle")
-local Control = require("controls.control")
-local Text = require("controls.text")
+local ClippingRectangle: ClippingRectangle = require("controls.clipping-rectangle")
 local Consts = require("app.consts")
-local Rectangle = require("controls.rectangle")
+local Control: Control = require("controls.control")
+local Rectangle: Rectangle = require("controls.rectangle")
+local Text: Text = require("controls.text")
 
----@class PreviewArea: ClippingRectangle
----@field parent AssetsPanel
----@field _preview_labels Control
----@field _drop_file_labels Control
----@field content_parent Control Parent for preview components, centered in the area
----@field _preview PreviewImageArea|PreviewAudioArea|nil
-local PreviewArea = class("PreviewArea", ClippingRectangle)
+-- The drop target and preview of the assets panel: a file dropped on it is
+-- handed to the panel, which shows its content here.
+local PreviewArea: PreviewArea = class("PreviewArea", ClippingRectangle)
 
 local PREVIEW_STRING = "Preview"
 local DROP_FILE_STRING = "Drop File Here"
 
----@param self PreviewArea
----@param str string
----@return Control
-local function _create_background_labels(self, str)
+local function _create_background_labels(self: PreviewArea, str: string): Control
     local labels = Control(self)
 
     local measure_label = Text(nil, str)
@@ -31,7 +24,7 @@ local function _create_background_labels(self, str)
     local ver = math.ceil(desired_h / (h + Consts.PADDING))
     local labels_w, labels_h = hor * (w + Consts.PADDING), ver * (h + Consts.PADDING)
 
-    local x, y = 0, 0
+    local x, y: number, number = 0, 0
     for i = 1, ver do
         for _ = 1, hor do
             local label = Text(labels, str, Consts.BACKGROUND_COLOR)
@@ -51,9 +44,7 @@ local function _create_background_labels(self, str)
     return labels
 end
 
----@param self PreviewArea
----@param labels Control
-local function _set_labels(self, labels)
+local function _set_labels(self: PreviewArea, labels: Control)
     for _, v in ipairs({
         self._preview_labels,
         self._drop_file_labels
@@ -63,8 +54,7 @@ local function _set_labels(self, labels)
     labels:set_enabled(true)
 end
 
----@param self PreviewArea
-local function _create_background(self)
+local function _create_background(self: PreviewArea)
     local w, h = self:get_size()
     Rectangle(self, w, h, Consts.BUTTON_NORMAL_COLOR)
     self._preview_labels = _create_background_labels(self, PREVIEW_STRING)
@@ -73,8 +63,7 @@ local function _create_background(self)
     _set_labels(self, self._drop_file_labels)
 end
 
----@param self PreviewArea
-local function _create_content_parent(self)
+local function _create_content_parent(self: PreviewArea)
     local control = Control(self)
     self.content_parent = control
 
@@ -82,10 +71,7 @@ local function _create_content_parent(self)
     control:set_position(w * 0.5, h * 0.5)
 end
 
----@param parent Control|nil
----@param width number
----@param height number
-function PreviewArea:init(parent, width, height)
+PreviewArea.init = function(self: PreviewArea, parent: Control, width: number, height: number)
     ClippingRectangle.init(self, parent, width, height)
     _create_background(self)
     _create_content_parent(self)
@@ -96,22 +82,17 @@ function PreviewArea:init(parent, width, height)
     app.file_system_drop_event_manager:set_receive_through(self, true)
 end
 
----@param x number
----@param y number
----@param dropped_file love.DroppedFile
-function PreviewArea:on_file_system_drop(x, y, dropped_file)
+function PreviewArea:on_file_system_drop(_x: number, _y: number, dropped_file: love.DroppedFile)
     local ok, err = dropped_file:open("r")
     assert(ok, err)
     self.parent:set_file(dropped_file)
     dropped_file:close()
 end
 
----@param love_content LoveMedium
----@param PreviewComponent PreviewImageArea|PreviewAudioArea
-function PreviewArea:set_content(love_content, PreviewComponent)
+function PreviewArea:set_content(love_content: LoveMedium, preview_component: PreviewComponent)
     self:reset()
     _set_labels(self, self._preview_labels)
-    self._preview = PreviewComponent(self, love_content)
+    self._preview = preview_component(self, love_content)
 end
 
 function PreviewArea:reset()
@@ -121,7 +102,11 @@ function PreviewArea:reset()
     end
 end
 
-function PreviewArea:release()
+-- The destructor undoes the area's own drop registration, which `init`
+-- made; the area is anchored to its panel (`PreviewArea(...) @ self` in
+-- game/assets/assets-panel.tlt) and dies with it (docs/lifetime.md,
+-- "Ownership").
+function PreviewArea:release(_reason?: LifetimeReason)
     app.file_system_drop_event_manager.file_dropped:unregister(self)
     app.file_system_drop_event_manager:set_receive_through(self, false)
 end

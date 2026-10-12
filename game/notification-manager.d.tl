@@ -1,4 +1,4 @@
--- game/notification-manager.lua (still Lua): timed notifications, drawn by
+-- game/notification-manager.tlt: timed notifications, drawn by
 -- the NotificationPanel.
 global record Notification
     message: string

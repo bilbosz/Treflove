@@ -1,12 +1,9 @@
 local Consts = require("app.consts")
 local Control: Control = require("controls.control")
+local Logo: Logo = require("game.logo")
 local Rectangle: Rectangle = require("controls.rectangle")
 local Screen: Screen = require("screens.screen")
 local Text: Text = require("controls.text")
-
--- game/logo is still Lua (see screens/menu-screen.tlt).
-local LOGO_MODULE = "game.logo"
-local Logo = require(LOGO_MODULE) as Logo
 
 -- A message under a spinning logo.
 local WaitingScreen: WaitingScreen = class("WaitingScreen", Screen)

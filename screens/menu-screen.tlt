@@ -1,14 +1,9 @@
 local Consts = require("app.consts")
 local Control: Control = require("controls.control")
 local FormScreen: FormScreen = require("ui.form-screen")
+local Logo: Logo = require("game.logo")
 local Rectangle: Rectangle = require("controls.rectangle")
 local Text: Text = require("controls.text")
-
--- game/logo is still Lua, so it is required by a computed name, which the
--- checker does not resolve, and cast to its fragment's type (docs/types.md);
--- `local Logo: Logo = require("game.logo")` once it is converted.
-local LOGO_MODULE = "game.logo"
-local Logo = require(LOGO_MODULE) as Logo
 
 -- A form of menu entries under the logo and a title.
 local MenuScreen: MenuScreen = class("MenuScreen", FormScreen)

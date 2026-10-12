@@ -1,4 +1,5 @@
--- game/token/token.lua (still Lua): a token on a page.
+-- game/token/token.tlt: a token on a page (constructor:
+-- `Token(data: TokenData, parent: Control)`).
 
 -- A token of the persisted state (GameState.tokens), the model data of a
 -- Token.

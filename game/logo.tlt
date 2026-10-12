@@ -1,14 +1,11 @@
-local DrawableControl = require("controls.drawable-control")
+local ClippingMask: ClippingMask = require("controls.clipping-mask")
 local Consts = require("app.consts")
-local ClippingMask = require("controls.clipping-mask")
+local DrawableControl: DrawableControl = require("controls.drawable-control")
 
----@class Logo: DrawableControl
----@field _mask ClippingMask
----@field color number[] Foreground color; channels may be mutated from outside (see ScreenSaver)
-local Logo = class("Logo", DrawableControl)
+-- The Treflove logo: the icon's silhouette over a coloured disc.
+local Logo: Logo = class("Logo", DrawableControl)
 
----@param parent Control
-function Logo:init(parent)
+Logo.init = function(self: Logo, parent: Control)
     local image = love.graphics.newImage("icon.png")
     local img_w, img_h = image:getDimensions()
     local r = img_w * 0.5

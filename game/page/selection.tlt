@@ -1,26 +1,19 @@
-local Rectangle = require("controls.rectangle")
-local Aabb = require("utils.aabb")
+local Aabb: Aabb = require("utils.aabb")
 local Consts = require("app.consts")
+local Rectangle: Rectangle = require("controls.rectangle")
 
----@class Selection: Rectangle
----@field _page Page
----@field _start_point number[]
----@field _end_point number[]
----@field _select_set table<Token, boolean> Currently selected tokens
-local Selection = class("Selection", Rectangle)
+-- The rectangle selecting tokens on a page.
+local Selection: Selection = class("Selection", Rectangle)
 
----@param self Selection
-local function _update_rectangle(self)
+local function _update_rectangle(self: Selection)
     local aabb = Aabb()
-    aabb:add_point(unpack(self._start_point))
-    aabb:add_point(unpack(self._end_point))
+    aabb:add_point(table.unpack(self._start_point))
+    aabb:add_point(table.unpack(self._end_point))
     self:set_position(aabb:get_position())
     self:set_size(aabb:get_size())
 end
 
----@param page Page
-function Selection:init(page)
-    -- assert_type(page, Page)
+Selection.init = function(self: Selection, page: Page)
     self._page = page
     Rectangle.init(self, self._page:get_page_coordinates(), 0, 0, Consts.PAGE_SELECTION_COLOR)
     self:set_enabled(false)
@@ -44,9 +37,7 @@ function Selection:hide()
     self:set_enabled(false)
 end
 
----@param x number
----@param y number
-function Selection:set_start_point(x, y)
+function Selection:set_start_point(x: number, y: number)
     assert(not self:is_enabled())
     self:show()
     self._start_point[1], self._start_point[2] = x, y
@@ -54,9 +45,7 @@ function Selection:set_start_point(x, y)
     _update_rectangle(self)
 end
 
----@param x number
----@param y number
-function Selection:set_end_point(x, y)
+function Selection:set_end_point(x: number, y: number)
     assert(self:is_enabled())
     self._end_point[1], self._end_point[2] = x, y
     _update_rectangle(self)
@@ -112,8 +101,7 @@ function Selection:unselect()
     self:on_selection_change()
 end
 
----@return table<Token, boolean>
-function Selection:get_select_set()
+function Selection:get_select_set(): {Token: boolean}
     return self._select_set
 end
 

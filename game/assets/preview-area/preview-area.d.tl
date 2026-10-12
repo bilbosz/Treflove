@@ -1,5 +1,7 @@
--- game/assets/preview-area/preview-area.lua (still Lua): the drop target
--- and preview of the assets panel.
+-- game/assets/preview-area/preview-area.tlt: the drop target and preview
+-- of the assets panel (constructor: `PreviewArea(parent: Control, width:
+-- number, height: number)`). Anchored to its panel; its `release` undoes
+-- its drop registration.
 
 -- What PreviewArea:set_content shows: PreviewImageArea or
 -- PreviewAudioArea, each a Control made with `(preview_area,
@@ -23,5 +25,5 @@ global interface PreviewArea is ClippingRectangle
     -- table: PreviewImageArea or PreviewAudioArea).
     set_content: function(self, love_content: LoveMedium, preview_component: PreviewComponent)
     reset: function(self)
-    -- release (Object): unregisters from file_dropped.
+    -- release (Object): the destructor; unregisters from file_dropped.
 end

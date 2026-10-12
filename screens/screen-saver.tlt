@@ -1,9 +1,6 @@
+local Logo: Logo = require("game.logo")
 local Rectangle: Rectangle = require("controls.rectangle")
 local Screen: Screen = require("screens.screen")
-
--- game/logo is still Lua (see screens/menu-screen.tlt).
-local LOGO_MODULE = "game.logo"
-local Logo = require(LOGO_MODULE) as Logo
 
 -- The server's screen when it has a window: the logo bouncing off the edges,
 -- changing colour and spin at every bounce.

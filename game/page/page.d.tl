@@ -1,4 +1,4 @@
--- game/page/page.lua (still Lua): a page of the game world: its background
+-- game/page/page.tlt: a page of the game world: its background
 -- image and the tokens on it.
 
 -- A page of the persisted state (GameState.pages), the model data of a

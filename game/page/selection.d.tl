@@ -1,4 +1,4 @@
--- game/page/selection.lua (still Lua): the rectangle selecting tokens on a
+-- game/page/selection.tlt: the rectangle selecting tokens on a
 -- page.
 global interface Selection is Rectangle
     _page: Page

@@ -1,4 +1,4 @@
--- game/quick-access-panel.lua (still Lua): the bar of buttons selecting
+-- game/quick-access-panel.tlt: the bar of buttons selecting
 -- the game screen's side panels.
 global interface QuickAccessPanel is Panel
     _game_screen: GameScreen

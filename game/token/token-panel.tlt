@@ -1,29 +1,18 @@
-local Panel = require("ui.panel")
 local Consts = require("app.consts")
-local Text = require("controls.text")
-local TextInput = require("ui.text-input")
-local NumberInput = require("ui.number-input")
-local TextButton = require("ui.text-button")
+local NumberInput: NumberInput = require("ui.number-input")
+local Panel: Panel = require("ui.panel")
+local Text: Text = require("controls.text")
+local TextButton: TextButton = require("ui.text-button")
+local TextInput: TextInput = require("ui.text-input")
 
----@class TokenPanelProperty
----@field key string Token data key
----@field def table Property definition from `token_properties`
----@field title Text|nil
----@field input TextInput|NumberInput|nil
+-- Edits the properties of the selected tokens: a title and an input per
+-- editable key, and Cancel and Apply buttons. Rebuilt on every selection
+-- change; the old inputs are removed from the game screen by hand and
+-- dropped (docs/lifetime.md, "Screens": an input is not destroyed while
+-- its form is shown).
+local TokenPanel: TokenPanel = class("TokenPanel", Panel)
 
----@class TokenPanel: Panel
----@field _game_screen GameScreen
----@field _properties TokenPanelProperty[]
----@field _keys string[]|nil Sorted editable keys of the selected tokens
----@field _selection_set table<Token, boolean>
----@field _cancel_button TextButton|nil
----@field _apply_button TextButton|nil
-local TokenPanel = class("TokenPanel", Panel)
-
----@param game_screen GameScreen
----@param width number
----@param height number
-function TokenPanel:init(game_screen, width, height)
+TokenPanel.init = function(self: TokenPanel, game_screen: GameScreen, width: number, height: number)
     Panel.init(self, game_screen:get_control(), width, height)
     self._game_screen = game_screen
     self._properties = {}
@@ -33,9 +22,7 @@ function TokenPanel:init(game_screen, width, height)
     self._apply_button = nil
 end
 
----@param w number
----@param h number
-function TokenPanel:on_resize(w, h)
+function TokenPanel:on_resize(w: number, h: number)
     Panel.on_resize(self, w, h)
     self:_update_view()
 end
@@ -45,7 +32,6 @@ function TokenPanel:on_selection_change()
     self:_update_view()
 end
 
----@private
 function TokenPanel:_update_view()
     self:_release_properties()
     self:_update_property_keys()
@@ -54,15 +40,14 @@ function TokenPanel:_update_view()
     self:_create_apply_button()
 end
 
----@private
 function TokenPanel:_update_property_keys()
-    local unique_keys = {}
+    local unique_keys: {string: boolean} = {}
     for token in pairs(self._selection_set) do
         for k in pairs(token:get_data()) do
             unique_keys[k] = true
         end
     end
-    local keys = {}
+    local keys: {string} = {}
     for k in pairs(unique_keys) do
         local t = app.data.token_properties[k].type
         if t == "string" or t == "number" then
@@ -73,12 +58,11 @@ function TokenPanel:_update_property_keys()
     self._keys = keys
 end
 
----@private
 function TokenPanel:_fill_in_properties()
-    local y = 0
+    local y: number = 0
     for _, k in ipairs(self._keys) do
         if app.data.token_properties[k] then
-            local property = {
+            local property: TokenPanelProperty = {
                 key = k,
                 def = app.data.token_properties[k],
                 title = nil,
@@ -89,7 +73,7 @@ function TokenPanel:_fill_in_properties()
                 local title = self:_create_property_title(property)
                 property.title = title
                 title:set_position(Consts.PADDING, y)
-                local h = select(2, title:get_size())
+                local _, h = title:get_size()
                 y = y + h * title:get_scale()
             end
 
@@ -97,16 +81,17 @@ function TokenPanel:_fill_in_properties()
                 local input = self:_create_property_input(property)
                 property.input = input
                 input:set_position(Consts.PADDING, y)
-                local h = select(2, input:get_size())
+                local _, h = input:get_size()
                 y = y + h
 
                 local is_single_value, value = self:_get_value_by_key(k)
                 if is_single_value then
                     local t = property.def.type
                     if t == "string" then
-                        input:set_text(value)
+                        input:set_text(value as string) -- as: a "string" property holds strings
                     elseif t == "number" then
-                        input:set_number(value)
+                        -- as: a "number" property's input is a NumberInput holding numbers
+                        (input as NumberInput):set_number(value as number)
                     end
                 else
                     input:set_multivalue(true)
@@ -120,19 +105,14 @@ function TokenPanel:_fill_in_properties()
     end
 end
 
----@private
----@param property TokenPanelProperty
----@return Text
-function TokenPanel:_create_property_title(property)
+function TokenPanel:_create_property_title(property: TokenPanelProperty): Text
     local title = Text(self, property.def.title, Consts.FOREGROUND_COLOR)
     title:set_scale(Consts.PANEL_FIELD_SCALE)
     return title
 end
 
----@private
----@param property TokenPanelProperty
----@return TextInput|NumberInput
-function TokenPanel:_create_property_input(property)
+-- A TextInput for a "string" property, a NumberInput for a "number" one.
+function TokenPanel:_create_property_input(property: TokenPanelProperty): TextInput
     local panel_w = self:get_size()
 
     local t = property.def.type
@@ -140,7 +120,7 @@ function TokenPanel:_create_property_input(property)
         self:_apply()
     end
 
-    local input
+    local input: TextInput
     if t == "string" then
         input = TextInput(self, self._game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT, false, nil, apply)
     elseif t == "number" then
@@ -151,13 +131,11 @@ function TokenPanel:_create_property_input(property)
     return input
 end
 
----@private
----@param key string
----@return boolean is_single_value
----@return any value Common value when all selected tokens agree
-function TokenPanel:_get_value_by_key(key)
+-- Whether every selected token has the same value under `key`, and that
+-- value. any: token data values are of every type (ModelData).
+function TokenPanel:_get_value_by_key(key: string): boolean, any
     local once = true
-    local value
+    local value: any
     for token in pairs(self._selection_set) do
         local current = token:get_data()[key]
         if once then
@@ -170,9 +148,8 @@ function TokenPanel:_get_value_by_key(key)
     return true, value
 end
 
----@private
 function TokenPanel:_create_cancel_button()
-    local h = select(2, self:get_size())
+    local _, h = self:get_size()
 
     local button = TextButton(self, self._game_screen, "Cancel", function()
         self:cancel()
@@ -182,11 +159,10 @@ function TokenPanel:_create_cancel_button()
     local s = Consts.PANEL_FIELD_SCALE
     button:set_scale(s)
 
-    local button_h = select(2, button:get_size())
+    local _, button_h = button:get_size()
     button:set_position(Consts.PADDING, h - button_h * s - Consts.PADDING)
 end
 
----@private
 function TokenPanel:_create_apply_button()
     local w, h = self:get_size()
 
@@ -202,7 +178,10 @@ function TokenPanel:_create_apply_button()
     button:set_position(w - button_w * s - Consts.PADDING, h - button_h * s - Consts.PADDING)
 end
 
----@private
+-- The inputs are removed from the form and dropped, not destroyed: Input
+-- has no destructor that would undo its `on_screen_hide` registrations,
+-- and the form is shown (docs/lifetime.md, "Screens"). `remove_input`
+-- discards each input's unlinking hook, so a dropped input is collectable.
 function TokenPanel:_release_properties()
     for _, v in ipairs(self._properties) do
         v.title:set_parent(nil)
@@ -225,7 +204,6 @@ function TokenPanel:_release_properties()
     end
 end
 
----@private
 function TokenPanel:_apply()
     for _, property in ipairs(self._properties) do
         if not property.input:is_multivalue_default() then
@@ -239,7 +217,8 @@ function TokenPanel:_apply()
                     end
                 end
             elseif t == "number" then
-                local key, value = property.key, property.input:get_number()
+                -- as: a "number" property's input is a NumberInput
+                local key, value = property.key, (property.input as NumberInput):get_number()
                 for token in pairs(self._selection_set) do
                     local old = token:get_data()[key]
                     if old ~= value then

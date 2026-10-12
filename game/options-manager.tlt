@@ -1,5 +1,5 @@
----@class OptionsManager
-local OptionsManager = class("OptionsManager")
+-- The client's settings.
+local OptionsManager: OptionsManager = class("OptionsManager")
 
 function OptionsManager:toggle_fullscreen()
     app.resize_manager:toggle_fullscreen()

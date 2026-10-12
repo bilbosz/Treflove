@@ -1,25 +1,16 @@
-local NotificationPanel = require("panels.notification-panel")
 local Consts = require("app.consts")
+local NotificationPanel: NotificationPanel = require("panels.notification-panel")
 
----@class Notification
----@field public message string
----@field public start_time number
----@field public duration number
+-- Timed notifications, drawn by the NotificationPanel.
+local NotificationManager: NotificationManager = class("NotificationManager")
 
----@class NotificationManager
----@field private _panel NotificationPanel
----@field private _notifications Notification[]
-local NotificationManager = class("NotificationManager")
-
-function NotificationManager:init()
+NotificationManager.init = function(self: NotificationManager)
     self._panel = NotificationPanel()
     self._notifications = {}
     app.update_event:register(self, self.on_update)
 end
 
----@param message string
----@param duration number|nil Defaults to `Consts.NOTIFICATION_DURATION`
-function NotificationManager:notify(message, duration)
+function NotificationManager:notify(message: string, duration?: number)
     table.insert(self._notifications, {
         message = message,
         start_time = app:get_time(),
@@ -28,9 +19,8 @@ function NotificationManager:notify(message, duration)
     self._panel:update_notifications()
 end
 
----Internal to the notification subsystem — used by NotificationPanel.
----@return Notification[]
-function NotificationManager:_get_notifications()
+-- Internal to the notification subsystem: used by NotificationPanel.
+function NotificationManager:_get_notifications(): {Notification}
     return self._notifications
 end
 
@@ -41,7 +31,7 @@ end
 
 function NotificationManager:on_update()
     local time = app:get_time()
-    local to_remove
+    local to_remove: {integer}
     for i, notification in ipairs(self._notifications) do
         if time > notification.start_time + notification.duration then
             to_remove = to_remove or {}

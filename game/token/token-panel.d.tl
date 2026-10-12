@@ -1,4 +1,4 @@
--- game/token/token-panel.lua (still Lua): edits the properties of the
+-- game/token/token-panel.tlt: edits the properties of the
 -- selected tokens.
 
 -- The type of a token property (GameState.token_properties).

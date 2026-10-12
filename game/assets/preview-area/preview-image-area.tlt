@@ -1,14 +1,11 @@
-local Control = require("controls.control")
-local Image = require("controls.image")
 local Consts = require("app.consts")
+local Control: Control = require("controls.control")
+local Image: Image = require("controls.image")
 
----@class PreviewImageArea: Control
----@field _preview_area PreviewArea
-local PreviewImageArea = class("PreviewImageArea", Control)
+-- An image preview, scaled to fit the preview area.
+local PreviewImageArea: PreviewImageArea = class("PreviewImageArea", Control)
 
----@param self PreviewImageArea
----@param love_content love.Image
-local function _create_preview(self, love_content)
+local function _create_preview(self: PreviewImageArea, love_content: love.Image)
     local image = Image(self, love_content)
 
     local area_w, area_h = self._preview_area:get_size()
@@ -20,9 +17,7 @@ local function _create_preview(self, love_content)
     image:set_position(-outer_w * 0.5, -outer_h * 0.5)
 end
 
----@param preview_area PreviewArea
----@param love_content love.Image
-function PreviewImageArea:init(preview_area, love_content)
+PreviewImageArea.init = function(self: PreviewImageArea, preview_area: PreviewArea, love_content: love.Image)
     self._preview_area = preview_area
     Control.init(self, preview_area.content_parent)
     _create_preview(self, love_content)

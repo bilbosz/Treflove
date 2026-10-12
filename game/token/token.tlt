@@ -1,32 +1,16 @@
-local Model = require("data.model")
-local Control = require("controls.control")
-local ClippingMask = require("controls.clipping-mask")
-local Image = require("controls.image")
+local Circle: Circle = require("controls.circle")
+local ClippingMask: ClippingMask = require("controls.clipping-mask")
 local Consts = require("app.consts")
-local Circle = require("controls.circle")
-local Text = require("controls.text")
+local Control: Control = require("controls.control")
+local Image: Image = require("controls.image")
+local Model: Model = require("data.model")
+local Text: Text = require("controls.text")
 
----@class TokenData
----@field name string
----@field diameter number Token diameter in meters
----@field position number[]
----@field avatar string Path of the avatar image asset
+-- A token on a page: an avatar clipped to a circle, a label under it and
+-- a selection highlight.
+local Token: Token = class("Token", Model, Control)
 
----@class Token: Model, Control
----@field _diameter number
----@field _clip ClippingMask
----@field _image Image
----@field _label Text
----@field _selection Circle Selection-highlight circle
----@field _is_selected boolean
----@field _drag_mouse_button number
----@field _prev_drag_mouse_x number|nil
----@field _prev_drag_mouse_y number|nil
-local Token = class("Token", Model, Control)
-
----@param self Token
----@param path string Avatar image asset path
-local function _create_avatar(self, path)
+local function _create_avatar(self: Token, path: string)
     local d = self._diameter
     local r = d * 0.5
     local clip = ClippingMask(self, d, d, function()
@@ -45,8 +29,7 @@ local function _create_avatar(self, path)
     img:set_position(r, r)
 end
 
----@param self Token
-local function _center_label(self)
+local function _center_label(self: Token)
     local label = self._label
     local s = 0.007
     local w, h = label:get_size()
@@ -55,15 +38,12 @@ local function _center_label(self)
     label:set_position(0, self._diameter * 0.5 + Consts.TOKEN_SELECTION_THICKNESS + h * s * 0.5)
 end
 
----@param self Token
----@param label string
-local function _create_label(self, label)
+local function _create_label(self: Token, label: string)
     self._label = Text(self, label)
     _center_label(self)
 end
 
----@param self Token
-local function _create_selection_effect(self)
+local function _create_selection_effect(self: Token)
     local r = self._diameter * 0.5 - Consts.TOKEN_SELECTION_THICKNESS * 0.5
     local circle = Circle(self, r, Consts.TOKEN_SELECTION_COLOR, Consts.TOKEN_SELECTION_THICKNESS)
     circle:set_position(-r, -r)
@@ -72,9 +52,7 @@ local function _create_selection_effect(self)
     self._selection:set_enabled(false)
 end
 
----@param data TokenData
----@param parent Control
-function Token:init(data, parent)
+Token.init = function(self: Token, data: TokenData, parent: Control)
     Model.init(self, data)
     Control.init(self, parent)
 
@@ -82,7 +60,7 @@ function Token:init(data, parent)
     self._prev_drag_mouse_x, self._prev_drag_mouse_y = nil, nil
 
     self._diameter = data.diameter
-    self:set_position(unpack(data.position))
+    self:set_position(data.position[1], data.position[2])
     _create_avatar(self, data.avatar)
     _create_label(self, data.name)
     _create_selection_effect(self)
@@ -95,22 +73,16 @@ function Token:init(data, parent)
     pointer_event_manager.pointer_move:register(self, self.on_pointer_event)
 end
 
----Consumes pointer events over the token, so controls below it do not react;
----receive-through controls such as the Page still get them.
----@param x number
----@param y number
----@param id PointerId
-function Token:on_pointer_event(x, y, id)
-
+-- Consumes pointer events over the token, so controls below it do not
+-- react; receive-through controls such as the Page still get them.
+function Token:on_pointer_event(_x: number, _y: number, _id: PointerId)
 end
 
----@return number
-function Token:get_radius()
+function Token:get_radius(): number
     return self.data.diameter * 0.5
 end
 
----@param value boolean
-function Token:set_select(value)
+function Token:set_select(value: boolean)
     self._is_selected = value
     self._selection:set_enabled(value)
     if value then
@@ -118,22 +90,18 @@ function Token:set_select(value)
     end
 end
 
----@return boolean
-function Token:get_select()
+function Token:get_select(): boolean
     return self._is_selected
 end
 
----@param x number
----@param y number
-function Token:set_position(x, y)
+function Token:set_position(x?: number, y?: number)
     local pos = self.data.position
     pos[1], pos[2] = x, y
     Control.set_position(self, x, y)
 end
 
----@param key string|number
----@param value any
-function Token:set_data(key, value)
+-- any: token data values are of every type (ModelData).
+function Token:set_data(key: string, value: any)
     Model.set_data(self, key, value)
     if key == "name" then
         self._label:set_text(self.data.name)

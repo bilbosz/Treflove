@@ -1,16 +1,13 @@
-local Control = require("controls.control")
 local Consts = require("app.consts")
-local Image = require("controls.image")
+local Control: Control = require("controls.control")
+local Image: Image = require("controls.image")
 
----@class PreviewAudioArea: Control
----@field _preview_area PreviewArea
-local PreviewAudioArea = class("PreviewAudioArea", Control)
+-- Audio has nothing to show: a note symbol stands for it.
+local PreviewAudioArea: PreviewAudioArea = class("PreviewAudioArea", Control)
 
 local MUSIC_NOTE_IMAGE_PATH = "game/assets/eighthnote.png"
 
----@param self PreviewAudioArea
----@param _ LoveMedium Unused — audio has no visual content, a note symbol is shown instead
-local function _create_preview(self, _)
+local function _create_preview(self: PreviewAudioArea, _love_content: LoveMedium)
     local symbol = Image(self, MUSIC_NOTE_IMAGE_PATH)
 
     local area_w, area_h = self._preview_area:get_size()
@@ -22,9 +19,7 @@ local function _create_preview(self, _)
     symbol:set_position(-outer_w * 0.5, -outer_h * 0.5)
 end
 
----@param preview_area PreviewArea
----@param love_content LoveMedium
-function PreviewAudioArea:init(preview_area, love_content)
+PreviewAudioArea.init = function(self: PreviewAudioArea, preview_area: PreviewArea, love_content: LoveMedium)
     self._preview_area = preview_area
     Control.init(self, preview_area.content_parent)
     _create_preview(self, love_content)
