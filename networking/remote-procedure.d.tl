@@ -1,4 +1,4 @@
--- networking/remote-procedure.lua (still Lua): the base of every remote
+-- networking/remote-procedure.tlt: the base of every remote
 -- procedure; the class name is its id on the connection. Each subclass
 -- redeclares `send_request`, `send_response` and `receive_response` with
 -- its own body records (a narrower parameter type is accepted for a
@@ -21,7 +21,7 @@ global interface RemoteProcedure is Object
     send_response: function(self, request: RequestBody): ResponseBody
     -- Abstract: processes the response on the requesting side.
     receive_response: function(self, response: ResponseBody)
-    -- release (Object) -- lifetime: becomes `self:stop()` only (Phase 0
-    -- still sets `_connection = nil`); a procedure is anchored to its
-    -- owner (`LoginRp(...) @ self`, the asset procedures `@ session`).
+    -- release (Object): `self:stop()` only, so a second release is
+    -- harmless; a procedure is anchored to its owner (`LoginRp(...) @
+    -- self`, the asset procedures `@ session`).
 end

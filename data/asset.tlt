@@ -1,13 +1,11 @@
 local Consts = require("app.consts")
 
----@class Asset
----@field private _path string
-local Asset = class("Asset")
+-- A file under the assets root of the running side (server or client), on
+-- LÖVE's filesystem.
+local Asset: Asset = class("Asset")
 
----@param path string
-local function _create_intermediate_dirs(path)
-    ---@type integer|nil
-    local found = 0
+local function _create_intermediate_dirs(path: string)
+    local found: integer = 0
     while true do
         found = string.find(path, "/", found + 1)
         if not found then
@@ -23,21 +21,15 @@ local function _create_intermediate_dirs(path)
     end
 end
 
----@param virtual_path string
----@return string
-function Asset.get_asset_path(virtual_path)
+function Asset.get_asset_path(virtual_path: string): string
     return (app.is_server and Consts.ASSETS_SERVER_ROOT or Consts.ASSETS_CLIENT_ROOT) .. "/assets/" .. virtual_path
 end
 
----@param virtual_path string
----@return string
-function Asset.get_root_path(virtual_path)
+function Asset.get_root_path(virtual_path: string): string
     return (app.is_server and Consts.ASSETS_SERVER_ROOT or Consts.ASSETS_CLIENT_ROOT) .. "/" .. virtual_path
 end
 
----@param path string
----@param is_on_root boolean
-function Asset:init(path, is_on_root)
+Asset.init = function(self: Asset, path: string, is_on_root: boolean)
     assert(string.sub(path, 1, 1) ~= "/")
     self._path = is_on_root and Asset.get_root_path(path) or Asset.get_asset_path(path)
 end
@@ -47,30 +39,28 @@ function Asset:create()
     assert(love.filesystem.write(self._path, ""))
 end
 
----@param content string
-function Asset:write(content)
+function Asset:write(content: string)
     assert(love.filesystem.write(self._path, content))
 end
 
----@return string
-function Asset:read()
+function Asset:read(): string
     return (love.filesystem.read(self._path))
 end
 
----@return string|nil
-function Asset:get_type()
+function Asset:get_type(): love.FileType
     local info = love.filesystem.getInfo(self._path)
-    return info and info.type
+    -- as: getInfo's result is a love-api "table" ({any: any}); its `type`
+    -- is a FileType.
+    return info and info.type as love.FileType
 end
 
----@return number|nil
-function Asset:get_size()
+function Asset:get_size(): number
     local info = love.filesystem.getInfo(self._path)
-    return info and info.size
+    -- as: see get_type; `size` is a number.
+    return info and info.size as number
 end
 
----@return string|nil
-function Asset:get_path()
+function Asset:get_path(): string
     local info = love.filesystem.getInfo(self._path)
     return info and self._path
 end

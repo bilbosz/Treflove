@@ -1,4 +1,4 @@
--- data/upload-asset-rp.lua (still Lua): the client sends an asset to the
+-- data/upload-asset-rp.tlt: the client sends an asset to the
 -- server.
 global record UploadAssetRequest is RequestBody
     path: string

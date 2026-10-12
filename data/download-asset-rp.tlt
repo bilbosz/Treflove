@@ -1,0 +1,24 @@
+local RemoteProcedure = require("networking.remote-procedure")
+
+-- The client asks the server for one asset's content.
+local DownloadAssetRp: DownloadAssetRp = class("DownloadAssetRp", RemoteProcedure)
+
+DownloadAssetRp.init = function(self: DownloadAssetRp, connection: Connection)
+    RemoteProcedure.init(self, connection)
+end
+
+function DownloadAssetRp:send_response(request: DownloadAssetRequest): DownloadAssetResponse
+    assert(app.is_server)
+    return {
+        path = request.path,
+        content = app.asset_manager:get_content(request.path)
+    }
+end
+
+function DownloadAssetRp:receive_response(response: DownloadAssetResponse)
+    assert(app.is_client)
+    assert(response.content)
+    app.asset_manager:mount_file(response.path, response.content)
+end
+
+return DownloadAssetRp

@@ -1,0 +1,23 @@
+local RemoteProcedure = require("networking.remote-procedure")
+
+-- The client sends an asset to the server.
+local UploadAssetRp: UploadAssetRp = class("UploadAssetRp", RemoteProcedure)
+
+UploadAssetRp.init = function(self: UploadAssetRp, connection: Connection)
+    RemoteProcedure.init(self, connection)
+end
+
+function UploadAssetRp:send_response(request: UploadAssetRequest): UploadAssetResponse
+    assert(app.is_server)
+    app.asset_manager:mount_file(request.path, request.content)
+    return {
+        success = true
+    }
+end
+
+function UploadAssetRp:receive_response(response: UploadAssetResponse)
+    assert(app.is_client)
+    assert(response.success)
+end
+
+return UploadAssetRp

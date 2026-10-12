@@ -1,0 +1,141 @@
+local Asset = require("data.asset")
+local DownloadAssetRp = require("data.download-asset-rp")
+local DownloadMissingAssetsRp = require("data.download-missing-assets-rp")
+local UploadAssetRp = require("data.upload-asset-rp")
+
+-- Assets on disk and the per-session remote procedures that move them
+-- between client and server.
+local AssetManager: AssetManager = class("AssetManager")
+
+-- Weak in keys and values (lua-lifetime trial/treflove/README.md,
+-- "data/asset-manager.lt"): a session's entry goes once the session and
+-- its procedure are collected, so nothing unregisters a session. Weak
+-- values too: Lua 5.1 and LuaJIT have no ephemerons (lua-lifetime
+-- docs/02-semantics.md, "Host"), and a procedure refers back to its
+-- session's connection through the request handler, so a strong value
+-- would keep its weak key alive. The procedures stay alive through those
+-- handlers while their session lives.
+local function _make_weak_table<V>(): {Session: V}
+    return setmetatable({} as {Session: V}, {
+        __mode = "kv"
+    } as metatable<{Session: V}>)
+end
+
+local function _filter_for_missing_assets(list: {string})
+    for i, v in ripairs(list) do
+        if Asset(v, false):get_type() then
+            table.remove(list, i)
+        end
+    end
+end
+
+local function _get_any_rp<T>(rp_list: {Session: T}): T
+    local _, rp = next(rp_list)
+    return rp
+end
+
+-- as (both functions): getDirectoryItems returns a love-api "table"
+-- ({any: any}); it is an array of names.
+local function _remove_server_mount(path: string)
+    local info = love.filesystem.getInfo(path)
+    if not info then
+        return
+    end
+    if info.type == "file" then
+        love.filesystem.remove(path)
+    elseif info.type == "directory" then
+        local items = love.filesystem.getDirectoryItems(path) as {string}
+        for _, v in ipairs(items) do
+            _remove_server_mount(path .. "/" .. v)
+        end
+        love.filesystem.remove(path)
+    else
+        assert_unreachable()
+    end
+end
+
+local function _mount_server_assets(src_path: string, dst_path: string)
+    local src_info = love.filesystem.getInfo(src_path)
+    if src_info.type == "file" then
+        local data = love.filesystem.read(src_path)
+        love.filesystem.write(dst_path, data)
+    elseif src_info.type == "directory" then
+        love.filesystem.createDirectory(dst_path)
+        local items = love.filesystem.getDirectoryItems(src_path) as {string}
+        for _, v in ipairs(items) do
+            _mount_server_assets(src_path .. "/" .. v, dst_path .. "/" .. v)
+        end
+    else
+        assert_unreachable()
+    end
+end
+
+AssetManager.init = function(self: AssetManager)
+    if app.is_server then
+        _remove_server_mount("s")
+        _mount_server_assets("server", "s")
+    end
+    -- remote procedures by session
+    self._upload_asset_rp = _make_weak_table()
+    self._download_asset_rp = _make_weak_table()
+    self._download_missing_assets_rp = _make_weak_table()
+end
+
+function AssetManager:mount_file(mount_point: string, content: string)
+    local file = Asset(mount_point, false)
+    if not file:get_type() then
+        file:create()
+    end
+    -- as: the container "string" makes decode return a string.
+    file:write(love.data.decode("string", "base64", content) as string)
+end
+
+function AssetManager:get_content(path: string): string
+    local file = Asset(path, false)
+    if file:get_type() ~= "file" then
+        return nil
+    end
+    -- as: the container "string" makes encode return a string.
+    return love.data.encode("string", "base64", file:read(), file:get_size()) as string
+end
+
+function AssetManager:upload_asset(path: string, data: string)
+    assert(app.is_client)
+
+    local rp = _get_any_rp(self._upload_asset_rp)
+    rp:send_request({
+        path = path,
+        -- as: see get_content.
+        content = love.data.encode("string", "base64", data) as string
+    })
+end
+
+function AssetManager:download_asset(path: string)
+    assert(app.is_client)
+
+    local rp = _get_any_rp(self._download_asset_rp)
+    rp:send_request({
+        path = path
+    })
+end
+
+function AssetManager:download_missing_assets(list: {string}, cb: function())
+    _filter_for_missing_assets(list)
+
+    local rp = _get_any_rp(self._download_missing_assets_rp)
+    rp:send_request({
+        list = list
+    }, cb)
+end
+
+-- The session's procedures die with it: each is anchored to the session
+-- (lua-lifetime docs/02-semantics.md, "Cascading death"), so a session
+-- needs no unregistering.
+function AssetManager:register_session(session: Session)
+    local connection = session:get_connection()
+    self._upload_asset_rp[session] = UploadAssetRp(connection) @ session
+    self._download_asset_rp[session] = DownloadAssetRp(connection) @ session
+    self._download_missing_assets_rp[session] = DownloadMissingAssetsRp(connection) @ session
+end
+
+return AssetManager

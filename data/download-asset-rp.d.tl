@@ -1,4 +1,4 @@
--- data/download-asset-rp.lua (still Lua): the client asks the server for
+-- data/download-asset-rp.tlt: the client asks the server for
 -- one asset's content.
 global record DownloadAssetRequest is RequestBody
     path: string

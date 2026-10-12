@@ -1,4 +1,4 @@
--- data/asset.lua (still Lua): a file under the assets root of the running
+-- data/asset.tlt: a file under the assets root of the running
 -- side (server or client), on LÖVE's filesystem.
 global interface Asset is Object
     _path: string -- the real path on LÖVE's filesystem

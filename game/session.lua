@@ -94,7 +94,6 @@ function Session:join_game()
 end
 
 function Session:release()
-    app.asset_manager:unregister_session(self)
     if app.is_client then
         lifetime.destroy(self._backstack_entry)
         self._backstack_entry = nil

@@ -1,4 +1,4 @@
--- data/download-missing-assets-rp.lua (still Lua): the client asks the
+-- data/download-missing-assets-rp.tlt: the client asks the
 -- server for the content of every asset it lacks.
 global record DownloadMissingAssetsRequest is RequestBody
     list: {string} -- asset paths
