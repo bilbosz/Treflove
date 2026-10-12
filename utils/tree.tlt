@@ -1,10 +1,8 @@
----@class Tree
----@field public parent Tree|nil
----@field public children Tree[]
-local Tree = class("Tree")
+local table_utils = require("utils.table")
 
----@param parent Tree|nil
-function Tree:init(parent)
+local Tree: Tree = class("Tree")
+
+Tree.init = function(self: Tree, parent?: Tree)
     self.children = {}
     self.parent = nil
     if parent then
@@ -12,8 +10,7 @@ function Tree:init(parent)
     end
 end
 
----@param parent Tree|nil
-function Tree:set_parent(parent)
+function Tree:set_parent(parent: Tree)
     if parent then
         parent:add_child(self)
     else
@@ -23,8 +20,7 @@ function Tree:set_parent(parent)
     end
 end
 
----@param child Tree
-function Tree:add_child(child)
+function Tree:add_child(child: Tree)
     if child.parent then
         child.parent:remove_child(child)
     end
@@ -32,9 +28,8 @@ function Tree:add_child(child)
     table.insert(self.children, child)
 end
 
----@param child Tree
-function Tree:remove_child(child)
-    local found
+function Tree:remove_child(child: Tree)
+    local found: integer
     for i, v in ipairs(self.children) do
         if v == child then
             found = i
@@ -49,24 +44,21 @@ function Tree:remove_child(child)
     end
 end
 
----@return Tree[]
-function Tree:get_children()
-    return table.copy(self.children)
+function Tree:get_children(): {Tree}
+    return table_utils.copy(self.children)
 end
 
----@return Tree|nil
-function Tree:get_parent()
+function Tree:get_parent(): Tree
     return self.parent
 end
 
----@param n number|nil
-function Tree:reattach(n)
+function Tree:reattach(n?: integer)
     local children = self.parent.children
     n = n or #children
     if children[n] == self then
         return
     end
-    local found
+    local found: integer
     for i, v in ipairs(children) do
         if v == self then
             found = i

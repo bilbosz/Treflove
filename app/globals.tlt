@@ -1,0 +1,8 @@
+-- Loads the modules that define the globals (docs/conventions.md, "Global
+-- Variables and Functions"); `dump` only in debug mode.
+if debug then
+    require("utils.dump")
+end
+require("utils.table")
+require("utils.utils")
+require("utils.class")

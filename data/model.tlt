@@ -1,0 +1,17 @@
+require("utils.class")
+
+local Model: Model = class("Model")
+
+Model.init = function(self: Model, data: ModelData)
+    self.data = data
+end
+
+function Model:get_data(): ModelData
+    return self.data
+end
+
+function Model:set_data(key: string | number, value: any)
+    self.data[key] = value
+end
+
+return Model

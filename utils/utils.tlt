@@ -1,11 +1,10 @@
 local Consts = require("app.consts")
 local Socket = require("socket")
+local table_utils = require("utils.table")
 
----@class Utils
-local Utils = {}
+local Utils: Utils = {}
 
----@param ctrl Control
-local function _draw_aabbs_detail(ctrl)
+local function _draw_aabbs_detail(ctrl: Control)
     love.graphics.rectangle("fill", ctrl:get_global_recursive_aabb():get_position_and_size())
     for _, child in ipairs(ctrl.children) do
         if child:is_enabled() then
@@ -14,8 +13,7 @@ local function _draw_aabbs_detail(ctrl)
     end
 end
 
----@param ctrl Control
-function Utils.draw_aabbs(ctrl)
+function Utils.draw_aabbs(ctrl: Control)
     love.graphics.setColor({
         1,
         0,
@@ -26,13 +24,10 @@ function Utils.draw_aabbs(ctrl)
     love.graphics.reset()
 end
 
----@param ctrl Control
----@param indent string|nil
----@return string
-function Utils.dump_controls(ctrl, indent)
+function Utils.dump_controls(ctrl: Control, indent?: string): string
     indent = indent or ""
     local name = get_class_name_of(ctrl)
-    local dump = {}
+    local dump: {string} = {}
     table.insert(dump, indent .. name .. "[")
     table.insert(dump, ctrl:is_enabled() and "e" or " ")
     table.insert(dump, ctrl:is_visible() and "v" or " ")
@@ -44,18 +39,26 @@ function Utils.dump_controls(ctrl, indent)
     return table.concat(dump)
 end
 
----@param obj table
----@param black_functions function[]|nil
-function Utils.monitor_object(obj, black_functions)
+-- any: a monitored object's index holds values of every type.
+local type AnyIndex = {string: any}
+
+local record MonitorMeta
+    __index: function(obj: Object, k: string): any -- any: see AnyIndex
+    __newindex: function(obj: Object, k: string, v: any) -- any: see AnyIndex
+end
+
+-- Debugging aid: log every read and write through `obj`'s metatable,
+-- except reads made from inside `black_functions`.
+function Utils.monitor_object(obj: Object, black_functions?: {function})
     black_functions = black_functions or {}
-    local mt = getmetatable(obj)
-    local old_index = mt.__index
-    mt.__index = function(_, k)
+    local mt = getmetatable(obj) as MonitorMeta
+    local old_index = (mt as {string: AnyIndex}).__index
+    mt.__index = function(_: Object, k: string): any
         local level = 1
         local info = debug.getinfo(level, "f")
         while info do
-            local f = info.func
-            if table.find_array_idx(black_functions, f) then
+            local f = info.func as function
+            if table_utils.find_array_idx(black_functions, f) then
                 return old_index[k]
             end
             level = level + 1
@@ -65,54 +68,39 @@ function Utils.monitor_object(obj, black_functions)
         return old_index[k]
     end
 
-    mt.__newindex = function(_, k, v)
+    mt.__newindex = function(_: Object, k: string, v: any)
         old_index[k] = v
         app:log("write on " .. k)
     end
 end
 
----@param a number
----@param b number
----@param x number
----@return number
-function Utils.mix(a, b, x)
+function Utils.mix(a: number, b: number, x: number): number
     return a + x * (b - a)
 end
 
----@param min number
----@param max number
----@param x number
----@return number
-function Utils.clamp(min, max, x)
+function Utils.clamp(min: number, max: number, x: number): number
     return math.min(math.max(min, x), max)
 end
 
----@param len number
----@return string
-function Utils.generate_salt(len)
-    local salt = {}
+function Utils.generate_salt(len: integer): string
+    local salt: {string} = {}
     local rng = love.math.newRandomGenerator()
     rng:setSeed(app.is_server and Consts.SERVER_SEED or Consts.CLIENT_SEED)
     for _ = 1, len do
-        table.insert(salt, string.char(rng:random(0, 255)))
+        table.insert(salt, string.char(rng:random(0, 255) as integer))
     end
-    return love.data.encode("string", "base64", table.concat(salt)) --[[@as string]]
+    return love.data.encode("string", "base64", table.concat(salt)) as string
 end
 
----@param str string
----@return string
-function Utils.hash(str)
-    return love.data.encode("string", "base64", love.data.hash(Consts.HASH_ALGORITHM, str)) --[[@as string]]
+function Utils.hash(str: string): string
+    return love.data.encode("string", "base64", love.data.hash(Consts.HASH_ALGORITHM, str)) as string
 end
 
----@return number
-function Utils.get_time()
+function Utils.get_time(): number
     return Socket.gettime()
 end
 
----@param min_level number|nil
----@return string
-function Utils.get_stack_trace(min_level)
+function Utils.get_stack_trace(min_level?: integer): string
     min_level = min_level or 1
     local trace = ""
     local up = 1
@@ -125,7 +113,7 @@ function Utils.get_stack_trace(min_level)
         if string.sub(info.source, 1, 1) == "@" then
             if level >= min_level + 1 then
                 local location = string.format("%s:%i", info.short_src, info.currentline)
-                if info.short_src ~= "utils/class.lua" then
+                if info.short_src ~= "build/utils/class.lua" then
                     if info.name then
                         trace = trace .. string.format("%44s in %s %s", location, info.namewhat, info.name) .. "\n"
                     else
@@ -140,12 +128,9 @@ function Utils.get_stack_trace(min_level)
     return trace
 end
 
----@param path string
----@return string[]
-function Utils.split_path(path)
-    local tab = {}
-    ---@type number, number|nil
-    local last_found, found = 1, 0
+function Utils.split_path(path: string): {string}
+    local tab: {string} = {}
+    local last_found, found: integer, integer = 1, 0
     while true do
         found = string.find(path, "/", found + 1)
         if not found then
@@ -164,33 +149,12 @@ function Utils.split_path(path)
     return tab
 end
 
----@param module string
----@return fun(msg: string)
-function Utils.error_handler(module)
+function Utils.error_handler(module: string): function(msg: string)
     assert_type(module, "string")
-    return function(msg)
+    return function(msg: string)
         print(string.format("%s error: \"%s\"", module, msg))
         print(Utils.get_stack_trace(2))
     end
-end
-
----Use to mark code that should not be reached
----@param msg string|nil
-function assert_unreachable(msg)
-    error(msg)
-end
-
----Use to mark abstract methods. Always raises an error; the `any` return type
----lets overridable methods with return values forward it via `return abstract()`.
----@return any
-function abstract()
-    error("Method marked as abstract has no implementation")
-end
-
----@param value any
----@return boolean
-function toboolean(value)
-    return not not value
 end
 
 return Utils

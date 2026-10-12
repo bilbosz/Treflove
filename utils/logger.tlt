@@ -2,20 +2,10 @@ local Consts = require("app.consts")
 local Model = require("data.model")
 local Utils = require("utils.utils")
 
----@class LoggerData
----@field public start_time number
+-- The logger's model data is `{start_time = number}`.
+local Logger: Logger = class("Logger", Model)
 
----@class Logger: Model
----@field public data LoggerData
----@field private _is_enabled boolean
----@field private _name string
----@field private _separator string
----@field private _start_time number
-local Logger = class("Logger", Model)
-
----@param name string
----@return boolean
-local function _is_enabled(name)
+local function _is_enabled(name: string): boolean
     local n = #name
     for _, pattern in ipairs(Consts.LOGGER_NAME_BLACKLIST) do
         local start, stop = string.find(name, pattern)
@@ -26,11 +16,7 @@ local function _is_enabled(name)
     return true
 end
 
----@private
----@param format string
----@param level number
----@param ... any
-function Logger:_log_implementation(format, level, ...)
+function Logger:_log_implementation(format: string, level: integer, ...: any)
     if not self._is_enabled then
         return
     end
@@ -46,40 +32,31 @@ function Logger:_log_implementation(format, level, ...)
     print(result)
 end
 
----@param data LoggerData
----@param name string
-function Logger:init(data, name)
+Logger.init = function(self: Logger, data: ModelData, name: string)
     assert_type(name, "string")
     Model.init(self, data)
     self._name = name
     self.data.start_time = self.data.start_time or Utils.get_time()
-    self._start_time = self.data.start_time
+    self._start_time = self.data.start_time as number
     self._separator = " "
     self._is_enabled = _is_enabled(name)
 end
 
----@param name string
-function Logger:set_name(name)
+function Logger:set_name(name: string)
     assert_type(name, "string")
     self._name = name
     self._is_enabled = _is_enabled(name)
 end
 
----@param text string
-function Logger:log(text)
+function Logger:log(text: string)
     self:_log_implementation("%s", 3, text)
 end
 
----@param format string
----@param ... any
-function Logger:log_format(format, ...)
+function Logger:log_format(format: string, ...: any)
     self:_log_implementation(format, 3, ...)
 end
 
----@param format string
----@param up number
----@param ... any
-function Logger:log_up(format, up, ...)
+function Logger:log_up(format: string, up: integer, ...: any)
     self:_log_implementation(format, 3 + up, ...)
 end
 

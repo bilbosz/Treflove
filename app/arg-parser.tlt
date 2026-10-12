@@ -1,17 +1,19 @@
 require("utils.class")
 
----@class ArgParser Example usage: `love . server 0.0.0.0 8080` or `love . client 192.0.0.1 8080`
-local arg_parser = {}
+local arg_parser: ArgParser = {}
 
----@param str string
----@return string|nil Input string or `nil` when provided string was wrong
-local function _parse_app_type(str)
-    return str == "server" and str or str == "client" and str or nil
+-- The app type, or nil when the string is wrong.
+local function _parse_app_type(str: string): AppType
+    if str == "server" then
+        return "server"
+    elseif str == "client" then
+        return "client"
+    end
+    return nil
 end
 
----@param str string
----@return string|nil Input string or `nil` when provided string was wrong
-local function _parse_address(str)
+-- The input string, or nil when it is not an address.
+local function _parse_address(str: string): string
     if str == "localhost" then
         return str
     else
@@ -33,21 +35,13 @@ local function _parse_address(str)
     end
 end
 
----@param str string
----@return string|nil Input string or `nil` when provided string was wrong
-local function _parse_port(str)
+-- The input string, or nil when it is not a port number.
+local function _parse_port(str: string): string
     local num = tonumber(str)
     return num and num >= 1024 and num <= 65535 and str or nil
 end
 
----@class ArgParserResult
----@field public app_type "server"|"client"
----@field public address string
----@field public port string Port number as string (range: 1024-65535)
-
----@param args string[] Program argument list
----@return ArgParserResult|nil
-function arg_parser.parse(args)
+function arg_parser.parse(args: {string}): ArgParserResult
     if #args < 4 then
         return nil
     else

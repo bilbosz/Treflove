@@ -28,11 +28,11 @@ local AssetsPanel = class("AssetsPanel", Panel)
 -- `any`; the instance contract is documented on PreviewArea:set_content.
 ---@type table<Media.Type, any>
 local FILE_TYPE_PREVIEW = {
-    [media.Type.IMAGE] = PreviewImageArea,
-    [media.Type.AUDIO] = PreviewAudioArea,
-    [media.Type.VIDEO] = nil,
-    [media.Type.TEXT] = nil,
-    [media.Type.FONT] = nil
+    IMAGE = PreviewImageArea,
+    AUDIO = PreviewAudioArea,
+    VIDEO = nil,
+    TEXT = nil,
+    FONT = nil
 }
 
 ---@param self AssetsPanel
@@ -190,7 +190,7 @@ local function _set_file_type(self, data)
     if FileTypePreview then
         self._preview_area:set_content(medium, FileTypePreview)
     end
-    self._file_type_input:set_text(tostring(table.find_table_key(media.Type, media_type)))
+    self._file_type_input:set_text(tostring(media_type))
 end
 
 ---@param game_screen GameScreen

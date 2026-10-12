@@ -1,45 +1,49 @@
----@alias DumpNodeDisplay fun(value: any, type: string, global_name: string|nil, content: string|nil): string
----@class DumpDisplayConfig
----@field show_global_names boolean
----@field table_max_level number|nil
----@field table_indention string|nil
----@field table_unfold_repeated boolean
----@field table_newline string
----@field index_display DumpNodeDisplay
----@field key_display DumpNodeDisplay
----@field value_display DumpNodeDisplay
----@field separator string
----@class DumpConfig
----@field keyword string|nil
----@field stacktrace table|nil
----@field dump DumpDisplayConfig
----@field text_processor nil|fun(text: string): any
----@param config DumpConfig|nil
----@return nil|fun(...: any): any
-local function _dump_generator(config)
+-- any (throughout): the dumper renders values of every type.
+local type DumpNodeDisplay = function(value: any, type: string, global_name: string, content: string): string
+
+local record DumpDisplayConfig
+    show_global_names: boolean
+    table_max_level: number
+    table_indention: string
+    table_unfold_repeated: boolean
+    table_newline: string
+    index_display: DumpNodeDisplay
+    key_display: DumpNodeDisplay
+    value_display: DumpNodeDisplay
+    separator: string
+end
+
+local record DumpStacktraceConfig
+end
+
+local record DumpConfig
+    keyword: string
+    stacktrace: DumpStacktraceConfig
+    dump: DumpDisplayConfig
+    text_processor: function(text: string): any -- any: e.g. `print`'s nothing
+end
+
+local type Dumper = function(...: any): any
+
+local function _dump_generator(config: DumpConfig): Dumper
     if not config then
         return
     end
 
-    ---@param keyword string
-    ---@return string
-    local function create_keyword(keyword)
+    local function create_keyword(keyword: string): string
         return "[" .. keyword .. "]\n"
     end
 
-    ---@param stacktrace_config table
-    ---@return string
-    local function create_stacktrace(stacktrace_config)
+    local function create_stacktrace(_stacktrace_config: DumpStacktraceConfig): string
         local result = "\n[STACKTRACE]\n"
         local trace = debug.traceback()
         local line_no = 1
         local ignore_head = 3
-        ---@type number|nil
-        local found = 0
+        local found: integer = 0
         while found do
-            local prev = found
+            local prev_found = found
             found = string.find(trace, "\n", found + 1)
-            local line = string.sub(trace, prev + 1, found)
+            local line = string.sub(trace, prev_found + 1, found)
             if line_no > ignore_head and not string.find(line, "boot%.lua") and not string.find(line, "%[C%]") then
                 result = result .. line
             end
@@ -48,44 +52,35 @@ local function _dump_generator(config)
         return result
     end
 
-    local node_types = {
-        Value = 1,
-        Index = 2,
-        Key = 3
+    local enum NodeType
+        "value"
+        "index"
+        "key"
+    end
+
+    local node_displays: {NodeType: DumpNodeDisplay} = {
+        ["value"] = config.dump.value_display,
+        ["index"] = config.dump.index_display,
+        ["key"] = config.dump.key_display
     }
 
-    local node_displays = {
-        [node_types.Value] = config.dump.value_display,
-        [node_types.Index] = config.dump.index_display,
-        [node_types.Key] = config.dump.key_display
-    }
-
-    ---@param dump_config DumpDisplayConfig
-    ---@param args any[]
-    ---@param n number
-    ---@return string
-    local function create_dump(dump_config, args, n)
+    local function create_dump(dump_config: DumpDisplayConfig, args: {any}, n: integer): string
         dump_config.table_max_level = dump_config.table_max_level or math.huge
         assert(not dump_config.table_unfold_repeated or dump_config.table_max_level ~= math.huge)
 
-        ---@param val any
-        ---@param tab table|nil
-        ---@param recursion_check table<table, boolean>|nil
-        ---@param is_first_layer boolean|nil
-        ---@return string|nil
-        local function get_glob_var_name(val, tab, recursion_check, is_first_layer)
-            tab = tab or _G
+        local function get_glob_var_name(val: any, tab?: {any: any}, recursion_check?: {any: boolean}, is_first_layer?: boolean): string
+            tab = tab or _G as {any: any}
             recursion_check = recursion_check or {}
             is_first_layer = is_first_layer == nil and true
 
             for var_name, cur_val in pairs(tab) do
                 if cur_val == val then
-                    if type(var_name) == "number" then
+                    if var_name is number then
                         return "[" .. var_name .. "]"
                     else
-                        return (is_first_layer and "" or ".") .. var_name
+                        return (is_first_layer and "" or ".") .. tostring(var_name)
                     end
-                elseif type(cur_val) == "table" then
+                elseif cur_val is {any: any} then
                     if recursion_check[cur_val] then
                         return
                     else
@@ -93,47 +88,41 @@ local function _dump_generator(config)
                     end
                     local founding = get_glob_var_name(val, cur_val, recursion_check, false)
                     if founding then
-                        if type(var_name) == "number" then
+                        if var_name is number then
                             return "[" .. var_name .. "]" .. founding
                         else
-                            return (is_first_layer and "" or ".") .. var_name .. founding
+                            return (is_first_layer and "" or ".") .. tostring(var_name) .. founding
                         end
                     end
                 end
             end
         end
 
-        ---@param val any
-        ---@param level number
-        ---@param node number
-        ---@param recursion_check table<table, boolean>|nil
-        ---@return string
-        local function dump(val, level, node, recursion_check)
+        local function dump_node(val: any, level: integer, node: NodeType, recursion_check?: {any: boolean}): string
             recursion_check = recursion_check or {}
 
             local indention = dump_config.table_indention and string.rep(dump_config.table_indention, level) or ""
-            local value_indention = node == node_types.Value and "" or indention
+            local value_indention = node == "value" and "" or indention
 
             local type_ = type(val)
-            local var_name
+            local var_name: string
             if dump_config.show_global_names then
                 var_name = get_glob_var_name(val)
             end
-            local content
+            local content: string
 
-            if type_ == "table" and (dump_config.table_unfold_repeated or not recursion_check[val]) and node == node_types.Value and level < dump_config.table_max_level then
+            if val is {any: any} and (dump_config.table_unfold_repeated or not recursion_check[val]) and node == "value" and level < dump_config.table_max_level then
                 recursion_check[val] = true
                 content = value_indention .. "{" .. dump_config.table_newline
                 local last_index = 0
                 for key, cur_val in pairs(val) do
-                    local key_type = type(key)
-                    if key_type == "number" and key == last_index + 1 then
+                    if key is number and key == last_index + 1 then
                         last_index = key
-                        content = content .. dump(key, level + 1, node_types.Index)
+                        content = content .. dump_node(key, level + 1, "index")
                     else
-                        content = content .. dump(key, level + 1, node_types.Key)
+                        content = content .. dump_node(key, level + 1, "key")
                     end
-                    content = content .. dump(cur_val, level + 1, node_types.Value, recursion_check) .. "," .. dump_config.table_newline
+                    content = content .. dump_node(cur_val, level + 1, "value", recursion_check) .. "," .. dump_config.table_newline
                 end
                 content = content .. indention .. "}"
             end
@@ -142,12 +131,12 @@ local function _dump_generator(config)
 
         local result = "\n[DUMP]\n"
         for i = 1, n do
-            result = result .. dump(args[i], 0, node_types.Value) .. (i ~= n and dump_config.separator or "")
+            result = result .. dump_node(args[i], 0, "value") .. (i ~= n and dump_config.separator or "")
         end
         return result
     end
 
-    return function(...)
+    return function(...: any): any
         local result = ""
 
         if config.keyword then
@@ -175,18 +164,15 @@ local function _dump_generator(config)
 
 end
 
----@param str string
----@return boolean
-local function _is_identifier(str)
+local function _is_identifier(str: string): boolean
     local l = #str
     local b, e = string.find(str, "[%a_][%w_]*")
     return b == 1 and e == l
 end
 
 -- Kept as a drop-in `text_processor` replacement for `print` when dumps
--- exceed the console line-length limit
----@param str string
-local function _long_print(str) -- luacheck: ignore 211
+-- exceed the console line-length limit.
+local function _long_print(str: string)
     local limit = 3000
     local strlen = #str
     for i = 1, strlen, limit do
@@ -194,9 +180,9 @@ local function _long_print(str) -- luacheck: ignore 211
         print(res)
     end
 end
+local _ = _long_print
 
----@type DumpConfig
-local default_dump_config = {
+local default_dump_config: DumpConfig = {
     stacktrace = {},
     dump = {
         show_global_names = false,
@@ -204,13 +190,13 @@ local default_dump_config = {
         table_indention = "    ",
         table_unfold_repeated = false,
         table_newline = "\n",
-        index_display = function(value, type, global_name, content)
+        index_display = function(_value: any, _type: string, _global_name: string, _content: string): string
             return ""
         end,
-        key_display = function(value, type, global_name, content)
-            if type == "table" or type == "userdata" or type == "function" or type == "thread" then
+        key_display = function(value: any, type_: string, _global_name: string, _content: string): string
+            if type_ == "table" or type_ == "userdata" or type_ == "function" or type_ == "thread" then
                 return tostring(value)
-            elseif type == "string" then
+            elseif value is string then
                 if _is_identifier(value) then
                     return value .. " = "
                 else
@@ -220,10 +206,10 @@ local default_dump_config = {
                 return "[" .. tostring(value) .. "] = "
             end
         end,
-        value_display = function(value, type, global_name, content)
-            if type == "table" then
+        value_display = function(value: any, type_: string, _global_name: string, content: string): string
+            if type_ == "table" then
                 return content and content or tostring(value)
-            elseif type == "string" then
+            elseif type_ == "string" then
                 return "\"" .. tostring(value) .. "\""
             else
                 return tostring(value)
@@ -231,7 +217,7 @@ local default_dump_config = {
         end,
         separator = ",\n"
     },
-    text_processor = print
+    text_processor = print as function(string): any
 }
 
 dump = _dump_generator(default_dump_config)
