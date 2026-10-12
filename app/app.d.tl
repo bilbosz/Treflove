@@ -1,18 +1,30 @@
--- app/app.lua (still Lua; its Client and Server subclasses too). The global
--- `app` is the running Client or Server.
+-- app/app.lua (still Lua): the base of Client (app/client.d.tl) and
+-- Server (app/server.d.tl). The global `app` is the running one.
 
 global interface App is Object
-    backstack_manager: BackstackManager
-    -- any: the persisted game state read from save.lua (table_utils.from_string).
-    data: {any: any}
+    asset_manager: AssetManager
+    backstack_manager: BackstackManager -- client only
+    button_event_manager: ButtonEventManager -- client only
+    connection_manager: ConnectionManager
+    -- The persisted game state (server/save.lua): the server reads it at
+    -- load, the client receives it with GameDataRp; nil before that.
+    data: GameState
     defer_manager: DeferManager
+    file_system_drop_event_manager: FileSystemDropEventManager -- client only
     height: number
     is_client: boolean
     is_server: boolean
-    keyboard_manager: KeyboardManager
+    keyboard_manager: KeyboardManager -- client only
     logger: Logger
+    notification_manager: NotificationManager -- client only
+    options_manager: OptionsManager -- client only
     params: ArgParserResult
-    root: Control
+    pointer_event_manager: PointerEventManager -- client only
+    resize_manager: ResizeManager -- client only
+    root: Control -- nil without a window (headless server)
+    screen_manager: ScreenManager -- nil on a headless server
+    session: Session -- client only: the session of its one connection
+    text_event_manager: TextEventManager -- client only
     update_event: Event -- triggered with (dt) every frame
     wheel_event: Event -- triggered with (x, y) wheel movement (client only)
     width: number
@@ -20,20 +32,8 @@ global interface App is Object
     _mark_for_quit: boolean
     _start_time: number
     _time: number
-    -- Fields whose types later phases declare:
-    -- P1/P2/P3: add asset_manager: AssetManager
-    -- P1/P2/P3: add button_event_manager: ButtonEventManager
-    -- P1/P2/P3: add connection_manager: ConnectionManager
-    -- P1/P2/P3: add file_system_drop_event_manager: FileSystemDropEventManager
-    -- P1/P2/P3: add notification_manager: NotificationManager
-    -- P1/P2/P3: add options_manager: OptionsManager
-    -- P1/P2/P3: add pointer_event_manager: PointerEventManager
-    -- P1/P2/P3: add resize_manager: ResizeManager
-    -- P1/P2/P3: add screen_manager: ScreenManager
-    -- P1/P2/P3: add session: Session
-    -- P1/P2/P3: add text_event_manager: TextEventManager
 
-    load: function(self)
+    load: function(self) -- abstract: implemented by Client and Server
     register_love_callbacks: function(self)
     get_time: function(self): number
     quit: function(self)
