@@ -233,9 +233,13 @@ harmlessly
 three logs, and the removal by hand below). The input keeps the hook in `_unlink_hook`, and
 `remove_input` discards it, so an input removed by hand (TokenPanel drops
 and replaces its inputs) is not pinned to the form by its hook; from the
-hook itself the discard is a no-op. Inputs have no destructor: an input
-is not destroyed while its form is shown, since its `on_screen_hide`
-registrations would outlive it.
+hook itself the discard is a no-op. On a shown form `remove_input` also
+calls the input's `on_screen_hide`, undoing what it registered while shown
+(the update, button, text and key events), as `Input:init` calls
+`on_screen_show` for an input added to a shown form; without it the
+dropped input's tombstone would stay a weak key of those events and be
+called from the next update. Inputs have no destructor: an input is not
+destroyed while its form is shown.
 
 ## Back Navigation
 

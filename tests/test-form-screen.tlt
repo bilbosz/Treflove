@@ -2,6 +2,7 @@ local test = require("tests.lib.test")
 local mocks = require("tests.lib.mocks")
 local FormScreen: FormScreen = require("ui.form-screen")
 local Input: Input = require("ui.input")
+local Control: Control = require("controls.control")
 
 -- The input's unlinking hook (ui/input.tlt, idiom B of lua-lifetime
 -- trial/treflove/README.md): `Input:init` attaches it `!@ (form_screen,
@@ -55,6 +56,16 @@ function TestFormInput:release(reason?: LifetimeReason)
     trace("TestFormInput:release(" .. tostring(reason) .. ") " .. self.name)
 end
 
+-- Logged instead of registering with the button event manager, which the
+-- app mock does not have.
+function TestFormInput:on_screen_show()
+    trace("TestFormInput:on_screen_show() " .. self.name)
+end
+
+function TestFormInput:on_screen_hide()
+    trace("TestFormInput:on_screen_hide() " .. self.name)
+end
+
 -- The inputs of a TestFormScreen.
 local function inputs_of(form: TestFormScreen): {TestFormInput}
     return form._inputs as {TestFormInput} -- as: see TestFormScreen.remove_input
@@ -89,8 +100,11 @@ local function collect()
 end
 
 local function setup()
-    mocks.install_app()
     mocks.ensure_love_math()
+    -- as: the mock is a table of fields; `show` puts the screen's control under `app.root`
+    mocks.install_app({
+        root = Control()
+    } as {string: any}) -- any: the override values are of several types
     log = {}
 end
 
@@ -223,5 +237,41 @@ test.case("an input removed by hand loses its hook and is collected once dropped
         "TestFormScreen:remove_input(a)",
         "> lifetime.destroy(form)",
         "TestFormScreen:release(destroy)"
+    })
+end)
+
+test.case("an input removed by hand from a shown form is hidden first", function()
+    setup()
+    local form = TestFormScreen()
+    local a = TestFormInput(form, "a")
+    local inputs = inputs_of(form)
+    trace("> form:show()")
+    form:show()
+    trace("> TestFormInput(form, 'b')")
+    local b = TestFormInput(form, "b")
+    trace("inputs: " .. names(inputs))
+    trace("> form:remove_input(b)")
+    form:remove_input(b)
+    trace("inputs: " .. names(inputs) .. ", hooks on form: " .. #lifetime.dependents(form))
+    trace("> form:hide()")
+    form:hide()
+    trace("> form:remove_input(a)")
+    form:remove_input(a)
+    trace("inputs: " .. names(inputs))
+    test.assert_deep_eq(log, {
+        "> form:show()",
+        "TestFormInput:on_screen_show() a",
+        "> TestFormInput(form, 'b')",
+        "TestFormInput:on_screen_show() b",
+        "inputs: {a, b}",
+        "> form:remove_input(b)",
+        "TestFormScreen:remove_input(b)",
+        "TestFormInput:on_screen_hide() b",
+        "inputs: {a}, hooks on form: 1",
+        "> form:hide()",
+        "TestFormInput:on_screen_hide() a",
+        "> form:remove_input(a)",
+        "TestFormScreen:remove_input(a)",
+        "inputs: {}"
     })
 end)

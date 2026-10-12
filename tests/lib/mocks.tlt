@@ -268,14 +268,23 @@ end
 
 -- Make sure `love.math.newTransform` exists, for code that constructs a
 -- `Control` (a `Screen` makes one). Under `love . test` the real module is
--- used; under plain LuaJIT a transform that ignores every operation is
--- installed instead (enough for constructing controls, not for geometry).
+-- used; under plain LuaJIT an identity transform is installed instead: the
+-- point methods return their arguments and every other operation is
+-- ignored (enough for constructing and parenting controls, not for
+-- geometry).
 function mocks.ensure_love_math()
     if love and love.math then
         return
     end
+    local function identity(_: FakeModule, x: number, y: number): number, number
+        return x, y
+    end
     local transform_mt: metatable<FakeModule> = {}
-    transform_mt.__index = function(): function(FakeModule): FakeModule
+    -- any: a method of the fake, with the signature of the one asked for
+    transform_mt.__index = function(_: FakeModule, name: string): any
+        if name == "transformPoint" or name == "inverseTransformPoint" then
+            return identity
+        end
         return function(transform: FakeModule): FakeModule
             return transform
         end

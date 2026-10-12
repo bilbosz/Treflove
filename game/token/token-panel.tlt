@@ -179,9 +179,10 @@ function TokenPanel:_create_apply_button()
 end
 
 -- The inputs are removed from the form and dropped, not destroyed: Input
--- has no destructor that would undo its `on_screen_hide` registrations,
--- and the form is shown (docs/lifetime.md, "Screens"). `remove_input`
--- discards each input's unlinking hook, so a dropped input is collectable.
+-- has no destructor, and `remove_input` on the shown form calls each
+-- input's `on_screen_hide` (undoing what it registered while shown) and
+-- discards its unlinking hook, so a dropped input is collectable
+-- (docs/lifetime.md, "Screens").
 function TokenPanel:_release_properties()
     for _, v in ipairs(self._properties) do
         v.title:set_parent(nil)
