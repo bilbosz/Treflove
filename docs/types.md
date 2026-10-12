@@ -161,6 +161,16 @@ fragment's line.
   and `PreviewAudioArea` have in common, since a union may hold one table
   type only). Such a type has no class table, so `is_instance_of` cannot
   take it.
+- Function parameters are compared **bivariantly**: a function whose
+  parameter is a subtype or a supertype of the expected one is accepted
+  (`function(x: Page)` where `function(x: Control)` is expected, and the
+  other way round), an unrelated type is not; the `self` parameter of a
+  method taken as a value (`self.on_update`) is not compared at all.
+  `Event.register` is generic in the owner (`register: function<O is
+  Object>(self, owner: O, handler: function(owner: O, ...: any))`), so an
+  owner must be an `Object` and a handler written as a plain function must
+  take that owner; a consumer passes its method as it is,
+  `app.update_event:register(self, self.on_update)`, with no cast.
 - `userdata` is a type (`PointerId = number | userdata`: a mouse button or a
   touch id).
 - A love-api "table" result (`love.filesystem.getInfo`) is `{any: any}`;

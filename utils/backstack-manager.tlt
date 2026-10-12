@@ -7,7 +7,7 @@ local BackstackManager: BackstackManager = class("BackstackManager")
 
 BackstackManager.init = function(self: BackstackManager)
     self._stack = {}
-    app.keyboard_manager.key_pressed:register(self, self.on_key_pressed as EventHandler)
+    app.keyboard_manager.key_pressed:register(self, self.on_key_pressed)
 end
 
 -- Push `cb` and return its entry for the caller to anchor: the entry

@@ -47,14 +47,17 @@ end
 
 -- Register `handler` to be called as `handler(owner, ...)` on trigger.
 -- Registering the same owner again replaces its handler.
-function Event:register(owner: Object, handler: EventHandler)
+function Event:register<O is Object>(owner: O, handler: function(owner: O, ...: any))
     assert_type(owner, "table")
     assert_type(handler, "function")
+    -- The tables hold the handlers of owners of every type; each handler is
+    -- called with its own owner only (trigger, get_handler's callers).
+    local h = handler as EventHandler
     if self._lock then
-        self._to_add[owner] = handler
+        self._to_add[owner] = h
         return
     end
-    self._handlers[owner] = handler
+    self._handlers[owner] = h
 end
 
 function Event:unregister(owner: Object)
