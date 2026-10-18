@@ -6,6 +6,7 @@ local AssetsPanel = require("game.assets.assets-panel")
 local QuickAccessPanel = require("game.quick-access-panel")
 local Consts = require("app.consts")
 local UserMenuScreen = require("screens.user-menu-screen")
+local lifetime = require("lifetime")
 
 ---@class GameScreen: Model, FormScreen
 ---@field _page Page
@@ -24,7 +25,9 @@ function GameScreen:init(data)
     self._page = Page(app.data.pages[data.page], self, app.width * 0.8, app.height)
 
     self._token_panel = TokenPanel(self, app.width * 0.2, app.height)
-    self._assets_panel = AssetsPanel(self, app.width * 0.2, app.height)
+    -- lua-lifetime: the assets panel (with its preview area's file-drop
+    -- registration) dies with the screen; GameScreen:release is gone.
+    self._assets_panel = lifetime.attach(AssetsPanel(self, app.width * 0.2, app.height), self)
 
     self._panel = self._assets_panel
     local panels = {
@@ -43,17 +46,16 @@ function GameScreen:init(data)
     self._quick_access_panel:add_entry("Assets", self._assets_panel)
 end
 
-function GameScreen:release()
-    self._assets_panel:release()
-end
-
 function GameScreen:show()
     self:on_resize(app.width, app.height)
     FormScreen.show(self)
-    app.backstack_manager:push(function()
-        self:release()
-        app.screen_manager:show(UserMenuScreen(app.session))
-    end)
+    -- lua-lifetime: the way back belongs to this screen and leaves the stack
+    -- with it. Going back shows the menu (which hides this screen), then
+    -- destroys the screen with everything anchored to it.
+    lifetime.attach(app.backstack_manager:push(function()
+        app.screen_manager:show(lifetime.attach(UserMenuScreen(app.session), app.session:get_period()))
+        lifetime.destroy(self)
+    end), self)
 end
 
 function GameScreen:on_selection_change()

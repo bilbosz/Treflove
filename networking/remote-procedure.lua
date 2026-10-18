@@ -47,9 +47,13 @@ function RemoteProcedure:receive_response(response)
     abstract()
 end
 
-function RemoteProcedure:release()
+---lua-lifetime: the destructor, run when the procedure's anchor dies. The
+---connection is alive, or dying in the same cascade and still usable
+---(lib/lua-lifetime/docs/02-semantics.md, "Tombstones": a dying object is not
+---dead); the tombstone empties `_connection` afterwards.
+---@param reason lifetime.Reason
+function RemoteProcedure:release(reason)
     self:stop()
-    self._connection = nil
 end
 
 return RemoteProcedure

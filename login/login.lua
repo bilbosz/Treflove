@@ -1,6 +1,7 @@
 local LoginRp = require("login.login-rp")
 local LogoutRp = require("login.logout-rp")
 local Utils = require("utils.utils")
+local lifetime = require("lifetime")
 
 ---@class Login
 ---@field private _connection Connection
@@ -21,8 +22,9 @@ end
 ---@param on_logout fun()
 function Login:init(session, on_login, on_logout)
     self._connection = session:get_connection()
-    self._login_rp = LoginRp(self._connection, on_login)
-    self._logout_rp = LogoutRp(self._connection, on_logout)
+    -- lua-lifetime: the procedures die with the login; Login:release is gone.
+    self._login_rp = lifetime.attach(LoginRp(self._connection, on_login), self)
+    self._logout_rp = lifetime.attach(LogoutRp(self._connection, on_logout), self)
 end
 
 ---@param user string
@@ -37,11 +39,6 @@ end
 function Login:logout()
     assert(app.is_client)
     self._logout_rp:send_request({})
-end
-
-function Login:release()
-    self._login_rp:release()
-    self._logout_rp:release()
 end
 
 return Login

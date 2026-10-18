@@ -4,6 +4,7 @@ local Text = require("controls.text")
 local TextInput = require("ui.text-input")
 local NumberInput = require("ui.number-input")
 local TextButton = require("ui.text-button")
+local lifetime = require("lifetime")
 
 ---@class TokenPanelProperty
 ---@field key string Token data key
@@ -204,23 +205,22 @@ end
 
 ---@private
 function TokenPanel:_release_properties()
+    -- lua-lifetime: a destroyed input ends its registrations and leaves the
+    -- control tree (TextInput:release, Tree:release) and its form (the hook
+    -- of ui/input.lua).
     for _, v in ipairs(self._properties) do
         v.title:set_parent(nil)
-
-        self._game_screen:remove_input(v.input)
-        v.input:set_parent(nil)
+        lifetime.destroy(v.input)
     end
     self._properties = {}
 
     if self._cancel_button then
-        self._game_screen:remove_input(self._cancel_button)
-        self._cancel_button:set_parent(nil)
+        lifetime.destroy(self._cancel_button)
         self._cancel_button = nil
     end
 
     if self._apply_button then
-        self._game_screen:remove_input(self._apply_button)
-        self._apply_button:set_parent(nil)
+        lifetime.destroy(self._apply_button)
         self._apply_button = nil
     end
 end

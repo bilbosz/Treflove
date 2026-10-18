@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Treflove is a multiplayer turn-based tabletop game engine built on LÖVE (love2d). The game master creates rules in Lua and can dynamically modify game state during gameplay. The project follows a server-client uniform architecture where many classes work in both server and client contexts. Only vanilla love2d is used - no external dependencies.
+Treflove is a multiplayer turn-based tabletop game engine built on LÖVE (love2d). The game master creates rules in Lua and can dynamically modify game state during gameplay. The project follows a server-client uniform architecture where many classes work in both server and client contexts. Only vanilla love2d is used - no external dependencies, with one exception on this branch: object lifetimes are tracked by [lua-lifetime](lib/lua-lifetime/README.md) (a git submodule at `lib/lua-lifetime`, required as a library, nothing transpiled) - see [docs/lifetimes.md](docs/lifetimes.md).
 
 ## Prerequisites
 
@@ -18,6 +18,7 @@ Detailed guidance is split into topic files, imported below. To address one topi
 - [docs/architecture.md](docs/architecture.md) - subsystems, design patterns, LÖVE integration
 - [docs/conventions.md](docs/conventions.md) - naming, modules vs classes, globals
 - [docs/type-annotations.md](docs/type-annotations.md) - LuaDoc annotation rules, strict typing, LÖVE types, annotation packages
+- [docs/lifetimes.md](docs/lifetimes.md) - object ownership with lua-lifetime: `lifetime.attach`, hooks, the "logged in" token, `release(reason)` as the destructor
 
 @docs/development.md
 
@@ -26,6 +27,8 @@ Detailed guidance is split into topic files, imported below. To address one topi
 @docs/conventions.md
 
 @docs/type-annotations.md
+
+@docs/lifetimes.md
 
 ## Project Status
 

@@ -11,6 +11,10 @@
 - `rg` (ripgrep) - `sudo apt install ripgrep`
 - `luajit` (optional, for fast headless tests) - `sudo apt install luajit`
 
+### Git submodules
+- `annotations/love2d` - LÖVE type annotations for the language server
+- `lib/lua-lifetime` - the lua-lifetime runtime (pure Lua; no build step): `git submodule update --init --recursive`
+
 ### Standard Unix Utilities
 - `bash`, `find`, `xargs`, `jobs`, `kill`, `sleep`, `mktemp`, `readlink`
 

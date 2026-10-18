@@ -1,5 +1,6 @@
 local Connector = require("networking.connector")
 local Connection = require("networking.connection")
+local lifetime = require("lifetime")
 
 ---@alias ConnectionManagerOnConnect fun(connection:Connection)
 ---@alias ConnectionManagerOnDisconnect fun(connection:Connection)
@@ -63,7 +64,13 @@ function ConnectionManager:remove(connection)
     if app.is_client then
         self._connector:remove_thread()
     end
-    connection:release()
+    -- lua-lifetime: one cascade tears down everything anchored to the
+    -- connection (the session, its login and remote procedures, the logged-in
+    -- period with its screens and back entries), the connection's own
+    -- release() first (lib/lua-lifetime/docs/02-semantics.md, "Cascading
+    -- death"). The three table removals above stay: a dead connection is a
+    -- tombstone, not nil, and would otherwise remain a key ("Tombstones").
+    lifetime.destroy(connection)
 end
 
 ---@return table<Connection, boolean>

@@ -223,6 +223,15 @@ function TextInput:on_screen_hide()
     Input.on_screen_hide(self)
 end
 
+---lua-lifetime: the destructor. A field destroyed while its screen is shown
+---(a panel rebuilding its inputs) ends its registrations as hiding the
+---screen would, then leaves the control tree.
+---@param reason lifetime.Reason
+function TextInput:release(reason)
+    self:on_screen_hide()
+    Control.release(self, reason)
+end
+
 ---@param dt number
 function TextInput:on_update(dt)
     local caret = self._caret

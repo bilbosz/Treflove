@@ -47,7 +47,21 @@ function class(name, ...)
     local index = _create_index(class, ...)
     local obj_mt = {
         __index = index,
-        class = class
+        class = class,
+        -- lua-lifetime: an instance's `release(reason)` is its destructor. The
+        -- runtime reads `__destroy` from the metatable when an anchored
+        -- instance dies (lib/lua-lifetime/docs/02-semantics.md, "`__destroy`
+        -- and reasons"); the method is looked up on the dying instance at
+        -- that moment, so a class defines `release` after `class()`, a
+        -- subclass overrides it, and an instance may carry its own.
+        ---@param obj table
+        ---@param reason lifetime.Reason
+        __destroy = function(obj, reason)
+            local release = obj.release
+            if release then
+                release(obj, reason)
+            end
+        end
     }
 
     local class_metatable = {

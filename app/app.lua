@@ -4,6 +4,7 @@ local DeferManager = require("events.defer-manager")
 local Event = require("events.event")
 local Logger = require("utils.logger")
 local Utils = require("utils.utils")
+local lifetime = require("lifetime")
 
 ---@class App
 ---@field public asset_manager AssetManager
@@ -88,6 +89,13 @@ function App:register_love_callbacks()
         function love.errorhandler()
 
         end
+    end
+
+    -- lua-lifetime: LÖVE runs love.quit on every quit path before it closes
+    -- the state; from then on the destructors the closing state runs report
+    -- "exit" (lib/lua-lifetime/docs/02-semantics.md, "Program end").
+    function love.quit()
+        lifetime.set_exiting(true)
     end
 
     ---@param dt number

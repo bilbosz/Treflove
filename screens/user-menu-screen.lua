@@ -1,6 +1,7 @@
 local MenuScreen = require("screens.menu-screen")
 local MenuTextButton = require("ui.menu.menu-text-button")
 local OptionsMenuScreen = require("screens.options-menu-screen")
+local lifetime = require("lifetime")
 
 ---@class UserMenuScreen: MenuScreen
 ---@field private _session Session
@@ -31,10 +32,12 @@ function UserMenuScreen:join_game()
 end
 
 function UserMenuScreen:options()
-    app.backstack_manager:push(function()
+    -- lua-lifetime: the options screen and the way back belong to this menu;
+    -- both die with it (at logout or disconnect), wherever the user is.
+    lifetime.attach(app.backstack_manager:push(function()
         app.screen_manager:show(self, self._session)
-    end)
-    app.screen_manager:show(OptionsMenuScreen())
+    end), self)
+    app.screen_manager:show(lifetime.attach(OptionsMenuScreen(), self))
 end
 
 function UserMenuScreen:logout()

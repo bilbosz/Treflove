@@ -1,4 +1,5 @@
 local test = require("tests.lib.test")
+local lifetime = require("lifetime")
 
 -- Base classes must be fully defined before deriving from them: `class()`
 -- copies base methods at creation time (see _create_index in utils/class.lua).
@@ -94,4 +95,55 @@ test.case("instances of the same class are independent", function()
     test.assert_eq(b.name, "b")
     a.extra = true
     test.assert_eq(b.extra, nil)
+end)
+
+-- lua-lifetime: `release(reason)` is the destructor of every instance.
+local Resource = class("TestResource")
+
+---@param log string[]
+---@param name string
+function Resource:init(log, name)
+    self.log = log
+    self.name = name
+end
+
+---@param reason lifetime.Reason
+function Resource:release(reason)
+    table.insert(self.log, self.name .. " (" .. reason .. ")")
+end
+
+local Quiet = class("TestQuiet")
+
+test.case("release runs as the destructor, with the reason, when an instance is destroyed", function()
+    local log = {}
+    local r = Resource(log, "r")
+    lifetime.destroy(r)
+    test.assert_deep_eq(log, {"r (destroy)"})
+    test.assert_false(lifetime.alive(r))
+    test.assert_error(function()
+        local _ = r.name
+    end)
+end)
+
+test.case("an anchored instance is released when its anchor dies; a class without release is fine", function()
+    local log = {}
+    local owner = Resource(log, "owner")
+    local child = lifetime.attach(Resource(log, "child"), owner)
+    local quiet = lifetime.attach(Quiet(), owner)
+    lifetime.destroy(owner)
+    test.assert_deep_eq(log, {"owner (destroy)", "child (anchor)"}, "the owner's body first, then its dependents")
+    test.assert_false(lifetime.alive(child))
+    test.assert_false(lifetime.alive(quiet))
+end)
+
+test.case("a subclass's release overrides the base's, as any method", function()
+    local log = {}
+    local Loud = class("TestLoud", Resource)
+    ---@param reason lifetime.Reason
+    function Loud:release(reason)
+        table.insert(self.log, "loud " .. self.name .. " (" .. reason .. ")")
+    end
+    lifetime.destroy(Loud(log, "l"))
+    lifetime.destroy(Resource(log, "r"))
+    test.assert_deep_eq(log, {"loud l (destroy)", "r (destroy)"})
 end)

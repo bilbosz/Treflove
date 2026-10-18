@@ -7,6 +7,7 @@ local Text = require("controls.text")
 local TextInput = require("ui.text-input")
 local TextButton = require("ui.text-button")
 local Utils = require("utils.utils")
+local lifetime = require("lifetime")
 
 local media = require("utils.media")
 
@@ -38,7 +39,9 @@ local FILE_TYPE_PREVIEW = {
 ---@param self AssetsPanel
 local function _create_preview_area(self)
     local w = self:get_size() - 2 * Consts.PADDING
-    self._preview_area = PreviewArea(self, w, w)
+    -- lua-lifetime: the preview area dies with the panel; AssetsPanel:release
+    -- is gone.
+    self._preview_area = lifetime.attach(PreviewArea(self, w, w), self)
     self._preview_area:set_position(Consts.PADDING, Consts.PADDING)
 end
 
@@ -253,10 +256,6 @@ end
 
 function AssetsPanel:cancel()
     self:reset()
-end
-
-function AssetsPanel:release()
-    self._preview_area:release()
 end
 
 return AssetsPanel

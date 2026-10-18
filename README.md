@@ -8,11 +8,18 @@ The aim of the project is to create or prototype a multiplayer game for several 
 
 [LÖVE](https://love2d.org/) is the only requirement for this project and the author makes sure to deliver.
 
+This branch also carries [lua-lifetime](https://github.com/bilbosz/lua-lifetime) as a git submodule
+(`lib/lua-lifetime`, pure Lua, used as a library): run `git submodule update --init --recursive`
+after cloning. See [docs/lifetimes.md](docs/lifetimes.md) for what it replaces.
+
 ## Architectural goals
 
 Server-client uniform architecture - some classes are used in server and client context.
 
-No external requirements other than what vanilla love2d framework offers.
+No external requirements other than what vanilla love2d framework offers. This branch is the
+exception made for comparison: object lifetimes (who owns what, and in which order things are
+released) are tracked by the lua-lifetime runtime instead of hand-written `release()` chains -
+[docs/lifetimes.md](docs/lifetimes.md).
 
 ## Running
 

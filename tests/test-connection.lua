@@ -1,5 +1,6 @@
 local test = require("tests.lib.test")
 local mocks = require("tests.lib.mocks")
+local lifetime = require("lifetime")
 local Connection = require("networking.connection")
 local RemoteProcedure = require("networking.remote-procedure")
 
@@ -131,11 +132,41 @@ test.case("responses are matched to requests in FIFO order", function()
     })
 end)
 
-test.case("release frees channels and threads", function()
+test.case("destroying a connection releases its channels and threads and unregisters it from the update event", function()
     local client_connection = make_connection_pair()
     local in_channel = client_connection:get_in_channel() --[[@as FakeChannel]]
     local out_channel = client_connection:get_out_channel() --[[@as FakeChannel]]
-    client_connection:release()
+    test.assert_eq(app.update_event:get_handler(client_connection), Connection.on_update)
+    lifetime.destroy(client_connection)
     test.assert_true(in_channel._released)
     test.assert_true(out_channel._released)
+    test.assert_eq(app.update_event:get_handler(client_connection), nil)
+    test.assert_false(lifetime.alive(client_connection))
+end)
+
+test.case("procedures anchored to a connection stop with it, newest first, after its own release", function()
+    local client_connection = make_connection_pair()
+    local log = {}
+    local unregister = Connection.unregister_request_handler
+    client_connection.unregister_request_handler = function(self, id)
+        table.insert(log, "unregister " .. id)
+        return unregister(self, id)
+    end
+    local release = Connection.release
+    client_connection.release = function(self, reason)
+        table.insert(log, "Connection:release(" .. reason .. ")")
+        return release(self, reason)
+    end
+    local first = lifetime.attach(EchoRp(client_connection), client_connection)
+    local Second = class("TestSecondRp", RemoteProcedure)
+    local second = lifetime.attach(Second(client_connection), client_connection)
+
+    lifetime.destroy(client_connection)
+    test.assert_deep_eq(log, {
+        "Connection:release(destroy)",
+        "unregister TestSecondRp",
+        "unregister TestEchoRp"
+    })
+    test.assert_false(lifetime.alive(first))
+    test.assert_false(lifetime.alive(second))
 end)

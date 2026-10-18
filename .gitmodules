@@ -1,3 +1,6 @@
 [submodule "annotations/love2d"]
 	path = annotations/love2d
 	url = git@github.com:LuaCATS/love2d.git
+[submodule "lib/lua-lifetime"]
+	path = lib/lua-lifetime
+	url = git@github.com:bilbosz/lua-lifetime.git

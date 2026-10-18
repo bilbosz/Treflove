@@ -1,6 +1,7 @@
 local RemoteProcedure = require("networking.remote-procedure")
 local WaitingScreen = require("screens.waiting-screen")
 local GameScreen = require("game.game-screen")
+local lifetime = require("lifetime")
 
 ---@class GameDataResponse
 ---@field public data table Full game state served by the server
@@ -38,7 +39,9 @@ function GameDataRp:receive_response(response)
     app.screen_manager:show(WaitingScreen("Synchronizing Assets..."))
     local list = _list_required_assets()
     app.asset_manager:download_missing_assets(list, function()
-        app.screen_manager:show(GameScreen(app.data.game))
+        -- lua-lifetime: the game screen belongs to the logged-in period:
+        -- logging out or disconnecting destroys it, with its panels.
+        app.screen_manager:show(lifetime.attach(GameScreen(app.data.game), app.session:get_period()))
     end)
 end
 

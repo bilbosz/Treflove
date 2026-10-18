@@ -109,7 +109,10 @@ function Connection:on_update()
     end
 end
 
-function Connection:release()
+---lua-lifetime: the destructor, run by ConnectionManager:remove's
+---lifetime.destroy(connection) before the session and the procedures die.
+---@param reason lifetime.Reason
+function Connection:release(reason)
     app.update_event:unregister(self)
     self._in_thread:release()
     self._in_channel:release()

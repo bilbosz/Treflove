@@ -3,6 +3,7 @@ local Control = require("controls.control")
 local Text = require("controls.text")
 local Consts = require("app.consts")
 local Rectangle = require("controls.rectangle")
+local lifetime = require("lifetime")
 
 ---@class PreviewArea: ClippingRectangle
 ---@field parent AssetsPanel
@@ -102,8 +103,15 @@ end
 function PreviewArea:on_file_system_drop(x, y, dropped_file)
     local ok, err = dropped_file:open("r")
     assert(ok, err)
-    self.parent:set_file(dropped_file)
-    dropped_file:close()
+    -- lua-lifetime: the file is closed when the block exits, by an error as
+    -- well as by the return (lib/lua-lifetime/docs/02-semantics.md, "The
+    -- library form").
+    lifetime.block(function(scope)
+        lifetime.hook(function()
+            dropped_file:close()
+        end, scope)
+        self.parent:set_file(dropped_file)
+    end)
 end
 
 ---@param love_content LoveMedium
@@ -121,9 +129,12 @@ function PreviewArea:reset()
     end
 end
 
-function PreviewArea:release()
+---lua-lifetime: the destructor, run when the panel that owns the area dies.
+---@param reason lifetime.Reason
+function PreviewArea:release(reason)
     app.file_system_drop_event_manager.file_dropped:unregister(self)
     app.file_system_drop_event_manager:set_receive_through(self, false)
+    Control.release(self, reason)
 end
 
 return PreviewArea

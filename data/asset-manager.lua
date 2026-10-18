@@ -2,6 +2,7 @@ local Asset = require("data.asset")
 local DownloadAssetRp = require("data.download-asset-rp")
 local DownloadMissingAssetsRp = require("data.download-missing-assets-rp")
 local UploadAssetRp = require("data.upload-asset-rp")
+local lifetime = require("lifetime")
 
 ---@class AssetManager
 ---@field private _download_asset_rp table<Session, DownloadAssetRp>
@@ -129,21 +130,18 @@ end
 ---@param session Session
 function AssetManager:register_session(session)
     local connection = session:get_connection()
-    self._upload_asset_rp[session] = UploadAssetRp(connection)
-    self._download_asset_rp[session] = DownloadAssetRp(connection)
-    self._download_missing_assets_rp[session] = DownloadMissingAssetsRp(connection)
-end
-
----@param session Session
-function AssetManager:unregister_session(session)
-    self._upload_asset_rp[session]:release()
-    self._upload_asset_rp[session] = nil
-
-    self._download_asset_rp[session]:release()
-    self._download_asset_rp[session] = nil
-
-    self._download_missing_assets_rp[session]:release()
-    self._download_missing_assets_rp[session] = nil
+    -- lua-lifetime: the procedures die with the session, and a hook on the
+    -- session clears its entries while it is dying and still a findable key
+    -- (lib/lua-lifetime/docs/02-semantics.md, "Hooks"); unregister_session
+    -- is gone.
+    self._upload_asset_rp[session] = lifetime.attach(UploadAssetRp(connection), session)
+    self._download_asset_rp[session] = lifetime.attach(DownloadAssetRp(connection), session)
+    self._download_missing_assets_rp[session] = lifetime.attach(DownloadMissingAssetsRp(connection), session)
+    lifetime.hook(function()
+        self._upload_asset_rp[session] = nil
+        self._download_asset_rp[session] = nil
+        self._download_missing_assets_rp[session] = nil
+    end, session)
 end
 
 return AssetManager

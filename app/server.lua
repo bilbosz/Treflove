@@ -5,6 +5,7 @@ local Session = require("game.session")
 local ConnectionManager = require("networking.connection-manager")
 local ScreenManager = require("screens.screen-manager")
 local ScreenSaver = require("screens.screen-saver")
+local lifetime = require("lifetime")
 
 ---@class Server: App
 ---@field private _save_file Asset
@@ -31,9 +32,11 @@ end
 function Server:load()
     self:_load_data()
     self.connection_manager:start(function(connection)
-        self._sessions[connection] = Session(connection)
+        -- lua-lifetime: the session dies inside the connection's cascade.
+        self._sessions[connection] = lifetime.attach(Session(connection), connection)
     end, function(connection)
-        self._sessions[connection]:release()
+        -- lua-lifetime: `release()` is gone; the entry is still removed by hand,
+        -- since a dead connection is a tombstone and stays a key.
         self._sessions[connection] = nil
     end)
 end

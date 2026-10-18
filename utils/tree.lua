@@ -49,6 +49,17 @@ function Tree:remove_child(child)
     end
 end
 
+---lua-lifetime: a destroyed node leaves its parent's children while it is
+---dying and still findable by identity, so no tombstone stays in the array
+---(lib/lua-lifetime/docs/02-semantics.md, "Tombstones"). A subclass with a
+---`release` of its own chains it: `Control.release(self, reason)`.
+---@param reason lifetime.Reason
+function Tree:release(reason)
+    if self.parent then
+        self.parent:remove_child(self)
+    end
+end
+
 ---@return Tree[]
 function Tree:get_children()
     return table.copy(self.children)

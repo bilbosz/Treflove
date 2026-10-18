@@ -1,5 +1,6 @@
 local test = require("tests.lib.test")
 local mocks = require("tests.lib.mocks")
+local lifetime = require("lifetime")
 local Consts = require("app.consts")
 local BackstackManager = require("utils.backstack-manager")
 
@@ -33,21 +34,54 @@ test.case("back invokes and pops callbacks in LIFO order", function()
     test.assert_eq(manager:get_top(), nil)
 end)
 
-test.case("pop removes only the top callback and only when it matches", function()
+test.case("push returns the entry; back destroys it before running its callback", function()
     mocks.install_app()
     local manager = BackstackManager()
-    local bottom = function()
-    end
-    local top = function()
-    end
-    manager:push(bottom)
-    manager:push(top)
+    local bottom = manager:push(function()
+    end)
+    local depth_in_cb
+    local top = manager:push(function()
+        depth_in_cb = manager:get_top()
+    end)
+    test.assert_eq(manager:get_top(), top)
 
-    manager:pop(bottom)
-    test.assert_eq(manager:get_top(), top, "popping a non-top callback is a no-op")
-
-    manager:pop(top)
+    manager:back()
+    test.assert_eq(depth_in_cb, bottom, "the callback already sees the entry gone")
+    test.assert_false(lifetime.alive(top))
     test.assert_eq(manager:get_top(), bottom)
+end)
+
+test.case("an entry anchored to an owner leaves the stack when the owner dies, wherever it sits", function()
+    mocks.install_app()
+    local manager = BackstackManager()
+    local owner = {}
+    local root = manager:push(function()
+    end)
+    local owned = lifetime.attach(manager:push(function()
+    end), owner)
+    local above = manager:push(function()
+    end)
+    test.assert_eq(manager:get_top(), above)
+
+    lifetime.destroy(owner)
+    test.assert_false(lifetime.alive(owned))
+    test.assert_eq(manager:get_top(), above, "the entry above is untouched")
+    manager:back()
+    test.assert_eq(manager:get_top(), root, "the owned entry is gone from the middle")
+end)
+
+test.case("destroying an entry by hand pops it without running its callback", function()
+    mocks.install_app()
+    local manager = BackstackManager()
+    local calls = 0
+    local entry = manager:push(function()
+        calls = calls + 1
+    end)
+    lifetime.destroy(entry)
+    test.assert_eq(calls, 0)
+    test.assert_eq(manager:get_top(), nil)
+    manager:back()
+    test.assert_eq(calls, 0, "nothing left to run")
 end)
 
 test.case("push accepts only functions", function()

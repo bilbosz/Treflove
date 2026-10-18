@@ -56,6 +56,7 @@ The class name is used as the RPC identifier. Examples: LoginRp, UploadAssetRp, 
 - Coordinates screen transitions (connecting → login → user menu → game)
 - Integrates with asset manager and backstack navigation
 - Server maintains `_sessions` table mapping Connection → Session
+- Is anchored to its connection (`lifetime.attach(Session(connection), connection)`) and owns its login, its remote procedures and, on the client, the "logged in" token that owns the menu and game screens - see [lifetimes.md](lifetimes.md)
 - **Note**: Client auto-logs in with hardcoded credentials "adam"/"krause" at [game/session.lua:56](../game/session.lua#L56)
 
 ## Event System
@@ -123,7 +124,7 @@ The [server/](../server/) directory contains server data, not source code: [serv
 
 ## Backstack Navigation
 
-[BackstackManager](../utils/backstack-manager.lua) maintains a stack of callbacks for back navigation (similar to browser history). When user presses back, the top callback is invoked and popped.
+[BackstackManager](../utils/backstack-manager.lua) maintains a stack of entries for back navigation (similar to browser history). `push(cb)` returns the entry, which the caller anchors to what it is for (a screen, the logged-in token); an entry leaves the stack when it dies. When the user presses back, the top entry is destroyed and its callback invoked.
 
 ## Key Design Patterns
 
@@ -135,13 +136,13 @@ The [server/](../server/) directory contains server data, not source code: [serv
 
 **Remote Procedures**: Request-response pattern over network connections using class names as identifiers.
 
-**Resource Cleanup**: Classes implement `release()` methods for cleanup, called when objects are no longer needed.
+**Resource Cleanup**: Classes implement `release(reason)` methods for cleanup; on this branch they are destructors run by lua-lifetime when the object's owner dies, when `lifetime.destroy` is called on it, or when the collector finds it - never called by hand. Ownership is declared where objects are created: `lifetime.attach(obj, owner)`. See [lifetimes.md](lifetimes.md).
 
 ## LÖVE Framework Integration
 
 - Entry: [main.lua](../main.lua)
 - Config: [conf.lua](../conf.lua)
-- Callbacks registered in `App:register_love_callbacks()` and overridden in Client/Server
+- Callbacks registered in `App:register_love_callbacks()` and overridden in Client/Server; `love.quit` tells lua-lifetime the program is ending
 - Client uses love.graphics, love.window, love.keyboard, love.mouse, love.touch
 - Both use love.thread and love.channel for networking
 - Server can run headless (no graphics) or with minimal UI

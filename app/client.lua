@@ -15,6 +15,7 @@ local ScreenManager = require("screens.screen-manager")
 local BackstackManager = require("utils.backstack-manager")
 local ButtonEventManager = require("ui.button-event")
 local TextEventManager = require("ui.text-event")
+local lifetime = require("lifetime")
 
 ---@class Client: App
 local Client = class("Client", App)
@@ -48,10 +49,14 @@ function Client:load()
     local connecting_screen = ConnectingScreen()
     self.screen_manager:show(connecting_screen)
     self.connection_manager:start(function(connection)
-        self.session = Session(connection)
+        -- lua-lifetime: the session dies inside the connection's cascade.
+        self.session = lifetime.attach(Session(connection), connection)
     end, function()
         self.screen_manager:show(connecting_screen)
-        self.session:release()
+        -- lua-lifetime: `self.session:release()` is gone; ConnectionManager:remove
+        -- destroys the connection, and the session with it, right after this
+        -- callback. The fields are still cleared by hand: a dead session is a
+        -- tombstone, not nil.
         self.session = nil
         self.data = nil
     end)

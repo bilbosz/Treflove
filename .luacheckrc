@@ -64,6 +64,8 @@ std = {
 
 exclude_files = {
     "doc/**",
+    -- lua-lifetime, a git submodule with a luacheck setup of its own
+    "lib/**",
     -- third-party type annotation packages (see annotations/CLAUDE.md)
     "annotations/**",
     -- lua-language-server plugin, runs inside the language server's own

@@ -19,6 +19,16 @@ function Screen:hide()
     self.screen:set_parent(nil)
 end
 
+---lua-lifetime: a screen destroyed while shown hides itself, so its controls
+---leave the root and its registrations end; the screen manager forgets it
+---through a hook of its own (screens/screen-manager.lua).
+---@param reason lifetime.Reason
+function Screen:release(reason)
+    if self.screen:get_parent() then
+        self:hide()
+    end
+end
+
 -- luacheck: push no unused args
 ---@param w number
 ---@param h number
