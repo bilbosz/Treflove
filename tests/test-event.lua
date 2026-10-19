@@ -1,7 +1,7 @@
 local test = require("tests.lib.test")
 local Event = require("events.event")
+local lifetime = require("lifetime")
 
--- An event owner for the tests; records every trigger it receives.
 ---@class TestEventOwner: Object
 ---@field received any[]
 local TestEventOwner = class("TestEventOwner")
@@ -90,8 +90,7 @@ end)
 test.case("an owner unregistered during dispatch is skipped immediately", function()
     local event = Event()
     local a, b = TestEventOwner(), TestEventOwner()
-    -- Whichever runs first unregisters the other (pairs order is unspecified),
-    -- so exactly one of them may fire in the first trigger and ever after.
+    -- pairs order is unspecified: whichever runs first unregisters the other
     event:register(a, function(o, value)
         table.insert(o.received, value)
         event:unregister(b)
@@ -189,7 +188,7 @@ test.case("clear during dispatch drops handlers and pending registrations", func
         event:clear()
     end)
     event:register(other, function(o, value)
-        -- may run before the releaser (pairs order is unspecified), never after
+        -- pairs order is unspecified: may run before the releaser, never after
         table.insert(o.received, value)
     end)
 
@@ -214,7 +213,6 @@ test.case("the dispatch lock is released after every trigger", function()
         1,
         2
     })
-    -- registering outside a trigger takes effect immediately again
     local late = TestEventOwner()
     event:register(late, late.on_ping)
     test.assert_eq(event:get_handler(late), late.on_ping)
@@ -253,14 +251,12 @@ test.case("owners are held weakly", function()
     local function _count(owner)
         calls = calls + 1
     end
-    -- Weak-valued probe to confirm the owner was really collected.
     local probe = setmetatable({}, {
         __mode = "v"
     })
 
-    -- Create and register the owner in a separate function so no stack slot or
-    -- register of this function keeps it alive (LuaJIT may keep block locals
-    -- in live slots until they are overwritten).
+    -- in a function of its own: LuaJIT may keep a block local in a live slot
+    -- until it is overwritten
     local function _register_temporary_owner()
         local owner = TestEventOwner()
         probe.owner = owner
@@ -277,4 +273,27 @@ test.case("owners are held weakly", function()
     test.assert_eq(probe.owner, nil, "owner was garbage collected")
     event:trigger()
     test.assert_eq(calls, 1, "collected owner no longer receives triggers")
+end)
+
+---@class TestDyingOwner: Object
+local TestDyingOwner = class("TestDyingOwner")
+
+test.case("a dead owner is skipped and dropped, by trigger and get_handler", function()
+    local event = Event()
+    local calls = 0
+    local function _count()
+        calls = calls + 1
+    end
+    local owner = TestDyingOwner()
+    event:register(owner, _count)
+    event:trigger()
+    test.assert_eq(calls, 1, "owner receives triggers while alive")
+
+    lifetime.destroy(owner)
+    test.assert_false(lifetime.alive(owner))
+    test.assert_eq(event:get_handler(owner), nil, "a tombstone has no handler")
+    event:trigger()
+    test.assert_eq(calls, 1, "a tombstone is not called")
+    ---@diagnostic disable-next-line: invisible
+    test.assert_eq(next(event._handlers), nil, "a tombstone is dropped")
 end)

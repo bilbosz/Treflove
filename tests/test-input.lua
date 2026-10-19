@@ -8,11 +8,6 @@ local Input = require("ui.input")
 local TextEventManager = require("ui.text-event")
 local TextInput = require("ui.text-input")
 
--- lua-lifetime: the link between a form and its inputs (idiom B of the
--- lua-lifetime trial): a hook on (form, input) unlinks an input that dies
--- first; a form that is going too (`lifetime.dying`) takes its list with it.
-
--- A real Control mixing in Input, as TextInput and TextButton do.
 ---@class TestInput: Control, Input
 ---@field name string
 local TestInput = class("TestInput", Control, Input)
@@ -100,6 +95,28 @@ test.case("a destroyed focused text input loses the focus, so LÖVE text input i
     test.assert_eq(form._focus, nil)
     test.assert_deep_eq(input_names(form), {})
     test.assert_deep_eq(parent:get_children(), {})
+end)
+
+test.case("a destroyed focused text input under the pointer lets go of it, then ends its text events", function()
+    local app_mock, form = setup()
+    mocks.ensure_love_graphics()
+    app_mock.text_event_manager = TextEventManager(mocks.make_keyboard())
+    local field = TextInput(form:get_control(), form, 100, 20, false, nil, nil)
+    form:show()
+    local manager = app_mock.button_event_manager
+    manager:dispatch_pointer_move(50, 10, 1)
+    manager:dispatch_pointer_down(50, 10, 1)
+    manager:dispatch_pointer_up(50, 10, 1)
+    local button = field:get_button()
+    test.assert_true(field:is_focused())
+    test.assert_true(button:is_hovered())
+
+    lifetime.destroy(field)
+    test.assert_false(button:is_hovered(), "the pointer let go of the field")
+    local text_appended = app_mock.text_event_manager.text_appended
+    test.assert_eq(text_appended:get_handler(field), nil, "the view update of letting go did not leave the text events registered")
+    app_mock.text_event_manager:text_input("x")
+    manager:dispatch_pointer_move(200, 200, 1)
 end)
 
 test.case("removing an input below the focused one keeps the focus on the same input", function()

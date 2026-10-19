@@ -25,40 +25,24 @@ local TextEventManager = require("ui.text-event")
 local BackstackManager = require("utils.backstack-manager")
 local Control = require("controls.control")
 
--- lua-lifetime: the whole ownership tree of docs/lifetimes.md, driven end to
--- end: a client and a server in one process, connected over fake channels
--- back to back, with `app` swapped between them for each frame (as the
--- lua-lifetime trial harness does). Connect (the auto-login), the menu, the
--- game, back, the options, logout, disconnect, and the teardown love.quit
--- runs: every step asserts what is shown, what is on the back stack, and
--- the whole order of the `release` calls it caused.
-
 ---@type string[]
 local destroy_errors = {}
--- lua-lifetime reports an error raised by a destructor other than the first
--- of a cascade here (lib/lua-lifetime/docs/02-semantics.md, "Errors in
--- destructors and `destroyerror`"); every case starts with the list empty
--- and asserts at its end that nothing was added. The error is printed as
--- the runtime's default would, so that one raised outside a case (an
--- orphan of another suite the collector finds later) is not hidden.
 -- luacheck: globals destroyerror
+---@param obj table|function The dying object (a hook: its function's owner)
 ---@param err any
 ---@diagnostic disable-next-line: lowercase-global
-function destroyerror(err)
-    table.insert(destroy_errors, tostring(err))
-    io.stderr:write("destroyerror: " .. tostring(err) .. "\n")
+function destroyerror(obj, err)
+    local message = tostring(obj) .. ": " .. tostring(err)
+    table.insert(destroy_errors, message)
+    io.stderr:write("destroyerror: " .. message .. "\n")
 end
 
--- Set by the client's own, bottom back entry (Client:load's quit).
 local quit_requested = false
 
----The server's stored `auth` for adam/krause: what LoginRp computes on both
----sides from the deterministic fakes (login/login.lua, login/login-rp.lua).
 ---@return string
 local function server_auth()
-    -- whole app mocks, not bare tables: an orphan of an earlier case or
-    -- suite that the collector finds meanwhile runs its destructor against
-    -- the global app
+    -- whole app mocks: an orphan of an earlier case that the collector finds
+    -- meanwhile runs its destructor against the global app
     app = mocks.make_app()
     local client = Utils.hash("adam" .. string.char(0) .. Utils.generate_salt(32) .. string.char(0) .. "krause")
     app = mocks.make_app({
@@ -68,7 +52,6 @@ local function server_auth()
     return Utils.hash("adam" .. string.char(0) .. Utils.generate_salt(32) .. string.char(0) .. client)
 end
 
----The server's persisted state: one page with one token, and the player.
 ---@param auth string
 ---@return table
 local function game_data(auth)
@@ -131,9 +114,6 @@ local function game_data(auth)
     }
 end
 
----The in-memory file system of both sides: the server's assets, which its
----asset manager mounts under "s", and the client's copies, so that nothing
----is missing when the game is joined.
 ---@return table<string, string>
 local function files()
     return {
@@ -157,8 +137,6 @@ function TestNotificationManager:notify(message)
     table.insert(self.messages, message)
 end
 
----A client app: Client:init's managers that the flow touches, and the
----connection callbacks of Client:load. `app` is the new app afterwards.
 ---@return AppMock
 local function make_client()
     local client = mocks.make_app()
@@ -174,7 +152,6 @@ local function make_client()
     client.asset_manager = AssetManager()
     client.connection_manager = ConnectionManager("localhost", "8080")
     client.session = nil
-    -- Client:load, without the connector's thread
     quit_requested = false
     client.backstack_manager:push(function()
         quit_requested = true
@@ -191,7 +168,6 @@ local function make_client()
     return client
 end
 
----A server app with the data above; `app` is the new app afterwards.
 ---@param auth string
 ---@return AppMock
 ---@return table<Connection, Session> sessions
@@ -216,16 +192,12 @@ local function make_server(auth)
     return server, sessions
 end
 
----One frame of `some_app`: what love.update does with the update event, the
----connections' `on_update` included.
 ---@param some_app AppMock
 local function frame(some_app)
     app = some_app
     some_app.update_event:trigger(0.016)
 end
 
----Connect: each side adds its end of a pair of fake channels, back to back,
----as its connector would. The client's session sends the login request.
 ---@param client AppMock
 ---@param server AppMock
 ---@return Connection client_connection
@@ -258,12 +230,8 @@ local CLASSES = {
     PreviewArea = PreviewArea
 }
 
----Log `Class:release(reason)` of every class above into `log` while `fn`
----runs; the originals are restored afterwards, whatever `fn` did. The
----collector is stopped meanwhile: a death by `reachable` (a replaced waiting
----screen, an earlier case's leftovers) is the collector's and would land in
----the log at a time of its choosing; each case collects at its end instead
----(lib/lua-lifetime/CLAUDE.md, rule 3).
+---The collector is stopped meanwhile: a death by `reachable` would land in
+---the log at a time of its choosing; each case collects at its end.
 ---@param log string[]
 ---@param fn fun()
 local function with_release_log(log, fn)
@@ -287,8 +255,6 @@ local function with_release_log(log, fn)
     end
 end
 
----The class names of `objects`, for asserting a dependents list; a hook or
----a token (a string metatable) by its kind.
 ---@param objects table[]
 ---@return string[]
 local function class_names(objects)
@@ -300,8 +266,6 @@ local function class_names(objects)
     return names
 end
 
----`class_names` without the hooks: a form screen carries one per input
----(ui/input.lua) and, while shown, the screen manager's.
 ---@param objects table[]
 ---@return string[]
 local function class_names_but_hooks(objects)
@@ -314,11 +278,24 @@ local function class_names_but_hooks(objects)
     return names
 end
 
----Everything up to the game screen: connect (the auto-login request), the
----login answered, the menu shown and the game joined at once, the game data
----and the (empty) asset download answered, the game screen shown.
----What a case works on: both apps, their ends of the connection, the
----server's sessions, and what `love.filesystem` was before the fake.
+---@param client AppMock
+---@param x number
+---@param y number
+local function move(client, x, y)
+    app = client
+    client.button_event_manager:dispatch_pointer_move(x, y, 1)
+end
+
+---@param client AppMock
+---@param ctrl Control
+local function click(client, ctrl)
+    local min_x, min_y, max_x, max_y = ctrl:get_global_aabb():get_bounds()
+    local x, y = (min_x + max_x) * 0.5, (min_y + max_y) * 0.5
+    move(client, x, y)
+    client.button_event_manager:dispatch_pointer_down(x, y, 1)
+    client.button_event_manager:dispatch_pointer_up(x, y, 1)
+end
+
 ---@class TestFlow
 ---@field client AppMock
 ---@field server AppMock
@@ -342,8 +319,8 @@ local function enter_the_game()
     test.assert_eq(get_class_name_of(client.session), "Session")
     test.assert_false(client.session:is_logged_in())
 
-    frame(server) -- the login request is answered
-    frame(client) -- logged in: the menu, then the game joined at once
+    frame(server)
+    frame(client)
     test.assert_true(client.session:is_logged_in())
     test.assert_true(sessions[server_connection]:is_logged_in())
     local notifications = client.notification_manager --[[@as TestNotificationManager]]
@@ -352,12 +329,12 @@ local function enter_the_game()
     })
     test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "WaitingScreen")
 
-    frame(server) -- the game data
+    frame(server)
     frame(client)
     test.assert_eq(client.data.game.page, "P")
     test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "WaitingScreen")
 
-    frame(server) -- the missing assets: none
+    frame(server)
     frame(client)
     test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "GameScreen")
     return {
@@ -370,12 +347,6 @@ local function enter_the_game()
     }
 end
 
----Ends a case as a quit would: both sides remove their connections
----(ConnectionManager:remove_all, what love.quit calls), then what the flow
----left unowned (the inputs of dead screens, the replaced waiting screens) is
----collected while the client app is still the global, and the fake file
----system is put back. Runs whether or not the case passed, so that a failed
----case leaves no orphans for the next one.
 ---@param flow TestFlow
 local function finish(flow)
     app = flow.server
@@ -388,7 +359,6 @@ local function finish(flow)
     test.assert_deep_eq(destroy_errors, {}, "no destructor raised")
 end
 
----A case that starts in the game and is torn down at its end, pass or fail.
 ---@param name string
 ---@param fn fun(flow: TestFlow)
 local function flow_case(name, fn)
@@ -544,10 +514,85 @@ flow_case("logout: the period dies with the menu, the options and the back entri
         "DownloadMissingAssetsRp",
         "hook",
         "LoginScreen"
-    }, "the dead period left the session; the login screen lives as long as the session")
+    }, "the dead period left the session; the login screen is the session's until the next login")
     test.assert_eq(get_class_name_of(client.backstack_manager:get_top()), "BackstackEntry")
     client.backstack_manager:back()
     test.assert_true(quit_requested, "only the client's own quit entry is left")
+end)
+
+flow_case("logging in again from the login screen: the screen dies at the login and its fields let go of the pointer", function(flow)
+    local client, server = flow.client, flow.server
+    client.backstack_manager:back()
+    client.backstack_manager:back()
+    frame(server)
+    frame(client)
+    local login_screen = client.screen_manager:get_screen() --[[@as LoginScreen]]
+    test.assert_eq(get_class_name_of(login_screen), "LoginScreen")
+
+    -- the fields in a function of their own: no local of this case may hold
+    -- them when the collector runs below
+    local function fill_in_the_fields()
+        ---@diagnostic disable-next-line: invisible
+        local login_input, password_input = login_screen._login_input._input, login_screen._password_input._input
+        click(client, login_input)
+        client.text_event_manager:text_input("adam")
+        click(client, password_input)
+        client.text_event_manager:text_input("krause")
+        test.assert_true(password_input:is_focused())
+        return password_input:get_button()
+    end
+    local password_button = fill_in_the_fields()
+    test.assert_true(password_button:is_hovered(), "the pointer rests on the password field")
+    local log = {}
+    with_release_log(log, function()
+        client.text_event_manager:key_pressed("return")
+        frame(server)
+        frame(client)
+    end)
+    test.assert_deep_eq(log, {
+        "LoginScreen:release(destroy)"
+    }, "logged in: the login screen is over, destroyed rather than left to the collector")
+    test.assert_false(lifetime.alive(login_screen))
+    test.assert_false(password_button:is_hovered(), "a hidden field is no longer under the pointer")
+    test.assert_deep_eq(class_names(lifetime.dependents(client.session)), {
+        "Login",
+        "GameDataRp",
+        "UploadAssetRp",
+        "DownloadAssetRp",
+        "DownloadMissingAssetsRp",
+        "hook",
+        "token"
+    }, "the dead login screen left the session")
+    frame(server)
+    frame(client)
+    frame(server)
+    frame(client)
+    test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "GameScreen")
+
+    -- under `love . test` their release runs while LÖVE frees their controls'
+    -- transforms in the same collection
+    collectgarbage("collect")
+    test.assert_deep_eq(destroy_errors, {}, "no destructor touched a freed LÖVE object")
+    move(client, 0, 0)
+end)
+
+flow_case("a button destroyed by its own click (the token panel's Cancel) lets go of the pointer", function(flow)
+    local client = flow.client
+    local game_screen = client.screen_manager:get_screen() --[[@as GameScreen]]
+    local token_panel = game_screen:get_token_panel()
+    game_screen:select_panel(token_panel)
+    ---@diagnostic disable-next-line: invisible
+    local cancel = token_panel._cancel_button --[[@as TextButton]]
+    click(client, cancel)
+    test.assert_false(lifetime.alive(cancel), "the cancel rebuilt the panel's fields and buttons")
+    ---@diagnostic disable-next-line: invisible
+    local new_cancel = token_panel._cancel_button --[[@as TextButton]]
+    test.assert_false(new_cancel:is_hovered())
+    local min_x, min_y, max_x, max_y = new_cancel:get_global_aabb():get_bounds()
+    move(client, (min_x + max_x) * 0.5 + 1, (min_y + max_y) * 0.5)
+    test.assert_true(new_cancel:is_hovered(), "the new button is under the pointer")
+    move(client, 0, 0)
+    test.assert_false(new_cancel:is_hovered())
 end)
 
 flow_case("disconnect: one cascade per side, the connection first, then the session's tree newest first", function(flow)

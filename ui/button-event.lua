@@ -1,24 +1,5 @@
 local Input = require("ui.input")
 
----Drives the `Button` helpers of the controls registered with it from raw
----pointer input (`dispatch_pointer_*`, called by the client next to the pointer
----manager):
----
----- down: the button under the pointer is selected;
----- up: if the pointer is still over the selected button, it is unselected and
----  clicked; the selection ends either way;
----- move: hover enters/leaves follow the pointer; a selected button is
----  unselected when the pointer leaves it and selected again when it returns.
----
----The button under the pointer is found by walking the control tree from
----`app.root` in tree order, descending only into visible controls whose
----recursive AABB contains the point and skipping read-only `Input`s together
----with their subtrees; the first registered control met wins (a registered
----parent before its children, earlier siblings before later ones). Unlike
----`events/hit-test.lua` this picks one control and never passes events on.
----
----Registration: `app.button_event_manager:register(ctrl, button)`; controls are
----held as weak keys, so a collected control drops out without unregistering.
 ---@class ButtonEventManager: Object
 ---@field private _buttons table<Control, Button> Registered button per control (weak keys)
 ---@field private _hover Button|nil Button currently under the pointer
@@ -35,17 +16,30 @@ function ButtonEventManager:init()
     self._selection = nil
 end
 
----Make `button` reachable by pointer over `ctrl`. Registering the same control
----again replaces its button.
 ---@param ctrl Control
 ---@param button Button
 function ButtonEventManager:register(ctrl, button)
     self._buttons[ctrl] = button
 end
 
+---A button kept here would be driven after its control is hidden or dead.
 ---@param ctrl Control
 function ButtonEventManager:unregister(ctrl)
+    local button = self._buttons[ctrl]
     self._buttons[ctrl] = nil
+    if not button then
+        return
+    end
+    if self._selection == button then
+        self._selection = nil
+        if button:is_selected() then
+            button:unselect()
+        end
+    end
+    if self._hover == button then
+        self._hover = nil
+        button:leave()
+    end
 end
 
 ---@param ctrl Control

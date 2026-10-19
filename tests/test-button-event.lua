@@ -5,9 +5,6 @@ local Button = require("ui.button")
 local ButtonEventManager = require("ui.button-event")
 local Input = require("ui.input")
 
--- Minimal stand-in for a Control (the real one needs `love.math`): only what
--- the button manager's tree walk looks at. It owns a Button and logs every
--- button event it receives into a shared log as "name:event".
 ---@class TestButtonControl: Object
 ---@field name string
 ---@field visible boolean
@@ -80,7 +77,6 @@ function TestButtonControl:on_clicked()
     self:record("clicked")
 end
 
--- A fake control that is an `Input`, so the manager's read-only check applies.
 ---@class TestButtonInput: TestButtonControl, Input
 ---@field read_only boolean
 local TestButtonInput = class("TestButtonInput", TestButtonControl, Input)
@@ -111,11 +107,6 @@ end
 ---@field inner TestButtonControl 10..30 x 70..90, child of input
 ---@field manager ButtonEventManager a, b, input and inner registered
 
--- root      (0..100)
---   a       (0..40, 0..40)
---   b       (50..90, 50..90)
---   input   (0..40, 60..100)
---     inner (10..30, 70..90)
 ---@return TestButtonTree
 local function _make_tree()
     local log = {}
@@ -174,7 +165,6 @@ test.case("release over another control does not click and ends the selection", 
 
     tree.manager:dispatch_pointer_down(20, 20, 1)
     tree.manager:dispatch_pointer_up(70, 70, 1)
-    -- a new press is accepted (the manager asserts no selection is pending)
     tree.manager:dispatch_pointer_down(70, 70, 1)
     tree.manager:dispatch_pointer_up(70, 70, 1)
 
@@ -249,7 +239,6 @@ test.case("read-only inputs and their subtrees are ignored", function()
     tree.manager:dispatch_pointer_up(20, 80, 1)
     test.assert_deep_eq(tree.log, {})
 
-    -- once writable, the registered input wins over its registered child
     tree.input.read_only = false
     tree.manager:dispatch_pointer_down(20, 80, 1)
     tree.manager:dispatch_pointer_up(20, 80, 1)
@@ -262,7 +251,6 @@ end)
 
 test.case("invisible controls are skipped, overlaps go to the first control in tree order", function()
     local tree = _make_tree()
-    -- move b over a; a comes first among root's children
     tree.b:get_global_recursive_aabb():set_position_and_size(0, 0, 40, 40)
 
     tree.manager:dispatch_pointer_down(20, 20, 1)
@@ -290,4 +278,57 @@ test.case("unregistered controls are not reached", function()
     tree.manager:dispatch_pointer_up(20, 20, 1)
 
     test.assert_deep_eq(tree.log, {})
+end)
+
+test.case("unregistering the control under the pointer leaves it at once; later moves do not reach it", function()
+    local tree = _make_tree()
+    tree.manager:dispatch_pointer_move(20, 20, nil)
+    tree.manager:unregister(tree.a --[[@as Control]] )
+    test.assert_false(tree.a.button:is_hovered())
+    tree.manager:dispatch_pointer_move(70, 70, nil)
+
+    test.assert_deep_eq(tree.log, {
+        "a:entered",
+        "a:left",
+        "b:entered"
+    })
+end)
+
+test.case("unregistering a pressed control unselects and leaves it; the release clicks nothing", function()
+    local tree = _make_tree()
+    tree.manager:dispatch_pointer_move(20, 20, nil)
+    tree.manager:dispatch_pointer_down(20, 20, 1)
+    tree.manager:unregister(tree.a --[[@as Control]] )
+    tree.manager:dispatch_pointer_up(20, 20, 1)
+    tree.manager:dispatch_pointer_down(70, 70, 1)
+
+    test.assert_deep_eq(tree.log, {
+        "a:entered",
+        "a:selected",
+        "a:unselected",
+        "a:left",
+        "b:selected"
+    })
+end)
+
+test.case("a control unregistered by its own click is left once, after the click", function()
+    local tree = _make_tree()
+    local manager = tree.manager
+    tree.a.button.clicked:register(tree.a, function(a)
+        a:record("clicked")
+        manager:unregister(a)
+    end)
+    manager:dispatch_pointer_move(20, 20, nil)
+    manager:dispatch_pointer_down(20, 20, 1)
+    manager:dispatch_pointer_up(20, 20, 1)
+    manager:dispatch_pointer_move(70, 70, nil)
+
+    test.assert_deep_eq(tree.log, {
+        "a:entered",
+        "a:selected",
+        "a:unselected",
+        "a:clicked",
+        "a:left",
+        "b:entered"
+    })
 end)
