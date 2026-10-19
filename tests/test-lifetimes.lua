@@ -37,12 +37,16 @@ local Control = require("controls.control")
 local destroy_errors = {}
 -- lua-lifetime reports an error raised by a destructor other than the first
 -- of a cascade here (lib/lua-lifetime/docs/02-semantics.md, "Errors in
--- destructors and `destroyerror`"); every case asserts there was none.
+-- destructors and `destroyerror`"); every case starts with the list empty
+-- and asserts at its end that nothing was added. The error is printed as
+-- the runtime's default would, so that one raised outside a case (an
+-- orphan of another suite the collector finds later) is not hidden.
 -- luacheck: globals destroyerror
 ---@param err any
 ---@diagnostic disable-next-line: lowercase-global
 function destroyerror(err)
     table.insert(destroy_errors, tostring(err))
+    io.stderr:write("destroyerror: " .. tostring(err) .. "\n")
 end
 
 -- Set by the client's own, bottom back entry (Client:load's quit).
@@ -52,17 +56,15 @@ local quit_requested = false
 ---sides from the deterministic fakes (login/login.lua, login/login-rp.lua).
 ---@return string
 local function server_auth()
-    ---@diagnostic disable-next-line: missing-fields, assign-type-mismatch
-    app = {
-        is_client = true,
-        is_server = false
-    }
+    -- whole app mocks, not bare tables: an orphan of an earlier case or
+    -- suite that the collector finds meanwhile runs its destructor against
+    -- the global app
+    app = mocks.make_app()
     local client = Utils.hash("adam" .. string.char(0) .. Utils.generate_salt(32) .. string.char(0) .. "krause")
-    ---@diagnostic disable-next-line: missing-fields, assign-type-mismatch
-    app = {
+    app = mocks.make_app({
         is_client = false,
         is_server = true
-    }
+    })
     return Utils.hash("adam" .. string.char(0) .. Utils.generate_salt(32) .. string.char(0) .. client)
 end
 
@@ -315,13 +317,19 @@ end
 ---Everything up to the game screen: connect (the auto-login request), the
 ---login answered, the menu shown and the game joined at once, the game data
 ---and the (empty) asset download answered, the game screen shown.
----@return AppMock client
----@return AppMock server
----@return Connection client_connection
----@return Connection server_connection
----@return table<Connection, Session> sessions
----@return table|nil previous_filesystem
+---What a case works on: both apps, their ends of the connection, the
+---server's sessions, and what `love.filesystem` was before the fake.
+---@class TestFlow
+---@field client AppMock
+---@field server AppMock
+---@field client_connection Connection
+---@field server_connection Connection
+---@field sessions table<Connection, Session>
+---@field previous_filesystem table|nil
+
+---@return TestFlow
 local function enter_the_game()
+    destroy_errors = {}
     mocks.ensure_love_data()
     mocks.ensure_love_math()
     mocks.ensure_love_graphics()
@@ -352,32 +360,52 @@ local function enter_the_game()
     frame(server) -- the missing assets: none
     frame(client)
     test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "GameScreen")
-    return client, server, client_connection, server_connection, sessions, previous
+    return {
+        client = client,
+        server = server,
+        client_connection = client_connection,
+        server_connection = server_connection,
+        sessions = sessions,
+        previous_filesystem = previous
+    }
 end
 
 ---Ends a case as a quit would: both sides remove their connections
 ---(ConnectionManager:remove_all, what love.quit calls), then what the flow
 ---left unowned (the inputs of dead screens, the replaced waiting screens) is
 ---collected while the client app is still the global, and the fake file
----system is put back.
----@param client AppMock
----@param server AppMock
----@param previous table|nil
-local function finish(client, server, previous)
-    app = server
-    server.connection_manager:remove_all()
-    app = client
-    client.connection_manager:remove_all()
+---system is put back. Runs whether or not the case passed, so that a failed
+---case leaves no orphans for the next one.
+---@param flow TestFlow
+local function finish(flow)
+    app = flow.server
+    flow.server.connection_manager:remove_all()
+    app = flow.client
+    flow.client.connection_manager:remove_all()
     collectgarbage("collect")
     collectgarbage("collect")
-    mocks.restore_love_filesystem(previous)
+    mocks.restore_love_filesystem(flow.previous_filesystem)
     test.assert_deep_eq(destroy_errors, {}, "no destructor raised")
+end
+
+---A case that starts in the game and is torn down at its end, pass or fail.
+---@param name string
+---@param fn fun(flow: TestFlow)
+local function flow_case(name, fn)
+    test.case(name, function()
+        local flow = enter_the_game()
+        local ok, err = pcall(fn, flow)
+        finish(flow)
+        if not ok then
+            error(err, 0)
+        end
+    end)
 end
 
 test.suite("Lifetimes end to end")
 
-test.case("connect and log in: the session owns the period, which owns the menu, its back entry and the game screen", function()
-    local client, server, client_connection, _, _, previous = enter_the_game()
+flow_case("connect and log in: the session owns the period, which owns the menu, its back entry and the game screen", function(flow)
+    local client, client_connection = flow.client, flow.client_connection
     local session = client.session
     test.assert_deep_eq(class_names(lifetime.dependents(client_connection)), {
         "Session"
@@ -406,11 +434,10 @@ test.case("connect and log in: the session owns the period, which owns the menu,
         "BackstackEntry"
     })
     test.assert_eq(client.backstack_manager:get_top(), game_dependents[#game_dependents], "the way back is the game screen's entry")
-    finish(client, server, previous)
 end)
 
-test.case("back from the game: the menu is shown again, the game screen dies with its panels, newest first", function()
-    local client, server, _, _, _, previous = enter_the_game()
+flow_case("back from the game: the menu is shown again, the game screen dies with its panels, newest first", function(flow)
+    local client = flow.client
     local game_screen = client.screen_manager:get_screen() --[[@as GameScreen]]
     local inputs_of_game = {}
     ---@diagnostic disable-next-line: invisible
@@ -444,11 +471,10 @@ test.case("back from the game: the menu is shown again, the game screen dies wit
         test.assert_deep_eq(lifetime.dependents(input), {})
     end
     test.assert_deep_eq(lifetime.dependents(game_screen), {}, "a dead anchor holds nothing")
-    finish(client, server, previous)
 end)
 
-test.case("the options: one screen per menu, a way back per visit, both the menu's", function()
-    local client, server, _, _, _, previous = enter_the_game()
+flow_case("the options: one screen per menu, a way back per visit, both the menu's", function(flow)
+    local client = flow.client
     client.backstack_manager:back()
     local menu = client.screen_manager:get_screen() --[[@as UserMenuScreen]]
     local logout_entry = client.backstack_manager:get_top()
@@ -477,11 +503,10 @@ test.case("the options: one screen per menu, a way back per visit, both the menu
     })
     client.backstack_manager:back()
     test.assert_eq(client.screen_manager:get_screen(), menu)
-    finish(client, server, previous)
 end)
 
-test.case("logout: the period dies with the menu, the options and the back entries; the login screen is the session's", function()
-    local client, server, _, _, _, previous = enter_the_game()
+flow_case("logout: the period dies with the menu, the options and the back entries; the login screen is the session's", function(flow)
+    local client, server = flow.client, flow.server
     client.backstack_manager:back()
     local menu = client.screen_manager:get_screen() --[[@as UserMenuScreen]]
     menu:options()
@@ -523,11 +548,10 @@ test.case("logout: the period dies with the menu, the options and the back entri
     test.assert_eq(get_class_name_of(client.backstack_manager:get_top()), "BackstackEntry")
     client.backstack_manager:back()
     test.assert_true(quit_requested, "only the client's own quit entry is left")
-    finish(client, server, previous)
 end)
 
-test.case("disconnect: one cascade per side, the connection first, then the session's tree newest first", function()
-    local client, server, client_connection, server_connection, sessions, previous = enter_the_game()
+flow_case("disconnect: one cascade per side, the connection first, then the session's tree newest first", function(flow)
+    local client, server, client_connection, server_connection, sessions = flow.client, flow.server, flow.client_connection, flow.server_connection, flow.sessions
     local session = client.session
     local server_session = sessions[server_connection]
     local log = {}
@@ -576,11 +600,10 @@ test.case("disconnect: one cascade per side, the connection first, then the sess
     })
     test.assert_false(lifetime.alive(server_session))
     test.assert_eq(sessions[server_connection], nil)
-    finish(client, server, previous)
 end)
 
-test.case("quit: remove_all tears every connection down in order, as love.quit does before the state closes", function()
-    local client, server, client_connection, server_connection, _, previous = enter_the_game()
+flow_case("quit: remove_all tears every connection down in order, as love.quit does before the state closes", function(flow)
+    local client, server, client_connection, server_connection = flow.client, flow.server, flow.client_connection, flow.server_connection
     local log = {}
     with_release_log(log, function()
         app = server
@@ -612,5 +635,4 @@ test.case("quit: remove_all tears every connection down in order, as love.quit d
     test.assert_false(lifetime.alive(server_connection))
     test.assert_eq(next(client.connection_manager:get_connections()), nil)
     test.assert_eq(next(server.connection_manager:get_connections()), nil)
-    finish(client, server, previous)
 end)
