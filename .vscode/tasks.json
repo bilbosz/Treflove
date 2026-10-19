@@ -4,9 +4,32 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Format All Code",
+            // ./build-code.sh: transpile, type-check and generate into
+            // build/. Its errors read FILE:LINE:COL: message (relative to
+            // the root), which the matcher turns into Problems entries. The
+            // "Debug ..." configurations of launch.json run it first.
+            "label": "Build",
             "type": "shell",
-            "command": "./format-code.sh"
+            "command": "./build-code.sh",
+            "group": "build",
+            "problemMatcher": {
+                "owner": "treflove",
+                "fileLocation": ["relative", "${workspaceFolder}"],
+                "pattern": {
+                    "regexp": "^(.+?):(\\d+):(\\d+): (.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "message": 4
+                }
+            }
+        },
+        {
+            // ./format-code.sh: lua-format over the Lua files (.lua-format).
+            "label": "Format Lua files",
+            "type": "shell",
+            "command": "./format-code.sh",
+            "problemMatcher": []
         }
     ]
 }

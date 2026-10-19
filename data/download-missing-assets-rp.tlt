@@ -1,0 +1,31 @@
+local RemoteProcedure = require("networking.remote-procedure")
+
+-- The client asks the server for the content of every asset it lacks.
+local DownloadMissingAssetsRp: DownloadMissingAssetsRp = class("DownloadMissingAssetsRp", RemoteProcedure)
+
+DownloadMissingAssetsRp.init = function(self: DownloadMissingAssetsRp, connection: Connection)
+    RemoteProcedure.init(self, connection)
+end
+
+function DownloadMissingAssetsRp:send_response(request: DownloadMissingAssetsRequest): DownloadMissingAssetsResponse
+    assert(app.is_server)
+    local contents: {string: string} = {}
+    for _, v in ipairs(request.list) do
+        contents[v] = app.asset_manager:get_content(v)
+    end
+    return {
+        success = true,
+        contents = contents
+    }
+end
+
+function DownloadMissingAssetsRp:receive_response(response: DownloadMissingAssetsResponse)
+    assert(app.is_client)
+    assert(response.success)
+    assert(response.contents)
+    for k, v in pairs(response.contents) do
+        app.asset_manager:mount_file(k, v)
+    end
+end
+
+return DownloadMissingAssetsRp

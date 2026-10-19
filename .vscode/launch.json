@@ -1,7 +1,21 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    // "Launch" runs ./run.sh (server and client, built first) in a terminal
+    // through the "F5 Anything" extension (discretegames.f5anything), with
+    // no debugger.
+    //
+    // The "Debug ..." configurations run under the "Local Lua Debugger"
+    // extension (tomblind.local-lua-debugger-vscode); see
+    // docs/development.md, "Editor Support". Each builds first (the Build
+    // task of .vscode/tasks.json), since the breakpoints rely on build/
+    // matching the sources. A breakpoint set in a .tlt file stops there:
+    // the entry points load .vscode/launch.lua under the debugger, which
+    // starts it and loads every built module under its source's name. That
+    // script says why "breakInCoroutines" must stay false and why the
+    // debugger does not stop on an error.
+    //
+    // To debug the client against a server, start "Debug server" first and
+    // then "Debug client" (two sessions; the second build is harmless).
+    // They are not a compound: two builds at once would race in build/.
     "version": "0.2.0",
     "configurations": [
         {
@@ -10,6 +24,46 @@
             "name": "Launch",
             "command": "./run.sh",
             "terminalIndex": -1
+        },
+        {
+            "name": "Debug tests (LuaJIT)",
+            "type": "lua-local",
+            "request": "launch",
+            "program": { "command": "luajit" },
+            "args": ["tests/run.lua"],
+            "cwd": "${workspaceFolder}",
+            "breakInCoroutines": false,
+            "preLaunchTask": "Build"
+        },
+        {
+            "name": "Debug tests (LÖVE)",
+            "type": "lua-local",
+            "request": "launch",
+            "program": { "command": "love" },
+            "args": [".", "test"],
+            "cwd": "${workspaceFolder}",
+            "breakInCoroutines": false,
+            "preLaunchTask": "Build"
+        },
+        {
+            "name": "Debug server",
+            "type": "lua-local",
+            "request": "launch",
+            "program": { "command": "love" },
+            "args": [".", "server", "localhost", "8080"],
+            "cwd": "${workspaceFolder}",
+            "breakInCoroutines": false,
+            "preLaunchTask": "Build"
+        },
+        {
+            "name": "Debug client",
+            "type": "lua-local",
+            "request": "launch",
+            "program": { "command": "love" },
+            "args": [".", "client", "localhost", "8080"],
+            "cwd": "${workspaceFolder}",
+            "breakInCoroutines": false,
+            "preLaunchTask": "Build"
         }
     ]
 }

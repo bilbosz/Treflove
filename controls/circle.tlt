@@ -1,0 +1,40 @@
+local DrawableControl: DrawableControl = require("controls.drawable-control")
+
+-- A circle outline.
+local Circle: Circle = class("Circle", DrawableControl)
+
+Circle.init = function(self: Circle, parent: Control, radius: number, color: {number}, line_width: number)
+    local r = radius
+    local d = r * 2
+    local w = line_width
+
+    DrawableControl.init(self, parent, d, d, function()
+        love.graphics.setColor(color)
+        love.graphics.setLineWidth(w)
+        love.graphics.circle("line", r, r, r)
+    end)
+
+    self._radius = r
+    self._diameter = d
+    self._line_width = w
+    self._color = color
+end
+
+function Circle:set_radius(radius: number)
+    local r = radius
+    local d = r * 2
+    local w = self._line_width
+    local color = self._color
+
+    DrawableControl.set_size(self, d, d)
+    self:set_draw_callback(function()
+        love.graphics.setColor(color)
+        love.graphics.setLineWidth(w)
+        love.graphics.circle("line", r, r, r)
+    end)
+
+    self._radius = r
+    self._diameter = d
+end
+
+return Circle

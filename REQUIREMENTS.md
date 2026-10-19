@@ -3,41 +3,45 @@
 ## Installation
 
 ### External Tools
-- `lua-format` - `npm install -g lua-format`
+- `luajit` - `sudo apt install luajit` (runs the build and the headless tests; `lua5.1` works for the build too)
 - `love` - `sudo apt install love` or download from https://love2d.org/
-- `lua-language-server` - `sudo apt install lua-language-server`
-- `luacheck` - `sudo apt install lua-check`
-- `jq` - `sudo apt install jq`
-- `rg` (ripgrep) - `sudo apt install ripgrep`
-- `luajit` (optional, for fast headless tests) - `sudo apt install luajit`
+- `luacheck` - `sudo apt install lua-check` (lints the few `.lua` files; the Teal sources are checked by the build)
+- `git` - the build needs the submodules: `git submodule update --init`
+- `lua-format` (optional) - `luarocks install --server=https://luarocks.org/dev luaformatter` (formats the few `.lua` files, `./format-code.sh` and the VS Code formatter; the Teal sources have no formatter)
+
+The Teal compiler (`lib/tl`) and the lifetime transpiler and runtime
+(`lib/lua-lifetime`) are submodules the build runs from the checkout; the
+LÖVE API description (`lib/love-api`) is a submodule only
+`tools/gen-love-types.lua` reads. Nothing else is installed.
 
 ### Standard Unix Utilities
-- `bash`, `find`, `xargs`, `jobs`, `kill`, `sleep`, `mktemp`, `readlink`
+- `bash`, `find`, `ls`, `mkdir`, `rm`, `xargs`, `jobs`, `kill`, `sleep`
 
-## format-code.sh
-- `find`
-- `xargs`
-- `rg`
-- `lua-format`
+## build-code.sh
+- `bash`
+- `luajit` (or `lua5.1`)
+- `find`, `ls`, `mkdir`, `rm`
 
 ## run.sh
 - `bash`
+- `luajit` (the build)
 - `love`
 - `jobs`
+- `xargs`
 - `kill`
 - `sleep`
-
-## diagnose-code.sh
-- `bash`
-- `lua-language-server`
-- `mktemp`
-- `readlink`
-- `jq`
 
 ## lint-code.sh
 - `bash`
 - `luacheck`
 
+## format-code.sh
+- `bash`
+- `lua-format`
+
 ## test-code.sh
 - `bash`
-- `luajit` (preferred) or `love` (fallback)
+- `luajit` (the build; also preferred for the tests) and `love` (fallback for the tests; CI runs both)
+
+## tools/gen-love-types.lua
+- `luajit` (regenerates `types/love.d.tl` from `lib/love-api`)

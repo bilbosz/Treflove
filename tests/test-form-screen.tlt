@@ -1,0 +1,277 @@
+local test = require("tests.lib.test")
+local mocks = require("tests.lib.mocks")
+local FormScreen: FormScreen = require("ui.form-screen")
+local Input: Input = require("ui.input")
+local Control: Control = require("controls.control")
+
+-- The input's unlinking hook (ui/input.tlt, idiom B of lua-lifetime
+-- trial/treflove/README.md): `Input:init` attaches it `!@ (form_screen,
+-- self)`, and `FormScreen:release` sets the flag it reads. The three orders
+-- of the trial's test case 2, each log compared whole. A line starting with
+-- `>` is the statement that runs next, so each death sits under the
+-- statement that caused it. Expected sequences follow lua-lifetime
+-- docs/02-semantics.md: a hook runs after its anchor's destructor, among
+-- its dependents ("Hooks: the `!@` operator"); a cascade runs the owner's
+-- destructor first, then its dependents most recently attached first, a
+-- dependent already destroyed skipped ("Cascading death").
+
+local log: {string} = {}
+
+local function trace(line: string)
+    table.insert(log, line)
+end
+
+-- The Input mixin needs a concrete class, as TextInput and TextButton are;
+-- a release of its own logs its death (Input has none).
+local interface TestFormInput is Input
+    name: string
+end
+
+-- The real FormScreen, its release and remove_input logged.
+local interface TestFormScreen is FormScreen
+    -- Every input of this form is a TestFormInput.
+    remove_input: function(self, input: TestFormInput)
+end
+
+local TestFormScreen: TestFormScreen = class("TestFormScreen", FormScreen)
+
+function TestFormScreen:release(reason?: LifetimeReason)
+    trace("TestFormScreen:release(" .. tostring(reason) .. ")")
+    FormScreen.release(self, reason)
+end
+
+function TestFormScreen:remove_input(input: TestFormInput)
+    trace("TestFormScreen:remove_input(" .. input.name .. ")")
+    FormScreen.remove_input(self, input)
+end
+
+local TestFormInput: TestFormInput = class("TestFormInput", Input)
+
+TestFormInput.init = function(self: TestFormInput, form_screen: FormScreen, name: string)
+    self.name = name
+    Input.init(self, form_screen)
+end
+
+function TestFormInput:release(reason?: LifetimeReason)
+    trace("TestFormInput:release(" .. tostring(reason) .. ") " .. self.name)
+end
+
+-- Logged instead of registering with the button event manager, which the
+-- app mock does not have.
+function TestFormInput:on_screen_show()
+    trace("TestFormInput:on_screen_show() " .. self.name)
+end
+
+function TestFormInput:on_screen_hide()
+    trace("TestFormInput:on_screen_hide() " .. self.name)
+end
+
+-- The inputs of a TestFormScreen.
+local function inputs_of(form: TestFormScreen): {TestFormInput}
+    return form._inputs as {TestFormInput} -- as: see TestFormScreen.remove_input
+end
+
+local function names(inputs: {TestFormInput}): string
+    local out: {string} = {}
+    for i, input in ipairs(inputs) do
+        out[i] = lifetime.alive(input) and input.name or tostring(lifetime.alive(input))
+    end
+    return "{" .. table.concat(out, ", ") .. "}"
+end
+
+-- Two collections must find nothing left to run (nothing goes to
+-- destroyerror either).
+-- `destroyerror` is the global the lifetime runtime calls with an error a
+-- destructor raised where it cannot propagate (lua-lifetime
+-- docs/02-semantics.md, "Errors in destructors and `destroyerror`"); no
+-- module declares it, so it is swapped through the globals table. as/any:
+-- the globals table as a map of values of any type.
+local globals = _G as {string: any}
+
+local function collect()
+    trace("> collectgarbage twice")
+    local previous = rawget(globals, "destroyerror")
+    rawset(globals, "destroyerror", function(_: any, err: any) -- any: whatever was raised
+        trace("destroyerror: " .. tostring(err))
+    end)
+    collectgarbage("collect")
+    collectgarbage("collect")
+    rawset(globals, "destroyerror", previous)
+end
+
+local function setup()
+    mocks.ensure_love_math()
+    -- as: the mock is a table of fields; `show` puts the screen's control under `app.root`
+    mocks.install_app({
+        root = Control()
+    } as {string: any}) -- any: the override values are of several types
+    log = {}
+end
+
+test.suite("FormScreen")
+
+test.case("an input that dies first is unlinked by its hook, after its own release", function()
+    setup()
+    local form = TestFormScreen()
+    local a = TestFormInput(form, "a")
+    local b = TestFormInput(form, "b")
+    local inputs = inputs_of(form)
+    trace("inputs: " .. names(inputs))
+    trace("> lifetime.destroy(a)")
+    lifetime.destroy(a)
+    trace("inputs: " .. names(inputs) .. ", a alive: " .. tostring(lifetime.alive(a)) .. ", b alive: " .. tostring(lifetime.alive(b)))
+    trace("> lifetime.destroy(form)")
+    lifetime.destroy(form)
+    trace("> lifetime.destroy(b)")
+    lifetime.destroy(b)
+    collect()
+    test.assert_deep_eq(log, {
+        "inputs: {a, b}",
+        "> lifetime.destroy(a)",
+        "TestFormInput:release(destroy) a",
+        "TestFormScreen:remove_input(a)",
+        "inputs: {b}, a alive: false, b alive: true",
+        "> lifetime.destroy(form)",
+        "TestFormScreen:release(destroy)",
+        "> lifetime.destroy(b)",
+        "TestFormInput:release(destroy) b",
+        "> collectgarbage twice"
+    })
+end)
+
+test.case("a form that dies first: its release sets the flag and the hooks do nothing", function()
+    setup()
+    local form = TestFormScreen()
+    local a = TestFormInput(form, "a")
+    local b = TestFormInput(form, "b")
+    local inputs = inputs_of(form)
+    trace("hooks on a: " .. #lifetime.dependents(a) .. ", on b: " .. #lifetime.dependents(b))
+    trace("> lifetime.destroy(form)")
+    lifetime.destroy(form)
+    trace("inputs: " .. names(inputs) .. ", form alive: " .. tostring(lifetime.alive(form)))
+    trace("hooks on a: " .. #lifetime.dependents(a) .. ", on b: " .. #lifetime.dependents(b))
+    trace("> lifetime.destroy(a)")
+    lifetime.destroy(a)
+    trace("> lifetime.destroy(b)")
+    lifetime.destroy(b)
+    collect()
+    test.assert_deep_eq(log, {
+        "hooks on a: 1, on b: 1",
+        "> lifetime.destroy(form)",
+        "TestFormScreen:release(destroy)",
+        "inputs: {a, b}, form alive: false",
+        "hooks on a: 0, on b: 0",
+        "> lifetime.destroy(a)",
+        "TestFormInput:release(destroy) a",
+        "> lifetime.destroy(b)",
+        "TestFormInput:release(destroy) b",
+        "> collectgarbage twice"
+    })
+end)
+
+-- The inputs owned by the form, the form by a period: each input is
+-- anchored to the form after its init attached its hook, so the form's
+-- dependents read hook a, a, hook b, b; newest first reaches b (whose hook
+-- then runs as b's dependent and finds the flag), b's hook again (dead,
+-- skipped), then a the same way.
+test.case("form and inputs in one cascade: the form first, nothing unlinked, no error", function()
+    setup()
+    local period = lifetime.token("period")
+    local form = TestFormScreen() @ period
+    TestFormInput(form, "a") @ form
+    TestFormInput(form, "b") @ form
+    local inputs = inputs_of(form)
+    trace("> lifetime.destroy(period)")
+    lifetime.destroy(period)
+    trace("inputs: " .. names(inputs) .. ", form alive: " .. tostring(lifetime.alive(form)))
+    collect()
+    test.assert_deep_eq(log, {
+        "> lifetime.destroy(period)",
+        "TestFormScreen:release(anchor)",
+        "TestFormInput:release(anchor) b",
+        "TestFormInput:release(anchor) a",
+        "inputs: {false, false}, form alive: false",
+        "> collectgarbage twice"
+    })
+end)
+
+-- A live input removed by hand (as TokenPanel drops its inputs) loses its
+-- hook too, so neither keeps the other: the form no longer pins it, its
+-- later death unlinks nothing, and once dropped the collector takes it
+-- (its release with "unreachable"; docs/02-semantics.md, "Reachability is
+-- the collector's").
+test.case("an input removed by hand loses its hook and is collected once dropped", function()
+    setup()
+    local form = TestFormScreen()
+    local a = TestFormInput(form, "a")
+    local inputs = inputs_of(form)
+    local weak: {TestFormInput} = setmetatable({}, {
+        __mode = "v"
+    })
+    -- In a frame of its own, so that no stack slot still refers to `c`.
+    local function add_and_remove_c()
+        local c = TestFormInput(form, "c")
+        weak[1] = c
+        trace("inputs: " .. names(inputs) .. ", hooks on form: " .. #lifetime.dependents(form))
+        trace("> form:remove_input(c)")
+        form:remove_input(c)
+        trace("inputs: " .. names(inputs) .. ", hooks on form: " .. #lifetime.dependents(form) .. ", on c: " .. #lifetime.dependents(c))
+    end
+    add_and_remove_c()
+    collect()
+    trace("c collected: " .. tostring(weak[1] == nil))
+    trace("> lifetime.destroy(a)")
+    lifetime.destroy(a)
+    trace("> lifetime.destroy(form)")
+    lifetime.destroy(form)
+    test.assert_deep_eq(log, {
+        "inputs: {a, c}, hooks on form: 2",
+        "> form:remove_input(c)",
+        "TestFormScreen:remove_input(c)",
+        "inputs: {a}, hooks on form: 1, on c: 0",
+        "> collectgarbage twice",
+        "TestFormInput:release(unreachable) c",
+        "c collected: true",
+        "> lifetime.destroy(a)",
+        "TestFormInput:release(destroy) a",
+        "TestFormScreen:remove_input(a)",
+        "> lifetime.destroy(form)",
+        "TestFormScreen:release(destroy)"
+    })
+end)
+
+test.case("an input removed by hand from a shown form is hidden first", function()
+    setup()
+    local form = TestFormScreen()
+    local a = TestFormInput(form, "a")
+    local inputs = inputs_of(form)
+    trace("> form:show()")
+    form:show()
+    trace("> TestFormInput(form, 'b')")
+    local b = TestFormInput(form, "b")
+    trace("inputs: " .. names(inputs))
+    trace("> form:remove_input(b)")
+    form:remove_input(b)
+    trace("inputs: " .. names(inputs) .. ", hooks on form: " .. #lifetime.dependents(form))
+    trace("> form:hide()")
+    form:hide()
+    trace("> form:remove_input(a)")
+    form:remove_input(a)
+    trace("inputs: " .. names(inputs))
+    test.assert_deep_eq(log, {
+        "> form:show()",
+        "TestFormInput:on_screen_show() a",
+        "> TestFormInput(form, 'b')",
+        "TestFormInput:on_screen_show() b",
+        "inputs: {a, b}",
+        "> form:remove_input(b)",
+        "TestFormScreen:remove_input(b)",
+        "TestFormInput:on_screen_hide() b",
+        "inputs: {a}, hooks on form: 1",
+        "> form:hide()",
+        "TestFormInput:on_screen_hide() a",
+        "> form:remove_input(a)",
+        "TestFormScreen:remove_input(a)",
+        "inputs: {}"
+    })
+end)

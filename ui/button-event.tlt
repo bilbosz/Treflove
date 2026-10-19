@@ -1,0 +1,128 @@
+local Input: Input = require("ui.input")
+
+-- Drives the `Button` helpers of the controls registered with it from raw
+-- pointer input (`dispatch_pointer_*`, called by the client next to the pointer
+-- manager):
+--
+-- - down: the button under the pointer is selected;
+-- - up: if the pointer is still over the selected button, it is unselected and
+--   clicked; the selection ends either way;
+-- - move: hover enters/leaves follow the pointer; a selected button is
+--   unselected when the pointer leaves it and selected again when it returns.
+--
+-- The button under the pointer is found by walking the control tree from
+-- `app.root` in tree order, descending only into visible controls whose
+-- recursive AABB contains the point and skipping read-only `Input`s together
+-- with their subtrees; the first registered control met wins (a registered
+-- parent before its children, earlier siblings before later ones). Unlike
+-- `events/hit-test.tlt` this picks one control and never passes events on.
+--
+-- Registration: `app.button_event_manager:register(ctrl, button)`; controls are
+-- held as weak keys, so a collected control drops out without unregistering.
+-- `unregister` also ends the button's hover and selection, which the manager
+-- keeps between dispatches: a hidden input's button must not get its leave
+-- from a later move, when its input may be a tombstone (events/event.tlt).
+local ButtonEventManager: ButtonEventManager = class("ButtonEventManager")
+
+local WEAK_KEYS: metatable<{Control: Button}> = {
+    __mode = "k"
+}
+
+ButtonEventManager.init = function(self: ButtonEventManager)
+    -- as: an empty table literal takes the type of the weak table
+    self._buttons = setmetatable({} as {Control: Button}, WEAK_KEYS)
+    self._hover = nil
+    self._selection = nil
+end
+
+-- Make `button` reachable by pointer over `ctrl`. Registering the same control
+-- again replaces its button.
+function ButtonEventManager:register(ctrl: Control, button: Button)
+    self._buttons[ctrl] = button
+end
+
+function ButtonEventManager:unregister(ctrl: Control)
+    local button = self._buttons[ctrl]
+    self._buttons[ctrl] = nil
+    if button and button == self._selection then
+        button:unselect()
+        self._selection = nil
+    end
+    if button and button == self._hover then
+        button:leave()
+        self._hover = nil
+    end
+end
+
+local function _is_read_only_input(ctrl: Control): boolean
+    if not is_instance_of(ctrl, Input) then
+        return false
+    end
+    -- as: is_instance_of has just said the control is an Input.
+    return (ctrl as Input):is_read_only()
+end
+
+local function _find_button(ctrl: Control, buttons: {Control: Button}, x: number, y: number): Button
+    if not ctrl:is_visible() or not ctrl:get_global_recursive_aabb():is_point_inside(x, y) or _is_read_only_input(ctrl) then
+        return nil
+    end
+    if buttons[ctrl] then
+        return buttons[ctrl]
+    end
+    for _, child in ipairs(ctrl:get_children()) do
+        local found = _find_button(child, buttons, x, y)
+        if found then
+            return found
+        end
+    end
+    return nil
+end
+
+function ButtonEventManager:_get_button(x: number, y: number): Button
+    return _find_button(app.root, self._buttons, x, y)
+end
+
+function ButtonEventManager:dispatch_pointer_down(x: number, y: number, _id: PointerId)
+    assert(not self._selection)
+    local selection = self:_get_button(x, y)
+    if not selection then
+        return
+    end
+    self._selection = selection
+    selection:select()
+end
+
+function ButtonEventManager:dispatch_pointer_up(x: number, y: number, _id: PointerId)
+    local selection = self._selection
+    local top = self:_get_button(x, y)
+    if selection and selection == top then
+        selection:unselect()
+        selection:click()
+    end
+    self._selection = nil
+end
+
+function ButtonEventManager:dispatch_pointer_move(x: number, y: number, _id: PointerId)
+    local top = self:_get_button(x, y)
+    local selection = self._selection
+    local hover = self._hover
+    if selection then
+        if selection ~= top then
+            selection:unselect()
+        end
+        if selection == top and selection ~= hover then
+            selection:select()
+        end
+    end
+    if hover ~= top then
+        if hover then
+            hover:leave()
+        end
+        if top then
+            top:enter()
+        end
+    end
+    self._hover = top
+end
+
+return ButtonEventManager

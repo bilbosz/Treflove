@@ -1,0 +1,165 @@
+local Consts = require("app.consts")
+local Socket = require("socket")
+local table_utils = require("utils.table")
+
+local Utils: Utils = {}
+
+local function _draw_aabbs_detail(ctrl: Control)
+    love.graphics.rectangle("fill", ctrl:get_global_recursive_aabb():get_position_and_size())
+    for _, child in ipairs(ctrl.children) do
+        if child:is_enabled() then
+            _draw_aabbs_detail(child)
+        end
+    end
+end
+
+function Utils.draw_aabbs(ctrl: Control)
+    love.graphics.setColor({
+        1,
+        0,
+        0,
+        0.1
+    })
+    _draw_aabbs_detail(ctrl)
+    love.graphics.reset()
+end
+
+function Utils.dump_controls(ctrl: Control, indent?: string): string
+    indent = indent or ""
+    local name = get_class_name_of(ctrl)
+    local lines: {string} = {}
+    table.insert(lines, indent .. name .. "[")
+    table.insert(lines, ctrl:is_enabled() and "e" or " ")
+    table.insert(lines, ctrl:is_visible() and "v" or " ")
+    table.insert(lines, ctrl:are_all_predecessors_enabled() and "a" or " ")
+    table.insert(lines, "]\n")
+    for _, child in ipairs(ctrl:get_children()) do
+        table.insert(lines, Utils.dump_controls(child, indent .. "|   "))
+    end
+    return table.concat(lines)
+end
+
+-- any: a monitored object's index holds values of every type.
+local type AnyIndex = {string: any}
+
+local record MonitorMeta
+    __index: function(obj: Object, k: string): any -- any: see AnyIndex
+    __newindex: function(obj: Object, k: string, v: any) -- any: see AnyIndex
+end
+
+-- Debugging aid: log every read and write through `obj`'s metatable,
+-- except reads made from inside `black_functions`.
+function Utils.monitor_object(obj: Object, black_functions?: {function})
+    black_functions = black_functions or {}
+    -- as: the instance metatable (utils/class.tlt), whose __index is the
+    -- class's merged method table; MonitorMeta types the replacements.
+    local mt = getmetatable(obj) as MonitorMeta
+    local old_index = (mt as {string: AnyIndex}).__index
+    mt.__index = function(_: Object, k: string): any -- any: see AnyIndex
+        local level = 1
+        local info = debug.getinfo(level, "f")
+        while info do
+            local f = info.func as function -- as: the "f" option fills func
+            if table_utils.find_array_idx(black_functions, f) then
+                return old_index[k]
+            end
+            level = level + 1
+            info = debug.getinfo(level, "f")
+        end
+        app:log("Read on " .. k)
+        return old_index[k]
+    end
+
+    mt.__newindex = function(_: Object, k: string, v: any) -- any: see AnyIndex
+        old_index[k] = v
+        app:log("write on " .. k)
+    end
+end
+
+function Utils.mix(a: number, b: number, x: number): number
+    return a + x * (b - a)
+end
+
+function Utils.clamp(min: number, max: number, x: number): number
+    return math.min(math.max(min, x), max)
+end
+
+function Utils.generate_salt(len: integer): string
+    local salt: {string} = {}
+    local rng = love.math.newRandomGenerator()
+    rng:setSeed(app.is_server and Consts.SERVER_SEED or Consts.CLIENT_SEED)
+    for _ = 1, len do
+        -- as: random(min, max) returns an integer in [min, max]
+        table.insert(salt, string.char(rng:random(0, 255) as integer))
+    end
+    -- as (here and in hash): the container "string" makes encode return a
+    -- string.
+    return love.data.encode("string", "base64", table.concat(salt)) as string
+end
+
+function Utils.hash(str: string): string
+    return love.data.encode("string", "base64", love.data.hash(Consts.HASH_ALGORITHM, str)) as string
+end
+
+function Utils.get_time(): number
+    return Socket.gettime()
+end
+
+function Utils.get_stack_trace(min_level?: integer): string
+    min_level = min_level or 1
+    local trace = ""
+    local up = 1
+    local level = 1
+    while true do
+        local info = debug.getinfo(up, "nSl")
+        if not info then
+            break
+        end
+        if string.sub(info.source, 1, 1) == "@" then
+            if level >= min_level + 1 then
+                local location = string.format("%s:%i", info.short_src, info.currentline)
+                if info.short_src ~= "build/utils/class.lua" then
+                    if info.name then
+                        trace = trace .. string.format("%44s in %s %s", location, info.namewhat, info.name) .. "\n"
+                    else
+                        trace = trace .. string.format("%44s", location) .. "\n"
+                    end
+                end
+            end
+            level = level + 1
+        end
+        up = up + 1
+    end
+    return trace
+end
+
+function Utils.split_path(path: string): {string}
+    local tab: {string} = {}
+    local last_found, found: integer, integer = 1, 0
+    while true do
+        found = string.find(path, "/", found + 1)
+        if not found then
+            break
+        end
+
+        local split = string.sub(path, last_found + 1, found - 1)
+        table.insert(tab, split)
+
+        last_found = found
+    end
+
+    local split = string.sub(path, last_found + 1, #path)
+    table.insert(tab, split)
+
+    return tab
+end
+
+function Utils.error_handler(module: string): function(msg: string)
+    assert_type(module, "string")
+    return function(msg: string)
+        print(string.format("%s error: \"%s\"", module, msg))
+        print(Utils.get_stack_trace(2))
+    end
+end
+
+return Utils

@@ -8,16 +8,16 @@ The `app/` directory contains the application layer that bootstraps and manages 
 
 ## File Structure
 
-- **[globals.lua](globals.lua)**: Loads global utilities (table, utils, class, dump in debug mode)
-- **[arg-parser.lua](arg-parser.lua)**: Parses command-line arguments
-- **[consts.lua](consts.lua)**: Application-wide constants (colors, fonts, dimensions, keybindings)
-- **[app.lua](app.lua)**: Base App class with common functionality
-- **[client.lua](client.lua)**: Client application with full UI and event managers
-- **[server.lua](server.lua)**: Server application managing connections and persistence
+- **[globals.tlt](globals.tlt)**: Loads the modules that define the globals (utils/table, utils/utils, utils/class; utils/dump in debug mode); it has no fragment, since it defines nothing itself
+- **[arg-parser.tlt](arg-parser.tlt)** / [arg-parser.d.tl](arg-parser.d.tl): Parses command-line arguments
+- **[consts.tlt](consts.tlt)** / [consts.d.tl](consts.d.tl): Application-wide constants (colors, fonts, dimensions, keybindings)
+- **[app.tlt](app.tlt)** / [app.d.tl](app.d.tl): Base App class with common functionality; the fragment declares its type `App`, the global `app` and the LÖVE `config`
+- **[client.tlt](client.tlt)** / [client.d.tl](client.d.tl): Client application with full UI and event managers
+- **[server.tlt](server.tlt)** / [server.d.tl](server.d.tl): Server application managing connections and persistence
 
 ## Bootstrap Flow
 
-1. [main.lua](../main.lua) requires [globals.lua](globals.lua) first (sets up global utilities)
+1. [conf.lua](../conf.lua) and [main.lua](../main.lua) put `build/` first on the require path; main.lua requires [globals.tlt](globals.tlt) first (sets up global utilities)
 2. `arg_parser.parse(arg)` parses command-line arguments: `love . <client|server> <address> <port>`
 3. Based on `app_type`, either Client or Server is instantiated with parsed params
 4. The instance assigns itself to global `app` variable
@@ -26,7 +26,7 @@ The `app/` directory contains the application layer that bootstraps and manages 
 
 ## App Base Class
 
-[app.lua](app.lua) defines the abstract App class that both Client and Server inherit from.
+[app.tlt](app.tlt) defines the abstract App class that both Client and Server inherit from.
 
 ### Key Responsibilities
 
@@ -43,7 +43,8 @@ The `app/` directory contains the application layer that bootstraps and manages 
 - `love.draw()` → renders `self.root` control hierarchy (if window enabled)
 - `love.update(dt)` → updates defer manager, checks for quit, updates time, triggers `update_event`, runs GC step
 - `love.errorhandler()` → prints error and stack trace in debug mode, silent otherwise
-- `love.keypressed()` → handles F2 (toggle AABB drawing), F4 (quit)
+- `love.keypressed()` → handles F2 (toggle AABB drawing), F4 (quit) (if window enabled; the Client wraps it)
+- `love.quit()` → announces program end to the lifetime runtime (`lifetime.set_exiting(true)`)
 
 **Root Control Management**:
 - `self.root` is the top-level Control that contains all UI
@@ -70,7 +71,7 @@ The `app/` directory contains the application layer that bootstraps and manages 
 - Error handler prints full stack trace
 - `log_fun` includes calling function name
 
-### Fields (see @field annotations)
+### Fields (see [app.d.tl](app.d.tl))
 
 The App class declares all manager fields that may exist in Client or Server:
 - Event managers: pointer, keyboard, button, text, resize, file-drop
@@ -85,7 +86,7 @@ Not all fields exist on all instances (e.g., Server doesn't have pointer_event_m
 
 ## Client Class
 
-[client.lua](client.lua) extends App for the game client.
+[client.tlt](client.tlt) extends App for the game client.
 
 ### Additional Initialization
 
@@ -103,11 +104,11 @@ Creates all UI-related managers:
 
 ### Load Flow
 
-1. Pushes quit callback onto backstack (escape key quits)
+1. Pushes the quit callback onto the backstack (escape key quits), anchored to the app (`push(...) @ self`: it lives as long as the program, and at program end dies in the app's cascade with the reason "anchor")
 2. Shows ConnectingScreen
 3. Starts connection via ConnectionManager
-4. On connection: creates Session
-5. On disconnection: shows ConnectingScreen again, releases Session
+4. On connection: creates the Session anchored to its connection (`Session(connection) @ connection`)
+5. On disconnection: shows ConnectingScreen again and clears `session` and `data`; `ConnectionManager:remove` then destroys the connection, and the Session dies in that cascade (`docs/lifetime.md`, "The Tree")
 
 ### LÖVE Callback Extensions
 
@@ -130,7 +131,7 @@ All input events are dispatched to multiple managers:
 
 ## Server Class
 
-[server.lua](server.lua) extends App for the game server.
+[server.tlt](server.tlt) extends App for the game server.
 
 ### Additional Initialization
 
@@ -145,18 +146,18 @@ Creates server-specific components:
 
 1. Loads saved data via `_load_data()`
 2. Starts ConnectionManager listening for connections
-3. On client connect: creates new Session for that connection
-4. On client disconnect: releases and removes Session
+3. On client connect: creates a new Session anchored to that connection (`Session(connection) @ connection`)
+4. On client disconnect: removes the Session from `_sessions`; `ConnectionManager:remove` then destroys the connection, and the Session dies in that cascade
 
 ### Data Persistence
 
 **Loading** (`_load_data()`):
 - Reads `save.lua` file content
-- Deserializes via `table.from_string(content)`
+- Deserializes via `table_utils.from_string(content)`
 - Stores in `self.data`
 
 **Saving** (`save_data()`):
-- Serializes `self.data` via `table.to_string(self.data)`
+- Serializes `self.data` via `table_utils.to_string(self.data)`
 - Writes to `save.lua` file
 
 The server is responsible for calling `save_data()` when game state changes.
@@ -164,31 +165,32 @@ The server is responsible for calling `save_data()` when game state changes.
 ### Multi-Session Architecture
 
 The server maintains multiple sessions simultaneously:
-- `_sessions[connection] = Session(connection)`
+- `_sessions[connection] = Session(connection) @ connection`
 - Each connected client has its own Session instance
 - Sessions are independent but share `app.data`
 
 ## ArgParser
 
-[arg-parser.lua](arg-parser.lua) validates and parses command-line arguments.
+[arg-parser.tlt](arg-parser.tlt) validates and parses command-line arguments.
 
 **Module Type**: Returns a table (not a class instance) with a `parse` function.
 
 **Expected format**: `love . <app_type> <address> <port>`
 
 **Validation**:
-- `app_type`: Must be "server" or "client" (typed as literal union `"server"|"client"`)
+- `app_type`: Must be "server" or "client" (typed as the enum `AppType`)
 - `address`: Either "localhost" or valid IPv4 (e.g., "192.168.1.1")
 - `port`: Number between 1024-65535 (returned as string)
 
 **Returns**: `ArgParserResult` table with validated fields, or `nil` if invalid.
 
 **Type Definition**:
-```lua
----@class ArgParserResult
----@field public app_type "server"|"client"
----@field public address string
----@field public port string Port number as string (range: 1024-65535)
+```teal
+global record ArgParserResult
+    app_type: AppType
+    address: string
+    port: string -- port number as a string (range: 1024-65535)
+end
 ```
 
 **Usage**:
@@ -204,7 +206,7 @@ end
 
 ## Constants
 
-[consts.lua](consts.lua) defines application-wide constants.
+[consts.tlt](consts.tlt) defines application-wide constants (typed by `Consts` in [consts.d.tl](consts.d.tl)).
 
 ### Categories
 
@@ -273,10 +275,10 @@ app = self
 This makes the app instance accessible everywhere without requiring imports. Check `app.is_client` or `app.is_server` to branch behavior in shared code.
 
 **Manager access pattern**:
-```lua
-app.screen_manager:show(SomeScreen())
-app.asset_manager:download_asset(...)
-app.backstack_manager:push(callback)
+```teal
+app.screen_manager:show(WaitingScreen("Loading..."))
+app.asset_manager:download_asset(path)
+app.backstack_manager:push(callback) @ owner -- or keep the entry and lifetime.destroy(entry)
 ```
 
 ## Debug Mode
@@ -285,7 +287,7 @@ When `debug` is true (controlled by LÖVE):
 - `love.draw()` supports AABB visualization (F2 key)
 - `love.errorhandler()` prints stack traces
 - `App:log_fun()` includes function names
-- [globals.lua](globals.lua) loads dump utilities
+- [globals.tlt](globals.tlt) loads dump utilities
 
 ## Headless vs Window Mode
 
@@ -306,20 +308,20 @@ Server checks `if self.root then` before creating ScreenManager.
 ## Common Patterns
 
 **Extending LÖVE callbacks**:
-```lua
+```teal
 function Client:register_love_callbacks()
     App.register_love_callbacks(self)  -- Call parent
-    -- Add client-specific callbacks
-    function love.keypressed(key)
+    -- Add client-specific callbacks (assigned, not defined: docs/types.md)
+    love.keypressed = function(key: love.KeyConstant, scancode: love.Scancode, isrepeat: boolean)
         -- Handle client input
     end
 end
 ```
 
 **Accessing managers from anywhere**:
-```lua
-app.notification_manager:show_notification("Hello")
-app.screen_manager:show(GameScreen())
+```teal
+app.notification_manager:notify("Hello")
+app.session:show_user_menu() -- client, logged in: the menu belongs to the session's period
 ```
 
 **Checking context**:

@@ -1,0 +1,60 @@
+-- The client's input thread: binds a port, tells it client-out through
+-- `get_port_channel`, accepts the server's connection on it and pushes
+-- every message it receives on `in_channel`. Started by client-out.
+-- as: a thread's arguments are what Thread:start passed (client-out.tlt);
+-- Teal types a main chunk's `...` as strings.
+local logger_data, channel, address, get_port_channel, in_channel = ... as (ModelData, love.Channel, string, love.Channel, love.Channel)
+
+-- A thread has a Lua state of its own: load love.filesystem (its module
+-- searcher) and look in build/ first, as main.lua does.
+require("love.filesystem")
+love.filesystem.setRequirePath("build/?.lua;build/?/init.lua;?.lua;?/init.lua")
+
+local Socket = require("socket")
+local Logger = require("utils.logger")
+local logger = Logger(logger_data, "client-in-?????")
+
+local in_server, bind_err = Socket.bind(address, 0)
+if bind_err then
+    logger:log("Could not bind for receiver")
+    return
+end
+local _, in_port = in_server:getsockname()
+logger:set_name(string.format("client-in-%05i", in_port))
+get_port_channel:push(in_port)
+local in_client, accept_err = in_server:accept()
+if accept_err then
+    logger:log("Could not connect to server")
+    return
+end
+logger:log("Established input connection to server. Waiting for messages...")
+
+while true do
+    local msg, size_err = in_client:receive("*l")
+    if size_err then
+        if size_err == "closed" then
+            logger:log("Connection closed by host")
+        else
+            logger:log("Error when receiving data size")
+        end
+        break
+    end
+    local n = tonumber(msg)
+    assert_type(n, "number")
+    local data, data_err = in_client:receive(n)
+    if data_err then
+        if data_err == "closed" then
+            logger:log("Connection lost")
+        else
+            logger:log("Error when receiving data")
+        end
+        break
+    end
+    logger:log("Received data with size of " .. n)
+    in_channel:push(data)
+end
+local closed: ConnectorMessage = {
+    "i",
+    in_channel
+}
+channel:push(closed)

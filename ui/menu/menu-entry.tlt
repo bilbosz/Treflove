@@ -1,0 +1,17 @@
+-- An entry of a MenuScreen: it makes its control when the menu is laid out.
+local MenuEntry: MenuEntry = class("MenuEntry")
+
+MenuEntry.init = function(self: MenuEntry)
+    self.control = nil
+end
+
+-- Abstract. Called, not assigned: `abstract()` raises when it runs.
+function MenuEntry:create_control(_parent: Control): Control
+    return abstract()
+end
+
+function MenuEntry:get_control(): Control
+    return self.control
+end
+
+return MenuEntry

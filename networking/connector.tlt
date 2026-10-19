@@ -1,0 +1,68 @@
+-- Starts the thread that accepts (server) or opens (client) connections and
+-- hands each new one, or each closed one, to the ConnectionManager. The
+-- thread scripts are started from build/, where the build puts them.
+local Connector: Connector = class("Connector")
+
+Connector.init = function(self: Connector, address: string, port: string)
+    self._address = address
+    self._port = port
+    self._channel = love.thread.newChannel()
+    self._retry_time = 1
+    self._thread = nil
+    self._connection_manager = nil
+end
+
+function Connector:start(connection_manager: ConnectionManager)
+    self._connection_manager = connection_manager
+    self:_try_restart_connection()
+
+    app.update_event:register(self, self.on_update)
+end
+
+function Connector:_try_restart_connection()
+    local now = love.timer.getTime()
+    if not self._thread or not self._thread:isRunning() and (not self._last_start or now - self._last_start >= self._retry_time) then
+        self._last_start = love.timer.getTime()
+        if not self._thread then
+            if app.is_server then
+                self._thread = love.thread.newThread("build/networking/detail/connection-dispatcher.lua")
+            else
+                self._thread = love.thread.newThread("build/networking/detail/client-out.lua")
+            end
+        end
+        if app.is_server then
+            self._thread:start(app.logger:get_data(), self._channel, self._address, self._port)
+        else
+            self._thread:start(app.logger:get_data(), self._channel, self._address, self._port, self._thread)
+        end
+    end
+end
+
+function Connector:_handle_connections()
+    while true do
+        -- as: the connection threads push only ConnectorMessages here.
+        local msg = self._channel:pop() as ConnectorMessage
+        if not msg then
+            break
+        end
+        local action, channel1, thread1, channel2, thread2 = msg[1], msg[2], msg[3], msg[4], msg[5]
+        if action == "a" then
+            self._connection_manager:add_connection(channel1, thread1, channel2, thread2)
+        elseif action == "i" then
+            self._connection_manager:remove_by_in_channel(channel1)
+        elseif action == "o" then
+            self._connection_manager:remove_by_out_channel(channel1)
+        end
+    end
+end
+
+function Connector:remove_thread()
+    self._thread = nil
+end
+
+function Connector:on_update()
+    self:_try_restart_connection()
+    self:_handle_connections()
+end
+
+return Connector

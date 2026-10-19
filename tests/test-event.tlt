@@ -1,0 +1,314 @@
+local test = require("tests.lib.test")
+local Event = require("events.event")
+
+-- An event owner for the tests; records every trigger it receives.
+local interface TestEventOwner is Object
+    received: {any} -- any: the values triggered, of several types
+    on_ping: function(self, value: any) -- any: see received
+end
+
+local TestEventOwner: TestEventOwner = class("TestEventOwner")
+
+TestEventOwner.init = function(self: TestEventOwner)
+    self.received = {}
+end
+
+function TestEventOwner:on_ping(value: any) -- any: see received
+    table.insert(self.received, value)
+end
+
+test.suite("Event")
+
+test.case("registered handlers receive the owner and trigger arguments", function()
+    local event = Event()
+    local first, second = TestEventOwner(), TestEventOwner()
+    local record Call
+        owner: TestEventOwner
+        a: number
+        b: string
+    end
+    local calls: {Call} = {}
+    local function _record(owner: TestEventOwner, a: number, b: string)
+        table.insert(calls, {
+            owner = owner,
+            a = a,
+            b = b
+        })
+    end
+    event:register(first, _record)
+    event:register(second, _record)
+
+    event:trigger(42, "x")
+
+    test.assert_eq(#calls, 2)
+    local seen: {TestEventOwner: boolean} = {}
+    for _, call in ipairs(calls) do
+        seen[call.owner] = true
+        test.assert_eq(call.a, 42)
+        test.assert_eq(call.b, "x")
+    end
+    test.assert_true(seen[first], "first owner passed as first argument")
+    test.assert_true(seen[second], "second owner passed as first argument")
+end)
+
+test.case("methods registered explicitly are called with their owner as self", function()
+    local event = Event()
+    local owner = TestEventOwner()
+    event:register(owner, owner.on_ping)
+
+    event:trigger(1)
+
+    test.assert_deep_eq(owner.received, {
+        1
+    })
+end)
+
+test.case("unregistered owners stop receiving triggers", function()
+    local event = Event()
+    local owner = TestEventOwner()
+    event:register(owner, owner.on_ping)
+    event:trigger(1)
+    event:unregister(owner)
+    event:trigger(2)
+
+    test.assert_deep_eq(owner.received, {
+        1
+    })
+end)
+
+test.case("registering an owner again replaces its handler", function()
+    local event = Event()
+    local owner = TestEventOwner()
+    event:register(owner, owner.on_ping)
+    event:register(owner, function(o: TestEventOwner, value: string)
+        table.insert(o.received, "replaced " .. value)
+    end)
+
+    event:trigger("a")
+
+    test.assert_deep_eq(owner.received, {
+        "replaced a"
+    })
+end)
+
+test.case("an owner unregistered during dispatch is skipped immediately", function()
+    local event = Event()
+    local a, b = TestEventOwner(), TestEventOwner()
+    -- Whichever runs first unregisters the other (pairs order is unspecified),
+    -- so exactly one of them may fire in the first trigger and ever after.
+    event:register(a, function(o: TestEventOwner, value: string)
+        table.insert(o.received, value)
+        event:unregister(b)
+    end)
+    event:register(b, function(o: TestEventOwner, value: string)
+        table.insert(o.received, value)
+        event:unregister(a)
+    end)
+
+    event:trigger("first")
+    test.assert_eq(#a.received + #b.received, 1, "only the first handler fired")
+    local survivor, removed = a, b
+    if #b.received == 1 then
+        survivor, removed = b, a
+    end
+
+    event:trigger("second")
+    test.assert_deep_eq(survivor.received, {
+        "first",
+        "second"
+    })
+    test.assert_deep_eq(removed.received, {}, "the unregistered owner never fired")
+    test.assert_eq(event:get_handler(removed), nil)
+end)
+
+test.case("an owner can unregister itself during dispatch", function()
+    local event = Event()
+    local owner = TestEventOwner()
+    event:register(owner, function(o: TestEventOwner, value: string)
+        table.insert(o.received, value)
+        event:unregister(o)
+    end)
+
+    event:trigger("first")
+    event:trigger("second")
+
+    test.assert_deep_eq(owner.received, {
+        "first"
+    })
+    test.assert_eq(event:get_handler(owner), nil)
+end)
+
+test.case("an owner registered during dispatch is active from the next trigger", function()
+    local event = Event()
+    local late, trigger = TestEventOwner(), TestEventOwner()
+    event:register(trigger, function(o: TestEventOwner, value: string)
+        table.insert(o.received, value)
+        event:register(late, late.on_ping)
+    end)
+
+    event:trigger("first")
+    test.assert_deep_eq(late.received, {}, "not called during the trigger that registered it")
+
+    event:trigger("second")
+    test.assert_deep_eq(late.received, {
+        "second"
+    })
+end)
+
+test.case("registering then unregistering during dispatch leaves the owner unregistered", function()
+    local event = Event()
+    local late, trigger = TestEventOwner(), TestEventOwner()
+    event:register(trigger, function()
+        event:register(late, late.on_ping)
+        event:unregister(late)
+    end)
+
+    event:trigger("first")
+    event:trigger("second")
+
+    test.assert_deep_eq(late.received, {})
+    test.assert_eq(event:get_handler(late), nil)
+end)
+
+test.case("release drops all handlers", function()
+    local event = Event()
+    local first, second = TestEventOwner(), TestEventOwner()
+    event:register(first, first.on_ping)
+    event:register(second, second.on_ping)
+
+    event:release()
+    event:trigger(1)
+
+    test.assert_deep_eq(first.received, {})
+    test.assert_deep_eq(second.received, {})
+    test.assert_eq(event:get_handler(first), nil)
+    test.assert_eq(event:get_handler(second), nil)
+end)
+
+test.case("release during dispatch drops handlers and pending registrations", function()
+    local event = Event()
+    local releaser, other, late = TestEventOwner(), TestEventOwner(), TestEventOwner()
+    event:register(releaser, function()
+        event:register(late, late.on_ping)
+        event:release()
+    end)
+    event:register(other, function(o: TestEventOwner, value: string)
+        -- may run before the releaser (pairs order is unspecified), never after
+        table.insert(o.received, value)
+    end)
+
+    event:trigger("first")
+    local other_calls = #other.received
+    test.assert_true(other_calls <= 1)
+
+    event:trigger("second")
+    test.assert_eq(#other.received, other_calls, "released handler not called again")
+    test.assert_deep_eq(late.received, {}, "pending registration dropped by release")
+    test.assert_eq(event:get_handler(releaser), nil)
+    test.assert_eq(event:get_handler(late), nil)
+end)
+
+test.case("the dispatch lock is released after every trigger", function()
+    local event = Event()
+    local owner = TestEventOwner()
+    event:register(owner, owner.on_ping)
+    event:trigger(1)
+    event:trigger(2)
+    test.assert_deep_eq(owner.received, {
+        1,
+        2
+    })
+    -- registering outside a trigger takes effect immediately again
+    local late = TestEventOwner()
+    event:register(late, late.on_ping)
+    test.assert_eq(event:get_handler(late), late.on_ping)
+end)
+
+test.case("trigger cannot be re-entered", function()
+    local event = Event()
+    local owner = TestEventOwner()
+    local reentry_failed = false
+    event:register(owner, function()
+        reentry_failed = not pcall(event.trigger, event, "nested")
+    end)
+
+    event:trigger("outer")
+
+    test.assert_true(reentry_failed)
+end)
+
+test.case("get_handler returns the registered function or nil", function()
+    local event = Event()
+    local owner, stranger = TestEventOwner(), TestEventOwner()
+    test.assert_eq(event:get_handler(owner), nil)
+
+    event:register(owner, owner.on_ping)
+    test.assert_eq(event:get_handler(owner), owner.on_ping)
+    test.assert_eq(event:get_handler(stranger), nil)
+
+    event:unregister(owner)
+    test.assert_eq(event:get_handler(owner), nil)
+end)
+
+test.case("owners are held weakly", function()
+    local event = Event()
+    local calls = 0
+    local function _count(_owner: TestEventOwner)
+        calls = calls + 1
+    end
+    -- Weak-valued probe to confirm the owner was really collected.
+    local probe: {string: TestEventOwner} = setmetatable({}, {
+        __mode = "v"
+    })
+
+    -- Create and register the owner in a separate function so no stack slot or
+    -- register of this function keeps it alive (LuaJIT may keep block locals
+    -- in live slots until they are overwritten).
+    local function _register_temporary_owner()
+        local owner = TestEventOwner()
+        probe.owner = owner
+        event:register(owner, _count)
+    end
+    _register_temporary_owner()
+
+    event:trigger()
+    test.assert_eq(calls, 1, "owner receives triggers while alive")
+
+    collectgarbage("collect")
+    collectgarbage("collect")
+
+    test.assert_eq(probe.owner, nil, "owner was garbage collected")
+    event:trigger()
+    test.assert_eq(calls, 1, "collected owner no longer receives triggers")
+end)
+
+-- An owner with a release is registered with the lifetime runtime and dies
+-- into a tombstone, which stays a key of the weak handler table until a
+-- later collection (events/event.tlt).
+local interface TestDyingOwner is Object
+end
+
+local TestDyingOwner: TestDyingOwner = class("TestDyingOwner")
+
+function TestDyingOwner:release(_reason?: LifetimeReason)
+end
+
+test.case("a dead owner is skipped and dropped, by trigger and get_handler", function()
+    local event = Event()
+    local calls = 0
+    local function _count(_owner: TestDyingOwner)
+        calls = calls + 1
+    end
+    local owner = TestDyingOwner()
+    event:register(owner, _count)
+    event:trigger()
+    test.assert_eq(calls, 1, "owner receives triggers while alive")
+
+    lifetime.destroy(owner)
+    test.assert_false(lifetime.alive(owner))
+    test.assert_eq(event:get_handler(owner), nil, "a tombstone has no handler")
+    event:trigger()
+    test.assert_eq(calls, 1, "a tombstone is not called")
+    -- as: `next` refuses a map keyed by an interface (docs/types.md)
+    test.assert_eq(next(event._handlers as {any: any}), nil, "a tombstone is dropped")
+end)

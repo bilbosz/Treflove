@@ -1,12 +1,15 @@
 {
     "recommendations": [
-        // lua language server
+        // running and debugging: the "Debug ..." configurations of launch.json
+        "tomblind.local-lua-debugger-vscode",
+        // lua language server, for the Lua files and, through
+        // editor/luals/plugin.lua, the .tlt and .d.tl files (see settings.json)
         "sumneko.lua",
-        // lua formatter, requires /usr/local/bin/lua-format (via luarocks install --server=https://luarocks.org/dev luaformatter)
+        // lua formatter, requires /usr/local/bin/lua-format (REQUIREMENTS.md)
         "koihik.vscode-lua-format",
         // running ./run.sh as launch configuration
         "discretegames.f5anything",
         // AI support
         "Anthropic.claude-code",
     ]
-}                       
+}

@@ -1,0 +1,52 @@
+local MenuScreen: MenuScreen = require("screens.menu-screen")
+local MenuTextButton: MenuTextButton = require("ui.menu.menu-text-button")
+local OptionsMenuScreen: OptionsMenuScreen = require("screens.options-menu-screen")
+
+-- The menu after logging in.
+local UserMenuScreen: UserMenuScreen = class("UserMenuScreen", MenuScreen)
+
+UserMenuScreen.init = function(self: UserMenuScreen, session: Session)
+    assert(session)
+    self._session = session
+    MenuScreen.init(self, "Menu", {
+        MenuTextButton(self, "Join Game", function()
+            self:join_game()
+        end),
+        MenuTextButton(self, "Options", function()
+            self:options()
+        end),
+        MenuTextButton(self, "Log Out", function()
+            self:logout()
+        end),
+        MenuTextButton(self, "Quit", function()
+            self:quit()
+        end)
+    })
+end
+
+function UserMenuScreen:join_game()
+    self._session:join_game()
+end
+
+-- The back entry returns to this screen, so it is anchored to it
+-- (docs/lifetime.md, "Screens"): if the screen dies first (when its
+-- owner, the logged-in period, ends), the entry dies with it and its hook
+-- takes it off the back stack ("Back Navigation"), instead of leaving a
+-- callback that would show a dead screen. The stack holds the entry, so
+-- the implicit `reachable` term does not end it early.
+function UserMenuScreen:options()
+    app.backstack_manager:push(function()
+        app.screen_manager:show(self)
+    end) @ self
+    app.screen_manager:show(OptionsMenuScreen())
+end
+
+function UserMenuScreen:logout()
+    self._session:logout()
+end
+
+function UserMenuScreen:quit()
+    app:quit()
+end
+
+return UserMenuScreen

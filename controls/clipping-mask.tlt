@@ -1,0 +1,28 @@
+local Control: Control = require("controls.control")
+
+-- Clips its children to the stencil a callback draws.
+local ClippingMask: ClippingMask = class("ClippingMask", Control)
+
+ClippingMask.init = function(self: ClippingMask, parent: Control, width: number, height: number, draw_mask_cb: DrawMaskCallback)
+    assert(width and height and draw_mask_cb)
+    Control.init(self, parent, width, height)
+    self:set_draw_mask_callback(draw_mask_cb)
+end
+
+function ClippingMask:draw()
+    love.graphics.stencil(self._stencil_cb, "replace", 1)
+    love.graphics.setStencilTest("greater", 0)
+    Control.draw(self)
+    love.graphics.setStencilTest()
+end
+
+function ClippingMask:set_draw_mask_callback(draw_mask_cb: DrawMaskCallback)
+    self._stencil_cb = function()
+        love.graphics.push()
+        love.graphics.replaceTransform(self.global_transform)
+        draw_mask_cb()
+        love.graphics.pop()
+    end
+end
+
+return ClippingMask

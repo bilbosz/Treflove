@@ -1,0 +1,142 @@
+local Consts = require("app.consts")
+local Control: Control = require("controls.control")
+local DeferManager: DeferManager = require("events.defer-manager")
+local Event: Event = require("events.event")
+local Logger: Logger = require("utils.logger")
+local Utils = require("utils.utils")
+
+-- The base of Client and Server: the global `app`, the clock, the logger,
+-- the update event and the LÖVE callbacks both need.
+local App: App = class("App")
+
+-- What love.errorhandler may return: the loop LÖVE runs instead of quitting
+-- (love-api types it so). any: that loop takes and returns whatever LÖVE's
+-- run loop passes.
+local type ErrorLoop = function(...: any): any...
+
+function App:register_love_callbacks()
+    love.load = function()
+        self:load()
+    end
+
+    if config.window then
+        self.root = Control()
+        self:rescale_root()
+        if debug then
+            love.draw = function()
+                if self.root:is_visible() then
+                    self.root:draw()
+                    love.graphics.reset()
+                    if self._draw_aabbs then
+                        Utils.draw_aabbs(self.root)
+                    end
+                end
+                love.graphics.reset()
+            end
+        else
+            love.draw = function()
+                if self.root:is_visible() then
+                    self.root:draw()
+                end
+                love.graphics.reset()
+            end
+        end
+        love.keypressed = function(key: love.KeyConstant)
+            if key == Consts.DRAW_AABBS_KEY then
+                self._draw_aabbs = not self._draw_aabbs
+            elseif key == Consts.QUIT_KEY then
+                self:quit()
+            end
+        end
+    end
+
+    -- The handler returns no loop function (nil): LÖVE then quits instead of
+    -- showing its error screen.
+    if debug then
+        love.errorhandler = function(msg: string): ErrorLoop
+            print(string.format("%s error: \"%s\"", app.is_client and "Client" or "Server", msg))
+            print(Utils.get_stack_trace(2))
+            return nil
+        end
+    else
+        love.errorhandler = function(_msg: string): ErrorLoop
+            return nil
+        end
+    end
+
+    -- The host announces program end, so that what the closing state
+    -- finalizes dies with the reason "exit" (lua-lifetime docs/02-semantics.md,
+    -- "Program end"; docs/03-runtime.md, "Program end"). LÖVE calls it on
+    -- every quit path, App:quit's love.event.quit included.
+    love.quit = function(): boolean
+        lifetime.set_exiting(true)
+        return false
+    end
+
+    love.update = function(dt: number)
+        self.defer_manager:update()
+        if self._mark_for_quit then
+            love.event.quit(Consts.APP_SUCCESS_EXIT_CODE)
+        end
+        self._time = Utils.get_time() - self._start_time
+        self.update_event:trigger(dt)
+        collectgarbage("step")
+    end
+end
+
+-- Abstract: Client and Server load their state and start their connections.
+function App:load()
+    abstract()
+end
+
+function App:get_time(): number
+    return self._time
+end
+
+function App:quit()
+    self._mark_for_quit = true
+end
+
+function App:log(...: any) -- any: values of any type, each formatted with %s
+    local format = string.rep("%s", select("#", ...), " ")
+    self.logger:log_up(format, 1, ...)
+end
+
+function App:log_fun(...: any) -- any: see log
+    local format = ""
+    if debug then
+        local info = debug.getinfo(2, "n")
+        format = string.format("%s ", info.name)
+    end
+    format = format .. string.rep("%s ", select("#", ...), " ")
+    self.logger:log_up(format, 1, ...)
+end
+
+function App:rescale_root()
+    local real_w, real_h = love.graphics.getDimensions()
+    local scale = real_w / Consts.MODEL_WIDTH
+    self.width, self.height = Consts.MODEL_WIDTH, real_h / scale
+    self.root:set_scale(scale)
+end
+
+App.init = function(self: App, params: ArgParserResult)
+    app = self
+    self._start_time = Utils.get_time()
+    self._time = nil
+    self.logger = Logger({
+        start_time = self._start_time
+    }, "main")
+    self.params = params
+    self.is_server = false
+    self.is_client = false
+    self.data = nil
+    self.width = nil
+    self.height = nil
+    self.root = nil
+    self.update_event = Event()
+    self.defer_manager = DeferManager()
+
+    self:register_love_callbacks()
+end
+
+return App

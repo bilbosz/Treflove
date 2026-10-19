@@ -1,0 +1,46 @@
+local Consts = require("app.consts")
+
+local DrawableControl: DrawableControl = require("controls.drawable-control")
+
+-- A single-font text, sized to fit it.
+local Text: Text = class("Text", DrawableControl)
+
+Text.init = function(self: Text, parent: Control, text: string, color?: {number}, font?: love.Font)
+    self._font = font or Consts.DISPLAY_FONT
+    DrawableControl.init(self, parent, 0, 0, function()
+        love.graphics.setColor(self._color)
+        love.graphics.draw(self._text_drawable)
+    end)
+
+    self._color = color or {
+        1,
+        1,
+        1
+    }
+    self:set_text(text)
+end
+
+function Text:set_color(color: {number})
+    self._color = color
+end
+
+function Text:get_color(): {number}
+    return self._color
+end
+
+function Text:set_text(text: string)
+    assert_type(text, "string")
+    self._text = text
+    local text_drawable = love.graphics.newText(self._font, text)
+    self._text_drawable = text_drawable
+
+    local w, h = text_drawable:getDimensions()
+    w, h = w or 0, h or 0
+    self:set_size(w, h)
+end
+
+function Text:get_text(): string
+    return self._text
+end
+
+return Text

@@ -1,0 +1,58 @@
+-- The base of every remote procedure: the class name is its id on the
+-- connection. A procedure is anchored to its owner (`LoginRp(...) @ self`,
+-- the asset procedures `@ session`) and dies with it (docs/lifetime.md).
+local RemoteProcedure: RemoteProcedure = class("RemoteProcedure")
+
+RemoteProcedure.init = function(self: RemoteProcedure, connection: Connection, dont_start?: boolean)
+    assert(connection)
+    self._connection = connection
+    self._id = get_class_name_of(self)
+
+    if not dont_start then
+        self:start()
+    end
+end
+
+function RemoteProcedure:start()
+    self._connection:register_request_handler(self._id, function(request: RequestBody): ResponseBody
+        return self:send_response(request)
+    end)
+end
+
+function RemoteProcedure:stop()
+    self._connection:unregister_request_handler(self._id)
+end
+
+-- `cb` is called with the response body after `receive_response`.
+function RemoteProcedure:send_request(request: RequestBody, cb?: RemoteProcedureCb)
+    self._connection:send_request(self._id, request, function(response: ResponseBody)
+        self:receive_response(response)
+        if cb then
+            cb(response)
+        end
+    end)
+end
+
+-- Abstract. Called, not assigned: `abstract()` raises when it runs.
+function RemoteProcedure:send_response(_request: RequestBody): ResponseBody
+    return abstract()
+end
+
+-- Abstract.
+function RemoteProcedure:receive_response(_response: ResponseBody)
+    abstract()
+end
+
+-- Invariant: a procedure never outlives its connection. Every procedure is
+-- anchored under its connection, directly or through its owner (the
+-- session, the login; docs/lifetime.md, "The Tree"), so it dies before the
+-- connection or in the connection's cascade, while the connection is
+-- dying and still usable (lua-lifetime docs/02-semantics.md, "Tombstones":
+-- a dying object is not dead); `stop` would raise on a dead connection's
+-- tombstone. Idempotent: `_connection` stays set, and a second release
+-- only unregisters an id that is gone already.
+function RemoteProcedure:release(_reason?: LifetimeReason)
+    self:stop()
+end
+
+return RemoteProcedure

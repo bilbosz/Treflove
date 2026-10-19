@@ -1,0 +1,40 @@
+local MenuEntry: MenuEntry = require("ui.menu.menu-entry")
+local Control: Control = require("controls.control")
+local TextInput: TextInput = require("ui.text-input")
+local Consts = require("app.consts")
+local Text: Text = require("controls.text")
+
+-- A menu entry that is a text field with its name on the left.
+local MenuTextInput: MenuTextInput = class("MenuTextInput", MenuEntry)
+
+MenuTextInput.init = function(self: MenuTextInput, screen: MenuScreen, field_name: string, masked: boolean, on_enter: TextInputCallback)
+    MenuEntry.init(self)
+    self._screen = screen
+    self._field_name = field_name
+    self._masked = masked
+    self._on_enter = on_enter
+end
+
+function MenuTextInput:create_control(parent: Control): Control
+    local ctrl = Control(parent)
+    self.control = ctrl
+
+    local input = TextInput(ctrl, self._screen, Consts.MENU_TEXT_INPUT_WIDTH, Consts.MENU_TEXT_INPUT_HEIGHT, self._masked, nil, self._on_enter)
+    self._input = input
+    input:set_position(Consts.MENU_TEXT_INPUT_FIELD_MARGIN, nil)
+    local input_h = ctrl:get_recursive_aabb(input):get_height()
+
+    local text = Text(ctrl, self._field_name, Consts.FOREGROUND_COLOR)
+    local text_w, text_h = text:get_size()
+    text:set_origin(text_w, text_h * 0.5)
+    text:set_position(-Consts.MENU_TEXT_INPUT_FIELD_MARGIN, input_h * 0.5)
+    text:set_scale(Consts.MENU_FIELD_SCALE)
+
+    return ctrl
+end
+
+function MenuTextInput:get_text(): string
+    return self._input:get_text()
+end
+
+return MenuTextInput

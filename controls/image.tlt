@@ -1,0 +1,20 @@
+local DrawableControl: DrawableControl = require("controls.drawable-control")
+local Asset: Asset = require("data.asset")
+
+-- An image from an asset path or a love.Image.
+local Image: Image = class("Image", DrawableControl)
+
+Image.init = function(self: Image, parent: Control, path_or_love_image: string | love.Image)
+    local love_image: love.Image
+    if path_or_love_image is string then
+        love_image = love.graphics.newImage(Asset(path_or_love_image, false):get_path() or path_or_love_image)
+    else
+        love_image = path_or_love_image
+    end
+    local w, h = love_image:getDimensions()
+    DrawableControl.init(self, parent, w, h, function()
+        love.graphics.draw(love_image)
+    end)
+end
+
+return Image

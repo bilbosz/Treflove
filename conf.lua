@@ -1,26 +1,22 @@
+-- Under the debugger of VS Code's "Local Lua Debugger" extension
+-- (.vscode/launch.json): start it and load every module under its source's
+-- name, so breakpoints in .tlt files stop there (.vscode/launch.lua). Here,
+-- in the first chunk LÖVE runs, so that app/arg-parser below is covered too.
+if os.getenv("LOCAL_LUA_DEBUGGER_VSCODE") == "1" then
+    love.filesystem.load(".vscode/launch.lua")()
+end
+
+-- The modules are built into build/ (./build-code.sh); look there first.
+love.filesystem.setRequirePath("build/?.lua;build/?/init.lua;?.lua;?/init.lua")
+
 local arg_parser = require("app.arg-parser")
 
----@class love.ConfigTable
----@field console boolean
----@field window love.WindowConfig|nil
-
----@class love.WindowConfig
----@field title string
----@field icon string
----@field resizable boolean
----@field fullscreen boolean
----@field display number
----@field width number
----@field height number
----@field minwidth number
----@field minheight number
-
----@param t love.ConfigTable
+-- LÖVE's configuration, kept in the global `config` (typed `LoveConfig` in
+-- app/app.d.tl for the Teal modules).
 function love.conf(t)
     local params = arg_parser.parse(arg)
 
-    ---@type "OS X"|"Windows"|"Linux"|"Android"|"iOS"
-    ---@diagnostic disable-next-line: undefined-field
+    -- "OS X", "Windows", "Linux", "Android" or "iOS"
     local os = love._os
     if os == "Windows" then
         t.console = true
