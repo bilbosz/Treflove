@@ -40,11 +40,14 @@ local TEST_MODULES = {
     "tests.test-event",
     "tests.test-input",
     "tests.test-keyboard",
+    "tests.test-lifetimes",
     "tests.test-pointer-event",
+    "tests.test-preview-area",
     "tests.test-screen-manager",
     "tests.test-session",
     "tests.test-table",
-    "tests.test-text-event"
+    "tests.test-text-event",
+    "tests.test-waiting-screen"
 }
 
 for _, module_name in ipairs(TEST_MODULES) do

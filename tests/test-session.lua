@@ -132,12 +132,21 @@ test.case("destroying the connection tears the whole tree down, the connection f
     test.assert_eq(app_mock.update_event:get_handler(connection), nil)
 end)
 
-test.case("get_period is the logged-in span, only on a logged-in client", function()
-    local _, connection = make_client()
+test.case("enter_game ignores data for a login that is over; leave_game needs the game (the whole flow: tests/test-lifetimes.lua)", function()
+    local app_mock, connection = make_client()
     local session = Session(connection):attach_lifetime(connection)
     test.assert_false(session:is_logged_in())
+    local shown = 0
+    ---@diagnostic disable-next-line: missing-fields, assign-type-mismatch
+    app_mock.screen_manager = {
+        show = function()
+            shown = shown + 1
+        end
+    }
+    session:enter_game()
+    test.assert_eq(shown, 0, "no period, no game screen")
     test.assert_error(function()
-        session:get_period()
+        session:leave_game()
     end)
     lifetime.destroy(connection)
 end)

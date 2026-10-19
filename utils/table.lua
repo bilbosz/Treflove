@@ -1,3 +1,23 @@
+-- lua-lifetime keeps a state record in a private field of every table it
+-- has seen, which `pairs` and `next` show
+-- (lib/lua-lifetime/docs/02-semantics.md, "Tombstones and `lifetime.alive`");
+-- the copies, merges and the emptiness test below skip it, so that they
+-- treat an anchored object as the plain table it is. The runtime is
+-- required on first use, not at load: this file is also loaded by the
+-- networking threads (networking/detail/client-out.lua, through
+-- app/globals.lua), which never see such a table.
+---@type nil|fun(k: any): boolean
+local is_state = nil
+
+---@param k any
+---@return boolean
+local function _is_state(k)
+    if not is_state then
+        is_state = require("lifetime").is_state
+    end
+    return is_state(k)
+end
+
 ---@param str string
 ---@return boolean
 function table.is_identifier(str)
@@ -11,7 +31,9 @@ end
 ---@param source table<K, V>
 function table.merge(destination, source)
     for k, v in pairs(source) do
-        destination[k] = v
+        if not _is_state(k) then
+            destination[k] = v
+        end
     end
 end
 
@@ -30,7 +52,9 @@ end
 function table.copy(source)
     local copy = {}
     for k, v in pairs(source) do
-        copy[k] = v
+        if not _is_state(k) then
+            copy[k] = v
+        end
     end
     return copy
 end
@@ -41,10 +65,12 @@ end
 function table.deep_copy(source)
     local copy = {}
     for k, v in pairs(source) do
-        if type(v) == "table" then
-            copy[k] = table.deep_copy(v)
-        else
-            copy[k] = v
+        if not _is_state(k) then
+            if type(v) == "table" then
+                copy[k] = table.deep_copy(v)
+            else
+                copy[k] = v
+            end
         end
     end
     return copy
@@ -173,7 +199,11 @@ end
 ---@param tab table
 ---@return boolean
 function table.is_empty(tab)
-    return not next(tab)
+    local k = next(tab)
+    if k ~= nil and _is_state(k) then
+        k = next(tab, k)
+    end
+    return k == nil
 end
 
 ---Iterator step function used by `ripairs`; returns the previous index and value.

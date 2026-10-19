@@ -4,7 +4,6 @@ local Screen = require("screens.screen")
 ---@field private _focus number
 ---@field private _inputs Input[]
 ---@field private _is_showed boolean
----@field private _is_released boolean lua-lifetime: set by the destructor, read by the inputs' hooks
 ---@field private _prev_focus number
 local FormScreen = class("FormScreen", Screen)
 
@@ -61,7 +60,6 @@ function FormScreen:init()
     self._prev_focus = nil
     self._focus = nil
     self._is_showed = false
-    self._is_released = false
 end
 
 ---@param ... any Arguments forwarded to `Screen.show`
@@ -106,16 +104,29 @@ function FormScreen:add_input(input)
     table.insert(self._inputs, input)
 end
 
+---Removes `input` from the form (an input calls it from its lua-lifetime
+---hook when it dies first, ui/input.lua). The focus follows the list: a
+---removed focused input loses the focus, so that LÖVE text input is switched
+---off, and the indices above the removed one shift down.
 ---@param input Input
 function FormScreen:remove_input(input)
     local found = table.find_array_idx(self._inputs, input)
     assert(found)
     table.remove(self._inputs, found)
-    if found == self._focus then
-        self._focus = nil
+    if self._focus then
+        if found == self._focus then
+            self._focus = nil
+            input:on_focus_lost()
+        elseif found < self._focus then
+            self._focus = self._focus - 1
+        end
     end
-    if found == self._prev_focus then
-        self._prev_focus = nil
+    if self._prev_focus then
+        if found == self._prev_focus then
+            self._prev_focus = nil
+        elseif found < self._prev_focus then
+            self._prev_focus = self._prev_focus - 1
+        end
     end
 end
 
@@ -147,20 +158,6 @@ function FormScreen:remove_all_inputs()
     self._inputs = {}
     self._prev_focus = nil
     self._focus = nil
-end
-
----lua-lifetime: the destructor runs before the hooks of the inputs
----(lib/lua-lifetime/docs/02-semantics.md, "Cascading death"), so this flag
----tells each input's hook that the form went first (ui/input.lua).
----@param reason lifetime.Reason
-function FormScreen:release(reason)
-    self._is_released = true
-    Screen.release(self, reason)
-end
-
----@return boolean
-function FormScreen:is_released()
-    return self._is_released
 end
 
 return FormScreen

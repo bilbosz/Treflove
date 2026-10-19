@@ -166,13 +166,13 @@ test.case("registering then unregistering during dispatch leaves the owner unreg
     test.assert_eq(event:get_handler(late), nil)
 end)
 
-test.case("release drops all handlers", function()
+test.case("clear drops all handlers", function()
     local event = Event()
     local first, second = TestEventOwner(), TestEventOwner()
     event:register(first, first.on_ping)
     event:register(second, second.on_ping)
 
-    event:release()
+    event:clear()
     event:trigger(1)
 
     test.assert_deep_eq(first.received, {})
@@ -181,12 +181,12 @@ test.case("release drops all handlers", function()
     test.assert_eq(event:get_handler(second), nil)
 end)
 
-test.case("release during dispatch drops handlers and pending registrations", function()
+test.case("clear during dispatch drops handlers and pending registrations", function()
     local event = Event()
     local releaser, other, late = TestEventOwner(), TestEventOwner(), TestEventOwner()
     event:register(releaser, function()
         event:register(late, late.on_ping)
-        event:release()
+        event:clear()
     end)
     event:register(other, function(o, value)
         -- may run before the releaser (pairs order is unspecified), never after

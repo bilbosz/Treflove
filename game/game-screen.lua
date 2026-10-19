@@ -5,8 +5,6 @@ local TokenPanel = require("game.token.token-panel")
 local AssetsPanel = require("game.assets.assets-panel")
 local QuickAccessPanel = require("game.quick-access-panel")
 local Consts = require("app.consts")
-local UserMenuScreen = require("screens.user-menu-screen")
-local lifetime = require("lifetime")
 
 ---@class GameScreen: Model, FormScreen
 ---@field _page Page
@@ -50,11 +48,10 @@ function GameScreen:show()
     self:on_resize(app.width, app.height)
     FormScreen.show(self)
     -- lua-lifetime: the way back belongs to this screen and leaves the stack
-    -- with it. Going back shows the menu (which hides this screen), then
-    -- destroys the screen with everything anchored to it.
+    -- with it. The session shows its menu again (which hides this screen)
+    -- and destroys the screen with everything anchored to it.
     app.backstack_manager:push(function()
-        app.screen_manager:show(UserMenuScreen(app.session):attach_lifetime(app.session:get_period()))
-        lifetime.destroy(self)
+        app.session:leave_game()
     end):attach_lifetime(self)
 end
 

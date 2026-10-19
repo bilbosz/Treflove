@@ -19,11 +19,16 @@ local function _filter_for_missing_assets(list)
     end
 end
 
+---The client's procedure of `rp_list`: the one registered for the client's
+---own session (`app.session`), not whichever `next` finds first.
 ---@generic T
 ---@param rp_list table<Session, T>
 ---@return T
-local function _get_any_rp(rp_list)
-    return select(2, next(rp_list))
+local function _get_client_rp(rp_list)
+    assert(app.is_client)
+    local rp = rp_list[app.session]
+    assert(rp, "no procedure registered for the client's session")
+    return rp
 end
 
 ---@param path string
@@ -97,9 +102,7 @@ end
 ---@param path string
 ---@param data string
 function AssetManager:upload_asset(path, data)
-    assert(app.is_client)
-
-    local rp = _get_any_rp(self._upload_asset_rp)
+    local rp = _get_client_rp(self._upload_asset_rp)
     rp:send_request({
         path = path,
         content = love.data.encode("string", "base64", data)
@@ -108,9 +111,7 @@ end
 
 ---@param path string
 function AssetManager:download_asset(path)
-    assert(app.is_client)
-
-    local rp = _get_any_rp(self._download_asset_rp)
+    local rp = _get_client_rp(self._download_asset_rp)
     rp:send_request({
         path = path
     })
@@ -121,7 +122,7 @@ end
 function AssetManager:download_missing_assets(list, cb)
     _filter_for_missing_assets(list)
 
-    local rp = _get_any_rp(self._download_missing_assets_rp)
+    local rp = _get_client_rp(self._download_missing_assets_rp)
     rp:send_request({
         list = list
     }, cb)

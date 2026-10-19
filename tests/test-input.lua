@@ -5,10 +5,12 @@ local Control = require("controls.control")
 local ButtonEventManager = require("ui.button-event")
 local FormScreen = require("ui.form-screen")
 local Input = require("ui.input")
+local TextEventManager = require("ui.text-event")
+local TextInput = require("ui.text-input")
 
 -- lua-lifetime: the link between a form and its inputs (idiom B of the
 -- lua-lifetime trial): a hook on (form, input) unlinks an input that dies
--- first; a form that dies first takes its list with it.
+-- first; a form that is going too (`lifetime.dying`) takes its list with it.
 
 -- A real Control mixing in Input, as TextInput and TextButton do.
 ---@class TestInput: Control, Input
@@ -72,7 +74,43 @@ test.case("an input that dies first unlinks itself from the form and leaves the 
     test.assert_false(lifetime.alive(a))
     ---@diagnostic disable-next-line: invisible
     test.assert_eq(form._focus, nil, "the focus index was cleared with the input")
-    test.assert_false(form:is_released())
+end)
+
+test.case("a destroyed focused text input loses the focus, so LÖVE text input is switched off", function()
+    local app_mock, form = setup()
+    mocks.ensure_love_graphics()
+    local keyboard = mocks.make_keyboard()
+    app_mock.text_event_manager = TextEventManager(keyboard)
+    local parent = Control()
+    local field = TextInput(parent, form, 100, 20, false, nil, nil)
+    form:show()
+    form:focus(field)
+    test.assert_true(field:is_focused())
+    test.assert_true(keyboard.text_input, "focusing a text field switches text input on")
+
+    lifetime.destroy(field)
+    test.assert_false(keyboard.text_input, "the field lost the focus while dying")
+    ---@diagnostic disable-next-line: invisible
+    test.assert_eq(form._focus, nil)
+    test.assert_deep_eq(input_names(form), {})
+    test.assert_deep_eq(parent:get_children(), {})
+end)
+
+test.case("removing an input below the focused one keeps the focus on the same input", function()
+    local _, form = setup()
+    local a = TestInput(nil, form, "a")
+    local b = TestInput(nil, form, "b")
+    local c = TestInput(nil, form, "c")
+    form:focus(c)
+    form:focus(b)
+    test.assert_true(b:is_focused())
+    lifetime.destroy(a)
+    test.assert_deep_eq(input_names(form), {"b", "c"})
+    ---@diagnostic disable-next-line: invisible
+    test.assert_eq(form._inputs[form._focus], b, "the index followed the list")
+    ---@diagnostic disable-next-line: invisible
+    test.assert_eq(form._inputs[form._prev_focus], c)
+    test.assert_true(b:is_focused())
 end)
 
 test.case("a form that dies first takes its list with it; the inputs stay alive and unhooked", function()
@@ -86,7 +124,7 @@ test.case("a form that dies first takes its list with it; the inputs stay alive 
     end
 
     lifetime.destroy(form)
-    test.assert_eq(removed, 0, "the hooks found the form released and did nothing")
+    test.assert_eq(removed, 0, "the hooks found the form dying and did nothing")
     test.assert_true(lifetime.alive(a))
     test.assert_true(lifetime.alive(b))
     test.assert_deep_eq(lifetime.dependents(a), {}, "the hook died with the form")

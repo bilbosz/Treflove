@@ -59,12 +59,20 @@ function WaitingScreen:init(message)
     self:_create_layout()
     self:_create_logo()
     self:_create_text()
-    app.update_event:register(self, self.on_update)
 end
 
+-- The logo spins only while the screen is shown: registered in `show`,
+-- unregistered in `hide`, so the screen has nothing to end at its death and
+-- needs no lifetime (docs/lifetimes.md, "Screens").
 function WaitingScreen:show()
     Screen.show(self)
+    app.update_event:register(self, self.on_update)
     self:on_resize(app.width, app.height)
+end
+
+function WaitingScreen:hide()
+    app.update_event:unregister(self)
+    Screen.hide(self)
 end
 
 ---@param w number

@@ -1,4 +1,5 @@
 local GameDataRp = require("game.game-data-rp")
+local GameScreen = require("game.game-screen")
 local Login = require("login.login")
 local LoginScreen = require("login.login-screen")
 local UserMenuScreen = require("screens.user-menu-screen")
@@ -11,6 +12,7 @@ local lifetime = require("lifetime")
 ---@field _login Login|nil
 ---@field _game_data_rp GameDataRp
 ---@field _user_menu_screen UserMenuScreen|nil
+---@field _game_screen GameScreen|nil The game screen, while the user is in the game (client only)
 ---@field _period lifetime.Token|nil The "logged in" span (client only): the menu screen, the game screen and their back entries die with it
 local Session = class("Session")
 
@@ -46,6 +48,7 @@ local function _on_logout(self)
         lifetime.destroy(self._period)
         self._period = nil
         self._user_menu_screen = nil
+        self._game_screen = nil
         app.screen_manager:show(LoginScreen(self._login):attach_lifetime(self))
     end
 end
@@ -55,6 +58,8 @@ function Session:init(connection)
     self._connection = connection
     self._user = nil
     self._period = nil
+    self._user_menu_screen = nil
+    self._game_screen = nil
     -- lua-lifetime: what the session owns is anchored where it is made and
     -- dies with the session, newest first; Session:release is gone.
     local login = Login(self, function(user)
@@ -84,13 +89,6 @@ function Session:get_connection()
     return self._connection
 end
 
----The "logged in" span, to anchor what must not outlive the login (client only).
----@return lifetime.Token
-function Session:get_period()
-    assert(app.is_client and self._period)
-    return self._period
-end
-
 ---@param user string
 ---@param password string
 function Session:login(user, password)
@@ -110,6 +108,30 @@ function Session:join_game()
     assert(app.is_client)
     app.screen_manager:show(WaitingScreen("Loading..."))
     self._game_data_rp:send_request({})
+end
+
+---Shows the game screen for `app.data.game`, once the game data and its
+---assets are in (GameDataRp). lua-lifetime: the screen belongs to the
+---logged-in period: logging out or disconnecting destroys it, with its
+---panels (client only). Data that arrives after a logout (the back key
+---pressed while "Loading...") belongs to a period that is over: ignored.
+function Session:enter_game()
+    assert(app.is_client and not self._game_screen)
+    if not self._period then
+        return
+    end
+    local screen = GameScreen(app.data.game):attach_lifetime(self._period)
+    self._game_screen = screen
+    app.screen_manager:show(screen)
+end
+
+---Back from the game: the menu is shown again (which hides the game screen),
+---then the game screen is destroyed with everything anchored to it.
+function Session:leave_game()
+    assert(app.is_client and self._game_screen)
+    app.screen_manager:show(self._user_menu_screen)
+    lifetime.destroy(self._game_screen)
+    self._game_screen = nil
 end
 
 return Session

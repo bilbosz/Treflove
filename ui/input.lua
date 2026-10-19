@@ -28,10 +28,11 @@ function Input:init(form_screen)
     -- lua-lifetime: the link to the form ends when either side dies, after
     -- that side's own release() (lib/lua-lifetime/docs/02-semantics.md,
     -- "Hooks"). An input that dies first unlinks itself while it is dying and
-    -- still findable; a form that dies first has said so in its release(),
-    -- and its list goes with it.
+    -- still findable; a form that is going too, as the root of the cascade
+    -- or in it, takes its list with it ("Tombstones and `lifetime.alive`":
+    -- `lifetime.dying`).
     lifetime.hook(function()
-        if not form_screen:is_released() then
+        if not lifetime.dying(form_screen) then
             form_screen:remove_input(self)
         end
     end, form_screen, self)

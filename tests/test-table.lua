@@ -64,6 +64,45 @@ test.case("find_table_key and find_array_idx locate values", function()
     }, "missing"), nil)
 end)
 
+test.case("copy, deep_copy, merge, is_empty and cpairs skip lua-lifetime's state record", function()
+    local lifetime = require("lifetime")
+    local anchored = lifetime.attach({
+        a = 1,
+        nested = {
+            b = 2
+        }
+    }, lifetime.reachable)
+    local keys = 0
+    for _ in pairs(anchored) do
+        keys = keys + 1
+    end
+    test.assert_eq(keys, 3, "pairs shows the runtime's record")
+
+    test.assert_deep_eq(table.copy(anchored), {
+        a = 1,
+        nested = anchored.nested
+    })
+    test.assert_deep_eq(table.deep_copy(anchored), {
+        a = 1,
+        nested = {
+            b = 2
+        }
+    })
+    local merged = {}
+    table.merge(merged, anchored)
+    test.assert_deep_eq(merged, {
+        a = 1,
+        nested = anchored.nested
+    })
+    local seen = 0
+    for _ in cpairs(anchored) do
+        seen = seen + 1
+    end
+    test.assert_eq(seen, 2)
+    test.assert_false(table.is_empty(anchored))
+    test.assert_true(table.is_empty(lifetime.attach({}, lifetime.reachable)))
+end)
+
 test.case("is_empty and is_identifier", function()
     test.assert_true(table.is_empty({}))
     test.assert_false(table.is_empty({

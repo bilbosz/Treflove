@@ -14,6 +14,21 @@
 ---@field stacktrace table|nil
 ---@field dump DumpDisplayConfig
 ---@field text_processor nil|fun(text: string): any
+-- lua-lifetime's state record, kept in a private field of every table the
+-- runtime has seen, is skipped like utils/table.lua skips it; required on
+-- first use, since the networking threads load this file in debug mode.
+---@type nil|fun(k: any): boolean
+local is_state = nil
+
+---@param k any
+---@return boolean
+local function _is_state(k)
+    if not is_state then
+        is_state = require("lifetime").is_state
+    end
+    return is_state(k)
+end
+
 ---@param config DumpConfig|nil
 ---@return nil|fun(...: any): any
 local function _dump_generator(config)
@@ -126,14 +141,17 @@ local function _dump_generator(config)
                 content = value_indention .. "{" .. dump_config.table_newline
                 local last_index = 0
                 for key, cur_val in pairs(val) do
-                    local key_type = type(key)
-                    if key_type == "number" and key == last_index + 1 then
-                        last_index = key
-                        content = content .. dump(key, level + 1, node_types.Index)
-                    else
-                        content = content .. dump(key, level + 1, node_types.Key)
+                    -- lua-lifetime's record is the runtime's, not the table's
+                    if not _is_state(key) then
+                        local key_type = type(key)
+                        if key_type == "number" and key == last_index + 1 then
+                            last_index = key
+                            content = content .. dump(key, level + 1, node_types.Index)
+                        else
+                            content = content .. dump(key, level + 1, node_types.Key)
+                        end
+                        content = content .. dump(cur_val, level + 1, node_types.Value, recursion_check) .. "," .. dump_config.table_newline
                     end
-                    content = content .. dump(cur_val, level + 1, node_types.Value, recursion_check) .. "," .. dump_config.table_newline
                 end
                 content = content .. indention .. "}"
             end

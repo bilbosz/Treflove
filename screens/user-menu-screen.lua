@@ -4,12 +4,14 @@ local OptionsMenuScreen = require("screens.options-menu-screen")
 
 ---@class UserMenuScreen: MenuScreen
 ---@field private _session Session
+---@field private _options_screen OptionsMenuScreen|nil Made on the first visit, kept for the next ones
 local UserMenuScreen = class("UserMenuScreen", MenuScreen)
 
 ---@param session Session
 function UserMenuScreen:init(session)
     assert(session)
     self._session = session
+    self._options_screen = nil
     MenuScreen.init(self, "Menu", {
         MenuTextButton(self, "Join Game", function()
             self:join_game()
@@ -31,12 +33,16 @@ function UserMenuScreen:join_game()
 end
 
 function UserMenuScreen:options()
-    -- lua-lifetime: the options screen and the way back belong to this menu;
-    -- both die with it (at logout or disconnect), wherever the user is.
+    -- lua-lifetime: the options screen, made once, and every way back from it
+    -- belong to this menu; they die with it (at logout or disconnect),
+    -- wherever the user is.
+    if not self._options_screen then
+        self._options_screen = OptionsMenuScreen():attach_lifetime(self)
+    end
     app.backstack_manager:push(function()
-        app.screen_manager:show(self, self._session)
+        app.screen_manager:show(self)
     end):attach_lifetime(self)
-    app.screen_manager:show(OptionsMenuScreen():attach_lifetime(self))
+    app.screen_manager:show(self._options_screen)
 end
 
 function UserMenuScreen:logout()

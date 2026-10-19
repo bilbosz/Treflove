@@ -56,13 +56,13 @@ The class name is used as the RPC identifier. Examples: LoginRp, UploadAssetRp, 
 - Coordinates screen transitions (connecting → login → user menu → game)
 - Integrates with asset manager and backstack navigation
 - Server maintains `_sessions` table mapping Connection → Session
-- Is anchored to its connection (`Session(connection):attach_lifetime(connection)`) and owns its login, its remote procedures and, on the client, the "logged in" token that owns the menu and game screens - see [lifetimes.md](lifetimes.md)
+- Is anchored to its connection (`Session(connection):attach_lifetime(connection)`) and owns its login, its remote procedures and, on the client, the "logged in" token that owns the menu and game screens; `enter_game`/`leave_game` build the game screen under the token and destroy it on the way back - see [lifetimes.md](lifetimes.md)
 - **Note**: Client auto-logs in with hardcoded credentials "adam"/"krause" at [game/session.lua:56](../game/session.lua#L56)
 
 ## Event System
 
 Events are composed, not inherited: a single [Event](../events/event.lua) class is instantiated by managers (or by `app` directly) and consumers register handlers on it:
-- `Event` API: `register(owner, handler)`, `unregister(owner)`, `release()`, `trigger(...)`, `get_handler(owner)`; handlers are called as `handler(owner, ...)`
+- `Event` API: `register(owner, handler)`, `unregister(owner)`, `clear()`, `trigger(...)`, `get_handler(owner)`; handlers are called as `handler(owner, ...)`
 - Owners are weak keys, so a collected owner drops out without unregistering; handlers are held strongly, so register methods, never closures capturing the owner: `app.update_event:register(self, self.on_update)`
 - Registering during a trigger is deferred until it finishes; unregistering takes effect immediately
 - Unregistering is optional, since owners are weak keys; consumers with an explicit lifecycle unregister when it ends - Connection and PreviewArea in `release()`, FormScreen in `hide()`, Input, TextInput and TextButton in `on_screen_hide()`, TextInput and TextButton also in `on_focus_lost()`
@@ -105,7 +105,7 @@ Higher-level UI components in [ui/](../ui/) like Panel, TextButton, Input, Numbe
 ## Asset Management
 
 [AssetManager](../data/asset-manager.lua):
-- Tracks assets per session
+- Tracks assets per session; on the client, the procedures used are its own session's
 - Downloads missing assets from server on demand
 - Handles asset uploads to server
 - [Asset](../data/asset.lua) wraps LÖVE's filesystem operations
@@ -142,7 +142,7 @@ The [server/](../server/) directory contains server data, not source code: [serv
 
 - Entry: [main.lua](../main.lua)
 - Config: [conf.lua](../conf.lua)
-- Callbacks registered in `App:register_love_callbacks()` and overridden in Client/Server; `love.quit` tells lua-lifetime the program is ending
+- Callbacks registered in `App:register_love_callbacks()` and overridden in Client/Server; `love.quit` removes every connection in order (`ConnectionManager:remove_all`) and then tells lua-lifetime the program is ending
 - Client uses love.graphics, love.window, love.keyboard, love.mouse, love.touch
 - Both use love.thread and love.channel for networking
 - Server can run headless (no graphics) or with minimal UI

@@ -73,6 +73,16 @@ function ConnectionManager:remove(connection)
     lifetime.destroy(connection)
 end
 
+---Removes every connection, each as `remove` does when the connector reports
+---it closed: the disconnect callback, then the connection's cascade. Called
+---from love.quit (app/app.lua), so the teardown runs in order before LÖVE
+---closes the state.
+function ConnectionManager:remove_all()
+    for connection in pairs(table.copy(self._connections)) do
+        self:remove(connection)
+    end
+end
+
 ---@return table<Connection, boolean>
 function ConnectionManager:get_connections()
     return self._connections

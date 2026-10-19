@@ -1,5 +1,7 @@
 ---Test doubles for the parts of the runtime that tests must control:
----the global `app`, LÖVE channels/threads, and `love.data` compression.
+---the global `app`, LÖVE channels/threads, `love.data` compression, and the
+---`love.graphics`, `love.filesystem` and `love.thread` surface the screens,
+---the assets and the connection manager touch at construction.
 local Event = require("events.event")
 local FileSystemDropEventManager = require("events.file-drop-event")
 local KeyboardManager = require("events.keyboard")
@@ -192,6 +194,174 @@ function mocks.make_thread()
     end
 
     return thread
+end
+
+---Make sure `love.thread.newChannel` exists: the connector of a real
+---`ConnectionManager` makes one at construction. Under `love . test` the real
+---module is there; under plain LuaJIT it is the fake channel.
+function mocks.ensure_love_thread()
+    if love and love.thread then
+        return
+    end
+    ---@diagnostic disable-next-line: missing-fields, assign-type-mismatch
+    love = love or {}
+    ---@diagnostic disable-next-line: missing-fields, assign-type-mismatch
+    love.thread = {
+        newChannel = mocks.make_channel
+    }
+end
+
+local function _no_op()
+end
+
+---Make sure `love.graphics` exists with what the controls and screens need at
+---construction: `newFont`, `newText` and `newImage` (their `getDimensions`),
+---`newShader`, `getDimensions`; drawing calls are no-ops. Neither runner has
+---a working module (plain LuaJIT has no `love`, and `love . test` runs without
+---a window, so the real module refuses every call), so the fakes install
+---under both. A text is 10 units per byte by
+---20, an image 64 by 64, a font 80 high; the fonts of app/consts.lua, loaded
+---only with a window, are faked too.
+function mocks.ensure_love_graphics()
+    local Consts = require("app.consts")
+    local function new_font()
+        return {
+            getHeight = function()
+                return 80
+            end
+        }
+    end
+    -- app/consts.lua loads the fonts only with a window; the text controls
+    -- read them at construction
+    Consts.DISPLAY_FONT = Consts.DISPLAY_FONT or new_font()
+    Consts.USER_INPUT_FONT = Consts.USER_INPUT_FONT or new_font()
+    -- under `love . test` the module is loaded but, without a window, has no
+    -- context and refuses every call
+    if love and love.graphics and love.window and love.window.isOpen() then
+        return
+    end
+    ---@diagnostic disable-next-line: missing-fields, assign-type-mismatch
+    love = love or {}
+    ---@diagnostic disable-next-line: missing-fields, assign-type-mismatch
+    love.graphics = {
+        newFont = new_font,
+        newText = function(_, text)
+            return {
+                getDimensions = function()
+                    return 10 * #text, 20
+                end
+            }
+        end,
+        newImage = function()
+            return {
+                getDimensions = function()
+                    return 64, 64
+                end
+            }
+        end,
+        newShader = function()
+            return {}
+        end,
+        getDimensions = function()
+            return 800, 600
+        end,
+        setColor = _no_op,
+        draw = _no_op,
+        circle = _no_op,
+        rectangle = _no_op,
+        setShader = _no_op,
+        reset = _no_op,
+        push = _no_op,
+        pop = _no_op,
+        replaceTransform = _no_op,
+        setScissor = _no_op,
+        stencil = _no_op,
+        setStencilTest = _no_op,
+        setLineWidth = _no_op
+    }
+end
+
+---Replace `love.filesystem` with an in-memory one over `files` (path to
+---content; a directory is any path with files under it) and return what was
+---there, for the test to restore with `mocks.restore_love_filesystem`. Used
+---where the real one would read or write the save directory: the asset
+---manager's mount of the server's assets, an asset's presence on the client.
+---@param files table<string, string>
+---@return table|nil previous What `love.filesystem` was
+function mocks.install_love_filesystem(files)
+    ---@diagnostic disable-next-line: missing-fields, assign-type-mismatch
+    love = love or {}
+    local previous = love.filesystem
+
+    ---@param path string
+    ---@return boolean
+    local function is_directory(path)
+        local prefix = path .. "/"
+        for k in pairs(files) do
+            if string.sub(k, 1, #prefix) == prefix then
+                return true
+            end
+        end
+        return false
+    end
+
+    ---@diagnostic disable-next-line: missing-fields, assign-type-mismatch
+    love.filesystem = {
+        getInfo = function(path)
+            local content = files[path]
+            if content then
+                return {
+                    type = "file",
+                    size = #content
+                }
+            end
+            if is_directory(path) then
+                return {
+                    type = "directory"
+                }
+            end
+            return nil
+        end,
+        read = function(path)
+            local content = files[path]
+            return content, content and #content
+        end,
+        write = function(path, content)
+            files[path] = content
+            return true
+        end,
+        createDirectory = function()
+            return true
+        end,
+        getDirectoryItems = function(path)
+            local prefix = path .. "/"
+            local seen, items = {}, {}
+            for k in pairs(files) do
+                if string.sub(k, 1, #prefix) == prefix then
+                    local rest = string.sub(k, #prefix + 1)
+                    local item = string.match(rest, "^[^/]+")
+                    if item and not seen[item] then
+                        seen[item] = true
+                        table.insert(items, item)
+                    end
+                end
+            end
+            table.sort(items)
+            return items
+        end,
+        remove = function(path)
+            files[path] = nil
+            return true
+        end
+    }
+    return previous
+end
+
+---Put back what `install_love_filesystem` replaced.
+---@param previous table|nil
+function mocks.restore_love_filesystem(previous)
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    love.filesystem = previous
 end
 
 ---Make sure `love.data.compress`/`decompress`/`encode`/`hash` exist. Under

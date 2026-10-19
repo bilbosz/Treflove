@@ -60,6 +60,7 @@ The `app/` directory contains the application layer that bootstraps and manages 
 - `App:quit()` sets `_mark_for_quit = true`
 - Checked in `love.update()` and triggers `love.event.quit()` next frame
 - Deferred quit prevents issues with quitting mid-frame
+- `love.quit` (registered by App) removes every connection in order, `ConnectionManager:remove_all()`, so each session's tree is torn down by lua-lifetime while LÖVE's threads and channels are still usable, then calls `lifetime.set_exiting(true)` for whatever the closing state finalizes
 
 **Logging**:
 - `App:log(...)` - general logging
@@ -107,7 +108,7 @@ Creates all UI-related managers:
 2. Shows ConnectingScreen
 3. Starts connection via ConnectionManager
 4. On connection: creates Session
-5. On disconnection: shows ConnectingScreen again, releases Session
+5. On disconnection: shows ConnectingScreen again and clears `session`; the session dies in the connection's cascade (lua-lifetime)
 
 ### LÖVE Callback Extensions
 
@@ -146,7 +147,7 @@ Creates server-specific components:
 1. Loads saved data via `_load_data()`
 2. Starts ConnectionManager listening for connections
 3. On client connect: creates new Session for that connection
-4. On client disconnect: releases and removes Session
+4. On client disconnect: removes the Session entry; the session dies in the connection's cascade (lua-lifetime)
 
 ### Data Persistence
 

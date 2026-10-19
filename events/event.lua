@@ -78,8 +78,10 @@ function Event:unregister(owner)
     self._handlers[owner] = nil
 end
 
----Drop all handlers and any pending registrations.
-function Event:release()
+---Drop all handlers and any pending registrations. (Not a destructor: an
+---event has nothing to free, and `release(reason)` is lua-lifetime's name
+---for one, see docs/lifetimes.md.)
+function Event:clear()
     self._to_add = _make_weak_table()
     if self._lock then
         -- the running trigger skips every owner from now on; cleaned up afterwards
