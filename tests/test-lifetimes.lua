@@ -27,14 +27,14 @@ local Control = require("controls.control")
 
 ---@type string[]
 local destroy_errors = {}
--- luacheck: globals destroyerror
+-- luacheck: globals lifetime_destroyerror
 ---@param obj table|function The dying object (a hook: its function's owner)
 ---@param err any
 ---@diagnostic disable-next-line: lowercase-global
-function destroyerror(obj, err)
+function lifetime_destroyerror(obj, err)
     local message = tostring(obj) .. ": " .. tostring(err)
     table.insert(destroy_errors, message)
-    io.stderr:write("destroyerror: " .. message .. "\n")
+    io.stderr:write("lifetime_destroyerror: " .. message .. "\n")
 end
 
 local quit_requested = false
@@ -400,9 +400,8 @@ flow_case("connect and log in: the session owns the period, which owns the menu,
     local game_screen = client.screen_manager:get_screen()
     local game_dependents = lifetime.dependents(game_screen)
     test.assert_deep_eq(class_names_but_hooks(game_dependents), {
-        "AssetsPanel",
         "BackstackEntry"
-    })
+    }, "the panels are the control tree's, not anchored")
     test.assert_eq(client.backstack_manager:get_top(), game_dependents[#game_dependents], "the way back is the game screen's entry")
 end)
 
@@ -421,8 +420,8 @@ flow_case("back from the game: the menu is shown again, the game screen dies wit
     end)
     test.assert_deep_eq(log, {
         "GameScreen:release(destroy)",
-        "AssetsPanel:release(anchor)",
-        "PreviewArea:release(anchor)"
+        "AssetsPanel:release(destroy)",
+        "PreviewArea:release(destroy)"
     })
     test.assert_false(lifetime.alive(game_screen))
     test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "UserMenuScreen")
@@ -437,8 +436,7 @@ flow_case("back from the game: the menu is shown again, the game screen dies wit
         "BackstackEntry"
     }, "the dead game screen left the period")
     for _, input in ipairs(inputs_of_game) do
-        test.assert_true(lifetime.alive(input), "an input is not the form's to destroy; its hook died with the form")
-        test.assert_deep_eq(lifetime.dependents(input), {})
+        test.assert_false(lifetime.alive(input), "the inputs died with the panels' control tree")
     end
     test.assert_deep_eq(lifetime.dependents(game_screen), {}, "a dead anchor holds nothing")
 end)
@@ -607,8 +605,8 @@ flow_case("disconnect: one cascade per side, the connection first, then the sess
     test.assert_deep_eq(log, {
         "Connection:release(destroy)",
         "GameScreen:release(anchor)",
-        "AssetsPanel:release(anchor)",
-        "PreviewArea:release(anchor)",
+        "AssetsPanel:release(destroy)",
+        "PreviewArea:release(destroy)",
         "UserMenuScreen:release(anchor)",
         "DownloadMissingAssetsRp:release(anchor)",
         "DownloadAssetRp:release(anchor)",
@@ -666,8 +664,8 @@ flow_case("quit: remove_all tears every connection down in order, as love.quit d
         "LoginRp:release(anchor)",
         "Connection:release(destroy)",
         "GameScreen:release(anchor)",
-        "AssetsPanel:release(anchor)",
-        "PreviewArea:release(anchor)",
+        "AssetsPanel:release(destroy)",
+        "PreviewArea:release(destroy)",
         "UserMenuScreen:release(anchor)",
         "DownloadMissingAssetsRp:release(anchor)",
         "DownloadAssetRp:release(anchor)",

@@ -41,6 +41,7 @@ local TEST_MODULES = {
     "tests.test-table",
     "tests.test-text",
     "tests.test-text-event",
+    "tests.test-tree",
     "tests.test-waiting-screen"
 }
 

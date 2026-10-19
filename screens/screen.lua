@@ -1,4 +1,5 @@
 local Control = require("controls.control")
+local lifetime = require("lifetime")
 
 ---@class Screen: Object
 ---@field public screen Control
@@ -19,11 +20,13 @@ function Screen:hide()
     self.screen:set_parent(nil)
 end
 
+---A screen takes its control tree with it, hidden first if it was shown.
 ---@param reason lifetime.Reason
 function Screen:release(reason)
     if self.screen:get_parent() then
         self:hide()
     end
+    lifetime.destroy(self.screen)
 end
 
 -- luacheck: push no unused args
