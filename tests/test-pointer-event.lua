@@ -3,9 +3,6 @@ local mocks = require("tests.lib.mocks")
 local Aabb = require("utils.aabb")
 local PointerEventManager = require("events.pointer-event")
 
--- Minimal stand-in for a Control (the real one needs `love.math`): only what
--- the hit-tested dispatch looks at. Handlers record calls into a shared log and
--- return `result` (truthy passes the event through to controls below).
 ---@class TestHitControl: Object
 ---@field name string
 ---@field visible boolean
@@ -63,10 +60,6 @@ end
 ---@field token TestHitControl 10..30 square, child of page
 ---@field popup TestHitControl 0..50 square, last child of root (drawn on top)
 
--- root
---   page   (0..100)
---     token  (10..30)
---   popup  (0..50)
 ---@return TestHitTree
 local function _make_tree()
     local log = {}
@@ -88,7 +81,6 @@ local function _make_tree()
     }
 end
 
----Install the app mock with `tree.root` as `app.root`.
 ---@param tree TestHitTree
 ---@return AppMock
 local function _install(tree)
@@ -161,7 +153,6 @@ test.case("receive_through controls below a consumer are still called", function
 
     manager:dispatch_pointer_down(20, 20, 1)
 
-    -- token consumes; page receives through; root does not
     test.assert_deep_eq(tree.log, {
         "token:20,20,1",
         "page:20,20,1"
@@ -189,14 +180,12 @@ test.case("invisible and non-hit controls are skipped, including their subtrees"
     tree.page.visible = true
     tree.page.result = true
 
-    -- (70, 70) misses token and popup; popup is invisible anyway
     manager:dispatch_pointer_down(70, 70, 1)
     test.assert_deep_eq(tree.log, {
         "page:70,70,1",
         "root:70,70,1"
     })
 
-    -- an invisible page hides the token inside it as well
     tree.log[1], tree.log[2] = nil, nil
     tree.page.visible = false
     manager:dispatch_pointer_down(20, 20, 1)
@@ -289,7 +278,6 @@ test.case("file drops use the same hit-tested order at the pointer position", fu
 
     manager:file_drop("file" --[[@as love.DroppedFile]] )
 
-    -- popup passes, token consumes, page is skipped, root receives through
     test.assert_deep_eq(tree.log, {
         "popup:20,25,file",
         "token:20,25,file",

@@ -5,10 +5,6 @@ local Control = require("controls.control")
 local Screen = require("screens.screen")
 local ScreenManager = require("screens.screen-manager")
 
--- lua-lifetime: the screen manager watches the shown screen with a hook. A
--- screen destroyed while shown hides itself and is forgotten; a replaced
--- screen that dies later is none of the manager's business.
-
 ---@return AppMock
 ---@return ScreenManager
 local function setup()

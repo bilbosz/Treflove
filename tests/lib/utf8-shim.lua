@@ -1,7 +1,4 @@
----Minimal pure-Lua stand-in for the Lua 5.3 `utf8` library, which LÖVE bundles
----but plain LuaJIT lacks. Covers only what the code under test uses (`len`,
----`offset`, `codes`) and only for valid UTF-8 input. Installed by
----`tests/run.lua` when `require("utf8")` fails.
+---`len`, `offset` and `codes` only, for valid UTF-8 only.
 ---@class Utf8Shim
 local utf8_shim = {}
 
@@ -25,8 +22,6 @@ function utf8_shim.len(s)
     return n
 end
 
----Byte position where the `n`-th character (counted from byte `i`) starts;
----negative `n` counts backwards from `i` (default: end of string + 1).
 ---@param s string
 ---@param n number
 ---@param i number|nil
@@ -88,7 +83,6 @@ local function _next_code(s, i)
     return i, (b1 - 0xF0) * 0x40000 + (b2 - 0x80) * 0x1000 + (b3 - 0x80) * 0x40 + (b4 - 0x80)
 end
 
----Iterate `(position, code)` over the characters of `s`.
 ---@param s string
 ---@return fun(s: string, i: number): number|nil, number|nil
 ---@return string

@@ -1,10 +1,4 @@
----Test suite entry point. Runs under plain LuaJIT (`luajit tests/run.lua` from
----the repository root) and inside LÖVE (`love . test`) — see test-code.sh.
--- The lua-lifetime runtime (lib/lua-lifetime) for plain LuaJIT; under LÖVE
--- main.lua has set the require path already.
 package.path = "lib/lua-lifetime/?.lua;lib/lua-lifetime/?/init.lua;" .. package.path
--- Plain LuaJIT has no bundled luasocket; utils/utils.lua only needs
--- `socket.gettime`, so provide a stub before anything requires it.
 local has_socket = pcall(require, "socket")
 if not has_socket then
     package.preload["socket"] = function()
@@ -16,8 +10,6 @@ if not has_socket then
     end
 end
 
--- Plain LuaJIT has no `utf8` library either (LÖVE bundles one); the text
--- editing code only needs `len`, `offset` and `codes`.
 local has_utf8 = pcall(require, "utf8")
 if not has_utf8 then
     package.preload["utf8"] = function()

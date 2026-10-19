@@ -11,15 +11,6 @@ local LoginRp = require("login.login-rp")
 local LogoutRp = require("login.logout-rp")
 local Connection = require("networking.connection")
 
--- lua-lifetime: the session tree (idiom A of the lua-lifetime trial). A
--- client session over a fake channel pair, no server behind it: the
--- auto-login request sits on the out channel unanswered, so the test sees
--- the tree as built by Session:init and torn down by one
--- lifetime.destroy(connection), the order asserted whole. Every case ends
--- by destroying its connection: the tree is the connection manager's to
--- end (ConnectionManager:remove), never the collector's, since the asset
--- manager holds the procedures until the session's hook clears them.
-
 ---@return AppMock
 ---@return Connection
 local function make_client()
@@ -41,8 +32,6 @@ local CLASSES = {
     DownloadMissingAssetsRp = DownloadMissingAssetsRp
 }
 
----Wrap every class's `release` to log `Class:release(reason)` while `fn`
----runs; the originals are restored afterwards, whatever `fn` did.
 ---@param log string[]
 ---@param fn fun()
 local function with_release_log(log, fn)

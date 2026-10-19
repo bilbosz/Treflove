@@ -2,21 +2,12 @@ require("utils.table")
 
 local select = select
 
----What every instance of a class made with `class()` can do besides its own
----methods. A type-level base too: a root class is annotated
----`---@class X: Object`, so the language server sees these methods on every
----instance.
 ---@class Object
 local Object = {}
 
 ---@type lifetime|nil The runtime, required on first use
 local lifetime = nil
 
----lua-lifetime: `lifetime.attach(self, ...)` returning `self`, so that a
----construction and its anchoring chain:
----`self._login = Login(self, ...):attach_lifetime(self)`. The runtime is
----required on first use, not at load: this file is also loaded by the
----networking threads, which never anchor anything.
 ---@generic O
 ---@param self O
 ---@param ... lifetime.Anchor The anchors, as for `lifetime.attach`
@@ -75,12 +66,6 @@ function class(name, ...)
     local obj_mt = {
         __index = index,
         class = class,
-        -- lua-lifetime: an instance's `release(reason)` is its destructor. The
-        -- runtime reads `__destroy` from the metatable when an anchored
-        -- instance dies (lib/lua-lifetime/docs/02-semantics.md, "`__destroy`
-        -- and reasons"); the method is looked up on the dying instance at
-        -- that moment, so a class defines `release` after `class()`, a
-        -- subclass overrides it, and an instance may carry its own.
         ---@param obj table
         ---@param reason lifetime.Reason
         __destroy = function(obj, reason)
@@ -151,4 +136,3 @@ function assert_type(obj, typ)
         assert_unreachable()
     end
 end
-

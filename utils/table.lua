@@ -1,11 +1,3 @@
--- lua-lifetime keeps a state record in a private field of every table it
--- has seen, which `pairs` and `next` show
--- (lib/lua-lifetime/docs/02-semantics.md, "Tombstones and `lifetime.alive`");
--- the copies, merges and the emptiness test below skip it, so that they
--- treat an anchored object as the plain table it is. The runtime is
--- required on first use, not at load: this file is also loaded by the
--- networking threads (networking/detail/client-out.lua, through
--- app/globals.lua), which never see such a table.
 ---@type nil|fun(k: any): boolean
 local is_state = nil
 
@@ -206,7 +198,6 @@ function table.is_empty(tab)
     return k == nil
 end
 
----Iterator step function used by `ripairs`; returns the previous index and value.
 ---@generic V
 ---@param t table<number, V>|V[]
 ---@param i number

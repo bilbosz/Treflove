@@ -64,19 +64,9 @@ function ConnectionManager:remove(connection)
     if app.is_client then
         self._connector:remove_thread()
     end
-    -- lua-lifetime: one cascade tears down everything anchored to the
-    -- connection (the session, its login and remote procedures, the logged-in
-    -- period with its screens and back entries), the connection's own
-    -- release() first (lib/lua-lifetime/docs/02-semantics.md, "Cascading
-    -- death"). The three table removals above stay: a dead connection is a
-    -- tombstone, not nil, and would otherwise remain a key ("Tombstones").
     lifetime.destroy(connection)
 end
 
----Removes every connection, each as `remove` does when the connector reports
----it closed: the disconnect callback, then the connection's cascade. Called
----from love.quit (app/app.lua), so the teardown runs in order before LÖVE
----closes the state.
 function ConnectionManager:remove_all()
     for connection in pairs(table.copy(self._connections)) do
         self:remove(connection)

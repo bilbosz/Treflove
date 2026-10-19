@@ -1,8 +1,7 @@
 local test = require("tests.lib.test")
 local lifetime = require("lifetime")
 
--- Base classes must be fully defined before deriving from them: `class()`
--- copies base methods at creation time (see _create_index in utils/class.lua).
+-- class() copies base methods at creation: a base is complete before deriving
 local Animal = class("TestAnimal")
 
 ---@param name string
@@ -97,7 +96,6 @@ test.case("instances of the same class are independent", function()
     test.assert_eq(b.extra, nil)
 end)
 
--- lua-lifetime: `release(reason)` is the destructor of every instance.
 local Resource = class("TestResource")
 
 ---@param log string[]

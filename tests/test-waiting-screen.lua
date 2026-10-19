@@ -3,8 +3,6 @@ local mocks = require("tests.lib.mocks")
 local Control = require("controls.control")
 local WaitingScreen = require("screens.waiting-screen")
 
--- A transient screen: no lifetime, registrations that follow show/hide.
-
 test.suite("WaitingScreen")
 
 test.case("the logo spins only while the screen is shown", function()

@@ -1,14 +1,6 @@
 local Event = require("events.event")
 local utf8 = require("utf8")
 
----Editable text composed into a text field (see `TextInput`): holds the text
----and the UTF-8 aware editing operations, and announces the result on its own
----events. The owner registers its methods on them, e.g.
----`buffer.edited:register(self, self.on_edit)`.
----
----The buffer knows nothing about keys; the owning control calls the editing
----operations from its `TextEventManager` handlers, which lets it filter or
----replace an edit (e.g. `NumberInput` rejects non-numeric text).
 ---@class TextBuffer: Object
 ---@field public edited Event Triggered with (text) after the text changed by an edit
 ---@field public removed_empty Event Triggered when removing from an already empty text
@@ -36,7 +28,6 @@ function TextBuffer:init()
     self._text = ""
 end
 
----Remove the last `character_number` characters (not bytes).
 ---@param character_number number
 function TextBuffer:remove_characters(character_number)
     local offset = utf8.offset(self._text, -character_number)
@@ -48,8 +39,6 @@ function TextBuffer:remove_characters(character_number)
     end
 end
 
----Remove everything after the last whitespace character (the whole text if
----there is none).
 function TextBuffer:remove_word()
     if self._text == "" then
         self.removed_empty:trigger()
@@ -82,7 +71,6 @@ function TextBuffer:get_text()
     return self._text
 end
 
----Replace the text without triggering `edited`.
 ---@param text string
 function TextBuffer:set_text(text)
     self._text = text

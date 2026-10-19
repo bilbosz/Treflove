@@ -2,14 +2,8 @@ local Button = require("ui.button")
 local FormScreen = require("ui.form-screen")
 local lifetime = require("lifetime")
 
----Interface for focusable form elements. Not a Control subclass at runtime,
----but always mixed into Control-derived classes (see TextInput, TextButton),
----which the `: Control` annotation reflects.
----
----Every input is clickable: it owns a `Button` (hover/selection state and
----pointer events) that is registered with `app.button_event_manager` while the
----form screen is shown. Subclasses register their methods on its events, e.g.
----`self:get_button().clicked:register(self, self.on_click)`.
+---Not a Control subclass at runtime, always mixed into one: what the
+---`: Control` annotation reflects.
 ---@class Input: Control
 ---@field private _button Button
 ---@field private _form_screen FormScreen
@@ -25,12 +19,6 @@ function Input:init(form_screen)
     self._is_focused = false
     self._is_read_only = false
     form_screen:add_input(self)
-    -- lua-lifetime: the link to the form ends when either side dies, after
-    -- that side's own release() (lib/lua-lifetime/docs/02-semantics.md,
-    -- "Hooks"). An input that dies first unlinks itself while it is dying and
-    -- still findable; a form that is going too, as the root of the cascade
-    -- or in it, takes its list with it ("Tombstones and `lifetime.alive`":
-    -- `lifetime.dying`).
     lifetime.hook(function()
         if not lifetime.dying(form_screen) then
             form_screen:remove_input(self)

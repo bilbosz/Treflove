@@ -91,12 +91,6 @@ function App:register_love_callbacks()
         end
     end
 
-    -- lua-lifetime: LÖVE runs love.quit on every quit path before it closes
-    -- the state. The connections are removed here, in order and while LÖVE's
-    -- threads and channels are still usable: each connection's cascade tears
-    -- its session down (ConnectionManager:remove_all). Whatever is left dies
-    -- with the closing state and reports "exit"
-    -- (lib/lua-lifetime/docs/02-semantics.md, "Program end").
     function love.quit()
         self.connection_manager:remove_all()
         lifetime.set_exiting(true)

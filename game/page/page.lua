@@ -75,7 +75,6 @@ function Page:init(data, game_screen, width, height)
     pointer_event_manager.pointer_down:register(self, self.on_pointer_down)
     pointer_event_manager.pointer_up:register(self, self.on_pointer_up)
     pointer_event_manager.pointer_move:register(self, self.on_pointer_move)
-    -- tokens on the page consume pointer events, the page still has to see them
     pointer_event_manager:set_receive_through(self, true)
     app.wheel_event:register(self, self.on_wheel_moved)
 end

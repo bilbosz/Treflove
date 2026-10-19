@@ -1,7 +1,3 @@
----Test doubles for the parts of the runtime that tests must control:
----the global `app`, LÖVE channels/threads, `love.data` compression, and the
----`love.graphics`, `love.filesystem` and `love.thread` surface the screens,
----the assets and the connection manager touch at construction.
 local Event = require("events.event")
 local FileSystemDropEventManager = require("events.file-drop-event")
 local KeyboardManager = require("events.keyboard")
@@ -9,8 +5,6 @@ local PointerEventManager = require("events.pointer-event")
 
 local mocks = {}
 
--- The real pointer manager with the pointer position under test control
--- instead of `love.mouse` (file drops are dispatched at this position).
 ---@class TestPointerEventManager: PointerEventManager
 ---@field position [number, number]
 local TestPointerEventManager = class("TestPointerEventManager", PointerEventManager)
@@ -28,8 +22,6 @@ function TestPointerEventManager:get_position()
     return self.position[1], self.position[2]
 end
 
----Stand-in for the `love.keyboard` module (what `TextEventManager` talks to):
----text input state and held keys are plain fields tests can set.
 ---@return FakeKeyboard
 function mocks.make_keyboard()
     ---@class FakeKeyboard
@@ -97,7 +89,6 @@ function mocks.make_app(overrides)
         return self._time
     end
 
-    ---Advance the fake clock; `app:get_time()` reflects it immediately.
     ---@param dt number
     function app_mock:advance_time(dt)
         self._time = self._time + dt
@@ -110,7 +101,6 @@ function mocks.make_app(overrides)
         })
     end
 
-    ---Move the fake pointer (what `pointer_event_manager:get_position()` returns).
     ---@param x number
     ---@param y number
     function app_mock:set_pointer_position(x, y)
@@ -136,7 +126,6 @@ function mocks.make_app(overrides)
     return app_mock
 end
 
----Replace the global `app` with a fresh mock and return it.
 ---@param overrides table|nil
 ---@return AppMock
 function mocks.install_app(overrides)
@@ -145,7 +134,6 @@ function mocks.install_app(overrides)
     return app_mock
 end
 
----In-memory stand-in for a `love.Channel` (no threads involved).
 ---@return FakeChannel
 function mocks.make_channel()
     ---@class FakeChannel
@@ -184,7 +172,6 @@ function mocks.make_channel()
     return channel
 end
 
----Stand-in for a `love.Thread`.
 ---@return table
 function mocks.make_thread()
     local thread = {}
@@ -196,9 +183,6 @@ function mocks.make_thread()
     return thread
 end
 
----Make sure `love.thread.newChannel` exists: the connector of a real
----`ConnectionManager` makes one at construction. Under `love . test` the real
----module is there; under plain LuaJIT it is the fake channel.
 function mocks.ensure_love_thread()
     if love and love.thread then
         return
@@ -214,14 +198,8 @@ end
 local function _no_op()
 end
 
----Make sure `love.graphics` exists with what the controls and screens need at
----construction: `newFont`, `newText` and `newImage` (their `getDimensions`),
----`newShader`, `getDimensions`; drawing calls are no-ops. Neither runner has
----a working module (plain LuaJIT has no `love`, and `love . test` runs without
----a window, so the real module refuses every call), so the fakes install
----under both. A text is 10 units per byte by
----20, an image 64 by 64, a font 80 high; the fonts of app/consts.lua, loaded
----only with a window, are faked too.
+---Fakes under both runners: plain LuaJIT has no `love`, and `love . test`
+---has no window, so the real module refuses every call.
 function mocks.ensure_love_graphics()
     local Consts = require("app.consts")
     local function new_font()
@@ -231,12 +209,9 @@ function mocks.ensure_love_graphics()
             end
         }
     end
-    -- app/consts.lua loads the fonts only with a window; the text controls
-    -- read them at construction
+    -- Consts loads the fonts only with a window
     Consts.DISPLAY_FONT = Consts.DISPLAY_FONT or new_font()
     Consts.USER_INPUT_FONT = Consts.USER_INPUT_FONT or new_font()
-    -- under `love . test` the module is loaded but, without a window, has no
-    -- context and refuses every call
     if love and love.graphics and love.window and love.window.isOpen() then
         return
     end
@@ -281,11 +256,6 @@ function mocks.ensure_love_graphics()
     }
 end
 
----Replace `love.filesystem` with an in-memory one over `files` (path to
----content; a directory is any path with files under it) and return what was
----there, for the test to restore with `mocks.restore_love_filesystem`. Used
----where the real one would read or write the save directory: the asset
----manager's mount of the server's assets, an asset's presence on the client.
 ---@param files table<string, string>
 ---@return table|nil previous What `love.filesystem` was
 function mocks.install_love_filesystem(files)
@@ -357,17 +327,12 @@ function mocks.install_love_filesystem(files)
     return previous
 end
 
----Put back what `install_love_filesystem` replaced.
 ---@param previous table|nil
 function mocks.restore_love_filesystem(previous)
     ---@diagnostic disable-next-line: assign-type-mismatch
     love.filesystem = previous
 end
 
----Make sure `love.data.compress`/`decompress`/`encode`/`hash` exist. Under
----`love . test` the real implementations are used; under plain LuaJIT
----reversible string-passthrough fakes are installed instead (`hash` is a
----plain string hash, deterministic, not cryptographic).
 function mocks.ensure_love_data()
     if love and love.data then
         return
@@ -398,10 +363,7 @@ function mocks.ensure_love_data()
     }
 end
 
----A 2D affine transform standing in for a `love.Transform`: what
----`Control` needs (`setTransformation`, `setMatrix`, `getMatrix`, `apply`,
----`inverse`, `transformPoint`, `inverseTransformPoint`). Column-major as
----LÖVE's: x' = a*x + c*y + tx, y' = b*x + d*y + ty.
+---Column-major, as LÖVE's `getMatrix`.
 ---@class FakeTransform
 ---@field a number
 ---@field b number
@@ -492,9 +454,6 @@ function FakeTransform:inverseTransformPoint(x, y)
     return self:inverse():transformPoint(x, y)
 end
 
----Make sure `love.math.newTransform` and `love.math.newRandomGenerator`
----exist, so that real `Control`s (and the login's salt) can be built under
----plain LuaJIT. Under `love . test` the real implementations are used.
 function mocks.ensure_love_math()
     if love and love.math then
         return

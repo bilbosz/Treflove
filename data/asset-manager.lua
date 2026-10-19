@@ -19,8 +19,6 @@ local function _filter_for_missing_assets(list)
     end
 end
 
----The client's procedure of `rp_list`: the one registered for the client's
----own session (`app.session`), not whichever `next` finds first.
 ---@generic T
 ---@param rp_list table<Session, T>
 ---@return T
@@ -69,7 +67,6 @@ local function _mount_server_assets(src_path, dst_path)
 end
 
 function AssetManager:init()
-    -- remote procedures by session
     if app.is_server then
         _remove_server_mount("s")
         _mount_server_assets("server", "s")
@@ -131,10 +128,6 @@ end
 ---@param session Session
 function AssetManager:register_session(session)
     local connection = session:get_connection()
-    -- lua-lifetime: the procedures die with the session, and a hook on the
-    -- session clears its entries while it is dying and still a findable key
-    -- (lib/lua-lifetime/docs/02-semantics.md, "Hooks"); unregister_session
-    -- is gone.
     self._upload_asset_rp[session] = UploadAssetRp(connection):attach_lifetime(session)
     self._download_asset_rp[session] = DownloadAssetRp(connection):attach_lifetime(session)
     self._download_missing_assets_rp[session] = DownloadMissingAssetsRp(connection):attach_lifetime(session)

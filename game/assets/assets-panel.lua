@@ -23,9 +23,7 @@ local media = require("utils.media")
 ---@field _data_size number|nil
 local AssetsPanel = class("AssetsPanel", Panel)
 
--- Preview component class tables by media type. The values are class tables
--- (constructors), which LuaLS cannot type against the instance union — hence
--- `any`; the instance contract is documented on PreviewArea:set_content.
+-- class tables: LuaLS cannot type them against the instance union, hence `any`
 ---@type table<Media.Type, any>
 local FILE_TYPE_PREVIEW = {
     [media.Type.IMAGE] = PreviewImageArea,
@@ -38,8 +36,6 @@ local FILE_TYPE_PREVIEW = {
 ---@param self AssetsPanel
 local function _create_preview_area(self)
     local w = self:get_size() - 2 * Consts.PADDING
-    -- lua-lifetime: the preview area dies with the panel; AssetsPanel:release
-    -- is gone.
     self._preview_area = PreviewArea(self, w, w):attach_lifetime(self)
     self._preview_area:set_position(Consts.PADDING, Consts.PADDING)
 end

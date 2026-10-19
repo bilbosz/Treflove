@@ -95,8 +95,6 @@ function Token:init(data, parent)
     pointer_event_manager.pointer_move:register(self, self.on_pointer_event)
 end
 
----Consumes pointer events over the token, so controls below it do not react;
----receive-through controls such as the Page still get them.
 ---@param x number
 ---@param y number
 ---@param id PointerId

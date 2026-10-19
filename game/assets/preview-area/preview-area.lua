@@ -103,9 +103,6 @@ end
 function PreviewArea:on_file_system_drop(x, y, dropped_file)
     local ok, err = dropped_file:open("r")
     assert(ok, err)
-    -- lua-lifetime: the file is closed when the block exits, by an error as
-    -- well as by the return (lib/lua-lifetime/docs/02-semantics.md, "The
-    -- library form").
     lifetime.block(function(scope)
         lifetime.hook(function()
             dropped_file:close()
@@ -129,7 +126,6 @@ function PreviewArea:reset()
     end
 end
 
----lua-lifetime: the destructor, run when the panel that owns the area dies.
 ---@param reason lifetime.Reason
 function PreviewArea:release(reason)
     app.file_system_drop_event_manager.file_dropped:unregister(self)

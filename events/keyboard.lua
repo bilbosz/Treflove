@@ -1,12 +1,5 @@
 local Event = require("events.event")
 
----Dispatches key presses and releases as the `key_pressed` / `key_released`
----events. Both are always delivered, also while text input is active, so
----navigation keeps working while typing (backstack, form focus, button
----activation); text editing keys are routed separately by `TextEventManager`.
----
----Handlers receive `(owner, key)`; e.g.
----`app.keyboard_manager.key_pressed:register(self, self.on_key_pressed)`.
 ---@class KeyboardManager: Object
 ---@field public key_pressed Event Triggered with (key)
 ---@field public key_released Event Triggered with (key)

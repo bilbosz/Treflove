@@ -33,9 +33,6 @@ function UserMenuScreen:join_game()
 end
 
 function UserMenuScreen:options()
-    -- lua-lifetime: the options screen, made once, and every way back from it
-    -- belong to this menu; they die with it (at logout or disconnect),
-    -- wherever the user is.
     if not self._options_screen then
         self._options_screen = OptionsMenuScreen():attach_lifetime(self)
     end

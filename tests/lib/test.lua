@@ -1,5 +1,3 @@
----Minimal zero-dependency test framework. Tests are grouped into suites; each
----case runs in protected mode so one failure never stops the run.
 ---@class TestSuite
 ---@field name string
 ---@field passed number
@@ -13,7 +11,6 @@ local suites = {}
 ---@type TestSuite|nil
 local current_suite = nil
 
----Start a new suite; subsequent `test.case` calls are recorded under it.
 ---@param name string
 function test.suite(name)
     current_suite = {
@@ -25,7 +22,6 @@ function test.suite(name)
     table.insert(suites, current_suite)
 end
 
----Run a single test case in protected mode.
 ---@param name string
 ---@param fn fun()
 function test.case(name, fn)
@@ -89,7 +85,6 @@ function test.assert_near(actual, expected, tolerance, message)
     end
 end
 
----Assert that `fn` raises an error.
 ---@param fn fun()
 ---@param message string|nil
 function test.assert_error(fn, message)
@@ -122,7 +117,6 @@ local function _deep_eq(a, b)
     return true
 end
 
----Recursively compare two values (tables by structure, everything else by equality).
 ---@param actual any
 ---@param expected any
 ---@param message string|nil
@@ -132,7 +126,6 @@ function test.assert_deep_eq(actual, expected, message)
     end
 end
 
----Print results of all suites and return the total number of failed cases.
 ---@return number
 function test.report()
     local total_passed, total_failed = 0, 0

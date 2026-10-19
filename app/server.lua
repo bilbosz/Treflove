@@ -31,11 +31,8 @@ end
 function Server:load()
     self:_load_data()
     self.connection_manager:start(function(connection)
-        -- lua-lifetime: the session dies inside the connection's cascade.
         self._sessions[connection] = Session(connection):attach_lifetime(connection)
     end, function(connection)
-        -- lua-lifetime: `release()` is gone; the entry is still removed by hand,
-        -- since a dead connection is a tombstone and stays a key.
         self._sessions[connection] = nil
     end)
 end

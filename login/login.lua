@@ -21,7 +21,6 @@ end
 ---@param on_logout fun()
 function Login:init(session, on_login, on_logout)
     self._connection = session:get_connection()
-    -- lua-lifetime: the procedures die with the login; Login:release is gone.
     self._login_rp = LoginRp(self._connection, on_login):attach_lifetime(self)
     self._logout_rp = LogoutRp(self._connection, on_logout):attach_lifetime(self)
 end

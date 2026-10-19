@@ -16,14 +16,6 @@ local Tree = require("utils.tree")
 ---@field private _scale number[]
 local Control = class("Control", Tree)
 
--- Transformations
--- * Link: https://learnopengl.com/Getting-started/Transformations
--- * Order:
---   * Origin
---   * Scaling
---   * Rotation
---   * Position
-
 ---@private
 function Control:_update_local_transform()
     self._local_transform = self._local_transform:setTransformation(self._position[1], self._position[2], self._rotation, self._scale[1], self._scale[2], self._origin[1], self._origin[2])

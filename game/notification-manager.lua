@@ -28,7 +28,6 @@ function NotificationManager:notify(message, duration)
     self._panel:update_notifications()
 end
 
----Internal to the notification subsystem — used by NotificationPanel.
 ---@return Notification[]
 function NotificationManager:_get_notifications()
     return self._notifications

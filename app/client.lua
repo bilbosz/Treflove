@@ -48,14 +48,9 @@ function Client:load()
     local connecting_screen = ConnectingScreen()
     self.screen_manager:show(connecting_screen)
     self.connection_manager:start(function(connection)
-        -- lua-lifetime: the session dies inside the connection's cascade.
         self.session = Session(connection):attach_lifetime(connection)
     end, function()
         self.screen_manager:show(connecting_screen)
-        -- lua-lifetime: `self.session:release()` is gone; ConnectionManager:remove
-        -- destroys the connection, and the session with it, right after this
-        -- callback. The fields are still cleared by hand: a dead session is a
-        -- tombstone, not nil.
         self.session = nil
         self.data = nil
     end)

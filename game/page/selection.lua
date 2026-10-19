@@ -20,7 +20,6 @@ end
 
 ---@param page Page
 function Selection:init(page)
-    -- assert_type(page, Page)
     self._page = page
     Rectangle.init(self, self._page:get_page_coordinates(), 0, 0, Consts.PAGE_SELECTION_COLOR)
     self:set_enabled(false)

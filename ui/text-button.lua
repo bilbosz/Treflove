@@ -40,9 +40,6 @@ function TextButton:on_screen_hide()
     app.keyboard_manager.key_pressed:unregister(self)
 end
 
----lua-lifetime: the destructor. A button destroyed while its screen is shown
----ends its registrations as hiding the screen would, then leaves the control
----tree.
 ---@param reason lifetime.Reason
 function TextButton:release(reason)
     self:on_screen_hide()

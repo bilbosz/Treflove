@@ -14,9 +14,6 @@
 ---@field stacktrace table|nil
 ---@field dump DumpDisplayConfig
 ---@field text_processor nil|fun(text: string): any
--- lua-lifetime's state record, kept in a private field of every table the
--- runtime has seen, is skipped like utils/table.lua skips it; required on
--- first use, since the networking threads load this file in debug mode.
 ---@type nil|fun(k: any): boolean
 local is_state = nil
 
@@ -141,7 +138,6 @@ local function _dump_generator(config)
                 content = value_indention .. "{" .. dump_config.table_newline
                 local last_index = 0
                 for key, cur_val in pairs(val) do
-                    -- lua-lifetime's record is the runtime's, not the table's
                     if not _is_state(key) then
                         local key_type = type(key)
                         if key_type == "number" and key == last_index + 1 then
@@ -201,8 +197,7 @@ local function _is_identifier(str)
     return b == 1 and e == l
 end
 
--- Kept as a drop-in `text_processor` replacement for `print` when dumps
--- exceed the console line-length limit
+-- a `text_processor` for dumps over the console line limit
 ---@param str string
 local function _long_print(str) -- luacheck: ignore 211
     local limit = 3000

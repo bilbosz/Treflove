@@ -2,7 +2,7 @@ local lifetime = require("lifetime")
 
 ---@class ScreenManager: Object
 ---@field private _screen Screen|nil
----@field private _screen_hook lifetime.Hook|nil lua-lifetime: forgets `_screen` when it dies
+---@field private _screen_hook lifetime.Hook|nil Forgets `_screen` when it dies
 local ScreenManager = class("ScreenManager")
 
 function ScreenManager:init()
@@ -18,14 +18,9 @@ end
 function ScreenManager:show(screen, ...)
     if self._screen then
         self._screen:hide()
-        -- lua-lifetime: the replaced screen may die later; it is no longer ours.
         lifetime.discard(self._screen_hook)
     end
     self._screen = screen
-    -- lua-lifetime: a shown screen that dies hides itself (Screen:release) and
-    -- is forgotten here, so the next show has nothing to hide. The hook runs
-    -- after the screen's own release() (lib/lua-lifetime/docs/02-semantics.md,
-    -- "Hooks").
     self._screen_hook = lifetime.hook(function()
         self._screen = nil
         self._screen_hook = nil

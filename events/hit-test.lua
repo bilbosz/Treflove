@@ -1,21 +1,3 @@
----Hit-tested dispatch shared by `PointerEventManager` and
----`FileSystemDropEventManager`. Unlike `Event:trigger`, which broadcasts to every
----owner, a hit-tested event reaches only the Controls under the point, in
----top-most-first order:
----
----1. Walk the control tree from `app.root`, descending only into visible
----   controls whose recursive AABB contains the point, and collect every
----   control that has a handler on the event (`Event:get_handler`).
----2. Call the collected controls in reverse tree order (later siblings and
----   children are drawn on top, so they are called first). A handler returning
----   a truthy value lets the event pass to the controls below; a falsy return
----   consumes it.
----3. Controls below a consumer are still called if they are in the
----   `receive_through` set, but their return value no longer matters.
----
----The control list is collected before any handler runs, so a control
----registered during the dispatch is not called by it, and a control
----unregistered during the dispatch is skipped for the rest of it.
 ---@class HitTest
 local hit_test = {}
 
@@ -48,9 +30,6 @@ local function _collect_hit_controls(ctrl, event, x, y, list)
     end
 end
 
----Call the handlers of `event` registered by controls under (x, y) as
----`handler(ctrl, x, y, ...)`, top-most first, honouring pass-through returns
----and `receive_through`.
 ---@param event Event
 ---@param receive_through ReceiveThroughSet
 ---@param x number

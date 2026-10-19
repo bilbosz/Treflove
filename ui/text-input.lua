@@ -7,13 +7,6 @@ local Rectangle = require("controls.rectangle")
 local Text = require("controls.text")
 local TextBuffer = require("ui.text-buffer")
 
----Single-line text field. Pointer hover/click come from the `Button` owned by
----`Input`; the text lives in an owned `TextBuffer`. While focused and on a
----shown form screen, the field registers its `on_append_text`/
----`on_remove_characters`/`on_remove_word`/`on_enter` methods on
----`app.text_event_manager` and applies them to the buffer (subclasses override
----them to filter edits, see `NumberInput`). A focused field keeps its focus
----while the screen is hidden, but receives no text until it is shown again.
 ---@class TextInput: Control, Input
 ---@field private _background Rectangle
 ---@field private _buffer TextBuffer
@@ -109,8 +102,6 @@ function TextInput:_update_view()
     self:_update_text_events_registration()
 end
 
----Text events go to the field only while it is focused and its form screen is
----shown; a hidden focused field must not receive typing.
 ---@private
 function TextInput:_update_text_events_registration()
     self:_set_text_events_registered(self:is_focused() and self:get_form_screen():is_showed())
@@ -223,9 +214,6 @@ function TextInput:on_screen_hide()
     Input.on_screen_hide(self)
 end
 
----lua-lifetime: the destructor. A field destroyed while its screen is shown
----(a panel rebuilding its inputs) ends its registrations as hiding the
----screen would, then leaves the control tree.
 ---@param reason lifetime.Reason
 function TextInput:release(reason)
     self:on_screen_hide()

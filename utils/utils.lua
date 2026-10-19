@@ -174,14 +174,13 @@ function Utils.error_handler(module)
     end
 end
 
----Use to mark code that should not be reached
 ---@param msg string|nil
 function assert_unreachable(msg)
     error(msg)
 end
 
----Use to mark abstract methods. Always raises an error; the `any` return type
----lets overridable methods with return values forward it via `return abstract()`.
+---Raises; the `any` return lets `return abstract()` type-check in a method
+---that returns a value.
 ---@return any
 function abstract()
     error("Method marked as abstract has no implementation")

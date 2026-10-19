@@ -5,21 +5,6 @@ local hit_test = require("events.hit-test")
 
 ---@alias PointerEventHandler fun(ctrl: Control, x: number, y: number, id: PointerId): boolean|nil Return truthy to let the event through to controls below
 
----Dispatches mouse and touch input to Controls under the pointer. Owners of the
----`pointer_down`, `pointer_up` and `pointer_move` events are always Controls and
----their handlers (see `PointerEventHandler`) receive `(ctrl, x, y, id)`:
----`app.pointer_event_manager.pointer_down:register(self, self.on_pointer_down)`.
----
----The events are never broadcast with `Event:trigger`; they are hit-tested
----(see `events/hit-test.lua`): only visible controls under the pointer are
----called, top-most first, and a handler returning a falsy value consumes the
----event so controls below it are not called, while a truthy return passes it
----on.
----
----A control that must also receive events consumed by a control above it
----(e.g. a Page under its Tokens) opts in once with
----`app.pointer_event_manager:set_receive_through(self, true)`; the option
----applies to all three pointer events and is held weakly.
 ---@class PointerEventManager: Object
 ---@field public pointer_down Event Hit-tested with (x, y, id)
 ---@field public pointer_up Event Hit-tested with (x, y, id)
@@ -36,7 +21,6 @@ function PointerEventManager:init()
     self._down_id = nil
 end
 
----Let `ctrl` also receive pointer events consumed by a control above it.
 ---@param ctrl Control
 ---@param value boolean
 function PointerEventManager:set_receive_through(ctrl, value)

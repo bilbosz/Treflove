@@ -65,7 +65,7 @@ end
 ---@param ... any Arguments forwarded to `Screen.show`
 function FormScreen:show(...)
     Screen.show(self, ...)
-    -- set before notifying the inputs, so they see the screen as shown (`hide` clears it first)
+    -- before the inputs are notified: they ask `is_showed`
     self._is_showed = true
     for _, input in ipairs(self._inputs) do
         input:on_screen_show()
@@ -104,10 +104,6 @@ function FormScreen:add_input(input)
     table.insert(self._inputs, input)
 end
 
----Removes `input` from the form (an input calls it from its lua-lifetime
----hook when it dies first, ui/input.lua). The focus follows the list: a
----removed focused input loses the focus, so that LÖVE text input is switched
----off, and the indices above the removed one shift down.
 ---@param input Input
 function FormScreen:remove_input(input)
     local found = table.find_array_idx(self._inputs, input)

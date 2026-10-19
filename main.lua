@@ -1,9 +1,6 @@
--- lua-lifetime (lib/lua-lifetime, a git submodule) owns the objects' lifetimes;
--- it is required as a library, nothing is transpiled.
 love.filesystem.setRequirePath(love.filesystem.getRequirePath() .. ";lib/lua-lifetime/?.lua;lib/lua-lifetime/?/init.lua")
 require("app.globals")
 
--- Test mode: run the suite inside LÖVE (real love.*) and exit. See test-code.sh.
 if arg[2] == "test" then
     require("tests.run")
 end

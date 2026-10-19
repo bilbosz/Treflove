@@ -205,9 +205,6 @@ end
 
 ---@private
 function TokenPanel:_release_properties()
-    -- lua-lifetime: a destroyed input ends its registrations and leaves the
-    -- control tree (TextInput:release, Tree:release) and its form (the hook
-    -- of ui/input.lua).
     for _, v in ipairs(self._properties) do
         v.title:set_parent(nil)
         lifetime.destroy(v.input)

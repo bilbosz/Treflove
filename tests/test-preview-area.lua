@@ -4,11 +4,6 @@ local lifetime = require("lifetime")
 local Control = require("controls.control")
 local PreviewArea = require("game.assets.preview-area.preview-area")
 
--- lua-lifetime: the one block scope of the project, `lifetime.block` in
--- PreviewArea:on_file_system_drop, closes a dropped file on every exit path.
-
--- A stand-in for the assets panel: the parent a preview area hands a dropped
--- file to.
 ---@class TestDropTarget: Control
 ---@field files table[] The files handed over, in order
 ---@field fail boolean Raise instead of taking the file
@@ -28,7 +23,6 @@ function TestDropTarget:set_file(file)
     table.insert(self.files, file)
 end
 
----A stand-in for a `love.DroppedFile` that logs its open and close.
 ---@param log string[]
 ---@return table
 local function make_file(log)

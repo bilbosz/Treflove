@@ -4,7 +4,6 @@ local lifetime = require("lifetime")
 local Connection = require("networking.connection")
 local RemoteProcedure = require("networking.remote-procedure")
 
--- An RPC used by the round-trip test. Class name = wire id.
 local EchoRp = class("TestEchoRp", RemoteProcedure)
 
 ---@param request table
@@ -20,8 +19,6 @@ function EchoRp:receive_response(response)
     self.got = response.out
 end
 
----Create a client/server connection pair wired back-to-back with fake
----channels: what the client sends, the server receives, and vice versa.
 ---@return Connection client_connection
 ---@return Connection server_connection
 local function make_connection_pair()

@@ -1,13 +1,5 @@
 local Event = require("events.event")
 
----Pointer button behaviour composed into a Control (see `Input`): holds the
----hovered/selected state that `ButtonEventManager` drives and announces every
----change on its own events. The owning control registers its methods on them,
----e.g. `button.clicked:register(self, self.on_click)`; all events are triggered
----with no arguments, after the state has changed.
----
----The control makes the button reachable by pointer with
----`app.button_event_manager:register(ctrl, button)`.
 ---@class Button: Object
 ---@field public clicked Event Pointer pressed and released over the same control
 ---@field public selected Event Pointer pressed over the control, or dragged back onto it while pressed

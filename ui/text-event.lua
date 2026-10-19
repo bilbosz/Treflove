@@ -1,19 +1,5 @@
 local Event = require("events.event")
 
----Turns LÖVE text input and editing keys into events for the focused text
----field. A field registers its methods while it has focus, e.g.
----`app.text_event_manager.text_appended:register(self, self.on_append_text)`,
----and applies them to its own `TextBuffer` (the manager holds no text).
----
----- `text_input(text)` (from `love.textinput`) triggers `text_appended` (text);
----- `key_pressed(key)` (from `love.keypressed`), only while text input is
----  active: backspace triggers `characters_removed` (1), ctrl+backspace
----  `word_removed`, return `entered`.
----
----`set_text_input`/`is_text_input` switch and query LÖVE text input, which
----`KeyboardManager` also consults to suppress plain key events while typing.
----All keyboard access goes through the injected `love.keyboard` backend so
----tests can pass a fake.
 ---@class TextEventManager: Object
 ---@field public text_appended Event Triggered with (text) typed by the user
 ---@field public characters_removed Event Triggered with (character_number) to remove from the end
