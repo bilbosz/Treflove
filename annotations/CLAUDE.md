@@ -1,51 +1,41 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code when working with type annotations in this folder.
+Guidance for the type annotation packages in this folder.
 
 ## Purpose
 
-The [annotations/](annotations/) folder contains type definition packages used by the Lua language server to provide autocomplete, type checking, and diagnostics for external libraries and frameworks.
+Type definition packages used by the Lua language server for autocomplete,
+type checking and diagnostics of external libraries and frameworks (LÖVE).
 
 ## Structure
 
-Each subdirectory represents a separate annotation package, typically maintained as a git submodule pointing to an upstream repository that provides type definitions.
+Each subdirectory is a separate annotation package, a git submodule pointing
+to an upstream repository that provides the type definitions.
 
 ## Integration
 
-Annotations are integrated via the [.luarc.json](.luarc.json) configuration at the repository root using the `workspace.library` setting, which tells the Lua language server to include these definitions when analyzing code.
+The packages are listed in the language server's workspace library
+configuration at the repository root, which tells the server to include them
+when analyzing code.
 
 ## Important Notes
 
-- **DO NOT manually edit** annotation files - they are maintained in upstream repositories and often auto-generated
-- Annotation folders are typically **git submodules** - use git submodule commands to update them
-- To update all submodules: `git submodule update --init --recursive`
+- **Do not edit** annotation files by hand: they are maintained upstream and
+  often auto-generated
+- Update the submodules with `git submodule update --init --recursive`
 
 ## Adding New Annotation Packages
 
-When adding annotations for new libraries:
-
-1. Add the annotation package as a git submodule in this directory:
-   ```bash
-   git submodule add <repository-url> annotations/<package-name>
-   ```
-
-2. Update [.luarc.json](.luarc.json) to include the new annotations:
-   ```json
-   "workspace.library": [
-     "annotations/<package-name>"
-   ]
-   ```
-
-3. Run diagnostics to verify the annotations work correctly:
-   ```bash
-   ./diagnose-code.sh
-   ```
+1. Add the package as a git submodule in this folder
+   (`git submodule add <repository-url> annotations/<package-name>`)
+2. Add it to the language server's workspace library configuration
+3. Run the diagnostics script to verify the annotations work
 
 ## Maintenance
 
-Periodically update annotation submodules to get the latest type definitions and bug fixes from upstream sources. Always test the project after updating to ensure compatibility.
+Update the annotation submodules periodically for the latest type definitions
+and fixes from upstream, and test the project afterwards.
 
 ## Documentation
 
-For information about writing and using Lua Language Server annotations, see the official documentation:
-- **Annotations Guide**: https://luals.github.io/wiki/annotations/
+The Lua Language Server annotation guide: https://luals.github.io/wiki/annotations/

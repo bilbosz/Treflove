@@ -14,15 +14,15 @@ game state (tokens, objects, maps, sound) live during play.
 
 ### 2. Game state synchronization
 
-[GameDataRp](game/game-data-rp.lua) sends the full state once on login; changes
-made afterwards do not propagate.
+The game data procedure sends the full state once on login; changes made
+afterwards do not propagate.
 
 - Push incremental state updates from server to all connected clients
 - Handle late joiners and mid-game asset additions
 
 ### 3. Game objects other than tokens
 
-Only [Token](game/token/token.lua) exists today.
+Only tokens exist today.
 
 - Generalize the object model (e.g. areas, cards, dice, drawings, labels)
 - Shared object lifecycle: creation, ownership, persistence, panel UI
@@ -33,17 +33,17 @@ Reusable object templates the GM can instantiate during play.
 
 ### 5. Media other than images
 
-[utils/media.lua](utils/media.lua) already types sources/fonts/videos, but the
-asset pipeline and game data handle images only.
+The media module already types sources, fonts and videos, but the asset
+pipeline and the game data handle images only.
 
 - Audio playback (background music, sound effects)
 - Ability to change board and background music at will during a game
 
 ### 6. Clipping of controls outside the clipping rectangle
 
-[ClippingMask](controls/clipping-mask.lua) clips drawing via stencil, but
-children outside the rectangle still participate in layout/hit testing and are
-fully processed.
+The clipping mask clips drawing via stencil, but children outside the
+rectangle still participate in layout and hit testing and are fully
+processed.
 
 - Cull controls that fall entirely outside the clip rect (draw + input)
 
@@ -51,41 +51,40 @@ fully processed.
 
 ### 7. Real login flow and user management
 
-- Remove the hardcoded dev auto-login `"adam"/"krause"` at
-  [game/session.lua:62](game/session.lua#L62) (or gate it behind a debug flag)
-- Users are currently added by hand-editing [server/save.lua](server/save.lua),
-  which also carries plaintext passwords in comments — add a way to create and
+- Remove the hardcoded dev auto-login (`"adam"/"krause"`) from the session's
+  constructor, or gate it behind a debug flag
+- Users are currently added by hand-editing the server's save file, which
+  also carries plaintext passwords in comments; add a way to create and
   manage accounts
 
 ### 8. Authentication hardening
 
-`Utils.generate_salt` ([utils/utils.lua:92](utils/utils.lua#L92)) is seeded with
-fixed constants, so the "salt" is a static pepper shared by all users.
+The salt generator is seeded with fixed constants, so the "salt" is a static
+pepper shared by all users.
 
 - Per-user random salts stored with the account, and a proper KDF for hashing
-- `_find_user_by_client_auth` in [login/login-rp.lua](login/login-rp.lua)
-  scans all players per login attempt — index by auth instead
+- The login procedure scans all players per login attempt to find a user by
+  its client auth; index by auth instead
 
 ### 9. Connection resilience
 
 - Client-side reconnect after a dropped connection (beyond the initial
-  ConnectingScreen), with session state recovery
+  connecting screen), with session state recovery
 - Timeouts and user-visible errors for failed RPCs instead of silent stalls
 - Graceful server-side session teardown on abrupt disconnects
 
 ### 10. Save robustness
 
-- Atomic writes for `save.lua` (write to temp file, then rename) so a crash
-  mid-save cannot corrupt the state
+- Atomic writes for the save file (write to a temp file, then rename) so a
+  crash mid-save cannot corrupt the state
 - Autosave cadence instead of relying on explicit saves
 - Version the save format to allow future migrations
 
 ### 11. Broader test coverage
 
-The suite in [tests/](tests/) covers utilities, events, and networking basics.
-Missing areas:
+The suite covers utilities, events, networking basics, the session and the
+object lifetimes. Missing areas:
 
 - Control hierarchy: transforms, AABB computation, event propagation, clipping
 - Serialization round-trips of real game data (pages, tokens, players)
 - RPC classes beyond Connection (login, asset transfer, game data)
-- Session lifecycle (login → screen transitions → logout/disconnect)

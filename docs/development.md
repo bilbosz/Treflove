@@ -1,6 +1,7 @@
 # Development
 
-After cloning, fetch the submodules (the LÖVE type annotations and the lua-lifetime runtime):
+After cloning, fetch the submodules (the LÖVE type annotations and the
+lua-lifetime runtime):
 ```bash
 git submodule update --init --recursive
 ```
@@ -24,61 +25,85 @@ Run both server and client together:
 
 ## Development Commands
 
-Format all Lua code (uses lua-format, excludes [annotations/](../annotations/)):
+Format all Lua code (lua-format; the library and annotation submodules are
+skipped):
 ```bash
 ./format-code.sh
 ```
 
-Lint Lua code (uses luacheck, config in [.luacheckrc](../.luacheckrc)):
+Lint Lua code (luacheck):
 ```bash
 ./lint-code.sh [target_path]
 ```
 
-The `lint-code.sh` script accepts an optional `target_path` (file or directory) and defaults to linting the entire project.
-
-Diagnose all Lua code (uses lua-language-server):
+Diagnose Lua code (lua-language-server; the results are JSON, empty when
+clean):
 ```bash
 ./diagnose-code.sh [target_path]
 ```
 
-The `diagnose-code.sh` script:
-- Runs `lua-language-server` diagnostics and outputs results as JSON
-- Accepts optional `target_path` argument to filter results (file or directory)
-- Defaults to diagnosing the entire project if no target is specified
-- Examples:
-  - `./diagnose-code.sh` - diagnose entire project
-  - `./diagnose-code.sh app/client.lua` - diagnose single file
-  - `./diagnose-code.sh controls/` - diagnose directory
+Both scripts accept an optional `target_path` (a file or a directory) and
+default to the whole project.
 
 Run the automated test suite:
 ```bash
 ./test-code.sh
 ```
 
-The `test-code.sh` script prefers plain `luajit` (fast, headless) and falls back to `love . test` (runs the same suite inside LÖVE with the real `love.*` APIs). Both must pass.
+The script prefers plain `luajit` (fast, headless) and falls back to
+`love . test` (the same suite inside LÖVE, with the real `love.*` APIs).
+Both must pass.
 
-The project uses:
-- `lua-format` for code formatting (config in [.lua-format](../.lua-format))
-- `luacheck` for linting (config in [.luacheckrc](../.luacheckrc))
-- `lua-language-server` for diagnosis report (config in [.luarc.json](../.luarc.json))
+The formatter, the linter and the language server each read their
+configuration file at the repository root.
 
-Verify changes with `./test-code.sh`, `./lint-code.sh`, `./diagnose-code.sh`, and by running the app (`./run.sh`).
+Verify changes with `./test-code.sh`, `./lint-code.sh`,
+`./diagnose-code.sh`, and by running the app (`./run.sh`).
 
 ## Continuous Integration
 
-GitHub Actions ([.github/workflows/ci.yml](../.github/workflows/ci.yml)) runs on every push:
+GitHub Actions runs on every push:
 
-- **Test, lint, diagnose**: `./test-code.sh` (LuaJIT), `./lint-code.sh`, and `./diagnose-code.sh` (fails if the diagnostics JSON is non-empty; lua-language-server version is pinned in the workflow)
-- **Test (LÖVE)**: the same suite via `love . test`, headless with dummy SDL video/audio drivers
+- **Test, lint, diagnose**: the suite under LuaJIT, the linter, and the
+  diagnostics (fails if the JSON is non-empty; the lua-language-server
+  version is pinned in the workflow)
+- **Test (LÖVE)**: the same suite via `love . test`, headless with dummy SDL
+  video and audio drivers
 
 ## Tests
 
-The suite lives in [tests/](../tests/) and has no external dependencies:
+The suite has no external dependencies:
 
-- [tests/run.lua](../tests/run.lua) — entry point; lists test modules in `TEST_MODULES` (add new files there)
-- [tests/lib/test.lua](../tests/lib/test.lua) — assertion framework: `test.suite(name)`, `test.case(name, fn)`, `assert_eq`, `assert_true/false`, `assert_near`, `assert_error`, `assert_deep_eq`
-- [tests/lib/mocks.lua](../tests/lib/mocks.lua) — test doubles: `install_app()` (fake global `app` with a controllable clock and captured logs), `make_channel()`/`make_thread()` (in-memory LÖVE channel/thread stand-ins), `make_keyboard()` (fake `love.keyboard` backend for `TextEventManager`), `ensure_love_data()` (real `love.data` under LÖVE, reversible fakes under plain LuaJIT), `ensure_love_math()` (real `love.math` under LÖVE; a fake affine `Transform` and random generator under plain LuaJIT, so real `Control`s can be built), `ensure_love_graphics()` (fake fonts, texts, images and shaders, under both runners, since neither has a window: real screens can be built), `ensure_love_thread()` (a fake `newChannel`, so a real `ConnectionManager` can be built), `install_love_filesystem(files)`/`restore_love_filesystem()` (an in-memory file system over a table)
-- [tests/lib/utf8-shim.lua](../tests/lib/utf8-shim.lua) — pure-Lua `utf8.len/offset/codes`, preloaded by `tests/run.lua` under plain LuaJIT (LÖVE bundles the real `utf8`)
-- Test files are named `test-<module>.lua`, one per module under test
+- The runner lists the test modules; a new test file is added to that list.
+  Test files are named `test-<module>`, one per module under test.
+- The assertion framework: `test.suite(name)`, `test.case(name, fn)`,
+  `assert_eq`, `assert_true/false`, `assert_near`, `assert_error`,
+  `assert_deep_eq`. Each case runs in protected mode, so one failure never
+  stops the run.
+- The test doubles: `install_app()` (a fake global `app` with a controllable
+  clock and captured logs), `make_channel()`/`make_thread()` (in-memory LÖVE
+  channel and thread stand-ins), `make_keyboard()` (a fake `love.keyboard`
+  backend for the text event manager), `ensure_love_data()`,
+  `ensure_love_math()`, `ensure_love_graphics()`, `ensure_love_thread()`
+  (the real modules under LÖVE where they work without a window; reversible
+  fakes under plain LuaJIT, so that real controls, screens and a connection
+  manager can be built), `install_love_filesystem(files)` /
+  `restore_love_filesystem()` (an in-memory file system over a table).
+- A pure-Lua `utf8` shim is preloaded under plain LuaJIT (LÖVE bundles the
+  real one).
 
-Conventions: pure calculation modules (`utils/aabb.lua`, `utils/table.lua`, `utils/class.lua`, `app/arg-parser.lua`) are tested with plain asserts; modules with runtime dependencies (event managers, `DeferManager`, `BackstackManager`, `Connection`/`RemoteProcedure`, `Session`, `ScreenManager`, `Input`, the screens) get mocks from `tests/lib/mocks.lua` instead of the real `app`/LÖVE objects. Classes defined inside test files use a `Test` name prefix (e.g. `TestEchoRp`) so they can't collide with production class names. A test of a destruction asserts the whole order of the `release` calls and the statement that caused them (`tests/test-session.lua`), as lua-lifetime's own suite does. [tests/test-lifetimes.lua](../tests/test-lifetimes.lua) drives the whole ownership tree end to end: a client and a server in one process over fake channels, the global `app` swapped per frame, through connect, the auto-login, the game, back, the options, logout, disconnect and the teardown `love.quit` runs; a case stops the collector while it logs a cascade and tears both sides down at its end, so a death by `reachable` never lands in a log.
+Conventions: pure calculation modules (AABB, the table utilities, the class
+system, the argument parser) are tested with plain asserts; modules with
+runtime dependencies (event managers, the defer and backstack managers,
+connections and remote procedures, the session, the screen manager, inputs,
+the screens) get the test doubles instead of the real `app`/LÖVE objects.
+Classes defined inside test files carry a `Test` name prefix (e.g.
+`TestEchoRp`) so they cannot collide with production class names. A test of
+a destruction asserts the whole order of the `release` calls and the
+statement that caused them, as lua-lifetime's own suite does. The lifetimes
+suite drives the whole ownership tree end to end: a client and a server in
+one process over fake channels, the global `app` swapped per frame, through
+connect, the auto-login, the game, back, the options, logout, a second
+login, disconnect and the teardown `love.quit` runs; the collector is
+stopped while a case logs a cascade, and each case tears both sides down at
+its end, so a death by `reachable` never lands in a log.

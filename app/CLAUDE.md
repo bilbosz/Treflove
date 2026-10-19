@@ -1,338 +1,93 @@
 # CLAUDE.md - App Directory
 
-This file provides guidance to Claude Code (claude.ai/code) when working with the app layer of Treflove.
+Guidance for the application layer: the base `App` class and its two
+specializations, `Client` and `Server`, plus the argument parser and the
+constants.
 
-## Overview
+## Bootstrap
 
-The `app/` directory contains the application layer that bootstraps and manages the entire Treflove application. It defines the base App class and its two specializations: Client and Server.
+1. The entry point loads the global utilities (the class system, the table
+   utilities, `dump` in debug mode) and parses the command line:
+   `love . <client|server> <address> <port>`
+2. Client or Server is instantiated with the parsed parameters and assigns
+   itself to the global `app`
+3. The instance registers the LÖVE callbacks; `love.load` then calls the
+   instance's `load`
 
-## File Structure
+The LÖVE configuration callback parses the same command line, so a server can
+run without a window.
 
-- **[globals.lua](globals.lua)**: Loads global utilities (table, utils, class, dump in debug mode)
-- **[arg-parser.lua](arg-parser.lua)**: Parses command-line arguments
-- **[consts.lua](consts.lua)**: Application-wide constants (colors, fonts, dimensions, keybindings)
-- **[app.lua](app.lua)**: Base App class with common functionality
-- **[client.lua](client.lua)**: Client application with full UI and event managers
-- **[server.lua](server.lua)**: Server application managing connections and persistence
+## The App base class
 
-## Bootstrap Flow
+- **Time**: a start time taken at construction and a frame time updated every
+  `love.update`, read with `app:get_time()`
+- **Update**: every frame runs the defer manager, honours a pending quit,
+  updates the time, triggers `update_event` (dt) and runs a collector step
+- **Root control**: with a window, `app.root` is the top-level `Control` of
+  all UI, scaled so that the model width (2000 units) fits the real window
+  width; the model height follows from the aspect ratio. Headless, there is
+  no root and no draw callback
+- **Quit**: `app:quit()` marks the app; the next update calls
+  `love.event.quit`, so a quit never happens mid-frame. `love.quit` removes
+  every connection in order (each session's tree is torn down while LÖVE's
+  threads and channels are still usable) and then tells lua-lifetime the
+  program is ending
+- **Debug mode** (LÖVE's `debug`): a key toggles the drawing of bounding
+  boxes, the error handler prints a stack trace, and `log_fun` includes the
+  calling function's name
+- **Logging**: `app:log(...)` and `app:log_fun(...)`
 
-1. [main.lua](../main.lua) requires [globals.lua](globals.lua) first (sets up global utilities)
-2. `arg_parser.parse(arg)` parses command-line arguments: `love . <client|server> <address> <port>`
-3. Based on `app_type`, either Client or Server is instantiated with parsed params
-4. The instance assigns itself to global `app` variable
-5. LÖVE callbacks are registered via `register_love_callbacks()`
-6. LÖVE calls `love.load()` which triggers `App:load()`
+The class declares every manager field that may exist on either side; not
+all exist on every instance (a headless server has no pointer manager).
 
-## App Base Class
+## Client
 
-[app.lua](app.lua) defines the abstract App class that both Client and Server inherit from.
+Creates the UI managers: connection, resize, screen, pointer, button,
+keyboard, text, notification, options, asset, backstack, file drop, and the
+wheel event. `load` pushes the quit callback onto the backstack (the back key
+quits), shows the connecting screen and starts connecting; a connection
+creates the session (anchored to the connection), a disconnect shows the
+connecting screen again and clears the session and the data.
 
-### Key Responsibilities
+The client wires every LÖVE input callback: a key press first goes to the
+app (debug keys), then toggles fullscreen or is dispatched to the keyboard
+manager and the text event manager; mouse and touch go to **both** the
+pointer event manager (hit-tested controls) and the button event manager
+(hover, press, click), so different systems handle the same input (button
+clicks versus drag and drop); the wheel, file drops, text input and resizes
+go to their managers.
 
-**Initialization**:
-- Sets global `app` reference to self
-- Initializes time tracking (`_start_time`, `_time`)
-- Creates Logger instance
-- Stores parsed arguments
-- Creates the `update_event` (`Event`) and DeferManager
-- Calls `register_love_callbacks()` to wire up LÖVE
+## Server
 
-**LÖVE Callback Registration**:
-- `love.load()` → calls `self:load()` (implemented by Client/Server)
-- `love.draw()` → renders `self.root` control hierarchy (if window enabled)
-- `love.update(dt)` → updates defer manager, checks for quit, updates time, triggers `update_event`, runs GC step
-- `love.errorhandler()` → prints error and stack trace in debug mode, silent otherwise
-- `love.keypressed()` → handles F2 (toggle AABB drawing), F4 (quit)
+Owns the save file, a map from connection to session, the connection manager
+and the asset manager; with a window it shows a screen saver. `load` reads
+the persisted state, then listens: a connection creates a session (anchored
+to the connection), a disconnect removes the map entry.
 
-**Root Control Management**:
-- `self.root` is the top-level Control that contains all UI
-- `rescale_root()` computes scale to fit MODEL_WIDTH (2000) to actual window width
-- Real height is computed dynamically: `height = real_height / scale`
-- Only created if `config.window` is enabled (headless server has no root)
+Persistence is a human-readable Lua table: `save_data()` serializes `app.data`
+into the save file; the server calls it when the game state changes. Sessions
+are independent but share `app.data`.
 
-**Time Management**:
-- `_start_time` set at construction using `Utils.get_time()`
-- `_time` updated every frame: `get_time() - _start_time`
-- Accessible via `App:get_time()`
+## Argument parser
 
-**Quit Handling**:
-- `App:quit()` sets `_mark_for_quit = true`
-- Checked in `love.update()` and triggers `love.event.quit()` next frame
-- Deferred quit prevents issues with quitting mid-frame
-- `love.quit` (registered by App) removes every connection in order, `ConnectionManager:remove_all()`, so each session's tree is torn down by lua-lifetime while LÖVE's threads and channels are still usable, then calls `lifetime.set_exiting(true)` for whatever the closing state finalizes
-
-**Logging**:
-- `App:log(...)` - general logging
-- `App:log_fun(...)` - includes function name in debug mode
-
-**Debug Features** (only when `debug` is true):
-- F2 key toggles AABB visualization via `_draw_aabbs` flag
-- Error handler prints full stack trace
-- `log_fun` includes calling function name
-
-### Fields (see @field annotations)
-
-The App class declares all manager fields that may exist in Client or Server:
-- Event managers: pointer, keyboard, button, text, resize, file-drop
-- Plain events: `update_event`, `wheel_event`
-- Core managers: connection, screen, asset, backstack, notification, options
-- Session and data
-- Dimensions: width, height
-- Root control
-- Flags: is_client, is_server
-
-Not all fields exist on all instances (e.g., Server doesn't have pointer_event_manager unless it has a window).
-
-## Client Class
-
-[client.lua](client.lua) extends App for the game client.
-
-### Additional Initialization
-
-Creates all UI-related managers:
-- **ConnectionManager**: Connects to server
-- **ResizeManager**: Handles window resizing
-- **ScreenManager**: Manages screen transitions
-- **Event Managers**: Pointer, Button, Keyboard, Text, FileDropEvent
-- **Wheel event**: plain `Event` (`wheel_event`)
-- **NotificationManager**: Shows notifications
-- **OptionsManager**: Client settings
-- **AssetManager**: Asset download/upload
-- **BackstackManager**: Back navigation
-- **Session**: Initially nil, created on connection
-
-### Load Flow
-
-1. Pushes quit callback onto backstack (escape key quits)
-2. Shows ConnectingScreen
-3. Starts connection via ConnectionManager
-4. On connection: creates Session
-5. On disconnection: shows ConnectingScreen again and clears `session`; the session dies in the connection's cascade (lua-lifetime)
-
-### LÖVE Callback Extensions
-
-Client overrides `register_love_callbacks()` and extends it with:
-- **F11**: Toggle fullscreen
-- **Escape**: Backstack navigation (BackstackManager listens on `keyboard_manager.key_pressed`)
-- **Mouse events**: mousepressed, mousereleased, mousemoved → `dispatch_pointer_down/up/move` on pointer_event_manager and button_event_manager
-- **Touch events**: touchpressed, touchreleased, touchmoved → `dispatch_pointer_down/up/move` on pointer_event_manager and button_event_manager
-- **Wheel**: wheelmoved → `wheel_event:trigger(x, y)`
-- **Keyboard**: keypressed → `keyboard_manager:dispatch_key_pressed` and `text_event_manager:key_pressed`; keyreleased → `keyboard_manager:dispatch_key_released`
-- **Text**: textinput → `text_event_manager:text_input`
-- **File drop**: filedropped → `file_system_drop_event_manager:file_drop`
-- **Resize**: resize → `resize_manager:resize`
-
-### Event Flow
-
-All input events are dispatched to multiple managers:
-- Pointer events go to both pointer_event_manager AND button_event_manager
-- This allows different systems to handle the same event (e.g., button clicks vs. drag-and-drop)
-
-## Server Class
-
-[server.lua](server.lua) extends App for the game server.
-
-### Additional Initialization
-
-Creates server-specific components:
-- **_save_file**: Asset("save.lua", true) for persistence
-- **_sessions**: Table mapping Connection → Session
-- **ConnectionManager**: Listens for connections
-- **AssetManager**: Serves assets to clients
-- **ScreenManager**: Only if `self.root` exists (window mode), shows ScreenSaver
-
-### Load Flow
-
-1. Loads saved data via `_load_data()`
-2. Starts ConnectionManager listening for connections
-3. On client connect: creates new Session for that connection
-4. On client disconnect: removes the Session entry; the session dies in the connection's cascade (lua-lifetime)
-
-### Data Persistence
-
-**Loading** (`_load_data()`):
-- Reads `save.lua` file content
-- Deserializes via `table.from_string(content)`
-- Stores in `self.data`
-
-**Saving** (`save_data()`):
-- Serializes `self.data` via `table.to_string(self.data)`
-- Writes to `save.lua` file
-
-The server is responsible for calling `save_data()` when game state changes.
-
-### Multi-Session Architecture
-
-The server maintains multiple sessions simultaneously:
-- `_sessions[connection] = Session(connection)`
-- Each connected client has its own Session instance
-- Sessions are independent but share `app.data`
-
-## ArgParser
-
-[arg-parser.lua](arg-parser.lua) validates and parses command-line arguments.
-
-**Module Type**: Returns a table (not a class instance) with a `parse` function.
-
-**Expected format**: `love . <app_type> <address> <port>`
-
-**Validation**:
-- `app_type`: Must be "server" or "client" (typed as literal union `"server"|"client"`)
-- `address`: Either "localhost" or valid IPv4 (e.g., "192.168.1.1")
-- `port`: Number between 1024-65535 (returned as string)
-
-**Returns**: `ArgParserResult` table with validated fields, or `nil` if invalid.
-
-**Type Definition**:
-```lua
----@class ArgParserResult
----@field public app_type "server"|"client"
----@field public address string
----@field public port string Port number as string (range: 1024-65535)
-```
-
-**Usage**:
-```lua
-local arg_parser = require("app.arg-parser")
-local params = arg_parser.parse(arg)
-if not params then
-    -- Show usage and quit
-else
-    -- params.app_type is guaranteed to be "server" or "client"
-end
-```
+A module (not a class) with one `parse` function. It validates the app type
+(`"server"` or `"client"`, typed as a literal union), the address
+(`localhost` or an IPv4) and the port (1024 to 65535, kept as a string), and
+returns a typed result table, or `nil` for invalid input, in which case the
+usage message is shown.
 
 ## Constants
 
-[consts.lua](consts.lua) defines application-wide constants.
+One module with every application-wide constant: colors, fonts, dimensions,
+keybindings, mouse buttons, network settings, asset roots and logger
+filters. Some are derived from others. The fonts are loaded only when the
+window configuration exists: a headless server has no fonts, and so has
+plain LuaJIT, where the tests fake them.
 
-### Categories
+## Patterns
 
-**Application**:
-- `APP_USAGE_MESSAGE`: Help text
-- `APP_SUCCESS_EXIT_CODE`: 0
-- `MODEL_WIDTH`: 2000 (virtual width, scaled to fit screen)
-
-**Networking**:
-- `NETWORK_COMPRESSION`: "lz4"
-- `HASH_ALGORITHM`: "sha256"
-- `CLIENT_SEED`, `SERVER_SEED`: RNG seeds
-
-**Asset Paths**:
-- `ASSETS_SERVER_ROOT`: "s"
-- `ASSETS_CLIENT_ROOT`: "c"
-
-**Colors** (RGB 0-1 range):
-- Background, foreground, button states (normal/hover/select/readonly)
-- Notification, logo, selection, token colors
-- Multivalue variants for special buttons
-
-**Fonts**:
-- `DISPLAY_FONT`: OpenSans.ttf at 80pt
-- `USER_INPUT_FONT`: NotoSansMono.ttf at 80pt
-- Only loaded if `config.window` exists
-
-**Keybindings**:
-- `DRAW_AABBS_KEY`: "f2"
-- `QUIT_KEY`: "f4"
-- `TOGGLE_FULLSCREEN_KEY`: "f11"
-- `BACKSTACK_KEY`: "escape"
-
-**UI Dimensions**:
-- Menu scales, padding, spacing
-- Input field dimensions
-- Notification panel sizing
-- Token/page selection settings
-
-**Mouse Buttons**:
-- `LEFT_MOUSE_BUTTON`: 1
-- `PAGE_SELECT_BUTTON`: 1
-- `PAGE_DRAG_TOKEN_BUTTON`: 2
-- `PAGE_DRAG_VIEW_BUTTON`: 3
-
-**Logging**:
-- `LOGGER_NAME_BLACKLIST`: Patterns for verbose loggers to suppress
-
-### Dynamic Values
-
-Some constants are computed from others:
-```lua
-Consts.PANEL_FIELD_SCALE = Consts.MENU_FIELD_SCALE
-Consts.PANEL_TEXT_INPUT_HEIGHT = Consts.MENU_TEXT_INPUT_HEIGHT
-```
-
-Fonts are only loaded when window config exists (headless server doesn't load fonts).
-
-## Global App Variable
-
-The `app` global is set in `App:init()`:
-```lua
-app = self
-```
-
-This makes the app instance accessible everywhere without requiring imports. Check `app.is_client` or `app.is_server` to branch behavior in shared code.
-
-**Manager access pattern**:
-```lua
-app.screen_manager:show(SomeScreen())
-app.asset_manager:download_asset(...)
-app.backstack_manager:push(callback)
-```
-
-## Debug Mode
-
-When `debug` is true (controlled by LÖVE):
-- `love.draw()` supports AABB visualization (F2 key)
-- `love.errorhandler()` prints stack traces
-- `App:log_fun()` includes function names
-- [globals.lua](globals.lua) loads dump utilities
-
-## Headless vs Window Mode
-
-**Window mode** (`config.window` is true):
-- Creates `self.root` control
-- Registers `love.draw()` callback
-- Loads fonts in Consts
-- Client always runs in window mode
-
-**Headless mode** (`config.window` is false):
-- `self.root` is nil
-- No draw callback
-- No fonts
-- Server can run headless for production
-
-Server checks `if self.root then` before creating ScreenManager.
-
-## Common Patterns
-
-**Extending LÖVE callbacks**:
-```lua
-function Client:register_love_callbacks()
-    App.register_love_callbacks(self)  -- Call parent
-    -- Add client-specific callbacks
-    function love.keypressed(key)
-        -- Handle client input
-    end
-end
-```
-
-**Accessing managers from anywhere**:
-```lua
-app.notification_manager:show_notification("Hello")
-app.screen_manager:show(GameScreen())
-```
-
-**Checking context**:
-```lua
-if app.is_client then
-    -- Client-only code
-elseif app.is_server then
-    -- Server-only code
-end
-```
-
-**Time tracking**:
-```lua
-local elapsed = app:get_time()
-```
+- Branch shared code on `app.is_client` / `app.is_server`
+- Reach subsystems through the managers: `app.screen_manager:show(...)`,
+  `app.asset_manager:download_asset(...)`, `app.backstack_manager:push(...)`
+- A subclass extending the LÖVE callbacks calls the base registration first
+  and then adds or wraps callbacks
