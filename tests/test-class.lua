@@ -118,7 +118,9 @@ test.case("release runs as the destructor, with the reason, when an instance is 
     local log = {}
     local r = Resource(log, "r")
     lifetime.destroy(r)
-    test.assert_deep_eq(log, {"r (destroy)"})
+    test.assert_deep_eq(log, {
+        "r (destroy)"
+    })
     test.assert_false(lifetime.alive(r))
     test.assert_error(function()
         local _ = r.name
@@ -133,14 +135,21 @@ test.case("attach_lifetime anchors the instance and returns it, so a constructio
     test.assert_eq(lifetime.format(lifetime.of(child)), "(" .. tostring(owner) .. ", reachable)")
     local chained = Resource(log, "chained"):attach_lifetime(owner, lifetime.reachable)
     test.assert_eq(get_class_name_of(chained), "TestResource")
-    test.assert_deep_eq(lifetime.dependents(owner), {child, chained})
+    test.assert_deep_eq(lifetime.dependents(owner), {
+        child,
+        chained
+    })
     local pinned = Quiet():attach_lifetime(lifetime.pin(owner))
     test.assert_eq(lifetime.format(lifetime.of(pinned)), tostring(owner), "the anchors are lifetime.attach's")
     test.assert_error(function()
         Quiet():attach_lifetime()
     end)
     lifetime.destroy(owner)
-    test.assert_deep_eq(log, {"owner (destroy)", "chained (anchor)", "child (anchor)"})
+    test.assert_deep_eq(log, {
+        "owner (destroy)",
+        "chained (anchor)",
+        "child (anchor)"
+    })
 end)
 
 test.case("an anchored instance is released when its anchor dies; a class without release is fine", function()
@@ -149,7 +158,10 @@ test.case("an anchored instance is released when its anchor dies; a class withou
     local child = Resource(log, "child"):attach_lifetime(owner)
     local quiet = Quiet():attach_lifetime(owner)
     lifetime.destroy(owner)
-    test.assert_deep_eq(log, {"owner (destroy)", "child (anchor)"}, "the owner's body first, then its dependents")
+    test.assert_deep_eq(log, {
+        "owner (destroy)",
+        "child (anchor)"
+    }, "the owner's body first, then its dependents")
     test.assert_false(lifetime.alive(child))
     test.assert_false(lifetime.alive(quiet))
 end)
@@ -163,5 +175,8 @@ test.case("a subclass's release overrides the base's, as any method", function()
     end
     lifetime.destroy(Loud(log, "l"))
     lifetime.destroy(Resource(log, "r"))
-    test.assert_deep_eq(log, {"loud l (destroy)", "r (destroy)"})
+    test.assert_deep_eq(log, {
+        "loud l (destroy)",
+        "r (destroy)"
+    })
 end)

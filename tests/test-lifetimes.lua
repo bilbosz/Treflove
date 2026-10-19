@@ -85,7 +85,9 @@ local function game_data(auth)
                 width = 10,
                 pixel_per_meter = 50,
                 image = "world/w.png",
-                tokens = {"T"}
+                tokens = {
+                    "T"
+                }
             }
         },
         token_properties = {
@@ -115,8 +117,13 @@ local function game_data(auth)
                 name = "T",
                 diameter = 3,
                 avatar = "token/t.png",
-                owners = {"adam"},
-                position = {1, 2}
+                owners = {
+                    "adam"
+                },
+                position = {
+                    1,
+                    2
+                }
             }
         }
     }
@@ -332,7 +339,9 @@ local function enter_the_game()
     test.assert_true(client.session:is_logged_in())
     test.assert_true(sessions[server_connection]:is_logged_in())
     local notifications = client.notification_manager --[[@as TestNotificationManager]]
-    test.assert_deep_eq(notifications.messages, {"Successfully logged in as adam"})
+    test.assert_deep_eq(notifications.messages, {
+        "Successfully logged in as adam"
+    })
     test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "WaitingScreen")
 
     frame(server) -- the game data
@@ -370,7 +379,9 @@ test.suite("Lifetimes end to end")
 test.case("connect and log in: the session owns the period, which owns the menu, its back entry and the game screen", function()
     local client, server, client_connection, _, _, previous = enter_the_game()
     local session = client.session
-    test.assert_deep_eq(class_names(lifetime.dependents(client_connection)), {"Session"})
+    test.assert_deep_eq(class_names(lifetime.dependents(client_connection)), {
+        "Session"
+    })
     test.assert_deep_eq(class_names(lifetime.dependents(session)), {
         "Login",
         "GameDataRp",
@@ -418,11 +429,16 @@ test.case("back from the game: the menu is shown again, the game screen dies wit
     })
     test.assert_false(lifetime.alive(game_screen))
     test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "UserMenuScreen")
-    test.assert_deep_eq(client.root:get_children(), {client.screen_manager:get_screen():get_control()}, "only the menu is on the root")
+    test.assert_deep_eq(client.root:get_children(), {
+        client.screen_manager:get_screen():get_control()
+    }, "only the menu is on the root")
     ---@diagnostic disable-next-line: invisible
     test.assert_eq(client.session._game_screen, nil)
     ---@diagnostic disable-next-line: invisible
-    test.assert_deep_eq(class_names(lifetime.dependents(client.session._period)), {"UserMenuScreen", "BackstackEntry"}, "the dead game screen left the period")
+    test.assert_deep_eq(class_names(lifetime.dependents(client.session._period)), {
+        "UserMenuScreen",
+        "BackstackEntry"
+    }, "the dead game screen left the period")
     for _, input in ipairs(inputs_of_game) do
         test.assert_true(lifetime.alive(input), "an input is not the form's to destroy; its hook died with the form")
         test.assert_deep_eq(lifetime.dependents(input), {})
@@ -441,7 +457,10 @@ test.case("the options: one screen per menu, a way back per visit, both the menu
     local options = client.screen_manager:get_screen()
     test.assert_eq(get_class_name_of(options), "OptionsMenuScreen")
     local menu_dependents = lifetime.dependents(menu)
-    test.assert_deep_eq(class_names_but_hooks(menu_dependents), {"OptionsMenuScreen", "BackstackEntry"})
+    test.assert_deep_eq(class_names_but_hooks(menu_dependents), {
+        "OptionsMenuScreen",
+        "BackstackEntry"
+    })
     local way_back = client.backstack_manager:get_top()
     test.assert_eq(way_back, menu_dependents[#menu_dependents])
 
@@ -452,7 +471,10 @@ test.case("the options: one screen per menu, a way back per visit, both the menu
 
     menu:options()
     test.assert_eq(client.screen_manager:get_screen(), options, "the same options screen on the second visit")
-    test.assert_deep_eq(class_names_but_hooks(lifetime.dependents(menu)), {"OptionsMenuScreen", "BackstackEntry"})
+    test.assert_deep_eq(class_names_but_hooks(lifetime.dependents(menu)), {
+        "OptionsMenuScreen",
+        "BackstackEntry"
+    })
     client.backstack_manager:back()
     test.assert_eq(client.screen_manager:get_screen(), menu)
     finish(client, server, previous)
@@ -486,7 +508,9 @@ test.case("logout: the period dies with the menu, the options and the back entri
     test.assert_false(lifetime.alive(options))
     test.assert_false(client.session:is_logged_in())
     test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "LoginScreen")
-    test.assert_deep_eq(client.root:get_children(), {client.screen_manager:get_screen():get_control()})
+    test.assert_deep_eq(client.root:get_children(), {
+        client.screen_manager:get_screen():get_control()
+    })
     test.assert_deep_eq(class_names(lifetime.dependents(client.session)), {
         "Login",
         "GameDataRp",

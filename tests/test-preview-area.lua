@@ -69,8 +69,13 @@ test.case("a dropped file is closed once the drop has been handled", function()
     local log = {}
     local file = make_file(log)
     area:on_file_system_drop(0, 0, file)
-    test.assert_deep_eq(log, {"open r", "close"})
-    test.assert_deep_eq(target.files, {file})
+    test.assert_deep_eq(log, {
+        "open r",
+        "close"
+    })
+    test.assert_deep_eq(target.files, {
+        file
+    })
 end)
 
 test.case("a dropped file is closed when handling it raises, before the error reaches the caller", function()
@@ -81,7 +86,10 @@ test.case("a dropped file is closed when handling it raises, before the error re
     local ok, err = pcall(area.on_file_system_drop, area, 0, 0, file)
     test.assert_false(ok)
     test.assert_true(string.find(tostring(err), "cannot read the file", 1, true) ~= nil, tostring(err))
-    test.assert_deep_eq(log, {"open r", "close"})
+    test.assert_deep_eq(log, {
+        "open r",
+        "close"
+    })
     test.assert_deep_eq(target.files, {})
 end)
 

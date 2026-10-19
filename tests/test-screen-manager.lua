@@ -36,7 +36,9 @@ test.case("a shown screen that is destroyed hides itself and is forgotten", func
     local owner = {}
     local screen = Screen():attach_lifetime(owner)
     manager:show(screen)
-    test.assert_deep_eq(app_mock.root:get_children(), {screen:get_control()})
+    test.assert_deep_eq(app_mock.root:get_children(), {
+        screen:get_control()
+    })
 
     lifetime.destroy(owner)
     test.assert_false(lifetime.alive(screen))

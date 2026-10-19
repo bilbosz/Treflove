@@ -53,7 +53,9 @@ test.suite("Input")
 test.case("an input registers with its form and is linked to it by a hook", function()
     local _, form = setup()
     local a = TestInput(nil, form, "a")
-    test.assert_deep_eq(input_names(form), {"a"})
+    test.assert_deep_eq(input_names(form), {
+        "a"
+    })
     local hooks = lifetime.dependents(a)
     test.assert_eq(#hooks, 1)
     test.assert_eq(getmetatable(hooks[1]), "hook")
@@ -69,8 +71,12 @@ test.case("an input that dies first unlinks itself from the form and leaves the 
     test.assert_true(a:is_focused())
 
     lifetime.destroy(a)
-    test.assert_deep_eq(input_names(form), {"b"})
-    test.assert_deep_eq(parent:get_children(), {b})
+    test.assert_deep_eq(input_names(form), {
+        "b"
+    })
+    test.assert_deep_eq(parent:get_children(), {
+        b
+    })
     test.assert_false(lifetime.alive(a))
     ---@diagnostic disable-next-line: invisible
     test.assert_eq(form._focus, nil, "the focus index was cleared with the input")
@@ -105,7 +111,10 @@ test.case("removing an input below the focused one keeps the focus on the same i
     form:focus(b)
     test.assert_true(b:is_focused())
     lifetime.destroy(a)
-    test.assert_deep_eq(input_names(form), {"b", "c"})
+    test.assert_deep_eq(input_names(form), {
+        "b",
+        "c"
+    })
     ---@diagnostic disable-next-line: invisible
     test.assert_eq(form._inputs[form._focus], b, "the index followed the list")
     ---@diagnostic disable-next-line: invisible
