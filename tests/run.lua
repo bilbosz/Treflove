@@ -30,6 +30,7 @@ local TEST_MODULES = {
     "tests.test-connection",
     "tests.test-defer-manager",
     "tests.test-event",
+    "tests.test-fonts",
     "tests.test-input",
     "tests.test-keyboard",
     "tests.test-lifetimes",
@@ -38,6 +39,7 @@ local TEST_MODULES = {
     "tests.test-screen-manager",
     "tests.test-session",
     "tests.test-table",
+    "tests.test-text",
     "tests.test-text-event",
     "tests.test-waiting-screen"
 }

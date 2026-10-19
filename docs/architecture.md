@@ -127,6 +127,13 @@ rendering; the primitives are Rectangle, Circle, Text and Image;
 `ClippingMask` clips its children to rectangular bounds. Higher-level
 components (Panel, TextButton, Input, TextInput, NumberInput) build on them.
 
+`Text` lays out in model units with a reference font (the fonts module's
+`REFERENCE_SIZE`, 80) and, when drawn, rasterizes at the pixel size its
+global transform gives: the fonts module keeps one `love.Font` per kind
+(`fonts.Kind`, display or user input) and integer pixel size. Axis-aligned
+text is drawn one glyph texel per screen pixel at a whole-pixel position;
+rotated text keeps its transform and scales the glyphs inside it.
+
 ## Screen Management
 
 `ScreenManager` shows one screen at a time (`show(screen)`); screens are

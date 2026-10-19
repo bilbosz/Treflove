@@ -201,17 +201,13 @@ end
 ---Fakes under both runners: plain LuaJIT has no `love`, and `love . test`
 ---has no window, so the real module refuses every call.
 function mocks.ensure_love_graphics()
-    local Consts = require("app.consts")
-    local function new_font()
+    local function new_font(_, size)
         return {
             getHeight = function()
-                return 80
+                return size
             end
         }
     end
-    -- Consts loads the fonts only with a window
-    Consts.DISPLAY_FONT = Consts.DISPLAY_FONT or new_font()
-    Consts.USER_INPUT_FONT = Consts.USER_INPUT_FONT or new_font()
     if love and love.graphics and love.window and love.window.isOpen() then
         return
     end
@@ -224,7 +220,8 @@ function mocks.ensure_love_graphics()
             return {
                 getDimensions = function()
                     return 10 * #text, 20
-                end
+                end,
+                setFont = _no_op
             }
         end,
         newImage = function()
@@ -249,6 +246,9 @@ function mocks.ensure_love_graphics()
         push = _no_op,
         pop = _no_op,
         replaceTransform = _no_op,
+        origin = _no_op,
+        translate = _no_op,
+        scale = _no_op,
         setScissor = _no_op,
         stencil = _no_op,
         setStencilTest = _no_op,

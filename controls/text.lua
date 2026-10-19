@@ -1,23 +1,53 @@
-local Consts = require("app.consts")
+local fonts = require("app.fonts")
 
 local DrawableControl = require("controls.drawable-control")
 
+local REFERENCE_SIZE = fonts.REFERENCE_SIZE
+
 ---@class Text: DrawableControl
 ---@field private _text string
----@field private _font love.Font|nil
+---@field private _kind FontKind
 ---@field private _color number[]
 ---@field private _text_drawable love.Text
+---@field private _pixel_size number The size the drawable's font is rasterized at
 local Text = class("Text", DrawableControl)
+
+---@private
+function Text:_draw()
+    local a, c, _, tx, b, d, _, ty = self.global_transform:getMatrix()
+    local scale = math.sqrt(a * a + b * b)
+    local px = fonts.pixel_size(scale)
+    if px ~= self._pixel_size then
+        self._pixel_size = px
+        self._text_drawable:setFont(fonts.get(self._kind, px))
+    end
+
+    love.graphics.setColor(self._color)
+    local is_axis_aligned = b == 0 and c == 0 and a > 0 and math.abs(a - d) <= 1e-6 * a
+    if is_axis_aligned then
+        -- One glyph texel per screen pixel, at a whole-pixel position; the
+        -- rounding of the font size is absorbed by the layout, not resampled
+        local k = scale * REFERENCE_SIZE / px
+        if math.abs(scale * REFERENCE_SIZE - px) <= 0.5 then
+            k = 1
+        end
+        love.graphics.origin()
+        love.graphics.translate(math.floor(tx + 0.5), math.floor(ty + 0.5))
+        love.graphics.scale(k)
+    else
+        love.graphics.scale(REFERENCE_SIZE / px)
+    end
+    love.graphics.draw(self._text_drawable)
+end
 
 ---@param parent Control|nil
 ---@param text string
 ---@param color number[]|nil
----@param font love.Font|nil
-function Text:init(parent, text, color, font)
-    self._font = font or Consts.DISPLAY_FONT
+---@param kind FontKind|nil
+function Text:init(parent, text, color, kind)
+    self._kind = kind or fonts.Kind.DISPLAY
     DrawableControl.init(self, parent, 0, 0, function()
-        love.graphics.setColor(self._color)
-        love.graphics.draw(self._text_drawable)
+        self:_draw()
     end)
 
     self._color = color or {
@@ -42,8 +72,9 @@ end
 function Text:set_text(text)
     assert_type(text, "string")
     self._text = text
-    local text_drawable = love.graphics.newText(self._font, text)
+    local text_drawable = love.graphics.newText(fonts.reference(self._kind), text)
     self._text_drawable = text_drawable
+    self._pixel_size = REFERENCE_SIZE
 
     local w, h = text_drawable:getDimensions()
     w, h = w or 0, h or 0
@@ -53,6 +84,11 @@ end
 ---@return string
 function Text:get_text()
     return self._text
+end
+
+---@return number The line height of the font, in model units
+function Text:get_font_height()
+    return fonts.reference(self._kind):getHeight()
 end
 
 return Text

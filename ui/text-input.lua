@@ -1,6 +1,7 @@
 local ClippingRectangle = require("controls.clipping-rectangle")
 local Consts = require("app.consts")
 local Control = require("controls.control")
+local fonts = require("app.fonts")
 local FormScreen = require("ui.form-screen")
 local Input = require("ui.input")
 local Rectangle = require("controls.rectangle")
@@ -151,11 +152,10 @@ end
 
 ---@private
 function TextInput:_create_text()
-    local font = Consts.USER_INPUT_FONT --[[@as love.Font]]
-    local text = Text(self._content, "", Consts.TEXT_INPUT_FOREGROUND_COLOR, font)
+    local text = Text(self._content, "", Consts.TEXT_INPUT_FOREGROUND_COLOR, fonts.Kind.USER_INPUT)
     self._text_ctrl = text
 
-    text:set_origin(0, font:getHeight() * 0.5)
+    text:set_origin(0, text:get_font_height() * 0.5)
     text:set_scale(Consts.MENU_FIELD_SCALE)
 end
 
