@@ -110,4 +110,5 @@ end
 
 -- After package.preload (the stubs of tests/run.lua), before the file
 -- searchers of Lua and LÖVE.
+---@diagnostic disable-next-line: deprecated
 table.insert(package.loaders or package.searchers, 2, searcher)

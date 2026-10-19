@@ -1,4 +1,7 @@
 -- https://luacheck.readthedocs.io/en/stable/index.html
+-- (For the Lua language server, which reads this file as Lua: a luacheck
+-- config is made of global assignments, and `files` is luacheck's table.)
+---@diagnostic disable: lowercase-global, undefined-global
 max_line_length = false
 max_comment_line_length = false
 

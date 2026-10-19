@@ -1,8 +1,10 @@
 -- editor/luals/check.lua: runs the rewrite of editor/luals/plugin.lua over
--- `.tlt` files and checks that each result is syntactically valid Lua, as
--- the language server will parse it. Prints one line when every file
--- passes; exit status 1 when any file fails. ./test-code.sh runs it over
--- every `.tlt` file of the repository.
+-- `.tlt` and `.d.tl` files and checks that each result is syntactically
+-- valid Lua, as the language server will parse it (the annotations are
+-- comments: whether the server reads them is not checked here). Prints
+-- one line when every file passes; exit status 1 when any file fails.
+-- ./test-code.sh runs it over every `.tlt` and `.d.tl` file of the
+-- repository and the lifetime runtime's declaration file.
 --
 --   luajit editor/luals/check.lua FILE...           check
 --   luajit editor/luals/check.lua --print FILE...   print each rewrite

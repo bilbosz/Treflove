@@ -111,7 +111,7 @@ Build, then run the automated test suite:
 ./test-code.sh
 ```
 
-The `test-code.sh` script builds, checks that the language server plugin rewrites every `.tlt` file into valid Lua (`editor/luals/check.lua`, "Editor Support"), then prefers plain `luajit` (fast, headless) and falls back to `love . test` (runs the same suite inside LÖVE with the real `love.*` APIs). Both must pass; after a build, run the LÖVE one with:
+The `test-code.sh` script builds, checks that the language server plugin rewrites every `.tlt` and `.d.tl` file into valid Lua (`editor/luals/check.lua`, "Editor Support"), then prefers plain `luajit` (fast, headless) and falls back to `love . test` (runs the same suite inside LÖVE with the real `love.*` APIs). Both must pass; after a build, run the LÖVE one with:
 ```bash
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy love . test
 ```
@@ -133,34 +133,52 @@ settings. Nothing under `.vscode/` is part of the app or the build. The
 same shape as lua-lifetime's editor support
 (`lib/lua-lifetime/editor/README.md`), adapted to Teal and LÖVE.
 
-- **Reading `.tlt`.** `.tlt` is associated with Lua, as `.lt` is in
-  lua-lifetime, and the Lua language server (`sumneko.lua`) reads it
-  through [editor/luals/plugin.lua](../editor/luals/plugin.lua): the
-  server parses Lua only, so the plugin's `OnSetText` rewrites a `.tlt`
-  file into plain Lua of the same shape before the server parses it, as
-  diffs the server maps every position back through, and `.tlt` files
-  get completion, hover, go to definition and diagnostics. The rewrite is
-  lua-lifetime's for `.lt` (`@` and `!@` become `or`, a statement-form
-  anchor `local _ = ...`, the `lifetime` header is inserted) plus the
-  stripping of Teal's types: the plugin parses the file with the
-  transpiler's own parser and Teal dialect (`lib/lua-lifetime/lifetime/`),
-  through a dialect that records every token the Teal dialect reads as a
-  type, and deletes them; a type declaration becomes `Name = {}`,
-  `global` goes, a cast goes with its `as`. The rewrite is for analysis
-  only and is never run; the plugin's header lists every rule. The
-  analysis is Lua's, untyped: the `.d.tl` fragments are not read, and
-  `./build-code.sh` is the type checker. While a line is being typed the
-  parser rejects the file and the server sees it raw, until the line is
-  complete. The server resolves `require("a.b")` to `a/b.tlt`
-  (`Lua.runtime.path`) and `require("lifetime")` to the runtime in the
-  submodule, loaded as a library; `build/` and the rest of `lib/` are
-  ignored. The first time the extension loads the plugin it asks whether
-  to trust it. [editor/luals/check.lua](../editor/luals/check.lua) runs
-  the rewrite over `.tlt` files and checks that each result compiles
+- **Reading `.tlt` and `.d.tl`.** Both are associated with Lua, as `.lt`
+  is in lua-lifetime, and the Lua language server (`sumneko.lua`) reads
+  them through [editor/luals/plugin.lua](../editor/luals/plugin.lua): the
+  server parses Lua only, so the plugin's `OnSetText` rewrites a file
+  into plain Lua of the same shape before the server parses it, as diffs
+  the server maps every position back through, and `.tlt` files get
+  completion, hover, go to definition and diagnostics with the types the
+  fragments declare. The rewrite is lua-lifetime's for `.lt` (`@` and
+  `!@` become `or`, a statement-form anchor `local _ = ...`, the
+  `lifetime` header is inserted) plus the translation of Teal's types
+  into the server's annotations (LuaCATS): the plugin parses the file
+  with the transpiler's own parser and Teal dialect
+  (`lib/lua-lifetime/lifetime/`), through a dialect that records every
+  token the Teal dialect reads as a type and where each type stands,
+  deletes them, and writes each type back as a comment the server reads
+  ([editor/luals/cats.lua](../editor/luals/cats.lua) spells them): a
+  local's type list becomes a `---@type` line before the statement, a
+  function's parameters and returns `---@param` and `---@return` lines, a
+  cast `--[[@as T]]`, and a type declaration (`global interface Client is
+  App` and its fields, in a fragment or a module) a `---@class` with one
+  `---@field` per field, an enum an `---@alias`, so that a `.d.tl` is
+  read as the declarations it holds. Since the fragments name the whole
+  (every class, `love.*` through `types/love.d.tl`, `lifetime.*` through
+  the runtime's `init.d.tl`), a `self` in a method, a required class
+  table and a field reached through them are typed. The rewrite is for
+  analysis only and is never run; the plugin's header lists every rule.
+  The server's checks are not the build's: a rewritten file turns off the
+  server's checks of values against the annotations (every Teal type
+  admits nil, a module's record is filled after `local m: M = {}`), it
+  reports what is undefined, and `./build-code.sh` is the type checker.
+  The tree is clean of the server's diagnostics, hints included (a
+  parameter a body ignores is named `_x`, which
+  `Lua.diagnostics.unusedLocalExclude` exempts).
+  While a line is being typed the parser rejects the file and the server
+  sees it raw, until the line is complete. The server resolves
+  `require("a.b")` to `a/b.tlt` (`Lua.runtime.path`) and
+  `require("lifetime")` to the runtime in the submodule, loaded as a
+  library; `build/` and the rest of `lib/` are ignored. The first time
+  the extension loads the plugin it asks whether to trust it.
+  [editor/luals/check.lua](../editor/luals/check.lua) runs the rewrite
+  over `.tlt` and `.d.tl` files and checks that each result compiles
   (`./test-code.sh` runs it over all of them; `--print` shows a rewrite).
-  `.d.tl` stays associated with Teal, which the "Teal" extension
-  (`pdesaulniers.vscode-teal`) highlights; its checker reads a fragment
-  alone, so what it reports there is not the build's verdict either.
+  To run the server itself over the tree as the editor would:
+  `lua-language-server --check . --configpath=FILE.json` with the
+  settings of `.vscode/settings.json` as a `.luarc`-style file (the
+  `Lua.` prefix dropped, `files.associations` included).
 - **Formatting.** `koihik.vscode-lua-format` is the formatter of the Lua
   files, with the config in [.lua-format](../.lua-format) and the
   `lua-format` binary of [REQUIREMENTS.md](../REQUIREMENTS.md);

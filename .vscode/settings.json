@@ -1,16 +1,16 @@
 {
     // .tlt is Teal with the lifetime extension (docs/types.md,
-    // docs/lifetime.md). It is associated with Lua, as .lt is in
-    // lua-lifetime: the Lua language server (sumneko.lua) reads it through
-    // the plugin below, so .tlt files get completion, hover, go to
-    // definition and diagnostics, untyped. .d.tl, the declaration
-    // fragments, are Teal (the "Teal" extension, pdesaulniers.vscode-teal,
-    // highlights them). Neither checker knows the whole: ./build-code.sh is
-    // the type checker (docs/development.md, "Editor Support").
+    // docs/lifetime.md) and .d.tl a declaration fragment. Both are
+    // associated with Lua, as .lt is in lua-lifetime: the Lua language
+    // server (sumneko.lua) reads them through the plugin below, so .tlt
+    // files get completion, hover, go to definition and diagnostics with
+    // the types the fragments declare. The server's checks are not the
+    // build's: ./build-code.sh is the type checker (docs/development.md,
+    // "Editor Support").
     "files.associations": {
         "*.luacheckrc": "lua",
         "*.tlt": "lua",
-        "*.d.tl": "teal"
+        "*.d.tl": "lua"
     },
 
     // lua-format (koihik.vscode-lua-format) formats the Lua files with the
@@ -25,21 +25,32 @@
 
     // sumneko.lua (lua-language-server). The server cannot parse Teal or
     // `@`: editor/luals/plugin.lua rewrites a .tlt file into plain Lua of
-    // the same shape before the server parses it (the extension asks once
-    // whether to trust the plugin). Teal's standard library is Lua 5.4's
-    // (docs/types.md), hence the version; the few Lua 5.1 builtins the
-    // Lua files use are listed as globals.
+    // the same shape, its types as the server's annotations, and a .d.tl
+    // fragment into annotations, before the server parses them (the
+    // extension asks once whether to trust the plugin). Teal's standard
+    // library is Lua 5.4's (docs/types.md), hence the version; the few
+    // Lua 5.1 builtins the Lua files use are listed as globals.
     "Lua.runtime.version": "Lua 5.4",
     "Lua.runtime.plugin": "editor/luals/plugin.lua",
 
     // A `require("a.b")` resolves to the source a/b.tlt (the build's
     // build/a/b.lua is ignored below), and `require("lifetime")` to the
-    // runtime in the lua-lifetime submodule, loaded as a library.
+    // runtime in the lua-lifetime submodule, loaded as a library (with
+    // its declaration file, lifetime/init.d.tl, for the `lifetime.*`
+    // types). The ignored directories are anchored to the root: a bare
+    // "lib" would ignore tests/lib too. annotations/ is not part of the
+    // repository: where a working tree of the LuaCATS LÖVE definitions
+    // is left from the submodule this repository dropped, it declares
+    // every `love.*` type a second time (types/love.d.tl declares them).
     "Lua.runtime.path": ["?.lua", "?/init.lua", "?.tlt"],
     "Lua.runtime.pathStrict": false,
     "Lua.workspace.library": ["lib/lua-lifetime/lifetime"],
-    "Lua.workspace.ignoreDir": ["build", "lib"],
+    "Lua.workspace.ignoreDir": ["/build", "/lib", "/annotations"],
     "Lua.workspace.checkThirdParty": false,
+
+    // A parameter or local that a body ignores on purpose is named `_x`:
+    // `tl` does not report it as unused, and neither does the server.
+    "Lua.diagnostics.unusedLocalExclude": ["_*"],
 
     // The globals of the declaration fragments (app/app.d.tl, utils/class.d.tl,
     // utils/table.d.tl, utils/dump.d.tl; conf.lua keeps `config`), so that

@@ -1,10 +1,9 @@
 {
     "recommendations": [
-        // Teal: highlights .tlt and .d.tl (see settings.json)
-        "pdesaulniers.vscode-teal",
         // running and debugging: the "Debug ..." configurations of launch.json
         "tomblind.local-lua-debugger-vscode",
-        // lua language server, for the Lua files
+        // lua language server, for the Lua files and, through
+        // editor/luals/plugin.lua, the .tlt and .d.tl files (see settings.json)
         "sumneko.lua",
         // lua formatter, requires /usr/local/bin/lua-format (REQUIREMENTS.md)
         "koihik.vscode-lua-format",
