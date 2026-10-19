@@ -27,7 +27,7 @@ function GameScreen:init(data)
     self._token_panel = TokenPanel(self, app.width * 0.2, app.height)
     -- lua-lifetime: the assets panel (with its preview area's file-drop
     -- registration) dies with the screen; GameScreen:release is gone.
-    self._assets_panel = lifetime.attach(AssetsPanel(self, app.width * 0.2, app.height), self)
+    self._assets_panel = AssetsPanel(self, app.width * 0.2, app.height):attach_lifetime(self)
 
     self._panel = self._assets_panel
     local panels = {
@@ -52,10 +52,10 @@ function GameScreen:show()
     -- lua-lifetime: the way back belongs to this screen and leaves the stack
     -- with it. Going back shows the menu (which hides this screen), then
     -- destroys the screen with everything anchored to it.
-    lifetime.attach(app.backstack_manager:push(function()
-        app.screen_manager:show(lifetime.attach(UserMenuScreen(app.session), app.session:get_period()))
+    app.backstack_manager:push(function()
+        app.screen_manager:show(UserMenuScreen(app.session):attach_lifetime(app.session:get_period()))
         lifetime.destroy(self)
-    end), self)
+    end):attach_lifetime(self)
 end
 
 function GameScreen:on_selection_change()

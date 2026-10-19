@@ -1,5 +1,5 @@
 ---@alias DeferEntry {[1]: number, [2]: function, [3]: any[]} Invocation time, callback and its arguments
----@class DeferManager
+---@class DeferManager: Object
 ---@field _queue DeferEntry[] Pending defers sorted by invocation time
 ---@field _to_add_defers DeferEntry[] Defers queued since the last update
 local DeferManager = class("DeferManager")

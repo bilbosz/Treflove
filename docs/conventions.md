@@ -21,7 +21,7 @@
     - Example: [app/client.lua](../app/client.lua)
 - **Privacy**: Prefix private members with underscore (`_method`, `_field`)
 - **Callbacks**: Named with `on_` prefix (`on_connect`, `on_disconnect`)
-- **Destructors**: `release(reason)` is the destructor lua-lifetime runs when the object dies; it is never called by hand. An override chains the base class's as `init` does (`Control.release(self, reason)`). Objects are anchored where they are created: `self._x = lifetime.attach(X(...), self)`; constructors never anchor themselves. See [lifetimes.md](lifetimes.md).
+- **Destructors**: `release(reason)` is the destructor lua-lifetime runs when the object dies; it is never called by hand. An override chains the base class's as `init` does (`Control.release(self, reason)`). Objects are anchored where they are created, by chaining the method every class instance has: `self._x = X(...):attach_lifetime(self)` (a token or another plain object: `lifetime.attach(obj, owner)`); constructors never anchor themselves. A root class is annotated `---@class X: Object` so the language server sees the method. See [lifetimes.md](lifetimes.md).
 - **Dynamic dispatch (factory-like)**: When the concrete type of a value must be determined at runtime, follow the pattern in [utils/media.lua](../utils/media.lua) (`media.get_type_and_medium`):
   - Wrap each fallible constructor in a local `_try_`-prefixed function with a strict signature (e.g., `_try_create_image_file`)
   - List the candidates in an ordered dispatch table of `{constructor, tag}` pairs (e.g., `MATCH_FILE`), ordered so ambiguous data resolves to the preferred type

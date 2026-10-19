@@ -20,7 +20,7 @@ local hit_test = require("events.hit-test")
 ---(e.g. a Page under its Tokens) opts in once with
 ---`app.pointer_event_manager:set_receive_through(self, true)`; the option
 ---applies to all three pointer events and is held weakly.
----@class PointerEventManager
+---@class PointerEventManager: Object
 ---@field public pointer_down Event Hit-tested with (x, y, id)
 ---@field public pointer_up Event Hit-tested with (x, y, id)
 ---@field public pointer_move Event Hit-tested with (x, y, id); id is the pressed pointer for mouse drags, nil for hover

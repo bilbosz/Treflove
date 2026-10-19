@@ -19,7 +19,7 @@ local Input = require("ui.input")
 ---
 ---Registration: `app.button_event_manager:register(ctrl, button)`; controls are
 ---held as weak keys, so a collected control drops out without unregistering.
----@class ButtonEventManager
+---@class ButtonEventManager: Object
 ---@field private _buttons table<Control, Button> Registered button per control (weak keys)
 ---@field private _hover Button|nil Button currently under the pointer
 ---@field private _selection Button|nil Button pressed and not yet released

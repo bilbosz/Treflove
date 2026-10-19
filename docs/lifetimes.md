@@ -4,7 +4,9 @@ This branch replaces the hand-written `release()` chains of `master` with
 ownership tracked by [lua-lifetime](../lib/lua-lifetime/README.md), used as a
 library (`local lifetime = require("lifetime")`): nothing is transpiled and
 no syntax is added. Where a `.lt` file would write `obj @ owner`, this code
-writes `lifetime.attach(obj, owner)`. The semantics are
+writes `obj:attach_lifetime(owner)` (every class instance has the method,
+from [utils/class.lua](../utils/class.lua)) or, for an object that is not a
+class instance, `lifetime.attach(obj, owner)`. The semantics are
 [lib/lua-lifetime/docs/02-semantics.md](../lib/lua-lifetime/docs/02-semantics.md)
 ("The library form" names the calls used here).
 
@@ -12,7 +14,8 @@ writes `lifetime.attach(obj, owner)`. The semantics are
 
 | Call | Meaning |
 | --- | --- |
-| `lifetime.attach(obj, owner)` | `obj` dies when `owner` dies (or earlier, when nothing refers to it any more). Returns `obj`, so it wraps a constructor call: `self._login = lifetime.attach(Login(...), self)`. |
+| `obj:attach_lifetime(owner, ...)` | `obj` dies when `owner` dies (or earlier, when nothing refers to it any more). Returns `obj`, so a construction and its anchoring chain: `self._login = Login(...):attach_lifetime(self)`. The anchors are `lifetime.attach`'s: several owners, `lifetime.pin(owner)`, `lifetime.reachable`. |
+| `lifetime.attach(obj, owner)` | The same for an object that is not a class instance, such as a token: `lifetime.attach(lifetime.token("logged in"), self)`. |
 | `lifetime.hook(fn, a, b)` | `fn(reason)` runs when `a` or `b` dies, after that object's own `release()`. |
 | `lifetime.token(name)` | An object that only names a span of time, to anchor to: the "logged in" period. |
 | `lifetime.destroy(obj)` | Ends `obj` now: its `release(reason)`, then everything anchored to it, most recently attached first, then the tombstone. |
@@ -87,7 +90,7 @@ Connection                      (ConnectionManager:remove → lifetime.destroy)
 ## Rules of thumb on this branch
 
 - Anchor an object where it is created, in the constructor of its owner:
-  `self._x = lifetime.attach(X(...), self)`. A constructor returns a fresh
+  `self._x = X(...):attach_lifetime(self)`. A constructor returns a fresh
   object on the default lifetime and leaves anchoring to the caller.
 - Only objects with something to clean up, or that own such objects, need an
   anchor. The control tree is still the tree: `Tree` parent-child links are

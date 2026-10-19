@@ -2,7 +2,7 @@ local test = require("tests.lib.test")
 local Event = require("events.event")
 
 -- An event owner for the tests; records every trigger it receives.
----@class TestEventOwner
+---@class TestEventOwner: Object
 ---@field received any[]
 local TestEventOwner = class("TestEventOwner")
 

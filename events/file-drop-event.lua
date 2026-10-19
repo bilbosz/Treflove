@@ -12,7 +12,7 @@ local hit_test = require("events.hit-test")
 ---`events/hit-test.lua`): top-most control first, a falsy return consumes the
 ---drop. A control that must also receive drops consumed above it opts in with
 ---`app.file_system_drop_event_manager:set_receive_through(self, true)`.
----@class FileSystemDropEventManager
+---@class FileSystemDropEventManager: Object
 ---@field public file_dropped Event Hit-tested with (x, y, dropped_file) at the pointer position
 ---@field private _receive_through ReceiveThroughSet
 local FileSystemDropEventManager = class("FileSystemDropEventManager")

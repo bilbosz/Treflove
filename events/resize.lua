@@ -2,7 +2,7 @@ local Event = require("events.event")
 
 ---Tracks the window size and fullscreen state. Consumers register on the
 ---`resized` event: `app.resize_manager.resized:register(self, self.on_resize)`.
----@class ResizeManager
+---@class ResizeManager: Object
 ---@field public resized Event Triggered with (width, height) of the rescaled root after every resize
 ---@field private _width number Remembered non-fullscreen window width
 ---@field private _height number Remembered non-fullscreen window height

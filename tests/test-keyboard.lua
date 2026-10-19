@@ -2,7 +2,7 @@ local test = require("tests.lib.test")
 local KeyboardManager = require("events.keyboard")
 
 -- A key event owner; records every key it receives.
----@class TestKeyOwner
+---@class TestKeyOwner: Object
 ---@field keys love.KeyConstant[]
 local TestKeyOwner = class("TestKeyOwner")
 

@@ -5,7 +5,7 @@ local UserMenuScreen = require("screens.user-menu-screen")
 local WaitingScreen = require("screens.waiting-screen")
 local lifetime = require("lifetime")
 
----@class Session
+---@class Session: Object
 ---@field _user string|nil Logged-in user name
 ---@field _connection Connection|nil
 ---@field _login Login|nil
@@ -27,11 +27,11 @@ local function _on_login(self, user)
         -- (lib/lua-lifetime/docs/02-semantics.md, "Tokens").
         local period = lifetime.attach(lifetime.token("logged in"), self)
         self._period = period
-        self._user_menu_screen = lifetime.attach(UserMenuScreen(self), period)
+        self._user_menu_screen = UserMenuScreen(self):attach_lifetime(period)
         app.screen_manager:show(self._user_menu_screen)
-        lifetime.attach(app.backstack_manager:push(function()
+        app.backstack_manager:push(function()
             self:logout()
-        end), period)
+        end):attach_lifetime(period)
     end
 end
 
@@ -46,7 +46,7 @@ local function _on_logout(self)
         lifetime.destroy(self._period)
         self._period = nil
         self._user_menu_screen = nil
-        app.screen_manager:show(lifetime.attach(LoginScreen(self._login), self))
+        app.screen_manager:show(LoginScreen(self._login):attach_lifetime(self))
     end
 end
 
@@ -57,16 +57,16 @@ function Session:init(connection)
     self._period = nil
     -- lua-lifetime: what the session owns is anchored where it is made and
     -- dies with the session, newest first; Session:release is gone.
-    local login = lifetime.attach(Login(self, function(user)
+    local login = Login(self, function(user)
         _on_login(self, user)
         if app.is_client then
             self._user_menu_screen:join_game()
         end
     end, function()
         _on_logout(self)
-    end), self)
+    end):attach_lifetime(self)
     self._login = login
-    self._game_data_rp = lifetime.attach(GameDataRp(self._connection), self)
+    self._game_data_rp = GameDataRp(self._connection):attach_lifetime(self)
     app.asset_manager:register_session(self)
 
     if app.is_client then

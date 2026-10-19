@@ -1,4 +1,4 @@
----@class Connector
+---@class Connector: Object
 ---@field private _address string
 ---@field private _port string
 ---@field private _channel love.Channel

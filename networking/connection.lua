@@ -17,7 +17,7 @@ local Consts = require("app.consts")
 ---@alias ConnectionResponseHandler fun(body: table) Processes the body of a received response
 ---@alias ConnectionRequestHandler fun(body: table): table Handles a request body and returns the response body
 
----@class Connection
+---@class Connection: Object
 ---@field private _queue ConnectionResponseHandler[] Handlers awaiting responses, in request order
 ---@field private _in_channel love.Channel
 ---@field private _in_thread love.Thread

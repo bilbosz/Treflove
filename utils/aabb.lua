@@ -1,6 +1,6 @@
 local Utils = require("utils.utils")
 
----@class Aabb
+---@class Aabb: Object
 ---@field private [1] number
 ---@field private [2] number
 ---@field private [3] number

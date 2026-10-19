@@ -1,4 +1,4 @@
----@class OptionsManager
+---@class OptionsManager: Object
 local OptionsManager = class("OptionsManager")
 
 function OptionsManager:toggle_fullscreen()

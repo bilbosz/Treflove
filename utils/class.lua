@@ -2,11 +2,38 @@ require("utils.table")
 
 local select = select
 
+---What every instance of a class made with `class()` can do besides its own
+---methods. A type-level base too: a root class is annotated
+---`---@class X: Object`, so the language server sees these methods on every
+---instance.
+---@class Object
+local Object = {}
+
+---@type lifetime|nil The runtime, required on first use
+local lifetime = nil
+
+---lua-lifetime: `lifetime.attach(self, ...)` returning `self`, so that a
+---construction and its anchoring chain:
+---`self._login = Login(self, ...):attach_lifetime(self)`. The runtime is
+---required on first use, not at load: this file is also loaded by the
+---networking threads, which never anchor anything.
+---@generic O
+---@param self O
+---@param ... lifetime.Anchor The anchors, as for `lifetime.attach`
+---@return O
+function Object.attach_lifetime(self, ...)
+    if not lifetime then
+        lifetime = require("lifetime")
+    end
+    return lifetime.attach(self, ...)
+end
+
 ---@param self table Class table under construction
 ---@param ... table Base class tables
 ---@return table Merged method index table
 local function _create_index(self, ...)
     local idx = {}
+    table.merge(idx, Object)
     for i = select("#", ...), 1, -1 do
         table.merge(idx, getmetatable(select(i, ...)).__index)
     end

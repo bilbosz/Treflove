@@ -96,9 +96,9 @@ end)
 test.case("a form and its inputs dying in one cascade: the form's body runs first, nothing is unlinked", function()
     local _, form = setup()
     local period = lifetime.token("period")
-    lifetime.attach(form, period)
-    local a = lifetime.attach(TestInput(nil, form, "a"), form)
-    local b = lifetime.attach(TestInput(nil, form, "b"), form)
+    form:attach_lifetime(period)
+    local a = TestInput(nil, form, "a"):attach_lifetime(form)
+    local b = TestInput(nil, form, "b"):attach_lifetime(form)
     local removed = 0
     form.remove_input = function(...)
         removed = removed + 1

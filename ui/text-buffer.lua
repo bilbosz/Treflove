@@ -9,7 +9,7 @@ local utf8 = require("utf8")
 ---The buffer knows nothing about keys; the owning control calls the editing
 ---operations from its `TextEventManager` handlers, which lets it filter or
 ---replace an edit (e.g. `NumberInput` rejects non-numeric text).
----@class TextBuffer
+---@class TextBuffer: Object
 ---@field public edited Event Triggered with (text) after the text changed by an edit
 ---@field public removed_empty Event Triggered when removing from an already empty text
 ---@field private _text string

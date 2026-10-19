@@ -1,6 +1,6 @@
 local lifetime = require("lifetime")
 
----@class ScreenManager
+---@class ScreenManager: Object
 ---@field private _screen Screen|nil
 ---@field private _screen_hook lifetime.Hook|nil lua-lifetime: forgets `_screen` when it dies
 local ScreenManager = class("ScreenManager")

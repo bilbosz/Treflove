@@ -2,7 +2,7 @@ local ClippingRectangle = require("controls.clipping-rectangle")
 local Consts = require("app.consts")
 local Text = require("controls.text")
 
----@class NotificationPanel
+---@class NotificationPanel: Object
 ---@field private _anchor Control
 ---@field private _width number
 ---@field private _height number

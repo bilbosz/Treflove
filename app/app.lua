@@ -6,7 +6,7 @@ local Logger = require("utils.logger")
 local Utils = require("utils.utils")
 local lifetime = require("lifetime")
 
----@class App
+---@class App: Object
 ---@field public asset_manager AssetManager
 ---@field public backstack_manager BackstackManager
 ---@field public button_event_manager ButtonEventManager

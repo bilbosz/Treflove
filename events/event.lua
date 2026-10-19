@@ -13,7 +13,7 @@
 ---Registering during a trigger is deferred until the trigger finishes;
 ---unregistering during a trigger takes effect immediately for the rest of that
 ---dispatch.
----@class Event
+---@class Event: Object
 ---@field private _handlers table<table, EventHandler> Active handler per owner (weak keys)
 ---@field private _lock boolean True while the event is being triggered
 ---@field private _to_add table<table, EventHandler> Registrations to apply once the lock is released (weak keys)

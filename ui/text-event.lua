@@ -14,7 +14,7 @@ local Event = require("events.event")
 ---`KeyboardManager` also consults to suppress plain key events while typing.
 ---All keyboard access goes through the injected `love.keyboard` backend so
 ---tests can pass a fake.
----@class TextEventManager
+---@class TextEventManager: Object
 ---@field public text_appended Event Triggered with (text) typed by the user
 ---@field public characters_removed Event Triggered with (character_number) to remove from the end
 ---@field public word_removed Event Triggered when the last word should be removed

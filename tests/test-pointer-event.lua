@@ -6,7 +6,7 @@ local PointerEventManager = require("events.pointer-event")
 -- Minimal stand-in for a Control (the real one needs `love.math`): only what
 -- the hit-tested dispatch looks at. Handlers record calls into a shared log and
 -- return `result` (truthy passes the event through to controls below).
----@class TestHitControl
+---@class TestHitControl: Object
 ---@field name string
 ---@field visible boolean
 ---@field result boolean|nil Value returned by the handlers

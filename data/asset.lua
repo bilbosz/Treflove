@@ -1,6 +1,6 @@
 local Consts = require("app.consts")
 
----@class Asset
+---@class Asset: Object
 ---@field private _path string
 local Asset = class("Asset")
 

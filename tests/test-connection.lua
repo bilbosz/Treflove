@@ -157,9 +157,9 @@ test.case("procedures anchored to a connection stop with it, newest first, after
         table.insert(log, "Connection:release(" .. reason .. ")")
         return release(self, reason)
     end
-    local first = lifetime.attach(EchoRp(client_connection), client_connection)
+    local first = EchoRp(client_connection):attach_lifetime(client_connection)
     local Second = class("TestSecondRp", RemoteProcedure)
-    local second = lifetime.attach(Second(client_connection), client_connection)
+    local second = Second(client_connection):attach_lifetime(client_connection)
 
     lifetime.destroy(client_connection)
     test.assert_deep_eq(log, {

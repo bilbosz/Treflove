@@ -1,6 +1,6 @@
 local Control = require("controls.control")
 
----@class Screen
+---@class Screen: Object
 ---@field public screen Control
 local Screen = class("Screen")
 

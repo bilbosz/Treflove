@@ -5,7 +5,7 @@ local lifetime = require("lifetime")
 ---@alias ConnectionManagerOnConnect fun(connection:Connection)
 ---@alias ConnectionManagerOnDisconnect fun(connection:Connection)
 
----@class ConnectionManager
+---@class ConnectionManager: Object
 ---@field private _connections table<Connection, boolean>
 ---@field private _by_in_channel table<love.Channel, Connection>
 ---@field private _by_out_channel table<love.Channel, Connection>

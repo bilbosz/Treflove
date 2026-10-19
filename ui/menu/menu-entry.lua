@@ -1,4 +1,4 @@
----@class MenuEntry
+---@class MenuEntry: Object
 ---@field public control nil|Control
 local MenuEntry = class("MenuEntry")
 

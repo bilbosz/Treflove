@@ -6,7 +6,7 @@ local Consts = require("app.consts")
 ---@field public start_time number
 ---@field public duration number
 
----@class NotificationManager
+---@class NotificationManager: Object
 ---@field private _panel NotificationPanel
 ---@field private _notifications Notification[]
 local NotificationManager = class("NotificationManager")

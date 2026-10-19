@@ -57,8 +57,8 @@ test.case("an entry anchored to an owner leaves the stack when the owner dies, w
     local owner = {}
     local root = manager:push(function()
     end)
-    local owned = lifetime.attach(manager:push(function()
-    end), owner)
+    local owned = manager:push(function()
+    end):attach_lifetime(owner)
     local above = manager:push(function()
     end)
     test.assert_eq(manager:get_top(), above)

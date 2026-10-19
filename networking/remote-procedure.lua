@@ -1,4 +1,4 @@
----@class RemoteProcedure
+---@class RemoteProcedure: Object
 ---@field private _id string
 ---@field private _connection Connection
 local RemoteProcedure = class("RemoteProcedure")

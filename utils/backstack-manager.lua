@@ -6,10 +6,16 @@ local lifetime = require("lifetime")
 ---An entry of the back stack. `push` returns it for the caller to anchor
 ---(lua-lifetime): an entry leaves the stack when it dies, wherever it sits,
 ---so a screen's or a period's entries vanish with their owner.
----@class BackstackEntry
+---@class BackstackEntry: Object
 ---@field cb BackstackManagerCb
+local BackstackEntry = class("BackstackEntry")
 
----@class BackstackManager
+---@param cb BackstackManagerCb
+function BackstackEntry:init(cb)
+    self.cb = cb
+end
+
+---@class BackstackManager: Object
 ---@field private _stack BackstackEntry[]
 local BackstackManager = class("BackstackManager")
 
@@ -19,16 +25,13 @@ function BackstackManager:init()
 end
 
 ---Push `cb`. The entry stays until `back` reaches it, or until the owner the
----caller anchors it to dies: `lifetime.attach(app.backstack_manager:push(cb), owner)`.
+---caller anchors it to dies: `app.backstack_manager:push(cb):attach_lifetime(owner)`.
 ---@param cb BackstackManagerCb
 ---@return BackstackEntry
 function BackstackManager:push(cb)
     assert_type(cb, "function")
     local stack = self._stack
-    ---@type BackstackEntry
-    local entry = {
-        cb = cb
-    }
+    local entry = BackstackEntry(cb)
     table.insert(stack, entry)
     -- lua-lifetime: runs while the entry is dying and still findable by
     -- identity (lib/lua-lifetime/docs/02-semantics.md, "Hooks").

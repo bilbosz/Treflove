@@ -1,6 +1,6 @@
 require("utils.class")
 
----@class Model
+---@class Model: Object
 ---@field data table
 local Model = class("Model")
 

@@ -4,7 +4,7 @@ local DownloadMissingAssetsRp = require("data.download-missing-assets-rp")
 local UploadAssetRp = require("data.upload-asset-rp")
 local lifetime = require("lifetime")
 
----@class AssetManager
+---@class AssetManager: Object
 ---@field private _download_asset_rp table<Session, DownloadAssetRp>
 ---@field private _download_missing_assets_rp table<Session, DownloadMissingAssetsRp>
 ---@field private _upload_asset_rp table<Session, UploadAssetRp>
@@ -134,9 +134,9 @@ function AssetManager:register_session(session)
     -- session clears its entries while it is dying and still a findable key
     -- (lib/lua-lifetime/docs/02-semantics.md, "Hooks"); unregister_session
     -- is gone.
-    self._upload_asset_rp[session] = lifetime.attach(UploadAssetRp(connection), session)
-    self._download_asset_rp[session] = lifetime.attach(DownloadAssetRp(connection), session)
-    self._download_missing_assets_rp[session] = lifetime.attach(DownloadMissingAssetsRp(connection), session)
+    self._upload_asset_rp[session] = UploadAssetRp(connection):attach_lifetime(session)
+    self._download_asset_rp[session] = DownloadAssetRp(connection):attach_lifetime(session)
+    self._download_missing_assets_rp[session] = DownloadMissingAssetsRp(connection):attach_lifetime(session)
     lifetime.hook(function()
         self._upload_asset_rp[session] = nil
         self._download_asset_rp[session] = nil

@@ -7,7 +7,7 @@ local Event = require("events.event")
 ---
 ---Handlers receive `(owner, key)`; e.g.
 ---`app.keyboard_manager.key_pressed:register(self, self.on_key_pressed)`.
----@class KeyboardManager
+---@class KeyboardManager: Object
 ---@field public key_pressed Event Triggered with (key)
 ---@field public key_released Event Triggered with (key)
 local KeyboardManager = class("KeyboardManager")

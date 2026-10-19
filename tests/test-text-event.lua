@@ -5,7 +5,7 @@ local TextEventManager = require("ui.text-event")
 
 -- Owns a TextBuffer the way TextInput does: buffer events are logged, manager
 -- events are applied to the buffer by methods registered on the manager.
----@class TestTextField
+---@class TestTextField: Object
 ---@field buffer TextBuffer
 ---@field log string[] Entries are "edited:<text>", "removed_empty" or "entered"
 local TestTextField = class("TestTextField")

@@ -1,4 +1,4 @@
----@class Tree
+---@class Tree: Object
 ---@field public parent Tree|nil
 ---@field public children Tree[]
 local Tree = class("Tree")

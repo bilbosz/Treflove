@@ -68,7 +68,7 @@ test.suite("Session")
 
 test.case("a client session owns its login, the game data procedure and the asset procedures, in creation order", function()
     local app_mock, connection = make_client()
-    local session = lifetime.attach(Session(connection), connection)
+    local session = Session(connection):attach_lifetime(connection)
     test.assert_eq(lifetime.format(lifetime.of(session)), "(" .. tostring(connection) .. ", reachable)")
     local dependents = lifetime.dependents(session)
     test.assert_eq(#dependents, 6, "login, game data, three asset procedures and the asset manager's hook")
@@ -89,7 +89,7 @@ end)
 
 test.case("destroying the connection tears the whole tree down, the connection first, then newest first", function()
     local app_mock, connection = make_client()
-    local session = lifetime.attach(Session(connection), connection)
+    local session = Session(connection):attach_lifetime(connection)
     local login = session._login
     local in_channel = connection:get_in_channel() --[[@as FakeChannel]]
     local log = {}
@@ -134,7 +134,7 @@ end)
 
 test.case("get_period is the logged-in span, only on a logged-in client", function()
     local _, connection = make_client()
-    local session = lifetime.attach(Session(connection), connection)
+    local session = Session(connection):attach_lifetime(connection)
     test.assert_false(session:is_logged_in())
     test.assert_error(function()
         session:get_period()

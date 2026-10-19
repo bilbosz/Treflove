@@ -23,7 +23,7 @@ Key functions:
 - `get_class_of(obj)` - get class table
 - `assert_type(obj, typ)` - runtime validation
 
-Classes define an `init` method that acts as a constructor. Multiple inheritance merges methods from all base classes in reverse order.
+Classes define an `init` method that acts as a constructor. Multiple inheritance merges methods from all base classes in reverse order. Every instance also gets the methods of `Object` (type-level base of every root class, `---@class X: Object`): `attach_lifetime(...)`, which anchors the instance with lua-lifetime and returns it, so `X(...):attach_lifetime(owner)` chains.
 
 ## Global App Instance
 
@@ -56,7 +56,7 @@ The class name is used as the RPC identifier. Examples: LoginRp, UploadAssetRp, 
 - Coordinates screen transitions (connecting → login → user menu → game)
 - Integrates with asset manager and backstack navigation
 - Server maintains `_sessions` table mapping Connection → Session
-- Is anchored to its connection (`lifetime.attach(Session(connection), connection)`) and owns its login, its remote procedures and, on the client, the "logged in" token that owns the menu and game screens - see [lifetimes.md](lifetimes.md)
+- Is anchored to its connection (`Session(connection):attach_lifetime(connection)`) and owns its login, its remote procedures and, on the client, the "logged in" token that owns the menu and game screens - see [lifetimes.md](lifetimes.md)
 - **Note**: Client auto-logs in with hardcoded credentials "adam"/"krause" at [game/session.lua:56](../game/session.lua#L56)
 
 ## Event System
@@ -136,7 +136,7 @@ The [server/](../server/) directory contains server data, not source code: [serv
 
 **Remote Procedures**: Request-response pattern over network connections using class names as identifiers.
 
-**Resource Cleanup**: Classes implement `release(reason)` methods for cleanup; on this branch they are destructors run by lua-lifetime when the object's owner dies, when `lifetime.destroy` is called on it, or when the collector finds it - never called by hand. Ownership is declared where objects are created: `lifetime.attach(obj, owner)`. See [lifetimes.md](lifetimes.md).
+**Resource Cleanup**: Classes implement `release(reason)` methods for cleanup; on this branch they are destructors run by lua-lifetime when the object's owner dies, when `lifetime.destroy` is called on it, or when the collector finds it - never called by hand. Ownership is declared where objects are created: `X(...):attach_lifetime(owner)`. See [lifetimes.md](lifetimes.md).
 
 ## LÖVE Framework Integration
 

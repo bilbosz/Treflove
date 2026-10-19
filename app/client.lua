@@ -15,7 +15,6 @@ local ScreenManager = require("screens.screen-manager")
 local BackstackManager = require("utils.backstack-manager")
 local ButtonEventManager = require("ui.button-event")
 local TextEventManager = require("ui.text-event")
-local lifetime = require("lifetime")
 
 ---@class Client: App
 local Client = class("Client", App)
@@ -50,7 +49,7 @@ function Client:load()
     self.screen_manager:show(connecting_screen)
     self.connection_manager:start(function(connection)
         -- lua-lifetime: the session dies inside the connection's cascade.
-        self.session = lifetime.attach(Session(connection), connection)
+        self.session = Session(connection):attach_lifetime(connection)
     end, function()
         self.screen_manager:show(connecting_screen)
         -- lua-lifetime: `self.session:release()` is gone; ConnectionManager:remove

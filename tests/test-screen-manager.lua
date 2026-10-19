@@ -34,7 +34,7 @@ end)
 test.case("a shown screen that is destroyed hides itself and is forgotten", function()
     local app_mock, manager = setup()
     local owner = {}
-    local screen = lifetime.attach(Screen(), owner)
+    local screen = Screen():attach_lifetime(owner)
     manager:show(screen)
     test.assert_deep_eq(app_mock.root:get_children(), {screen:get_control()})
 

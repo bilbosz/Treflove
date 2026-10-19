@@ -8,7 +8,7 @@ local Input = require("ui.input")
 -- Minimal stand-in for a Control (the real one needs `love.math`): only what
 -- the button manager's tree walk looks at. It owns a Button and logs every
 -- button event it receives into a shared log as "name:event".
----@class TestButtonControl
+---@class TestButtonControl: Object
 ---@field name string
 ---@field visible boolean
 ---@field button Button

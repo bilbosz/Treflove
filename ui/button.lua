@@ -8,7 +8,7 @@ local Event = require("events.event")
 ---
 ---The control makes the button reachable by pointer with
 ---`app.button_event_manager:register(ctrl, button)`.
----@class Button
+---@class Button: Object
 ---@field public clicked Event Pointer pressed and released over the same control
 ---@field public selected Event Pointer pressed over the control, or dragged back onto it while pressed
 ---@field public unselected Event Pressed pointer dragged off the control, or released over it (before `clicked`)
