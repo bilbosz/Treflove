@@ -23,6 +23,12 @@ Run both server and client together:
 ./run.sh
 ```
 
+Run them with one side under the Tracy profiler (after `./build-tracy.sh`;
+see [profiling.md](profiling.md)):
+```bash
+./profile.sh [client|server]
+```
+
 ## Development Commands
 
 Format all Lua code (lua-format; the library and annotation submodules are

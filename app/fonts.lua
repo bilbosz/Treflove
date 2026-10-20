@@ -1,3 +1,5 @@
+local profiler = require("utils.profiler")
+
 ---@class Fonts
 local fonts = {}
 
@@ -35,7 +37,9 @@ function fonts.get(kind, pixel_size)
     end
     local font = sizes[pixel_size]
     if not font then
+        local zone = profiler.zone_begin("new font")
         font = love.graphics.newFont(kind, pixel_size, fonts.HINTING)
+        profiler.zone_end(zone)
         sizes[pixel_size] = font
     end
     return font

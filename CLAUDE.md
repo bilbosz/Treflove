@@ -19,6 +19,7 @@ Detailed guidance is split into topic files, imported below. To address one topi
 - [docs/conventions.md](docs/conventions.md) - naming, modules vs classes, globals
 - [docs/type-annotations.md](docs/type-annotations.md) - LuaDoc annotation rules, strict typing, LÖVE types, annotation packages
 - [docs/lifetimes.md](docs/lifetimes.md) - object ownership with lua-lifetime: `lifetime.attach`, hooks, the "logged in" token, `release(reason)` as the destructor
+- [docs/profiling.md](docs/profiling.md) - the Tracy profiler: the FFI binding in the profiler module, what is instrumented, adding zones, `./build-tracy.sh` and `./profile.sh`
 
 @docs/development.md
 
@@ -29,6 +30,8 @@ Detailed guidance is split into topic files, imported below. To address one topi
 @docs/type-annotations.md
 
 @docs/lifetimes.md
+
+@docs/profiling.md
 
 ## Project Status
 

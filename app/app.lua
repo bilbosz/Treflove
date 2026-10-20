@@ -4,6 +4,7 @@ local DeferManager = require("events.defer-manager")
 local Event = require("events.event")
 local Logger = require("utils.logger")
 local Utils = require("utils.utils")
+local profiler = require("utils.profiler")
 local lifetime = require("lifetime")
 
 ---@class App: Object
@@ -51,6 +52,7 @@ function App:register_love_callbacks()
         self:rescale_root()
         if debug then
             function love.draw()
+                local zone = profiler.zone_begin("draw")
                 if self.root:is_visible() then
                     self.root:draw()
                     love.graphics.reset()
@@ -59,13 +61,16 @@ function App:register_love_callbacks()
                     end
                 end
                 love.graphics.reset()
+                profiler.zone_end(zone)
             end
         else
             function love.draw()
+                local zone = profiler.zone_begin("draw")
                 if self.root:is_visible() then
                     self.root:draw()
                 end
                 love.graphics.reset()
+                profiler.zone_end(zone)
             end
         end
         ---@param key love.KeyConstant
@@ -98,13 +103,23 @@ function App:register_love_callbacks()
 
     ---@param dt number
     function love.update(dt)
+        profiler.frame_mark()
+        local frame = profiler.zone_begin("update")
+        local zone = profiler.zone_begin("defer manager")
         self.defer_manager:update()
+        profiler.zone_end(zone)
         if self._mark_for_quit then
             love.event.quit(Consts.APP_SUCCESS_EXIT_CODE)
         end
         self._time = Utils.get_time() - self._start_time
+        zone = profiler.zone_begin("update event")
         self.update_event:trigger(dt)
+        profiler.zone_end(zone)
+        zone = profiler.zone_begin("collector step")
         collectgarbage("step")
+        profiler.zone_end(zone)
+        profiler.plot("Lua heap (KB)", collectgarbage("count"))
+        profiler.zone_end(frame)
     end
 end
 

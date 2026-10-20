@@ -15,6 +15,7 @@ local ScreenManager = require("screens.screen-manager")
 local BackstackManager = require("utils.backstack-manager")
 local ButtonEventManager = require("ui.button-event")
 local TextEventManager = require("ui.text-event")
+local profiler = require("utils.profiler")
 
 ---@class Client: App
 local Client = class("Client", App)
@@ -68,8 +69,10 @@ function Client:register_love_callbacks()
             self.resize_manager:toggle_fullscreen()
             return
         end
+        local zone = profiler.zone_begin("key pressed")
         self.keyboard_manager:dispatch_key_pressed(key)
         self.text_event_manager:key_pressed(key)
+        profiler.zone_end(zone)
     end
     ---@param key love.KeyConstant
     function love.keyreleased(key)
@@ -84,21 +87,29 @@ function Client:register_love_callbacks()
     ---@param y number
     ---@param button number
     function love.mousepressed(x, y, button)
+        local zone = profiler.zone_begin("pointer down")
         self.pointer_event_manager:dispatch_pointer_down(x, y, button)
         self.button_event_manager:dispatch_pointer_down(x, y, button)
+        profiler.zone_end(zone)
     end
     ---@param x number
     ---@param y number
     ---@param button number
     function love.mousereleased(x, y, button)
+        local zone = profiler.zone_begin("pointer up")
         self.pointer_event_manager:dispatch_pointer_up(x, y, button)
         self.button_event_manager:dispatch_pointer_up(x, y, button)
+        profiler.zone_end(zone)
     end
     ---@param x number
     ---@param y number
     function love.mousemoved(x, y)
+        local zone = profiler.zone_begin("pointer move: hit test")
         self.pointer_event_manager:dispatch_pointer_move(x, y, nil)
+        profiler.zone_end(zone)
+        zone = profiler.zone_begin("pointer move: buttons")
         self.button_event_manager:dispatch_pointer_move(x, y, nil)
+        profiler.zone_end(zone)
     end
     ---@param id lightuserdata
     ---@param x number
@@ -127,10 +138,14 @@ function Client:register_love_callbacks()
     end
     ---@param text string
     function love.textinput(text)
+        local zone = profiler.zone_begin("text input")
         self.text_event_manager:text_input(text)
+        profiler.zone_end(zone)
     end
     function love.resize()
+        local zone = profiler.zone_begin("resize")
         self.resize_manager:resize()
+        profiler.zone_end(zone)
     end
 end
 

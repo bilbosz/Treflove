@@ -36,6 +36,7 @@ local TEST_MODULES = {
     "tests.test-lifetimes",
     "tests.test-pointer-event",
     "tests.test-preview-area",
+    "tests.test-profiler",
     "tests.test-screen-manager",
     "tests.test-session",
     "tests.test-table",

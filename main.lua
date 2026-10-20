@@ -5,6 +5,12 @@ if arg[2] == "test" then
     require("tests.run")
 end
 
+local profiler = require("utils.profiler")
+local profiling, profiling_off_reason = profiler.start()
+if not profiling and os.getenv(profiler.ENV_VAR) then
+    io.stderr:write("profiler off: " .. tostring(profiling_off_reason) .. "\n")
+end
+
 local Consts = require("app.consts")
 local Utils = require("utils.utils")
 

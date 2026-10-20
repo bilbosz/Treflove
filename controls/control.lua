@@ -1,4 +1,5 @@
 local Aabb = require("utils.aabb")
+local profiler = require("utils.profiler")
 local Tree = require("utils.tree")
 
 ---@class Control: Tree
@@ -295,7 +296,9 @@ function Control:draw()
     for _, child in ipairs(self.children) do
         local min_x, min_y, max_x, max_y = child._global_aabb:get_bounds()
         if child:is_visible() and min_x < w and max_x >= 0 and min_y < h and max_y >= 0 then
+            local zone = profiler.zone_begin_of(child)
             child:draw()
+            profiler.zone_end(zone)
         end
     end
 end

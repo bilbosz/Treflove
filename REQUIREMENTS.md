@@ -11,6 +11,11 @@
 - `rg` (ripgrep) - `sudo apt install ripgrep`
 - `luajit` (optional, for fast headless tests) - `sudo apt install luajit`
 
+### Profiling (optional)
+- `git`, `cmake` and a C++ compiler - to build the Tracy client library with
+  `./build-tracy.sh`; the Tracy GUI of the same version to view a capture
+  (see `docs/profiling.md`)
+
 ### Git submodules
 - `annotations/love2d` - LÖVE type annotations for the language server
 - `lib/lua-lifetime` - the lua-lifetime runtime (pure Lua; no build step): `git submodule update --init --recursive`
@@ -45,3 +50,21 @@
 ## test-code.sh
 - `bash`
 - `luajit` (preferred) or `love` (fallback)
+
+## build-tracy.sh
+- `bash`
+- `git`
+- `cmake`
+- a C++ compiler
+- `find`
+- `readlink`
+
+## profile.sh
+- `bash`
+- `love`
+- `find`
+- `readlink`
+- `jobs`
+- `kill`
+- `sleep`
+- the Tracy client library (`./build-tracy.sh` or `TREFLOVE_TRACY`)
