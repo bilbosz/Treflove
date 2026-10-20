@@ -22,10 +22,15 @@ instance, `lifetime.attach(obj, owner)`. The semantics are the library's
 | `lifetime.dying(obj)` | `true` while `obj` is dying: its death decided, its tombstone not yet made. A hook on `(form, input)` asks it whether the form is going too. |
 
 `release(reason)` is the destructor of every class instance (the class
-system forwards the runtime's `__destroy` to it). It is never called by hand
-on this branch; the runtime calls it when the object's owner dies, when
-`lifetime.destroy` is called on it, or when the collector finds it. `reason`
-is `"anchor"`, `"destroy"`, `"unreachable"` or `"exit"`.
+system forwards the runtime's `__lifetime_destroy` to it). It is never called
+by hand on this branch; the runtime calls it when the object's owner dies,
+when `lifetime.destroy` is called on it, or when the collector finds it.
+`reason` is `"anchor"`, `"destroy"`, `"unreachable"` or `"exit"`. Few
+classes implement one: a tree node takes its subtree (`Tree`), a screen its
+control tree (`Screen`), a connection frees its LÖVE threads and channels,
+a remote procedure gives its handler slot back. Everything else is owned
+through anchors or the control tree, and a registration on an `Event` or a
+hit-tested manager ends by itself when its owner dies.
 
 ## Who owns what
 
@@ -45,10 +50,16 @@ Connection                      (a disconnect → lifetime.destroy;
         │   └── back entry: return from the options (one per visit)
         ├── back entry: log out
         └── GameScreen                  (while in the game)
-            ├── AssetsPanel
-            │   └── PreviewArea         (release: file-drop registration)
+            ├── its control tree        (the panels, the preview area, the inputs)
             └── back entry: leave the game
 ```
+
+The control tree is the other ownership: a destroyed control takes its
+subtree with it, newest child first, each child destroyed inside its
+parent's `release`, so a screen's panels, their inputs and the preview
+area die with the screen without an anchor of their own, and a replaced
+control (a notification line, a token property, a preview) is destroyed,
+not detached and left to the collector.
 
 The whole tree is driven end to end by the lifetimes test suite: a client and
 a server in one process over fake channels, every step asserting the order of
@@ -85,13 +96,15 @@ the `release` calls it caused.
 - **Forms and inputs**: an input hooks `(form_screen, self)`. An input
   destroyed first (the token panel rebuilding its fields) unlinks itself
   from the form (a focused one loses the focus, so LÖVE text input is
-  switched off), ends its registrations and leaves the control tree; a form
-  that is going too, as the root of the cascade or in it, is what the hook
-  sees with `lifetime.dying(form_screen)`, and it does nothing then.
-  Unregistering an input from the button manager (a hidden screen's, a
-  destroyed one's) lets go of its button at once if it is under the pointer
-  or pressed: a button kept for the next pointer move would reach a dead
-  input, or a live one whose form is dead.
+  switched off) and leaves the control tree with its subtree; a form that
+  is going too, as the root of the cascade or in it, is what the hook sees
+  with `lifetime.dying(form_screen)`, and it does nothing then. The inputs
+  of a dying form die with its control tree. Their registrations end by
+  themselves: the events drop a dead owner, the button manager finds its
+  buttons by walking the live tree, and a button it still holds under the
+  pointer or pressed only triggers events nobody alive listens to.
+  Unregistering an input from the button manager when its screen hides
+  lets go of its button at once.
 - **Events**: an owner the runtime has seen dies into a tombstone, which
   stays a weak key of an `Event` for one more collection (or longer, while
   something else holds it); `trigger` and `get_handler` treat a dead owner as
@@ -109,10 +122,16 @@ the `release` calls it caused.
   `self._x = X(...):attach_lifetime(self)`. A constructor returns a fresh
   object on the default lifetime and leaves anchoring to the caller.
 - Only objects with something to clean up, or that own such objects, need an
-  anchor. The control tree is still the tree: parent-child links are not
-  lifetimes, and most controls are never anchored.
+  anchor. A control needs none to die with its parent: a destroyed node
+  takes its subtree. Parent-child links are not anchors (a child may be
+  detached and reparented), but a parent's death is a child's death.
 - A `release(reason)` that overrides a base class's chains it, as `init`
-  does: `Control.release(self, reason)`.
+  does: `Control.release(self, reason)`. Before writing one, ask whether a
+  registry that drops dead owners, a hook, or the tree already does the
+  work: a destructor is for what nothing else frees.
+- A control that is replaced is destroyed (`lifetime.destroy`), not
+  detached with `set_parent(nil)` and dropped: a detached subtree lives on
+  until the collector finds it.
 - Dead objects are tombstones. Clear the field or the table entry by hand
   where `master` cleared it after `release()`, or let a hook do it while the
   object is dying and still findable by identity (the back stack, the asset

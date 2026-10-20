@@ -36,7 +36,7 @@ local FILE_TYPE_PREVIEW = {
 ---@param self AssetsPanel
 local function _create_preview_area(self)
     local w = self:get_size() - 2 * Consts.PADDING
-    self._preview_area = PreviewArea(self, w, w):attach_lifetime(self)
+    self._preview_area = PreviewArea(self, w, w)
     self._preview_area:set_position(Consts.PADDING, Consts.PADDING)
 end
 

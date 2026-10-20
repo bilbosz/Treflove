@@ -68,7 +68,7 @@ function class(name, ...)
         class = class,
         ---@param obj table
         ---@param reason lifetime.Reason
-        __destroy = function(obj, reason)
+        __lifetime_destroy = function(obj, reason)
             local release = obj.release
             if release then
                 release(obj, reason)

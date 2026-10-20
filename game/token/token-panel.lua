@@ -206,7 +206,7 @@ end
 ---@private
 function TokenPanel:_release_properties()
     for _, v in ipairs(self._properties) do
-        v.title:set_parent(nil)
+        lifetime.destroy(v.title)
         lifetime.destroy(v.input)
     end
     self._properties = {}

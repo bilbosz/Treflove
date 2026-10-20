@@ -122,15 +122,9 @@ end
 function PreviewArea:reset()
     _set_labels(self, self._drop_file_labels)
     if self._preview then
-        self._preview:set_parent(nil)
+        lifetime.destroy(self._preview)
+        self._preview = nil
     end
-end
-
----@param reason lifetime.Reason
-function PreviewArea:release(reason)
-    app.file_system_drop_event_manager.file_dropped:unregister(self)
-    app.file_system_drop_event_manager:set_receive_through(self, false)
-    Control.release(self, reason)
 end
 
 return PreviewArea
