@@ -1,6 +1,7 @@
 local Consts = require("app.consts")
 local Input = require("ui.input")
 local Text = require("controls.text")
+local Control = require("controls.control")
 
 ---@class TextButton: Text, Input
 ---@field private _action fun()
@@ -37,6 +38,12 @@ end
 function TextButton:on_screen_hide()
     Input.on_screen_hide(self)
     app.keyboard_manager.key_pressed:unregister(self)
+end
+
+---@param reason lifetime.Reason
+function TextButton:release(reason)
+    self:on_screen_hide()
+    Control.release(self, reason)
 end
 
 function TextButton:on_focus()

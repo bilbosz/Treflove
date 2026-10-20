@@ -1,7 +1,6 @@
 local ClippingRectangle = require("controls.clipping-rectangle")
 local Consts = require("app.consts")
 local Text = require("controls.text")
-local lifetime = require("lifetime")
 
 ---@class NotificationPanel: Object
 ---@field private _anchor Control
@@ -67,7 +66,7 @@ end
 
 function NotificationPanel:update_notifications()
     for _, child in ipairs(self._anchor:get_children()) do
-        lifetime.destroy(child)
+        child:set_parent(nil)
     end
     local y = self._height - Consts.NOTIFICATION_PADDING
     for _, notification in ipairs(app.notification_manager:_get_notifications()) do

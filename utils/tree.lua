@@ -51,18 +51,11 @@ function Tree:remove_child(child)
     end
 end
 
----A node takes its subtree with it: the children are destroyed newest
----first, each with its own subtree, inside this body. A parent that is going
----too (it destroyed this node, or dies in the same cascade) keeps its
----children array for the tombstone to empty.
 ---@param reason lifetime.Reason
 function Tree:release(reason)
     local parent = self.parent
-    if parent and lifetime.alive(parent) and not lifetime.dying(parent) then
+    if parent and lifetime.alive(parent) then
         parent:remove_child(self)
-    end
-    for _, child in ripairs(self:get_children()) do
-        lifetime.destroy(child)
     end
 end
 

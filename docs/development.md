@@ -93,7 +93,7 @@ The suite has no external dependencies:
   real one).
 
 Conventions: pure calculation modules (AABB, the table utilities, the class
-system, the tree, the argument parser) are tested with plain asserts; modules with
+system, the argument parser) are tested with plain asserts; modules with
 runtime dependencies (event managers, the defer and backstack managers,
 connections and remote procedures, the session, the screen manager, inputs,
 the screens) get the test doubles instead of the real `app`/LÖVE objects.

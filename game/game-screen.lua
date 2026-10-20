@@ -23,7 +23,7 @@ function GameScreen:init(data)
     self._page = Page(app.data.pages[data.page], self, app.width * 0.8, app.height)
 
     self._token_panel = TokenPanel(self, app.width * 0.2, app.height)
-    self._assets_panel = AssetsPanel(self, app.width * 0.2, app.height)
+    self._assets_panel = AssetsPanel(self, app.width * 0.2, app.height):attach_lifetime(self)
 
     self._panel = self._assets_panel
     local panels = {

@@ -90,10 +90,10 @@ managers (or by `app` directly) and consumers register handlers on it:
   `app.update_event:register(self, self.on_update)`
 - Registering during a trigger is deferred until it finishes; unregistering
   takes effect immediately
-- Unregistering is optional, since owners are weak keys and a dead owner is
-  dropped; consumers with an explicit lifecycle unregister when it ends (a
-  connection in `release()`, a form screen in `hide()`, inputs in
-  `on_screen_hide()` and `on_focus_lost()`)
+- Unregistering is optional, since owners are weak keys; consumers with an
+  explicit lifecycle unregister when it ends (a connection and a preview area
+  in `release()`, a form screen in `hide()`, inputs in `on_screen_hide()` and
+  `on_focus_lost()`)
 
 Events by source:
 - Broadcast events: `app.update_event` (dt), `app.wheel_event` (x, y, client
@@ -126,8 +126,6 @@ axis-aligned bounding boxes for hit testing. `DrawableControl` adds
 rendering; the primitives are Rectangle, Circle, Text and Image;
 `ClippingMask` clips its children to rectangular bounds. Higher-level
 components (Panel, TextButton, Input, TextInput, NumberInput) build on them.
-A destroyed control takes its subtree with it, newest child first; a screen
-destroys its control tree, see [lifetimes.md](lifetimes.md).
 
 `Text` lays out in model units with a reference font (the fonts module's
 `REFERENCE_SIZE`, 80) and, when drawn, rasterizes at the pixel size its
@@ -177,11 +175,9 @@ invoked.
   as the identifier
 - **Resource cleanup**: `release(reason)` is the destructor lua-lifetime runs
   when the object's owner dies, when `lifetime.destroy` is called on it, or
-  when the collector finds it; never called by hand, and written only for
-  what nothing else frees (a tree node's subtree, a screen's tree, a
-  connection's LÖVE objects, a procedure's handler slot). Ownership is
-  declared where objects are created: `X(...):attach_lifetime(owner)`, or by
-  the control tree. See [lifetimes.md](lifetimes.md)
+  when the collector finds it; never called by hand. Ownership is declared
+  where objects are created: `X(...):attach_lifetime(owner)`. See
+  [lifetimes.md](lifetimes.md)
 
 ## LÖVE Framework Integration
 

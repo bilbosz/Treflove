@@ -22,16 +22,12 @@
 - **Privacy**: prefix private members with underscore (`_method`, `_field`)
 - **Callbacks**: named with `on_` prefix (`on_connect`, `on_disconnect`)
 - **Destructors**: `release(reason)` is the destructor lua-lifetime runs when
-  the object dies; it is never called by hand, and rarely written: a tree
-  node takes its subtree, a screen its control tree, a connection frees its
-  LÖVE objects, a remote procedure its handler slot; registrations on events
-  and hit-tested managers end by themselves when the owner dies. An override
-  chains the base class's as `init` does (`Control.release(self, reason)`).
-  Objects are anchored where they are created, by chaining the method every
-  class instance has: `self._x = X(...):attach_lifetime(self)` (a token or
-  another plain object: `lifetime.attach(obj, owner)`); constructors never
-  anchor themselves; a control is not anchored to its parent, the tree does
-  that. A root class is annotated `---@class X: Object` so the language
+  the object dies; it is never called by hand. An override chains the base
+  class's as `init` does (`Control.release(self, reason)`). Objects are
+  anchored where they are created, by chaining the method every class
+  instance has: `self._x = X(...):attach_lifetime(self)` (a token or another
+  plain object: `lifetime.attach(obj, owner)`); constructors never anchor
+  themselves. A root class is annotated `---@class X: Object` so the language
   server sees the method. See [lifetimes.md](lifetimes.md).
 - **Dynamic dispatch (factory-like)**: when the concrete type of a value must
   be determined at runtime, follow the pattern of the media module

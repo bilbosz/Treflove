@@ -23,8 +23,6 @@ function Input:init(form_screen)
         if not lifetime.dying(form_screen) then
             form_screen:remove_input(self)
         end
-        -- a button kept under the pointer or pressed would be driven later
-        app.button_event_manager:unregister(self)
     end, form_screen, self)
     if form_screen:is_showed() then
         self:on_screen_show()

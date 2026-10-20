@@ -2,8 +2,6 @@ local Event = require("events.event")
 local FileSystemDropEventManager = require("events.file-drop-event")
 local KeyboardManager = require("events.keyboard")
 local PointerEventManager = require("events.pointer-event")
-local ButtonEventManager = require("ui.button-event")
-local TextEventManager = require("ui.text-event")
 
 local mocks = {}
 
@@ -121,8 +119,6 @@ function mocks.make_app(overrides)
     app_mock.resize_manager = resize_manager
     app_mock.pointer_event_manager = TestPointerEventManager()
     app_mock.file_system_drop_event_manager = FileSystemDropEventManager()
-    app_mock.button_event_manager = ButtonEventManager()
-    app_mock.text_event_manager = TextEventManager(mocks.make_keyboard())
 
     if overrides then
         table.merge(app_mock, overrides)

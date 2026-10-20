@@ -7,7 +7,6 @@ local Input = require("ui.input")
 local Rectangle = require("controls.rectangle")
 local Text = require("controls.text")
 local TextBuffer = require("ui.text-buffer")
-local lifetime = require("lifetime")
 
 ---@class TextInput: Control, Input
 ---@field private _background Rectangle
@@ -99,9 +98,6 @@ end
 
 ---@private
 function TextInput:_update_view()
-    if lifetime.dying(self) then -- the view died with the children
-        return
-    end
     self:_upload_background_view()
     self:_update_content_view()
     self:_update_text_events_registration()
@@ -218,6 +214,12 @@ function TextInput:on_screen_hide()
     Input.on_screen_hide(self)
 end
 
+---@param reason lifetime.Reason
+function TextInput:release(reason)
+    self:on_screen_hide()
+    Control.release(self, reason)
+end
+
 ---@param dt number
 function TextInput:on_update(dt)
     local caret = self._caret
@@ -285,9 +287,7 @@ end
 function TextInput:on_focus_lost()
     Input.on_focus_lost(self)
     app.text_event_manager:set_text_input(false)
-    if not lifetime.dying(self) then
-        self._caret:set_enabled(false)
-    end
+    self._caret:set_enabled(false)
     self:_update_view()
 end
 
