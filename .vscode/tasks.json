@@ -7,6 +7,12 @@
             "label": "Format All Code",
             "type": "shell",
             "command": "./format-code.sh"
+        },
+        {
+            "label": "Run Server + Client",
+            "type": "shell",
+            "command": "./run.sh",
+            "problemMatcher": []
         }
     ]
 }

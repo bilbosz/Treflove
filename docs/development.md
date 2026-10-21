@@ -23,6 +23,42 @@ Run both server and client together:
 ./run.sh
 ```
 
+## Debugging
+
+The VS Code launch configurations (`.vscode/launch.json`, Run and Debug,
+F5) run the program under the Local Lua Debugger extension
+(`tomblind.local-lua-debugger-vscode`, recommended by the workspace):
+`Client`, `Server`, the compound `Server + Client` (both at once, one debug
+session each, stopped together) and the test suite, `Tests (LuaJIT)` and
+`Tests (LÖVE)`. Breakpoints, stepping and the inspection of locals work in
+every module of the main Lua state. The task `Run Server + Client` runs
+`./run.sh` without a debugger.
+
+The wiring: the extension sets `LOCAL_LUA_DEBUGGER_VSCODE` in the program's
+environment and puts its `lldebugger` module on `LUA_PATH`; the entry point
+(and the test runner, for the LuaJIT run) starts the debugger through the
+debugger module (`app/debugger.lua`) before anything else, and without the
+variable every function of that module is a no-op, so the program is
+unchanged from the shell. An uncaught error, raised or a runtime one (an
+index of `nil`, a bad argument to a LÖVE function), reaches the LÖVE error
+handler, which prints it and asks the debugger to pause with the stack as it
+is: the frame that raised the error and its locals are there to inspect, a
+few frames below the handler; on continue the program exits, as it does
+without the debugger. The extension also pauses at an `error` or `assert`
+call of its own accord, caught or not, by a rule of its own that holds for
+the first such call after the start and rarely later: an error the program
+handles is one to continue past.
+
+Out of reach: the networking thread scripts (`networking/detail/`) run in
+Lua states of their own, which the debugger does not see. The debugger talks
+over the standard streams, so the LÖVE console (a window of its own, on
+Windows) is switched off while it is attached.
+
+Driving the debugger, by Claude through its debugmcp tools or by hand, and
+running any Lua from an evaluation, a Watch or a breakpoint condition: the
+`debug-live` skill, `.claude/skills/debug-live/SKILL.md`, which the debugmcp
+tools ask for by name.
+
 ## Development Commands
 
 Format all Lua code (lua-format; the library and annotation submodules are

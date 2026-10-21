@@ -11,6 +11,11 @@
 - `rg` (ripgrep) - `sudo apt install ripgrep`
 - `luajit` (optional, for fast headless tests) - `sudo apt install luajit`
 
+### VS Code (optional)
+- the extensions recommended by the workspace (`.vscode/extensions.json`): the
+  language server, the formatter and, behind the launch configurations, the
+  Local Lua Debugger (`tomblind.local-lua-debugger-vscode`)
+
 ### Git submodules
 - `annotations/love2d` - LÖVE type annotations for the language server
 - `annotations/luasocket` - LuaSocket type annotations (LÖVE bundles the library; the thread scripts use it)
