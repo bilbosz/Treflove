@@ -3,7 +3,7 @@ local Input = require("ui.input")
 local Text = require("controls.text")
 
 ---@class TextButton: Text, Input
----@field private _action fun()
+---@field private _action InputHandler
 local TextButton = class("TextButton", Text, Input)
 
 ---@private
@@ -14,7 +14,7 @@ end
 ---@param parent Control
 ---@param form_screen FormScreen
 ---@param text string
----@param action fun()
+---@param action InputHandler Run on a click or the return key
 function TextButton:init(parent, form_screen, text, action)
     Text.init(self, parent, text, Consts.BUTTON_NORMAL_COLOR)
     Input.init(self, form_screen)

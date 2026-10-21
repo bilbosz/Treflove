@@ -1,7 +1,7 @@
 local Control = require("controls.control")
 
----@alias StencilCallback fun()
----@alias DrawMaskCallback fun()
+---@alias StencilCallback fun() The mask callback under the mask's global transform, as `love.graphics.stencil` takes it
+---@alias DrawMaskCallback fun() Draws the mask in the mask's local coordinates: the children show where it draws
 
 ---@class ClippingMask: Control
 ---@field private _stencil_cb StencilCallback

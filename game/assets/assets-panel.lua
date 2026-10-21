@@ -19,12 +19,11 @@ local media = require("utils.media")
 ---@field _upload_button TextButton
 ---@field _cancel_button TextButton
 ---@field _media_type media.Type|nil
----@field _data string|nil Raw content of the dropped file
----@field _data_size number|nil
+---@field private _data string|nil Raw content of the dropped file
+---@field private _data_size number|nil
 local AssetsPanel = class("AssetsPanel", Panel)
 
--- class tables: LuaLS cannot type them against the instance union, hence `any`
----@type table<media.Type, any>
+---@type table<media.Type, PreviewComponentClass|nil>
 local FILE_TYPE_PREVIEW = {
     [media.Type.IMAGE] = PreviewImageArea,
     [media.Type.AUDIO] = PreviewAudioArea,

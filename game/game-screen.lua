@@ -7,15 +7,17 @@ local QuickAccessPanel = require("game.quick-access-panel")
 local Consts = require("app.consts")
 
 ---@class GameScreen: Model, FormScreen
----@field _page Page
----@field _token_panel TokenPanel
----@field _assets_panel AssetsPanel
----@field _panel Panel|nil Currently selected side panel
----@field _panels Panel[]
----@field _quick_access_panel QuickAccessPanel
+---@field data GameScreenData
+---@field get_data fun(self: GameScreen): GameScreenData
+---@field private _page Page
+---@field private _token_panel TokenPanel
+---@field private _assets_panel AssetsPanel
+---@field private _panel Panel|nil Currently selected side panel
+---@field private _panels Panel[]
+---@field private _quick_access_panel QuickAccessPanel
 local GameScreen = class("GameScreen", Model, FormScreen)
 
----@param data table Game data (a `game` entry of the persisted state)
+---@param data GameScreenData
 function GameScreen:init(data)
     Model.init(self, data)
     FormScreen.init(self)

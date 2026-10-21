@@ -5,12 +5,14 @@ local Consts = require("app.consts")
 local Rectangle = require("controls.rectangle")
 local lifetime = require("lifetime")
 
+---@alias PreviewComponentClass PreviewImageArea|PreviewAudioArea|fun(preview_area: PreviewArea, love_content: LoveMedium): PreviewImageArea|PreviewAudioArea A preview class table: its class joined by its constructor, as `Class` is
+
 ---@class PreviewArea: ClippingRectangle
 ---@field parent AssetsPanel
 ---@field _preview_labels Control
 ---@field _drop_file_labels Control
 ---@field content_parent Control Parent for preview components, centered in the area
----@field _preview PreviewImageArea|PreviewAudioArea|nil
+---@field private _preview PreviewImageArea|PreviewAudioArea|nil
 local PreviewArea = class("PreviewArea", ClippingRectangle)
 
 local PREVIEW_STRING = "Preview"
@@ -112,7 +114,7 @@ function PreviewArea:on_file_system_drop(x, y, dropped_file)
 end
 
 ---@param love_content LoveMedium
----@param PreviewComponent PreviewImageArea|PreviewAudioArea
+---@param PreviewComponent PreviewComponentClass
 function PreviewArea:set_content(love_content, PreviewComponent)
     self:reset()
     _set_labels(self, self._preview_labels)

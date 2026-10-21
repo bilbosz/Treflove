@@ -1,6 +1,6 @@
 local Control = require("controls.control")
 
----@alias DrawCb fun()
+---@alias DrawCb fun() Draws the control in its local coordinates, under its global transform
 
 ---@class DrawableControl: Control
 ---@field private _draw_cb DrawCb

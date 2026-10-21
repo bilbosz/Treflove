@@ -8,8 +8,8 @@ local NumberInput = class("NumberInput", TextInput)
 ---@param form_screen FormScreen
 ---@param width number
 ---@param height number
----@param on_input fun()|nil
----@param on_enter fun()|nil
+---@param on_input InputHandler|nil Run after an edit
+---@param on_enter InputHandler|nil Run on the return key
 function NumberInput:init(parent, form_screen, width, height, on_input, on_enter)
     TextInput.init(self, parent, form_screen, width, height, false, on_input, on_enter)
     self._number = 0

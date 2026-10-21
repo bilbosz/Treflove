@@ -1,10 +1,10 @@
 local Screen = require("screens.screen")
 
 ---@class FormScreen: Screen
----@field private _focus number
+---@field private _focus integer|nil Index of the focused input
 ---@field private _inputs Input[]
 ---@field private _is_showed boolean
----@field private _prev_focus number
+---@field private _prev_focus integer|nil
 local FormScreen = class("FormScreen", Screen)
 
 ---@private
@@ -137,6 +137,7 @@ end
 
 ---@param input Input
 function FormScreen:focus(input)
+    ---@type integer|nil
     local found
     for i, v in ipairs(self._inputs) do
         if v == input then

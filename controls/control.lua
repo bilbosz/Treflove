@@ -3,7 +3,7 @@ local Tree = require("utils.tree")
 
 ---@class Control: Tree
 ---@field public parent Control|nil
----@field public children Control[]|nil
+---@field public children Control[]
 ---@field protected global_transform love.Transform
 ---@field protected size [number, number]
 ---@field private _global_aabb Aabb
@@ -13,7 +13,7 @@ local Tree = require("utils.tree")
 ---@field private _origin [number, number]
 ---@field private _position [number, number]
 ---@field private _rotation number
----@field private _scale number[]
+---@field private _scale [number, number]
 local Control = class("Control", Tree)
 
 ---@private

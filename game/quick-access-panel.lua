@@ -3,8 +3,8 @@ local Consts = require("app.consts")
 local TextButton = require("ui.text-button")
 
 ---@class QuickAccessPanel: Panel
----@field _game_screen GameScreen
----@field _entries table<Panel, TextButton> Panel-selecting buttons indexed by their target panel
+---@field private _game_screen GameScreen
+---@field private _entries table<Panel, TextButton> Panel-selecting buttons indexed by their target panel
 local QuickAccessPanel = class("QuickAccessPanel", Panel)
 
 ---@param game_screen GameScreen
