@@ -9,6 +9,7 @@ local TextButton = require("ui.text-button")
 local Utils = require("utils.utils")
 
 local media = require("utils.media")
+local permissions = require("game.permissions")
 
 ---@class AssetsPanel: Panel
 ---@field _game_screen GameScreen
@@ -16,7 +17,7 @@ local media = require("utils.media")
 ---@field _remote_location_input TextInput
 ---@field _preview_area PreviewArea
 ---@field _file_type_input TextInput
----@field _upload_button TextButton
+---@field _upload_button TextButton|nil Absent when the player may not write the assets
 ---@field _cancel_button TextButton
 ---@field _media_type media.Type|nil
 ---@field private _data string|nil Raw content of the dropped file
@@ -132,8 +133,11 @@ end
 
 ---@param self AssetsPanel
 local function _refresh_upload_button_geometry(self)
-    local w, h = self:get_size()
     local button = self._upload_button
+    if not button then
+        return
+    end
+    local w, h = self:get_size()
     local s = Consts.PANEL_FIELD_SCALE
     button:set_scale(s)
 
@@ -204,7 +208,9 @@ function AssetsPanel:init(game_screen, width, height)
     _create_file_type_field(self)
     _create_remote_location_field(self)
     _create_cancel_button(self)
-    _create_upload_button(self)
+    if assert(app.session):get_permissions():allows(permissions.Action.WRITE, permissions.Kind.ASSETS) then
+        _create_upload_button(self)
+    end
 end
 
 ---@param file love.DroppedFile
