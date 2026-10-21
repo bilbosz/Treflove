@@ -5,6 +5,7 @@ local Image = require("controls.image")
 local Consts = require("app.consts")
 local Circle = require("controls.circle")
 local Text = require("controls.text")
+local permissions = require("game.permissions")
 
 ---@alias TokenDataValue string|number|string[]|number[] The value of a token property, by its `TokenPropertyType`: `string`, `number`, `image` (an asset path) or `array`
 
@@ -19,6 +20,7 @@ local Text = require("controls.text")
 ---@class Token: Model, Control
 ---@field data TokenData
 ---@field get_data fun(self: Token): TokenData
+---@field private _key string The token's key in `GameData.tokens`
 ---@field _diameter number
 ---@field _clip ClippingMask
 ---@field _image Image
@@ -78,11 +80,14 @@ local function _create_selection_effect(self)
     self._selection:set_enabled(false)
 end
 
+---@param key string The token's key in `GameData.tokens`, which the permissions name
 ---@param data TokenData
 ---@param parent Control
-function Token:init(data, parent)
+function Token:init(key, data, parent)
+    assert_type(key, "string")
     Model.init(self, data)
     Control.init(self, parent)
+    self._key = key
 
     self._drag_mouse_button = 1
     self._prev_drag_mouse_x, self._prev_drag_mouse_y = nil, nil
@@ -106,6 +111,16 @@ end
 ---@param id PointerId
 function Token:on_pointer_event(x, y, id)
 
+end
+
+---@return string
+function Token:get_key()
+    return self._key
+end
+
+---@return boolean Whether the logged-in player may change the token
+function Token:is_writable()
+    return assert(app.session):get_permissions():allows(permissions.Action.WRITE, permissions.Kind.TOKENS, self._key)
 end
 
 ---@return number

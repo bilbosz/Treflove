@@ -25,6 +25,7 @@ local test = require("tests.lib.test")
 local TEST_MODULES = {
     "tests.test-aabb",
     "tests.test-arg-parser",
+    "tests.test-assets-panel",
     "tests.test-backstack-manager",
     "tests.test-button-event",
     "tests.test-class",
@@ -38,6 +39,7 @@ local TEST_MODULES = {
     "tests.test-input",
     "tests.test-keyboard",
     "tests.test-lifetimes",
+    "tests.test-page",
     "tests.test-permissions",
     "tests.test-pointer-event",
     "tests.test-preview-area",
@@ -46,6 +48,7 @@ local TEST_MODULES = {
     "tests.test-table",
     "tests.test-text",
     "tests.test-text-event",
+    "tests.test-token-panel",
     "tests.test-tree",
     "tests.test-upload-asset-rp",
     "tests.test-waiting-screen"
