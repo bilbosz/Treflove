@@ -1,3 +1,5 @@
+local images = require("graphics.images")
+
 ---@class Media
 local media = {}
 
@@ -21,7 +23,7 @@ end
 ---@param data string
 ---@return love.Image
 local function _try_create_image_file(data)
-    return love.graphics.newImage(data)
+    return images.new(data)
 end
 
 ---@param data string

@@ -1,4 +1,4 @@
-local fonts = require("app.fonts")
+local fonts = require("graphics.fonts")
 
 local DrawableControl = require("controls.drawable-control")
 
@@ -14,8 +14,7 @@ local Text = class("Text", DrawableControl)
 
 ---@private
 function Text:_draw()
-    local a, c, _, tx, b, d, _, ty = self.global_transform:getMatrix()
-    local scale = math.sqrt(a * a + b * b)
+    local scale, is_axis_aligned, tx, ty = self:get_screen_placement()
     local px = fonts.pixel_size(scale)
     if px ~= self._pixel_size then
         self._pixel_size = px
@@ -23,7 +22,6 @@ function Text:_draw()
     end
 
     love.graphics.setColor(self._color)
-    local is_axis_aligned = b == 0 and c == 0 and a > 0 and math.abs(a - d) <= 1e-6 * a
     if is_axis_aligned then
         -- One glyph texel per screen pixel, at a whole-pixel position; the
         -- rounding of the font size is absorbed by the layout, not resampled

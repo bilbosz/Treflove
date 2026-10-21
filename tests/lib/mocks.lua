@@ -232,7 +232,9 @@ function mocks.ensure_love_graphics()
             return {
                 getDimensions = function()
                     return 64, 64
-                end
+                end,
+                setFilter = _no_op,
+                setMipmapFilter = _no_op
             }
         end,
         newShader = function()

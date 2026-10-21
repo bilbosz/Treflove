@@ -140,8 +140,14 @@ the `release` calls it caused.
   parent that died first (an input the collector finds after its panel).
 - A form screen is destroyed, never left to the collector: keep it in a field
   and destroy it when it is over, as the session does with its login screen.
-  The collector finds the form and its inputs in one collection and runs the
-  inputs' hooks against a form that is not dying yet. Those hooks reach the
+  The collector finds the form and its inputs in one collection, in an order
+  of its own: an input's hook may find the form a tombstone already or, since
+  a finalizer runs at an allocation point, see the form die nested inside
+  the call the hook makes into it. The hook therefore does nothing for a
+  death the collector found (`"unreachable"`, `"exit"`), since the form,
+  which holds its inputs, is garbage with such an input, and tests the form
+  with `lifetime.alive` otherwise. A suite that makes a form destroys it at
+  the end of the case, so none reaches the collector. Those hooks reach the
   inputs' controls, whose LÖVE objects may already be freed: LuaJIT
   finalizes userdata newest first, and LÖVE frees an object in its `__gc`
   (`Cannot use object after it has been released.`). In general, a

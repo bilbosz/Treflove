@@ -88,3 +88,20 @@ object lifetimes. Missing areas:
 - Control hierarchy: transforms, AABB computation, event propagation, clipping
 - Serialization round-trips of real game data (pages, tokens, players)
 - RPC classes beyond Connection (login, asset transfer, game data)
+
+### 12. Texture atlases, once measured
+
+Every image is its own texture, with its mipmaps; LÖVE batches consecutive
+draws of one texture, and the per-path image cache makes the tokens of one
+avatar share theirs. An atlas (many images packed into one texture, drawn as
+quads from a sprite batch) pays off only once draw calls are the bottleneck
+(`love.graphics.getStats().drawcalls` in the thousands per frame), and each
+token is drawn inside its own stencil mask today, which ends a batch anyway.
+
+- Measure first; build an atlas only for a measured frame budget
+- Avatars arrive as uploads at runtime, so the atlas is packed at runtime
+  (a canvas), and each entry is padded by the depth of the mipmap chain it
+  is drawn with, or the chain bleeds the neighbours in
+- A page image larger than the texture size limit
+  (`love.graphics.getSystemLimits().texturesize`) cannot be loaded at all;
+  split such an image into tiles on the server or at load

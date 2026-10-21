@@ -1,3 +1,5 @@
+local images = require("graphics.images")
+
 local Asset = require("data.asset")
 local DownloadAssetRp = require("data.download-asset-rp")
 local DownloadMissingAssetsRp = require("data.download-missing-assets-rp")
@@ -84,6 +86,7 @@ function AssetManager:mount_file(mount_point, content)
         file:create()
     end
     file:write(love.data.decode("string", "base64", content))
+    images.forget(Asset.get_asset_path(mount_point))
 end
 
 ---@param path string

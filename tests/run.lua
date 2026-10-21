@@ -1,4 +1,5 @@
-package.path = "lib/lua-lifetime/?.lua;lib/lua-lifetime/?/init.lua;" .. package.path
+-- The project first: the submodule carries a tests/lib/test.lua of its own
+package.path = "./?.lua;lib/lua-lifetime/?.lua;lib/lua-lifetime/?/init.lua;" .. package.path
 local has_socket = pcall(require, "socket")
 if not has_socket then
     package.preload["socket"] = function()
@@ -31,6 +32,8 @@ local TEST_MODULES = {
     "tests.test-defer-manager",
     "tests.test-event",
     "tests.test-fonts",
+    "tests.test-image",
+    "tests.test-images",
     "tests.test-input",
     "tests.test-keyboard",
     "tests.test-lifetimes",

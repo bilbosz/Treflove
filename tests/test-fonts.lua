@@ -1,6 +1,6 @@
 local test = require("tests.lib.test")
 local mocks = require("tests.lib.mocks")
-local fonts = require("app.fonts")
+local fonts = require("graphics.fonts")
 
 test.suite("fonts")
 

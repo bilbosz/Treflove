@@ -31,4 +31,19 @@ function DrawableControl:set_draw_callback(draw_cb)
     self._draw_cb = draw_cb
 end
 
+---What the global transform does to the screen: the scale of a model unit in
+---pixels, whether the axes are kept (no rotation, no mirroring, one scale both
+---ways) and the position of the origin
+---@protected
+---@return number scale
+---@return boolean is_axis_aligned
+---@return number tx
+---@return number ty
+function DrawableControl:get_screen_placement()
+    local a, c, _, tx, b, d, _, ty = self.global_transform:getMatrix()
+    local scale = math.sqrt(a * a + b * b)
+    local is_axis_aligned = b == 0 and c == 0 and a > 0 and math.abs(a - d) <= 1e-6 * a
+    return scale, is_axis_aligned, tx, ty
+end
+
 return DrawableControl

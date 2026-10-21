@@ -129,12 +129,24 @@ components (Panel, TextButton, Input, TextInput, NumberInput) build on them.
 A destroyed control takes its subtree with it, newest child first; a screen
 destroys its control tree, see [lifetimes.md](lifetimes.md).
 
+The graphics folder holds the two texture systems, the fonts module and the
+images module, both caches over LÖVE objects that the controls draw with.
+
 `Text` lays out in model units with a reference font (the fonts module's
 `REFERENCE_SIZE`, 80) and, when drawn, rasterizes at the pixel size its
 global transform gives: the fonts module keeps one `love.Font` per kind
 (`fonts.Kind`, display or user input) and integer pixel size. Axis-aligned
 text is drawn one glyph texel per screen pixel at a whole-pixel position;
 rotated text keeps its transform and scales the glyphs inside it.
+
+`Image` draws a `love.Image` the images module made with its mipmap chain,
+filtered linearly within and between the levels, so a downscaled image (a
+token avatar, a zoomed-out page) samples the level of its on-screen size
+instead of skipping texels; the module keeps one image per file path, which
+the asset manager forgets when it writes the file again. An axis-aligned
+image is drawn at a whole-pixel position and, when its scale is within half
+a pixel of one texel per screen pixel, exactly at that; a rotated image
+keeps its transform.
 
 ## Screen Management
 

@@ -19,8 +19,15 @@ function Input:init(form_screen)
     self._is_focused = false
     self._is_read_only = false
     form_screen:add_input(self)
-    lifetime.hook(function()
-        if not lifetime.dying(form_screen) then
+    lifetime.hook(function(reason)
+        -- A form holds its inputs, so one the collector finds is garbage with
+        -- its form, which may be a tombstone already or die in a finalizer
+        -- nested at an allocation inside a call made into it: nothing to
+        -- unlink then (docs/lifetimes.md, "Forms and inputs")
+        if reason == "unreachable" or reason == "exit" then
+            return
+        end
+        if lifetime.alive(form_screen) and not lifetime.dying(form_screen) then
             form_screen:remove_input(self)
         end
         -- a button kept under the pointer or pressed would be driven later

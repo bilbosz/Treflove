@@ -1,3 +1,5 @@
+local images = require("graphics.images")
+
 local DrawableControl = require("controls.drawable-control")
 local Consts = require("app.consts")
 local ClippingMask = require("controls.clipping-mask")
@@ -9,7 +11,7 @@ local Logo = class("Logo", DrawableControl)
 
 ---@param parent Control
 function Logo:init(parent)
-    local image = love.graphics.newImage("icon.png")
+    local image = images.get("icon.png")
     local img_w, img_h = image:getDimensions()
     local r = img_w * 0.5
 

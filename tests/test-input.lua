@@ -43,6 +43,22 @@ local function input_names(form)
     return names
 end
 
+---What a case leaves, the inputs and their parents first, then the form, so
+---nothing of it reaches the collector (docs/lifetimes.md, "Forms and inputs")
+---@param form FormScreen
+---@param ... Control
+local function finish(form, ...)
+    for i = 1, select("#", ...) do
+        local obj = select(i, ...)
+        if lifetime.alive(obj) then
+            lifetime.destroy(obj)
+        end
+    end
+    if lifetime.alive(form) then
+        lifetime.destroy(form)
+    end
+end
+
 test.suite("Input")
 
 test.case("an input registers with its form and is linked to it by a hook", function()
@@ -55,6 +71,7 @@ test.case("an input registers with its form and is linked to it by a hook", func
     test.assert_eq(#hooks, 1)
     test.assert_eq(getmetatable(hooks[1]), "hook")
     test.assert_deep_eq(lifetime.dependents(form), hooks, "the same hook hangs on the form")
+    finish(form, a)
 end)
 
 test.case("an input that dies first unlinks itself from the form and leaves the control tree", function()
@@ -75,6 +92,7 @@ test.case("an input that dies first unlinks itself from the form and leaves the 
     test.assert_false(lifetime.alive(a))
     ---@diagnostic disable-next-line: invisible
     test.assert_eq(form._focus, nil, "the focus index was cleared with the input")
+    finish(form, parent)
 end)
 
 test.case("a destroyed focused text input loses the focus, so LÖVE text input is switched off", function()
@@ -95,6 +113,7 @@ test.case("a destroyed focused text input loses the focus, so LÖVE text input i
     test.assert_eq(form._focus, nil)
     test.assert_deep_eq(input_names(form), {})
     test.assert_deep_eq(parent:get_children(), {})
+    finish(form, parent)
 end)
 
 test.case("a destroyed focused text input under the pointer lets go of it, then ends its text events", function()
@@ -117,6 +136,7 @@ test.case("a destroyed focused text input under the pointer lets go of it, then 
     test.assert_eq(text_appended:get_handler(field), nil, "the view update of letting go did not leave the text events registered")
     app_mock.text_event_manager:text_input("x")
     manager:dispatch_pointer_move(200, 200, 1)
+    finish(form)
 end)
 
 test.case("removing an input below the focused one keeps the focus on the same input", function()
@@ -137,6 +157,7 @@ test.case("removing an input below the focused one keeps the focus on the same i
     ---@diagnostic disable-next-line: invisible
     test.assert_eq(form._inputs[form._prev_focus], c)
     test.assert_true(b:is_focused())
+    finish(form, b, c)
 end)
 
 test.case("a form that dies first takes its list with it; the inputs stay alive and unhooked", function()
@@ -155,6 +176,7 @@ test.case("a form that dies first takes its list with it; the inputs stay alive 
     test.assert_true(lifetime.alive(b))
     test.assert_deep_eq(lifetime.dependents(a), {}, "the hook died with the form")
     test.assert_deep_eq(lifetime.dependents(b), {})
+    finish(form, a, b)
 end)
 
 test.case("a form and its inputs dying in one cascade: the form's body runs first, nothing is unlinked", function()
@@ -187,4 +209,5 @@ test.case("a shown form that dies hides itself and its inputs end their registra
     test.assert_eq(app_mock.keyboard_manager.key_pressed:get_handler(form), nil)
     test.assert_deep_eq(app_mock.root:get_children(), {})
     test.assert_true(lifetime.alive(a), "the input is not the form's to destroy")
+    finish(form, a)
 end)
