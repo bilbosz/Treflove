@@ -19,7 +19,6 @@ end
 ---@param label string Button caption
 ---@param entry Panel Panel shown when the button is pressed
 function QuickAccessPanel:add_entry(label, entry)
-    ---@type Control[]
     local children = self:get_children()
     local x = 0
     if #children > 1 then

@@ -39,7 +39,6 @@ function Utils.dump_controls(ctrl, indent)
     table.insert(dump, ctrl:are_all_predecessors_enabled() and "a" or " ")
     table.insert(dump, "]\n")
     for _, child in ipairs(ctrl:get_children()) do
-        ---@cast child Control
         table.insert(dump, Utils.dump_controls(child, indent .. "|   "))
     end
     return table.concat(dump)

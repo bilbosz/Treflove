@@ -1,7 +1,7 @@
 ---@class fonts
 local fonts = {}
 
----@enum FontKind
+---@enum fonts.Kind
 fonts.Kind = {
     DISPLAY = "fonts/OpenSans.ttf",
     USER_INPUT = "fonts/NotoSansMono.ttf"
@@ -14,7 +14,7 @@ fonts.MAX_PIXEL_SIZE = 256
 ---@type love.HintingMode
 fonts.HINTING = "normal"
 
----@type table<FontKind, table<number, love.Font>>
+---@type table<fonts.Kind, table<number, love.Font>>
 local cache = {}
 
 ---@param scale number Model units to screen pixels
@@ -24,7 +24,7 @@ function fonts.pixel_size(scale)
     return math.max(fonts.MIN_PIXEL_SIZE, math.min(fonts.MAX_PIXEL_SIZE, px))
 end
 
----@param kind FontKind
+---@param kind fonts.Kind
 ---@param pixel_size number An integer
 ---@return love.Font
 function fonts.get(kind, pixel_size)
@@ -41,7 +41,7 @@ function fonts.get(kind, pixel_size)
     return font
 end
 
----@param kind FontKind
+---@param kind fonts.Kind
 ---@return love.Font
 function fonts.reference(kind)
     return fonts.get(kind, fonts.REFERENCE_SIZE)

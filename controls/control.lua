@@ -4,6 +4,8 @@ local Tree = require("utils.tree")
 ---@class Control: Tree
 ---@field public parent Control|nil
 ---@field public children Control[]
+---@field get_children fun(self: Control): Control[]
+---@field get_parent fun(self: Control): Control|nil
 ---@field protected global_transform love.Transform
 ---@field protected size [number, number]
 ---@field private _global_aabb Aabb
@@ -49,7 +51,7 @@ end
 
 ---@private
 function Control:_update_global_aabb_parent()
-    local parent = self:get_parent() ---@cast parent Control|nil
+    local parent = self:get_parent()
     while parent do
         parent._global_aabb:set(parent:get_global_aabb())
         local aabb = parent._global_aabb
@@ -217,9 +219,7 @@ function Control:_get_recursive_aabb_detail(reference_transform)
     aabb:add_point(diff:transformPoint(w, 0))
     aabb:add_point(diff:transformPoint(w, h))
     aabb:add_point(diff:transformPoint(0, h))
-    ---@type Control[]
-    local children = self:get_children()
-    for _, child in ipairs(children) do
+    for _, child in ipairs(self:get_children()) do
         aabb:add_aabb(child:_get_recursive_aabb_detail(reference_transform))
     end
     return aabb
