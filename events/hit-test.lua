@@ -25,7 +25,6 @@ local function _collect_hit_controls(ctrl, event, x, y, list)
         table.insert(list, ctrl)
     end
     for _, child in ipairs(ctrl:get_children()) do
-        ---@cast child Control
         _collect_hit_controls(child, event, x, y, list)
     end
 end
