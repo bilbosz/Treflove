@@ -1,11 +1,11 @@
 local RemoteProcedure = require("networking.remote-procedure")
 
----@class DownloadAssetRequest
+---@class DownloadAssetRequest: RequestBody
 ---@field public path string
 
----@class DownloadAssetResponse
+---@class DownloadAssetResponse: ResponseBody
 ---@field public path string
----@field public content string
+---@field public content string|nil `nil` when the server has no such asset
 
 ---@class DownloadAssetRp: RemoteProcedure
 local DownloadAssetRp = class("DownloadAssetRp", RemoteProcedure)

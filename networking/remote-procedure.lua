@@ -1,3 +1,4 @@
+---@alias RemoteProcedureCallback fun(response: ResponseBody) Called with the response body after `receive_response`
 ---@class RemoteProcedure: Object
 ---@field private _id string
 ---@field private _connection Connection
@@ -25,8 +26,8 @@ function RemoteProcedure:stop()
     self._connection:unregister_request_handler(self._id)
 end
 
----@param request table Request body
----@param cb nil|fun(response: table) Called with the response body after `receive_response`
+---@param request RequestBody
+---@param cb RemoteProcedureCallback|nil
 function RemoteProcedure:send_request(request, cb)
     self._connection:send_request(self._id, request, function(response)
         self:receive_response(response)
@@ -36,13 +37,13 @@ function RemoteProcedure:send_request(request, cb)
     end)
 end
 
----@param request table Request body
----@return table Response body
+---@param request RequestBody
+---@return ResponseBody
 function RemoteProcedure:send_response(request)
     return abstract()
 end
 
----@param response table Response body
+---@param response ResponseBody
 function RemoteProcedure:receive_response(response)
     abstract()
 end

@@ -1,10 +1,10 @@
 local RemoteProcedure = require("networking.remote-procedure")
 
----@class UploadAssetRequest
+---@class UploadAssetRequest: RequestBody
 ---@field public path string
 ---@field public content string
 
----@class UploadAssetResponse
+---@class UploadAssetResponse: ResponseBody
 ---@field public success boolean
 
 ---@class UploadAssetRp: RemoteProcedure

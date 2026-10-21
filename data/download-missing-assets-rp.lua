@@ -1,11 +1,11 @@
 local RemoteProcedure = require("networking.remote-procedure")
 
----@class DownloadMissingAssetsRequest
+---@class DownloadMissingAssetsRequest: RequestBody
 ---@field public list string[]
 
----@class DownloadMissingAssetsResponse
+---@class DownloadMissingAssetsResponse: ResponseBody
 ---@field public success boolean
----@field public contents table<string, string>
+---@field public contents table<string, string> Base64 contents by asset path, the paths the server has
 
 ---@class DownloadMissingAssetsRp: RemoteProcedure
 local DownloadMissingAssetsRp = class("DownloadMissingAssetsRp", RemoteProcedure)
@@ -19,6 +19,7 @@ end
 ---@return DownloadMissingAssetsResponse
 function DownloadMissingAssetsRp:send_response(request)
     assert(app.is_server)
+    ---@type table<string, string>
     local contents = {}
     for _, v in ipairs(request.list) do
         contents[v] = app.asset_manager:get_content(v)

@@ -1,21 +1,27 @@
 local Consts = require("app.consts")
 
----@class RequestBody
+---@class RequestBody The base of every remote procedure's request class
+
+---@class ResponseBody The base of every remote procedure's response class
+
+---@alias ConnectionSource
+---| "c" # The client
+---| "s" # The server
 
 ---@class Request
----@field public source string
----@field public id string
+---@field public source ConnectionSource The side that sent the request
+---@field public id string The remote procedure's class name
 ---@field public body RequestBody
 
----@class ResponseBody
-
 ---@class Response
----@field public source string
----@field public id string
+---@field public source ConnectionSource The side that sent the request, so the response goes back to it
+---@field public id string The remote procedure's class name
 ---@field public body ResponseBody
 
----@alias ConnectionResponseHandler fun(body: table) Processes the body of a received response
----@alias ConnectionRequestHandler fun(body: table): table Handles a request body and returns the response body
+---@alias ConnectionMessage Request|Response What the channels carry, serialized and compressed
+
+---@alias ConnectionResponseHandler fun(body: ResponseBody) Processes the body of a received response
+---@alias ConnectionRequestHandler fun(body: RequestBody): ResponseBody Handles a request body and returns the response body
 
 ---@class Connection: Object
 ---@field private _queue ConnectionResponseHandler[] Handlers awaiting responses, in request order
@@ -23,21 +29,21 @@ local Consts = require("app.consts")
 ---@field private _in_thread love.Thread
 ---@field private _out_channel love.Channel
 ---@field private _out_thread love.Thread
----@field private _source string
+---@field private _source ConnectionSource
 ---@field private _requests_handlers table<string, ConnectionRequestHandler>
 local Connection = class("Connection")
 
----@param message table
+---@param message ConnectionMessage
 ---@return string
 local function _compress(message)
     return love.data.compress("string", Consts.NETWORK_COMPRESSION, table.to_string(message)) --[[@as string]]
 end
 
 ---@param payload string
----@return table
+---@return ConnectionMessage
 local function _decompress(payload)
     local serialized = love.data.decompress("string", Consts.NETWORK_COMPRESSION, payload) --[[@as string]]
-    return table.from_string(serialized) --[[@as table]]
+    return table.from_string(serialized) --[[@as ConnectionMessage]]
 end
 
 ---@param in_channel love.Channel
@@ -57,12 +63,13 @@ function Connection:init(in_channel, in_thread, out_channel, out_thread)
 end
 
 ---@param id string
----@param body table
+---@param body RequestBody
 ---@param response_handler ConnectionResponseHandler
 function Connection:send_request(id, body, response_handler)
     assert_type(body, "table")
     assert_type(response_handler, "function")
 
+    ---@type Request
     local request = {
         source = self._source,
         id = id,
@@ -102,9 +109,9 @@ function Connection:on_update()
         end
         local message = _decompress(payload)
         if message.source == self._source then
-            self:_handle_response(message)
+            self:_handle_response(message --[[@as Response]] )
         else
-            self:_send_response(message)
+            self:_send_response(message --[[@as Request]] )
         end
     end
 end
@@ -133,6 +140,7 @@ function Connection:_send_response(request)
 
     local body = self._requests_handlers[request.id](request.body)
     assert_type(body, "table")
+    ---@type Response
     local response = {
         source = request.source,
         id = request.id,

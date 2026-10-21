@@ -1,14 +1,16 @@
 local RemoteProcedure = require("networking.remote-procedure")
 local Utils = require("utils.utils")
 
----@class LoginRequest
+---@class LoginRequest: RequestBody
 ---@field public auth string
 
----@class LoginResponse
----@field public user string|nil
+---@class LoginResponse: ResponseBody
+---@field public user string|nil `nil` when the credentials match no user
+
+---@alias LoginCallback fun(user: string) Called with the user name once logged in
 
 ---@class LoginRp: RemoteProcedure
----@field on_login fun(user: string)
+---@field on_login LoginCallback
 local LoginRp = class("LoginRp", RemoteProcedure)
 
 ---@param user_name string
@@ -30,7 +32,7 @@ local function _find_user_by_client_auth(client_auth)
 end
 
 ---@param connection Connection
----@param on_login fun(user: string)
+---@param on_login LoginCallback
 function LoginRp:init(connection, on_login)
     RemoteProcedure.init(self, connection)
     self.on_login = on_login
