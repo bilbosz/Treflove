@@ -1,4 +1,4 @@
----@class Images
+---@class images
 local images = {}
 
 ---@alias ImageSource string|love.FileData|love.ImageData|love.CompressedImageData A file path or the decoded or raw file

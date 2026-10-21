@@ -1,11 +1,11 @@
 local images = require("graphics.images")
 
----@class Media
+---@class media
 local media = {}
 
 ---@alias LoveMedium love.Source|love.Image|love.Font|love.Video|nil
 
----@enum Media.Type
+---@enum media.Type
 media.Type = {
     VIDEO = 1,
     AUDIO = 2,
@@ -59,7 +59,7 @@ local MATCH_FILE = {
 }
 
 ---@param data string
----@return Media.Type|nil, LoveMedium
+---@return media.Type|nil, LoveMedium
 function media.get_type_and_medium(data)
     for _, v in ipairs(MATCH_FILE) do
         local f, t = unpack(v)

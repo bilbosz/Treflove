@@ -56,7 +56,15 @@ specific type available:
 - **Enums**: constant tables used as enums are annotated `---@enum Name` so
   values can be typed as the enum instead of `number`/`string`
 - **Module tables**: modules (snake_case tables, not instantiated) still get
-  a PascalCase `---@class` annotation so the language server can type them
+  a `---@class` annotation so the language server can type them
+- **Module type names**: a module's type is named after the module, in
+  snake_case, the same name as the module table, so the annotation and the
+  variable read alike:
+  ```lua
+  ---@class module
+  local module = {}
+  ```
+  A value typed as the module uses that name too: `---@type module`
 - **Abstract methods**: `abstract()` raises and is typed as returning `any`,
   so an overridable method that returns a value forwards it:
   `return abstract()`

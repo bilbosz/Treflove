@@ -12,10 +12,11 @@
   - **Modules**: tables with static functions (no instances created)
     - Use snake_case naming: `arg_parser`, `utils`, etc.
     - Return the table directly: `return arg_parser`
-    - Annotate the module table with a PascalCase `---@class` so the language
-      server can type it (`---@class Media` above `local media = {}`)
+    - Annotate the module table with a `---@class` named after the module, in
+      snake_case, so the language server can type it (`---@class media`
+      above `local media = {}`)
     - Constant tables acting as enums are annotated `---@enum`
-      (`---@enum Media.Type`)
+      (`---@enum media.Type`)
   - **Classes**: use the custom class system for object-oriented code
     - Use PascalCase naming: `Client`, `Server`, `Session`
     - Create instances with `ClassName()`

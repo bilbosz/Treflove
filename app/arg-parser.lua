@@ -1,6 +1,6 @@
 require("utils.class")
 
----@class ArgParser Example usage: `love . server 0.0.0.0 8080` or `love . client 192.0.0.1 8080`
+---@class arg_parser Example usage: `love . server 0.0.0.0 8080` or `love . client 192.0.0.1 8080`
 local arg_parser = {}
 
 ---@param str string

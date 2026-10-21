@@ -1,4 +1,4 @@
----@class Fonts
+---@class fonts
 local fonts = {}
 
 ---@enum FontKind

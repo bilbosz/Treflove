@@ -1,4 +1,4 @@
----@class HitTest
+---@class hit_test
 local hit_test = {}
 
 local WEAK_KEYS = {
