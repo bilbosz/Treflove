@@ -1,16 +1,17 @@
+---@type LoggerData, love.Channel, string, string
 local logger_data, channel, address, port = ...
 
 local Socket = require("socket")
 local logger = require("utils.logger")(logger_data, "connection-dispatcher")
 
-local server, bind_err = Socket.bind(address, tonumber(port))
+local server, bind_err = Socket.bind(address, assert(tonumber(port)))
 assert(not bind_err, bind_err)
 logger:log("Connection dispatcher started working")
 
 while true do
     logger:log("Waiting for connection...")
 
-    local client = server:accept()
+    local client = assert(server:accept())
     logger:log("New client found")
 
     local dispatcher_channel = love.thread.newChannel()

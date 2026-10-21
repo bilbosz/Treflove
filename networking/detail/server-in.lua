@@ -1,3 +1,4 @@
+---@type LoggerData, string, love.Channel, love.Channel, love.Thread
 local logger_data, address, dispatcher_channel, channel, in_thread = ...
 
 local Socket = require("socket")
@@ -16,6 +17,10 @@ logger:log("Bound port " .. in_port .. " for receiver")
 dispatcher_channel:push(in_port)
 
 local in_client = in_server:accept()
+if not in_client then
+    logger:log("Could not accept client sender connection")
+    return
+end
 logger:log("Accepted client sender connection on port " .. in_port)
 
 local out_port, port_err = in_client:receive("*l")
@@ -57,7 +62,9 @@ while true do
     logger:log("Received data with size of " .. n)
     in_channel:push(data)
 end
-channel:push({
+---@type ConnectorMessage
+local stopped = {
     "i",
     in_channel
-})
+}
+channel:push(stopped)

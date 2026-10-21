@@ -1,9 +1,12 @@
+---@alias ConnectorMessage
+---| {[1]: "a", [2]: love.Channel, [3]: love.Thread, [4]: love.Channel, [5]: love.Thread} # A connection is up: its in channel and thread, its out channel and thread
+---| {[1]: "i"|"o", [2]: love.Channel} # The receiving ("i") or the sending ("o") side of a connection stopped: its in or out channel
 ---@class Connector: Object
 ---@field private _address string
 ---@field private _port string
 ---@field private _channel love.Channel
 ---@field private _retry_time number
----@field private _thread love.Thread
+---@field private _thread love.Thread|nil `nil` until the first start, and on the client once its connection is gone
 ---@field private _connection_manager ConnectionManager
 ---@field private _last_start number|nil Time of the last connection thread start
 local Connector = class("Connector")
@@ -50,7 +53,7 @@ end
 ---@private
 function Connector:_handle_connections()
     while true do
-        local msg = self._channel:pop()
+        local msg = self._channel:pop() --[[@as ConnectorMessage|nil]]
         if not msg then
             break
         end

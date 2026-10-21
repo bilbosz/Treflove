@@ -1,21 +1,24 @@
+---@type LoggerData, string, string, love.Channel, love.Channel, love.Channel, love.Thread, love.Thread
 local logger_data, address, out_port, in_channel, out_channel, main_channel, out_thread, in_thread = ...
 
 local Socket = require("socket")
 local logger = require("utils.logger")(logger_data, string.format("server-out-%05i", out_port))
 
-local out_client, connect_err = Socket.connect(address, out_port)
-if connect_err then
+local out_client = Socket.connect(address, assert(tonumber(out_port)))
+if not out_client then
     logger:log("Could not connect to client receiver on port " .. out_port)
     return
 end
 logger:log("Connected to client receiver on port " .. out_port)
-main_channel:push({
+---@type ConnectorMessage
+local established = {
     "a",
     in_channel,
     in_thread,
     out_channel,
     out_thread
-})
+}
+main_channel:push(established)
 
 local msg = out_channel:demand()
 while msg ~= false do
@@ -34,7 +37,9 @@ while msg ~= false do
     logger:log("Send data with size of " .. n)
     msg = out_channel:demand()
 end
-main_channel:push({
+---@type ConnectorMessage
+local stopped = {
     "o",
     out_channel
-})
+}
+main_channel:push(stopped)

@@ -1,3 +1,4 @@
+---@type LoggerData, love.Channel, string, string, love.Thread
 local logger_data, channel, address, port, out_thread = ...
 
 require("app.globals")
@@ -5,22 +6,23 @@ local Socket = require("socket")
 local Logger = require("utils.logger")
 local logger = Logger(logger_data, "client-out-?????")
 
+---@type string|nil
 local out_port
 do
     logger:log("Trying to connect to port " .. port)
-    local client, connect_err = Socket.connect(address, tonumber(port))
-    if connect_err then
+    local client = Socket.connect(address, assert(tonumber(port)))
+    if not client then
         logger:log("Could not connect to port " .. port)
         return
     end
     local port_err
     out_port, port_err = client:receive("*l")
-    logger:set_name(string.format("client-out-%05i", out_port))
     if port_err or not tonumber(out_port) then
         client:close()
         logger:log("Could not receive client sender port")
         return
     end
+    logger:set_name(string.format("client-out-%05i", out_port))
     client:close()
     logger:log("Dispatchee connection closed")
 end
@@ -28,8 +30,8 @@ end
 do
     local get_port_channel = love.thread.newChannel()
     local in_channel, out_channel = love.thread.newChannel(), love.thread.newChannel()
-    local out_client, connect_err = Socket.connect(address, tonumber(out_port))
-    if connect_err then
+    local out_client = Socket.connect(address, assert(tonumber(out_port)))
+    if not out_client then
         logger:log("Could not connect to server on port " .. out_port)
         return
     end
@@ -42,13 +44,15 @@ do
         logger:log("Could not send receiver port")
         return
     end
-    channel:push({
+    ---@type ConnectorMessage
+    local established = {
         "a",
         in_channel,
         in_thread,
         out_channel,
         out_thread
-    })
+    }
+    channel:push(established)
     logger:log("Established output connection with host")
 
     local msg = out_channel:demand()
@@ -76,8 +80,10 @@ do
         logger:log("Send data with size of " .. n)
         msg = out_channel:demand()
     end
-    channel:push({
+    ---@type ConnectorMessage
+    local stopped = {
         "o",
         out_channel
-    })
+    }
+    channel:push(stopped)
 end

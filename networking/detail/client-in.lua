@@ -1,3 +1,4 @@
+---@type LoggerData, love.Channel, string, love.Channel, love.Channel
 local logger_data, channel, address, get_port_channel, in_channel = ...
 
 local Socket = require("socket")
@@ -11,8 +12,8 @@ end
 local in_port = select(2, in_server:getsockname())
 logger:set_name(string.format("client-in-%05i", in_port))
 get_port_channel:push(in_port)
-local in_client, accept_err = in_server:accept()
-if accept_err then
+local in_client = in_server:accept()
+if not in_client then
     logger:log("Could not connect to server")
     return
 end
@@ -42,7 +43,9 @@ while true do
     logger:log("Received data with size of " .. n)
     in_channel:push(data)
 end
-channel:push({
+---@type ConnectorMessage
+local stopped = {
     "i",
     in_channel
-})
+}
+channel:push(stopped)
