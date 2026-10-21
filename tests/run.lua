@@ -1,5 +1,6 @@
 -- The project first: the submodule carries a tests/lib/test.lua of its own
 package.path = "./?.lua;lib/lua-lifetime/?.lua;lib/lua-lifetime/?/init.lua;" .. package.path
+require("app.debugger").start()
 local has_socket = pcall(require, "socket")
 if not has_socket then
     package.preload["socket"] = function()

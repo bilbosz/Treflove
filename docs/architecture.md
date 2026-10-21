@@ -2,8 +2,9 @@
 
 ## Dual-Mode Bootstrap
 
-The entry point parses the command line and instantiates either the Client or
-the Server:
+The entry point starts the debugger when VS Code attached one (see
+[development.md](development.md#debugging)), parses the command line and
+instantiates either the Client or the Server:
 - **Client**: the full UI application, with the event managers (pointer,
   keyboard, wheel, button, text, file-drop, resize), the screen manager, the
   connection manager, the asset manager, backstack navigation, notifications

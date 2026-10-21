@@ -1,4 +1,5 @@
 local arg_parser = require("app.arg-parser")
+local debugger = require("app.debugger")
 
 ---@class love.ConfigTable
 ---@field console boolean
@@ -49,6 +50,12 @@ function love.conf(t)
     if t.window then
         t.window.width, t.window.height = 800, 600
         t.window.minwidth, t.window.minheight = 600, 600
+    end
+
+    if debugger.is_attached() then
+        -- The debugger talks over the standard streams, which a LÖVE console
+        -- (a window of its own, on Windows) would take over
+        t.console = false
     end
 
     config = t

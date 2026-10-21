@@ -1,5 +1,6 @@
 local Consts = require("app.consts")
 local Socket = require("socket")
+local debugger = require("app.debugger")
 
 ---@class Utils
 local Utils = {}
@@ -177,6 +178,7 @@ function Utils.error_handler(module)
     return function(msg)
         print(string.format("%s error: \"%s\"", module, msg))
         print(Utils.get_stack_trace(2))
+        debugger.pause()
     end
 end
 

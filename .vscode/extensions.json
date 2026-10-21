@@ -4,9 +4,9 @@
         "sumneko.lua",
         // lua formatter, requires /usr/local/bin/lua-format (via luarocks install --server=https://luarocks.org/dev luaformatter)
         "koihik.vscode-lua-format",
-        // running ./run.sh as launch configuration
-        "discretegames.f5anything",
+        // debugger behind the launch configurations (Run and Debug, F5)
+        "tomblind.local-lua-debugger-vscode",
         // AI support
         "Anthropic.claude-code",
     ]
-}                       
+}

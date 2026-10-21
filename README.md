@@ -35,6 +35,10 @@ To run single instance of client and server use:
 
     ./run.sh
 
+To debug, use the VS Code launch configurations (Run and Debug): the client,
+the server, both at once, or the test suite; see
+[docs/development.md](docs/development.md#debugging).
+
 ## Project status
 
 Milestones that are consider done at this point:

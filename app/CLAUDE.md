@@ -6,8 +6,10 @@ constants.
 
 ## Bootstrap
 
-1. The entry point loads the global utilities (the class system, the table
-   utilities, `dump` in debug mode) and parses the command line:
+1. The entry point starts the debugger when VS Code attached one (the
+   debugger module, a no-op otherwise), loads the global utilities (the class
+   system, the table utilities, `dump` in debug mode) and parses the command
+   line:
    `love . <client|server> <address> <port>`
 2. Client or Server is instantiated with the parsed parameters and assigns
    itself to the global `app`
@@ -33,8 +35,8 @@ run without a window.
   threads and channels are still usable) and then tells lua-lifetime the
   program is ending
 - **Debug mode** (LÖVE's `debug`): a key toggles the drawing of bounding
-  boxes, the error handler prints a stack trace, and `log_fun` includes the
-  calling function's name
+  boxes, the error handler prints a stack trace and pauses the debugger when
+  one is attached, and `log_fun` includes the calling function's name
 - **Logging**: `app:log(...)` and `app:log_fun(...)`
 
 The class declares every manager field that may exist on either side; not

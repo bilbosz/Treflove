@@ -1,4 +1,5 @@
 love.filesystem.setRequirePath(love.filesystem.getRequirePath() .. ";lib/lua-lifetime/?.lua;lib/lua-lifetime/?/init.lua")
+require("app.debugger").start()
 require("app.globals")
 
 if arg[2] == "test" then

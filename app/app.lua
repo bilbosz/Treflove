@@ -4,6 +4,7 @@ local DeferManager = require("events.defer-manager")
 local Event = require("events.event")
 local Logger = require("utils.logger")
 local Utils = require("utils.utils")
+local debugger = require("app.debugger")
 local lifetime = require("lifetime")
 
 ---@class App: Object
@@ -84,6 +85,7 @@ function App:register_love_callbacks()
         function love.errorhandler(msg)
             print(string.format("%s error: \"%s\"", app.is_client and "Client" or "Server", msg))
             print(Utils.get_stack_trace(2))
+            debugger.pause()
         end
     else
         function love.errorhandler()
