@@ -98,7 +98,26 @@ return {
             -- login: piotr
             -- password: stępczyński
             auth = "h56e16kPixnS4sl1flNsuzCyaD+6KUhKPFFNKu8mS0o=",
-            group = "player"
+            group = "player",
+            permissions = {
+                "write:tokens/@owned",
+                "view:tokens/Bilbosz"
+            }
+        }
+    },
+    groups = {
+        master = {
+            title = "Game master",
+            permissions = {
+                "read",
+                "write"
+            }
+        },
+        player = {
+            title = "Player",
+            permissions = {
+                "read"
+            }
         }
     }
 }

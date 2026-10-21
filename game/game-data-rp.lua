@@ -7,6 +7,7 @@ local WaitingScreen = require("screens.waiting-screen")
 ---@field token_properties table<string, TokenProperty> By token data key
 ---@field tokens table<string, TokenData> By token name, as `PageData.tokens` lists them
 ---@field players table<string, PlayerData> By login
+---@field groups table<string, GroupData> By group name, as `PlayerData.group` names them
 
 ---@class GameScreenData The `game` entry, the model of the game screen
 ---@field page string The shown page, a key of `GameData.pages`
@@ -17,12 +18,15 @@ local WaitingScreen = require("screens.waiting-screen")
 ---@field title string Shown in the token panel
 ---@field type TokenPropertyType
 
----@alias PlayerGroup "master"|"player"
+---@class GroupData
+---@field title string Display name
+---@field permissions string[] Grants of every player in the group, `<action>[:<kind>[/<key>]]` (`game/permissions.lua`)
 
 ---@class PlayerData
 ---@field name string Display name
----@field auth string The login's server-side hash of the client hash
----@field group PlayerGroup
+---@field auth string|nil The login's server-side hash of the client hash; on the server only, the wire copy has none
+---@field group string A key of `GameData.groups`
+---@field permissions string[]|nil Grants of the player's own, added to the group's
 
 ---@class GameDataResponse
 ---@field public data GameData
