@@ -19,14 +19,15 @@ local lifetime = require("lifetime")
 ---@field private _has_new_value boolean
 ---@field private _is_multivalue boolean
 ---@field private _masked boolean
----@field private _on_enter fun()|nil
----@field private _on_input fun()|nil
+---@field private _on_enter InputHandler|nil
+---@field private _on_input InputHandler|nil
 ---@field private _padding number
 ---@field private _text_ctrl Text
 local TextInput = class("TextInput", Control, Input)
 
 ---@private
 function TextInput:_upload_background_view()
+    ---@type number[]|nil
     local color
     if self:is_focused() then
         if self:is_multivalue_default() then
@@ -180,8 +181,8 @@ end
 ---@param width number
 ---@param height number
 ---@param masked boolean|nil
----@param on_input fun()|nil
----@param on_enter fun()|nil
+---@param on_input InputHandler|nil Run after an edit
+---@param on_enter InputHandler|nil Run on the return key
 function TextInput:init(parent, form_screen, width, height, masked, on_input, on_enter)
     assert_type(form_screen, FormScreen)
     Control.init(self, parent, width, height)
@@ -296,7 +297,7 @@ function TextInput:get_text()
     return self._buffer:get_text()
 end
 
----@return number
+---@return integer
 function TextInput:get_text_length()
     return self._buffer:get_text_length()
 end

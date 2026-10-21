@@ -6,23 +6,28 @@ local Consts = require("app.consts")
 local Circle = require("controls.circle")
 local Text = require("controls.text")
 
+---@alias TokenDataValue string|number|string[]|number[] The value of a token property, by its `TokenPropertyType`: `string`, `number`, `image` (an asset path) or `array`
+
 ---@class TokenData
 ---@field name string
 ---@field diameter number Token diameter in meters
 ---@field position {[1]: number, [2]: number} Position on the page, in meters
 ---@field avatar string Path of the avatar image asset
 ---@field owners string[]|nil Logins of the players who own the token
+---@field [string] TokenDataValue By a key of `GameData.token_properties`
 
 ---@class Token: Model, Control
+---@field data TokenData
+---@field get_data fun(self: Token): TokenData
 ---@field _diameter number
 ---@field _clip ClippingMask
 ---@field _image Image
 ---@field _label Text
 ---@field _selection Circle Selection-highlight circle
----@field _is_selected boolean
----@field _drag_mouse_button number
----@field _prev_drag_mouse_x number|nil
----@field _prev_drag_mouse_y number|nil
+---@field private _is_selected boolean
+---@field private _drag_mouse_button number
+---@field private _prev_drag_mouse_x number|nil
+---@field private _prev_drag_mouse_y number|nil
 local Token = class("Token", Model, Control)
 
 ---@param self Token
@@ -130,8 +135,8 @@ function Token:set_position(x, y)
     Control.set_position(self, x, y)
 end
 
----@param key string|number
----@param value any
+---@param key string A key of `GameData.token_properties`
+---@param value TokenDataValue|nil
 function Token:set_data(key, value)
     Model.set_data(self, key, value)
     if key == "name" then

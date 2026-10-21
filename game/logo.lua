@@ -5,7 +5,7 @@ local Consts = require("app.consts")
 local ClippingMask = require("controls.clipping-mask")
 
 ---@class Logo: DrawableControl
----@field _mask ClippingMask
+---@field private _mask ClippingMask
 ---@field color number[] Foreground color; channels may be mutated from outside (see ScreenSaver)
 local Logo = class("Logo", DrawableControl)
 

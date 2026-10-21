@@ -14,16 +14,18 @@ local Consts = require("app.consts")
 ---@field tokens string[] Names of the tokens placed on the page
 
 ---@class Page: Model, ClippingRectangle
----@field _background Image
----@field _page_coordinates Control Coordinate system scaled to page meters
----@field _name string
----@field _pixel_per_meter number
----@field _page_width number
----@field _pointer_down_pos table<any, number[]> Local pointer-down positions per button
----@field _game_screen GameScreen
----@field _selection Selection
----@field _tokens Token[]
----@field _select_set_start_pos table<Token, number[]>|nil
+---@field data PageData
+---@field get_data fun(self: Page): PageData
+---@field private _background Image
+---@field private _page_coordinates Control Coordinate system scaled to page meters
+---@field private _name string
+---@field private _pixel_per_meter number
+---@field private _page_width number
+---@field private _pointer_down_pos table<PointerId, [number, number]> Local pointer-down positions per button
+---@field private _game_screen GameScreen
+---@field private _selection Selection
+---@field private _tokens Token[]
+---@field private _select_set_start_pos table<Token, [number, number]>|nil
 local Page = class("Page", Model, ClippingRectangle)
 
 ---@private

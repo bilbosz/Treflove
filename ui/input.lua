@@ -2,6 +2,8 @@ local Button = require("ui.button")
 local FormScreen = require("ui.form-screen")
 local lifetime = require("lifetime")
 
+---@alias InputHandler fun() Run by an input on a user action: an edit, the return key, a click
+
 ---Not a Control subclass at runtime, always mixed into one: what the
 ---`: Control` annotation reflects.
 ---@class Input: Control

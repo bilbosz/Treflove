@@ -28,6 +28,7 @@ end
 ---@param parent Control|nil
 ---@param path_or_love_image string|love.Image
 function Image:init(parent, path_or_love_image)
+    ---@type love.Image
     local love_image
     if type(path_or_love_image) == "string" then
         love_image = images.get(Asset(path_or_love_image, false):get_path() or path_or_love_image)

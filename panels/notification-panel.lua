@@ -4,7 +4,7 @@ local Text = require("controls.text")
 local lifetime = require("lifetime")
 
 ---@class NotificationPanel: Object
----@field private _anchor Control
+---@field private _anchor ClippingRectangle
 ---@field private _width number
 ---@field private _height number
 local NotificationPanel = class("NotificationPanel")

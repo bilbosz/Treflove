@@ -8,17 +8,17 @@ local lifetime = require("lifetime")
 
 ---@class TokenPanelProperty
 ---@field key string Token data key
----@field def table Property definition from `token_properties`
----@field title Text|nil
----@field input TextInput|NumberInput|nil
+---@field def TokenProperty Property definition from `token_properties`
+---@field title Text|nil Set once the property is filled in
+---@field input TextInput|NumberInput|nil Set once the property is filled in, a `NumberInput` for a `number` property
 
 ---@class TokenPanel: Panel
----@field _game_screen GameScreen
----@field _properties TokenPanelProperty[]
----@field _keys string[]|nil Sorted editable keys of the selected tokens
----@field _selection_set table<Token, boolean>
----@field _cancel_button TextButton|nil
----@field _apply_button TextButton|nil
+---@field private _game_screen GameScreen
+---@field private _properties TokenPanelProperty[]
+---@field private _keys string[]|nil Sorted editable keys of the selected tokens
+---@field private _selection_set table<Token, boolean>
+---@field private _cancel_button TextButton|nil
+---@field private _apply_button TextButton|nil
 local TokenPanel = class("TokenPanel", Panel)
 
 ---@param game_screen GameScreen
@@ -57,12 +57,16 @@ end
 
 ---@private
 function TokenPanel:_update_property_keys()
+    ---@type table<string, boolean>
     local unique_keys = {}
     for token in pairs(self._selection_set) do
-        for k in pairs(token:get_data()) do
+        ---@type table<string, TokenDataValue>
+        local data = token:get_data()
+        for k in pairs(data) do
             unique_keys[k] = true
         end
     end
+    ---@type string[]
     local keys = {}
     for k in pairs(unique_keys) do
         local t = app.data.token_properties[k].type
@@ -79,6 +83,7 @@ function TokenPanel:_fill_in_properties()
     local y = 0
     for _, k in ipairs(self._keys) do
         if app.data.token_properties[k] then
+            ---@type TokenPanelProperty
             local property = {
                 key = k,
                 def = app.data.token_properties[k],
@@ -90,7 +95,7 @@ function TokenPanel:_fill_in_properties()
                 local title = self:_create_property_title(property)
                 property.title = title
                 title:set_position(Consts.PADDING, y)
-                local h = select(2, title:get_size())
+                local _, h = title:get_size()
                 y = y + h * title:get_scale()
             end
 
@@ -98,15 +103,19 @@ function TokenPanel:_fill_in_properties()
                 local input = self:_create_property_input(property)
                 property.input = input
                 input:set_position(Consts.PADDING, y)
-                local h = select(2, input:get_size())
+                local _, h = input:get_size()
+                ---@type number
                 y = y + h
 
                 local is_single_value, value = self:_get_value_by_key(k)
                 if is_single_value then
                     local t = property.def.type
                     if t == "string" then
+                        ---@cast value string
                         input:set_text(value)
                     elseif t == "number" then
+                        ---@cast input NumberInput
+                        ---@cast value number
                         input:set_number(value)
                     end
                 else
@@ -141,6 +150,7 @@ function TokenPanel:_create_property_input(property)
         self:_apply()
     end
 
+    ---@type TextInput|NumberInput
     local input
     if t == "string" then
         input = TextInput(self, self._game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT, false, nil, apply)
@@ -155,9 +165,10 @@ end
 ---@private
 ---@param key string
 ---@return boolean is_single_value
----@return any value Common value when all selected tokens agree
+---@return TokenDataValue|nil value Common value when all selected tokens agree
 function TokenPanel:_get_value_by_key(key)
     local once = true
+    ---@type TokenDataValue|nil
     local value
     for token in pairs(self._selection_set) do
         local current = token:get_data()[key]
@@ -236,7 +247,9 @@ function TokenPanel:_apply()
                     end
                 end
             elseif t == "number" then
-                local key, value = property.key, property.input:get_number()
+                local input = property.input
+                ---@cast input NumberInput
+                local key, value = property.key, input:get_number()
                 for token in pairs(self._selection_set) do
                     local old = token:get_data()[key]
                     if old ~= value then

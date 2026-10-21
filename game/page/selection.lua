@@ -3,10 +3,10 @@ local Aabb = require("utils.aabb")
 local Consts = require("app.consts")
 
 ---@class Selection: Rectangle
----@field _page Page
----@field _start_point number[]
----@field _end_point number[]
----@field _select_set table<Token, boolean> Currently selected tokens
+---@field private _page Page
+---@field _start_point [number, number]
+---@field _end_point [number, number]
+---@field private _select_set table<Token, boolean> Currently selected tokens
 local Selection = class("Selection", Rectangle)
 
 ---@param self Selection

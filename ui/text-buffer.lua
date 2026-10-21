@@ -76,9 +76,11 @@ function TextBuffer:set_text(text)
     self._text = text
 end
 
----@return number
+---@return integer
 function TextBuffer:get_text_length()
-    return utf8.len(self._text)
+    local length = utf8.len(self._text)
+    assert(length, "the text is not UTF-8")
+    return length
 end
 
 return TextBuffer
