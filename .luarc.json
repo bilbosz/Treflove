@@ -2,6 +2,7 @@
     "workspace": {
         "library": [
             "annotations/love2d/library",
+            "annotations/luasocket/library",
             "lib/lua-lifetime/editor/luals/meta"
         ],
         "ignoreDir": [
@@ -31,8 +32,23 @@
         "ripairs",
         "toboolean"
     ],
-    "diagnostics.disable": [
-        "param-type-mismatch",
-        "lowercase-global"
-    ]
+    "diagnostics.disable": [],
+    "runtime.plugin": ".vscode/constructor_hints.lua",
+    "diagnostics.neededFileStatus": {
+        "no-unknown": "Any",
+        "incomplete-signature-doc": "Any",
+        "missing-global-doc": "Any",
+        "missing-local-export-doc": "Any",
+        "global-element": "Any",
+        "lowercase-global": "Any"
+    },
+    "diagnostics.severity": {
+        "no-unknown": "Warning",
+        "incomplete-signature-doc": "Warning",
+        "missing-global-doc": "Warning",
+        "missing-local-export-doc": "Warning",
+        "global-element": "Warning",
+        "lowercase-global": "Warning"
+    },
+    "type.checkTableShape": true
 }

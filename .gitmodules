@@ -4,3 +4,6 @@
 [submodule "lib/lua-lifetime"]
 	path = lib/lua-lifetime
 	url = git@github.com:bilbosz/lua-lifetime.git
+[submodule "annotations/luasocket"]
+	path = annotations/luasocket
+	url = git@github.com:LuaCATS/luasocket.git
