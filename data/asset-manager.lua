@@ -131,7 +131,7 @@ end
 ---@param session Session
 function AssetManager:register_session(session)
     local connection = session:get_connection()
-    self._upload_asset_rp[session] = UploadAssetRp(connection):attach_lifetime(session)
+    self._upload_asset_rp[session] = UploadAssetRp(session):attach_lifetime(session)
     self._download_asset_rp[session] = DownloadAssetRp(connection):attach_lifetime(session)
     self._download_missing_assets_rp[session] = DownloadMissingAssetsRp(connection):attach_lifetime(session)
     lifetime.hook(function()

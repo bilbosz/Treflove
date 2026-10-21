@@ -47,6 +47,7 @@ local TEST_MODULES = {
     "tests.test-text",
     "tests.test-text-event",
     "tests.test-tree",
+    "tests.test-upload-asset-rp",
     "tests.test-waiting-screen"
 }
 
