@@ -37,6 +37,7 @@ local TEST_MODULES = {
     "tests.test-input",
     "tests.test-keyboard",
     "tests.test-lifetimes",
+    "tests.test-permissions",
     "tests.test-pointer-event",
     "tests.test-preview-area",
     "tests.test-screen-manager",
