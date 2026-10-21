@@ -1,4 +1,5 @@
 ---@class OptionsManager: Object
+---@overload fun(): OptionsManager
 local OptionsManager = class("OptionsManager")
 
 function OptionsManager:toggle_fullscreen()

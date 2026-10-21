@@ -40,6 +40,7 @@ end
 
 function NotificationManager:on_update()
     local time = app:get_time()
+    ---@type integer[]|nil
     local to_remove
     for i, notification in ipairs(self._notifications) do
         if time > notification.start_time + notification.duration then

@@ -17,6 +17,7 @@ local ButtonEventManager = require("ui.button-event")
 local TextEventManager = require("ui.text-event")
 
 ---@class Client: App
+---@field public data GameData|nil Cleared on a disconnect
 local Client = class("Client", App)
 
 ---@param params ArgParserResult
