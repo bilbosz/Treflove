@@ -25,7 +25,7 @@ local Consts = require("app.consts")
 ---@field private _game_screen GameScreen
 ---@field private _selection Selection
 ---@field private _tokens Token[]
----@field private _select_set_start_pos table<Token, [number, number]>|nil
+---@field private _select_set_start_pos table<Token, [number, number]>|nil While dragging: the start positions of the selected tokens the player may write, the ones the drag moves
 local Page = class("Page", Model, ClippingRectangle)
 
 ---@private
@@ -70,7 +70,7 @@ function Page:init(data, game_screen, width, height)
 
     self._tokens = {}
     for _, name in ipairs(data.tokens) do
-        table.insert(self._tokens, Token(app.data.tokens[name], self._page_coordinates))
+        table.insert(self._tokens, Token(name, app.data.tokens[name], self._page_coordinates))
     end
 
     local pointer_event_manager = app.pointer_event_manager
@@ -120,9 +120,11 @@ function Page:on_pointer_down(x, y, button)
         self._select_set_start_pos = {}
         local set = self._selection:get_select_set()
         for token in pairs(set) do
-            self._select_set_start_pos[token] = {
-                token:get_position()
-            }
+            if token:is_writable() then
+                self._select_set_start_pos[token] = {
+                    token:get_position()
+                }
+            end
         end
     end
 end
@@ -169,9 +171,8 @@ function Page:on_pointer_move(x, y)
         local sx, sy = unpack(self._pointer_down_pos[Consts.PAGE_DRAG_TOKEN_BUTTON])
         local wx, wy = self._page_coordinates:transform_to_local(x, y)
         local ox, oy = wx - sx, wy - sy
-        local set = self._selection:get_select_set()
-        for token in pairs(set) do
-            local start_pos_x, start_pos_y = unpack(self._select_set_start_pos[token])
+        for token, start_pos in pairs(assert(self._select_set_start_pos)) do
+            local start_pos_x, start_pos_y = unpack(start_pos)
             token:set_position(start_pos_x + ox, start_pos_y + oy)
         end
     end
