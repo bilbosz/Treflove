@@ -62,6 +62,15 @@ local function game_data(auth)
                 group = "master"
             }
         },
+        groups = {
+            master = {
+                title = "Game master",
+                permissions = {
+                    "read",
+                    "write"
+                }
+            }
+        },
         game = {
             page = "P"
         },
