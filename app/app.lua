@@ -14,7 +14,7 @@ local lifetime = require("lifetime")
 ---@field public data GameData|nil On the server from `load()` on; on the client while the game data is in, until a disconnect
 ---@field public defer_manager DeferManager
 ---@field public file_system_drop_event_manager FileSystemDropEventManager
----@field public height number
+---@field public height number|nil Model height, with a window
 ---@field public is_client boolean
 ---@field public is_server boolean
 ---@field public keyboard_manager KeyboardManager
@@ -23,15 +23,15 @@ local lifetime = require("lifetime")
 ---@field public options_manager OptionsManager
 ---@field public pointer_event_manager PointerEventManager
 ---@field public resize_manager ResizeManager
----@field public root Control
----@field public screen_manager ScreenManager
----@field public session Session
+---@field public root Control|nil With a window
+---@field public screen_manager ScreenManager|nil On the client, and on a server with a window
+---@field public session Session|nil The client's, while connected
 ---@field public text_event_manager TextEventManager
 ---@field public update_event Event Triggered with (dt) every frame
 ---@field public wheel_event Event Triggered with (x, y) wheel movement (client only)
----@field public width number
+---@field public width number|nil Model width, with a window
 ---@field protected load fun(self:App)
----@field protected params string[]
+---@field protected params ArgParserResult
 ---@field private _draw_aabbs boolean
 ---@field private _mark_for_quit boolean
 ---@field private _start_time number

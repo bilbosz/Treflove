@@ -5,6 +5,10 @@ local media = {}
 
 ---@alias LoveMedium love.Source|love.Image|love.Font|love.Video|nil
 
+---@alias media.Constructor fun(data: string): LoveMedium Raises when `data` is not of its type
+
+---@alias media.Candidate {[1]: media.Constructor, [2]: media.Type}
+
 ---@enum media.Type
 media.Type = {
     VIDEO = 1,
@@ -38,7 +42,7 @@ local function _try_create_video_file(data)
     return love.graphics.newVideo(data)
 end
 
----@type any[]
+---@type media.Candidate[] Ordered so ambiguous data resolves to the preferred type
 local MATCH_FILE = {
     {
         _try_create_video_file,

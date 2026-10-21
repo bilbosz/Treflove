@@ -36,6 +36,7 @@ end
 
 ---@param child Tree
 function Tree:remove_child(child)
+    ---@type integer|nil
     local found
     for i, v in ipairs(self.children) do
         if v == child then
@@ -83,6 +84,7 @@ function Tree:reattach(n)
     if children[n] == self then
         return
     end
+    ---@type integer|nil
     local found
     for i, v in ipairs(children) do
         if v == self then

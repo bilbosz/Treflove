@@ -26,7 +26,7 @@ end
 ---@return T
 local function _get_client_rp(rp_list)
     assert(app.is_client)
-    local rp = rp_list[app.session]
+    local rp = rp_list[assert(app.session)]
     assert(rp, "no procedure registered for the client's session")
     return rp
 end
@@ -85,7 +85,7 @@ function AssetManager:mount_file(mount_point, content)
     if not file:get_type() then
         file:create()
     end
-    file:write(love.data.decode("string", "base64", content))
+    file:write(love.data.decode("string", "base64", content) --[[@as string]] )
     images.forget(Asset.get_asset_path(mount_point))
 end
 

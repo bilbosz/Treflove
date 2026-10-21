@@ -39,6 +39,7 @@ function Utils.dump_controls(ctrl, indent)
     table.insert(dump, ctrl:are_all_predecessors_enabled() and "a" or " ")
     table.insert(dump, "]\n")
     for _, child in ipairs(ctrl:get_children()) do
+        ---@cast child Control
         table.insert(dump, Utils.dump_controls(child, indent .. "|   "))
     end
     return table.concat(dump)
@@ -48,8 +49,12 @@ end
 ---@param black_functions function[]|nil
 function Utils.monitor_object(obj, black_functions)
     black_functions = black_functions or {}
+    ---@type table<string, any>
     local mt = getmetatable(obj)
+    ---@type table<string, any>
     local old_index = mt.__index
+    ---@param k string
+    ---@return any
     mt.__index = function(_, k)
         local level = 1
         local info = debug.getinfo(level, "f")
@@ -65,6 +70,8 @@ function Utils.monitor_object(obj, black_functions)
         return old_index[k]
     end
 
+    ---@param k string
+    ---@param v any
     mt.__newindex = function(_, k, v)
         old_index[k] = v
         app:log("write on " .. k)

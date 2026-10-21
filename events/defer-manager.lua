@@ -1,7 +1,8 @@
----@alias DeferEntry {[1]: number, [2]: function, [3]: any[]} Invocation time, callback and its arguments
+---@alias DeferCallback fun(...: any)
+---@alias DeferEntry {[1]: number, [2]: DeferCallback, [3]: any[]} Invocation time, callback and its arguments
 ---@class DeferManager: Object
----@field _queue DeferEntry[] Pending defers sorted by invocation time
----@field _to_add_defers DeferEntry[] Defers queued since the last update
+---@field package _queue DeferEntry[] Pending defers sorted by invocation time
+---@field package _to_add_defers DeferEntry[] Defers queued since the last update
 local DeferManager = class("DeferManager")
 
 ---@param self DeferManager
@@ -19,7 +20,7 @@ function DeferManager:init()
 end
 
 ---@param t number Delay in seconds
----@param f function Callback to invoke after the delay
+---@param f DeferCallback Callback to invoke after the delay
 ---@param ... any Arguments passed to the callback
 function DeferManager:call_defered(t, f, ...)
     assert_type(t, "number")

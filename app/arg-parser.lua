@@ -3,8 +3,10 @@ require("utils.class")
 ---@class arg_parser Example usage: `love . server 0.0.0.0 8080` or `love . client 192.0.0.1 8080`
 local arg_parser = {}
 
+---@alias AppType "server"|"client"
+
 ---@param str string
----@return string|nil Input string or `nil` when provided string was wrong
+---@return AppType|nil Input string or `nil` when provided string was wrong
 local function _parse_app_type(str)
     return str == "server" and str or str == "client" and str or nil
 end
@@ -41,7 +43,7 @@ local function _parse_port(str)
 end
 
 ---@class ArgParserResult
----@field public app_type "server"|"client"
+---@field public app_type AppType
 ---@field public address string
 ---@field public port string Port number as string (range: 1024-65535)
 

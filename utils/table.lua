@@ -1,6 +1,10 @@
 ---@type nil|fun(k: any): boolean
 local is_state = nil
 
+---@alias table.Key number|string|boolean|table|function|userdata|thread Any value but nil
+
+---@alias table.Display fun(v: any): string A value or a key in the source form `table.to_string` writes
+
 ---@param k any
 ---@return boolean
 local function _is_state(k)
@@ -22,6 +26,8 @@ end
 ---@param destination table<K, V>
 ---@param source table<K, V>
 function table.merge(destination, source)
+    ---@param k any
+    ---@param v any
     for k, v in pairs(source) do
         if not _is_state(k) then
             destination[k] = v
@@ -33,6 +39,7 @@ end
 ---@param destination table<number, V>|V[]
 ---@param source V[]
 function table.merge_array(destination, source)
+    ---@param v any
     for _, v in ipairs(source) do
         table.insert(destination, v)
     end
@@ -42,7 +49,10 @@ end
 ---@param source table<K, V>
 ---@return table<K, V>
 function table.copy(source)
+    ---@type table<any, any>
     local copy = {}
+    ---@param k any
+    ---@param v any
     for k, v in pairs(source) do
         if not _is_state(k) then
             copy[k] = v
@@ -55,7 +65,10 @@ end
 ---@param source table<K, V>
 ---@return table<K, V>
 function table.deep_copy(source)
+    ---@type table<any, any>
     local copy = {}
+    ---@param k any
+    ---@param v any
     for k, v in pairs(source) do
         if not _is_state(k) then
             if type(v) == "table" then
@@ -71,36 +84,48 @@ end
 ---@param source table
 ---@return string
 function table.to_string(source)
+    ---@type fun(t: table<any, any>): string
     local table_display
+    ---@type table<type, table.Display|nil>
     local value_display = {
         ["nil"] = tostring,
         ["boolean"] = tostring,
         ["number"] = tostring,
+        ---@param v string
+        ---@return string
         ["string"] = function(v)
             return "\"" .. string.gsub(v, "\n", "\\n") .. "\""
         end,
         ["function"] = nil,
         ["userdata"] = nil,
         ["thread"] = nil,
+        ---@param v table
+        ---@return string
         ["table"] = function(v)
             return table_display(v)
         end
 
     }
+    ---@type table<type, table.Display|nil>
     local key_display = table.copy(value_display)
     key_display["nil"] = nil
     key_display["table"] = nil
 
     local depth = 0
+    ---@type table<table, boolean>
     local visited = {}
     table_display = function(t)
         assert(type(t) == "table")
         assert(not visited[t])
         visited[t] = true
         depth = depth + 1
+        ---@type number[]
         local nums = {}
+        ---@type string[]
         local strings = {}
+        ---@type table.Key[]
         local others = {}
+        ---@param k table.Key
         for k in pairs(t) do
             local k_type = type(k)
             if k_type == "number" then
@@ -116,11 +141,14 @@ function table.to_string(source)
         local prefix = string.rep("    ", depth)
         local result = "{"
         local last = 0
-        for _, group in ipairs({
+        ---@type table.Key[][]
+        local groups = {
             nums,
             strings,
             others
-        }) do
+        }
+        for _, group in ipairs(groups) do
+            ---@param k table.Key
             for _, k in ipairs(group) do
                 local v = t[k]
                 local k_type = type(k)
@@ -153,7 +181,12 @@ end
 ---@param str string
 ---@return table|nil
 function table.from_string(str)
-    local chunk = loadstring(str)
+    local chunk, syntax_error = loadstring(str)
+    if not chunk then
+        app:log("Error when creating table.", tostring(syntax_error))
+        return nil
+    end
+    ---@type boolean, any
     local no_error, result = pcall(chunk)
     if not no_error then
         app:log("Error when creating table.", tostring(result))
@@ -167,6 +200,8 @@ end
 ---@param value V
 ---@return K|nil
 function table.find_table_key(tab, value)
+    ---@param k any
+    ---@param v any
     for k, v in pairs(tab) do
         if v == value then
             return k
@@ -180,6 +215,7 @@ end
 ---@param value V
 ---@return number|nil
 function table.find_array_idx(array, value)
+    ---@param v any
     for i, v in ipairs(array) do
         if v == value then
             return i

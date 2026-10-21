@@ -1,4 +1,4 @@
----@alias DumpNodeDisplay fun(value: any, type: string, global_name: string|nil, content: string|nil): string
+---@alias DumpNodeDisplay fun(value: any, type: type, global_name: string|nil, content: string|nil): string
 ---@class DumpDisplayConfig
 ---@field show_global_names boolean
 ---@field table_max_level number|nil
@@ -9,9 +9,10 @@
 ---@field key_display DumpNodeDisplay
 ---@field value_display DumpNodeDisplay
 ---@field separator string
+---@class DumpStacktraceConfig Present to print the stack trace; no options yet
 ---@class DumpConfig
 ---@field keyword string|nil
----@field stacktrace table|nil
+---@field stacktrace DumpStacktraceConfig|nil
 ---@field dump DumpDisplayConfig
 ---@field text_processor nil|fun(text: string): any
 ---@type nil|fun(k: any): boolean
@@ -39,7 +40,7 @@ local function _dump_generator(config)
         return "[" .. keyword .. "]\n"
     end
 
-    ---@param stacktrace_config table
+    ---@param stacktrace_config DumpStacktraceConfig
     ---@return string
     local function create_stacktrace(stacktrace_config)
         local result = "\n[STACKTRACE]\n"
@@ -60,12 +61,14 @@ local function _dump_generator(config)
         return result
     end
 
+    ---@enum DumpNodeType
     local node_types = {
         Value = 1,
         Index = 2,
         Key = 3
     }
 
+    ---@type table<DumpNodeType, DumpNodeDisplay>
     local node_displays = {
         [node_types.Value] = config.dump.value_display,
         [node_types.Index] = config.dump.index_display,
@@ -81,7 +84,7 @@ local function _dump_generator(config)
         assert(not dump_config.table_unfold_repeated or dump_config.table_max_level ~= math.huge)
 
         ---@param val any
-        ---@param tab table|nil
+        ---@param tab table<any, any>|nil
         ---@param recursion_check table<table, boolean>|nil
         ---@param is_first_layer boolean|nil
         ---@return string|nil
@@ -90,6 +93,8 @@ local function _dump_generator(config)
             recursion_check = recursion_check or {}
             is_first_layer = is_first_layer == nil and true
 
+            ---@param var_name any
+            ---@param cur_val any
             for var_name, cur_val in pairs(tab) do
                 if cur_val == val then
                     if type(var_name) == "number" then
@@ -117,7 +122,7 @@ local function _dump_generator(config)
 
         ---@param val any
         ---@param level number
-        ---@param node number
+        ---@param node DumpNodeType
         ---@param recursion_check table<table, boolean>|nil
         ---@return string
         local function dump(val, level, node, recursion_check)
@@ -127,16 +132,20 @@ local function _dump_generator(config)
             local value_indention = node == node_types.Value and "" or indention
 
             local type_ = type(val)
+            ---@type string|nil
             local var_name
             if dump_config.show_global_names then
                 var_name = get_glob_var_name(val)
             end
+            ---@type string|nil
             local content
 
             if type_ == "table" and (dump_config.table_unfold_repeated or not recursion_check[val]) and node == node_types.Value and level < dump_config.table_max_level then
                 recursion_check[val] = true
                 content = value_indention .. "{" .. dump_config.table_newline
                 local last_index = 0
+                ---@param key any
+                ---@param cur_val any
                 for key, cur_val in pairs(val) do
                     if not _is_state(key) then
                         local key_type = type(key)
