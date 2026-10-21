@@ -4,17 +4,26 @@ local lifetime = require("lifetime")
 local Connection = require("networking.connection")
 local RemoteProcedure = require("networking.remote-procedure")
 
+---@class TestEchoRequest
+---@field inp number
+
+---@class TestEchoResponse
+---@field out number
+
+---@class TestEchoRp: RemoteProcedure
+---@field got number|nil The `out` of the last response received
+---@overload fun(connection: Connection, dont_start: boolean|nil): TestEchoRp
 local EchoRp = class("TestEchoRp", RemoteProcedure)
 
----@param request table
----@return table
+---@param request TestEchoRequest
+---@return TestEchoResponse
 function EchoRp:send_response(request)
     return {
         out = request.inp * 2
     }
 end
 
----@param response table
+---@param response TestEchoResponse
 function EchoRp:receive_response(response)
     self.got = response.out
 end
@@ -50,18 +59,24 @@ end)
 
 test.case("an incoming request is answered by the registered handler", function()
     local client_connection, server_connection = make_connection_pair()
-    server_connection:register_request_handler("SomeRp", function(body)
+    ---@param body {value: number}
+    ---@return {doubled: number}
+    local function double(body)
         return {
             doubled = body.value * 2
         }
-    end)
+    end
+    server_connection:register_request_handler("SomeRp", double)
 
+    ---@type {doubled: number}|nil
     local received
+    ---@param body {doubled: number}
+    local function receive(body)
+        received = body
+    end
     client_connection:send_request("SomeRp", {
         value = 21
-    }, function(body)
-        received = body
-    end)
+    }, receive)
     server_connection:on_update()
     client_connection:on_update()
 
@@ -86,39 +101,46 @@ test.case("full RPC round-trip: request, server handler, client response", funct
     local client_rp = EchoRp(client_connection)
     local _ = EchoRp(server_connection)
 
+    ---@type TestEchoResponse|nil
     local cb_response
+    ---@param response TestEchoResponse
+    local function receive(response)
+        cb_response = response
+    end
     client_rp:send_request({
         inp = 21
-    }, function(response)
-        cb_response = response
-    end)
+    }, receive)
 
     server_connection:on_update()
     client_connection:on_update()
 
     test.assert_eq(client_rp.got, 42, "receive_response processed the answer")
-    test.assert_eq(cb_response.out, 42, "the optional callback also fires")
+    test.assert_eq(assert(cb_response).out, 42, "the optional callback also fires")
 end)
 
 test.case("responses are matched to requests in FIFO order", function()
     local client_connection, server_connection = make_connection_pair()
-    server_connection:register_request_handler("OrderRp", function(body)
+    ---@param body {id: string}
+    ---@return {id: string}
+    local function echo_id(body)
         return {
             id = body.id
         }
-    end)
+    end
+    server_connection:register_request_handler("OrderRp", echo_id)
 
+    ---@type string[]
     local received = {}
+    ---@param body {id: string}
+    local function receive(body)
+        table.insert(received, body.id)
+    end
     client_connection:send_request("OrderRp", {
         id = "a"
-    }, function(body)
-        table.insert(received, body.id)
-    end)
+    }, receive)
     client_connection:send_request("OrderRp", {
         id = "b"
-    }, function(body)
-        table.insert(received, body.id)
-    end)
+    }, receive)
 
     server_connection:on_update()
     client_connection:on_update()
@@ -155,6 +177,8 @@ test.case("procedures anchored to a connection stop with it, newest first, after
         return release(self, reason)
     end
     local first = EchoRp(client_connection):attach_lifetime(client_connection)
+    ---@class TestSecondRp: RemoteProcedure
+    ---@overload fun(connection: Connection, dont_start: boolean|nil): TestSecondRp
     local Second = class("TestSecondRp", RemoteProcedure)
     local second = Second(client_connection):attach_lifetime(client_connection)
 

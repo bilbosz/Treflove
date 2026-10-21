@@ -5,7 +5,7 @@ local Button = require("ui.button")
 local ButtonEventManager = require("ui.button-event")
 local Input = require("ui.input")
 
----@class TestButtonControl: Object
+---@class TestButtonControl: Control
 ---@field name string
 ---@field visible boolean
 ---@field button Button
@@ -122,7 +122,7 @@ local function _make_tree()
         input
     })
     local app_mock = mocks.install_app()
-    app_mock.root = root --[[@as Control]]
+    app_mock.root = root
     local manager = ButtonEventManager()
     for _, ctrl in ipairs({
         a,
@@ -130,7 +130,7 @@ local function _make_tree()
         input,
         inner
     }) do
-        manager:register(ctrl --[[@as Control]] , ctrl.button)
+        manager:register(ctrl, ctrl.button)
     end
     return {
         log = log,
@@ -271,7 +271,7 @@ end)
 
 test.case("unregistered controls are not reached", function()
     local tree = _make_tree()
-    tree.manager:unregister(tree.a --[[@as Control]] )
+    tree.manager:unregister(tree.a)
 
     tree.manager:dispatch_pointer_move(20, 20, nil)
     tree.manager:dispatch_pointer_down(20, 20, 1)
@@ -283,7 +283,7 @@ end)
 test.case("unregistering the control under the pointer leaves it at once; later moves do not reach it", function()
     local tree = _make_tree()
     tree.manager:dispatch_pointer_move(20, 20, nil)
-    tree.manager:unregister(tree.a --[[@as Control]] )
+    tree.manager:unregister(tree.a)
     test.assert_false(tree.a.button:is_hovered())
     tree.manager:dispatch_pointer_move(70, 70, nil)
 
@@ -298,7 +298,7 @@ test.case("unregistering a pressed control unselects and leaves it; the release 
     local tree = _make_tree()
     tree.manager:dispatch_pointer_move(20, 20, nil)
     tree.manager:dispatch_pointer_down(20, 20, 1)
-    tree.manager:unregister(tree.a --[[@as Control]] )
+    tree.manager:unregister(tree.a)
     tree.manager:dispatch_pointer_up(20, 20, 1)
     tree.manager:dispatch_pointer_down(70, 70, 1)
 
@@ -314,10 +314,12 @@ end)
 test.case("a control unregistered by its own click is left once, after the click", function()
     local tree = _make_tree()
     local manager = tree.manager
-    tree.a.button.clicked:register(tree.a, function(a)
+    ---@param a TestButtonControl
+    local function record_and_unregister(a)
         a:record("clicked")
         manager:unregister(a)
-    end)
+    end
+    tree.a.button.clicked:register(tree.a, record_and_unregister)
     manager:dispatch_pointer_move(20, 20, nil)
     manager:dispatch_pointer_down(20, 20, 1)
     manager:dispatch_pointer_up(20, 20, 1)

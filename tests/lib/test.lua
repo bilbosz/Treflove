@@ -1,9 +1,15 @@
+---@class test
+local test = {}
+
+---@class TestFailure
+---@field name string The case's name
+---@field err string The error it raised
+
 ---@class TestSuite
 ---@field name string
 ---@field passed number
 ---@field failed number
----@field failures {name: string, err: string}[]
-local test = {}
+---@field failures TestFailure[]
 
 ---@type TestSuite[]
 local suites = {}
@@ -26,6 +32,7 @@ end
 ---@param fn fun()
 function test.case(name, fn)
     local suite = assert(current_suite, "test.suite() must be called before test.case()")
+    ---@type boolean, string
     local ok, err = xpcall(fn, function(e)
         return tostring(e)
     end)
@@ -104,6 +111,8 @@ local function _deep_eq(a, b)
     if type(a) ~= "table" or type(b) ~= "table" then
         return false
     end
+    ---@cast a table<any, any>
+    ---@cast b table<any, any>
     for k, v in pairs(a) do
         if not _deep_eq(v, b[k]) then
             return false

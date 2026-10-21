@@ -2,6 +2,9 @@ local test = require("tests.lib.test")
 local lifetime = require("lifetime")
 
 -- class() copies base methods at creation: a base is complete before deriving
+---@class TestAnimal: Object
+---@field name string
+---@field extra boolean|nil
 local Animal = class("TestAnimal")
 
 ---@param name string
@@ -19,6 +22,7 @@ function Animal:noise()
     return "..."
 end
 
+---@class TestPet: Object
 local Pet = class("TestPet")
 
 ---@return string
@@ -31,6 +35,8 @@ function Pet:owner()
     return "adam"
 end
 
+---@class TestDog: TestAnimal, TestPet
+---@overload fun(name: string): TestDog The constructor is TestAnimal's
 local Dog = class("TestDog", Animal, Pet)
 
 ---@return string
@@ -96,6 +102,9 @@ test.case("instances of the same class are independent", function()
     test.assert_eq(b.extra, nil)
 end)
 
+---@class TestResource: Object
+---@field log string[]
+---@field name string
 local Resource = class("TestResource")
 
 ---@param log string[]
@@ -110,6 +119,8 @@ function Resource:release(reason)
     table.insert(self.log, self.name .. " (" .. reason .. ")")
 end
 
+---@class TestQuiet: Object
+---@overload fun(): TestQuiet
 local Quiet = class("TestQuiet")
 
 test.case("release runs as the destructor, with the reason, when an instance is destroyed", function()
@@ -166,6 +177,7 @@ end)
 
 test.case("a subclass's release overrides the base's, as any method", function()
     local log = {}
+    ---@class TestLoud: TestResource
     local Loud = class("TestLoud", Resource)
     ---@param reason lifetime.Reason
     function Loud:release(reason)

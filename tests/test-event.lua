@@ -20,6 +20,7 @@ test.suite("Event")
 test.case("registered handlers receive the owner and trigger arguments", function()
     local event = Event()
     local first, second = TestEventOwner(), TestEventOwner()
+    ---@type {owner: TestEventOwner, a: number, b: string}[]
     local calls = {}
     ---@param owner TestEventOwner
     ---@param a number
@@ -37,6 +38,7 @@ test.case("registered handlers receive the owner and trigger arguments", functio
     event:trigger(42, "x")
 
     test.assert_eq(#calls, 2)
+    ---@type table<TestEventOwner, boolean>
     local seen = {}
     for _, call in ipairs(calls) do
         seen[call.owner] = true
@@ -276,6 +278,7 @@ test.case("owners are held weakly", function()
 end)
 
 ---@class TestDyingOwner: Object
+---@overload fun(): TestDyingOwner
 local TestDyingOwner = class("TestDyingOwner")
 
 test.case("a dead owner is skipped and dropped, by trigger and get_handler", function()

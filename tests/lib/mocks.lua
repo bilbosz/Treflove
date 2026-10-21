@@ -26,7 +26,7 @@ end
 
 ---@return FakeKeyboard
 function mocks.make_keyboard()
-    ---@class FakeKeyboard
+    ---@class FakeKeyboard: love.keyboard
     ---@field text_input boolean
     ---@field key_repeat boolean
     ---@field down table<love.KeyConstant, boolean> Keys reported as held by `isDown`
@@ -67,7 +67,7 @@ function mocks.make_keyboard()
     return keyboard
 end
 
----@param overrides table|nil Fields merged over the defaults
+---@param overrides {is_client: boolean, is_server: boolean}|nil Fields merged over the defaults
 ---@return AppMock
 function mocks.make_app(overrides)
     ---@class AppMock: App
@@ -109,7 +109,7 @@ function mocks.make_app(overrides)
         self.pointer_event_manager.position[1], self.pointer_event_manager.position[2] = x, y
     end
 
-    ---@class ResizeManagerMock
+    ---@class ResizeManagerMock: ResizeManager
     ---@field resized Event
     local resize_manager = {
         resized = Event()
@@ -130,7 +130,7 @@ function mocks.make_app(overrides)
     return app_mock
 end
 
----@param overrides table|nil
+---@param overrides {is_client: boolean, is_server: boolean}|nil
 ---@return AppMock
 function mocks.install_app(overrides)
     local app_mock = mocks.make_app(overrides)
@@ -140,7 +140,7 @@ end
 
 ---@return FakeChannel
 function mocks.make_channel()
-    ---@class FakeChannel
+    ---@class FakeChannel: love.Channel
     ---@field _queue any[]
     ---@field _released boolean|nil
     local channel = {
@@ -176,8 +176,10 @@ function mocks.make_channel()
     return channel
 end
 
----@return table
+---@return FakeThread
 function mocks.make_thread()
+    ---@class FakeThread: love.Thread
+    ---@field _released boolean|nil
     local thread = {}
 
     function thread:release()
@@ -263,7 +265,7 @@ function mocks.ensure_love_graphics()
 end
 
 ---@param files table<string, string>
----@return table|nil previous What `love.filesystem` was
+---@return love.filesystem|nil previous What `love.filesystem` was
 function mocks.install_love_filesystem(files)
     ---@diagnostic disable-next-line: missing-fields, assign-type-mismatch
     love = love or {}
@@ -283,6 +285,8 @@ function mocks.install_love_filesystem(files)
 
     ---@diagnostic disable-next-line: missing-fields, assign-type-mismatch
     love.filesystem = {
+        ---@param path string
+        ---@return {type: love.FileType, size: number|nil}|nil
         getInfo = function(path)
             local content = files[path]
             if content then
@@ -298,19 +302,29 @@ function mocks.install_love_filesystem(files)
             end
             return nil
         end,
+        ---@param path string
+        ---@return string|nil contents
+        ---@return number|nil size
         read = function(path)
             local content = files[path]
             return content, content and #content
         end,
+        ---@param path string
+        ---@param content string
+        ---@return boolean
         write = function(path, content)
             files[path] = content
             return true
         end,
+        ---@return boolean
         createDirectory = function()
             return true
         end,
+        ---@param path string
+        ---@return string[]
         getDirectoryItems = function(path)
             local prefix = path .. "/"
+            ---@type table<string, boolean>, string[]
             local seen, items = {}, {}
             for k in pairs(files) do
                 if string.sub(k, 1, #prefix) == prefix then
@@ -325,6 +339,8 @@ function mocks.install_love_filesystem(files)
             table.sort(items)
             return items
         end,
+        ---@param path string
+        ---@return boolean
         remove = function(path)
             files[path] = nil
             return true
@@ -333,9 +349,8 @@ function mocks.install_love_filesystem(files)
     return previous
 end
 
----@param previous table|nil
+---@param previous love.filesystem|nil
 function mocks.restore_love_filesystem(previous)
-    ---@diagnostic disable-next-line: assign-type-mismatch
     love.filesystem = previous
 end
 
@@ -370,7 +385,7 @@ function mocks.ensure_love_data()
 end
 
 ---Column-major, as LÖVE's `getMatrix`.
----@class FakeTransform
+---@class FakeTransform: love.Transform
 ---@field a number
 ---@field b number
 ---@field c number
@@ -418,7 +433,22 @@ function FakeTransform:setMatrix(...)
     return self
 end
 
----@return number ...
+---@return number e1_1
+---@return number e1_2
+---@return number e1_3
+---@return number e1_4
+---@return number e2_1
+---@return number e2_2
+---@return number e2_3
+---@return number e2_4
+---@return number e3_1
+---@return number e3_2
+---@return number e3_3
+---@return number e3_4
+---@return number e4_1
+---@return number e4_2
+---@return number e4_3
+---@return number e4_4
 function FakeTransform:getMatrix()
     return self.a, self.c, 0, self.tx, self.b, self.d, 0, self.ty, 0, 0, 1, 0, 0, 0, 0, 1
 end
@@ -472,9 +502,15 @@ function mocks.ensure_love_math()
         newRandomGenerator = function()
             local state = 1
             return {
+                ---@param _ love.RandomGenerator
+                ---@param seed number
                 setSeed = function(_, seed)
                     state = seed % 2147483647
                 end,
+                ---@param _ love.RandomGenerator
+                ---@param lo number
+                ---@param hi number
+                ---@return number
                 random = function(_, lo, hi)
                     state = (state * 16807) % 2147483647
                     return lo + state % (hi - lo + 1)

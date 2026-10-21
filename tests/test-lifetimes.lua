@@ -53,12 +53,14 @@ local function server_auth()
 end
 
 ---@param auth string
----@return table
+---@return GameData
 local function game_data(auth)
     return {
         players = {
             adam = {
-                auth = auth
+                name = "Adam",
+                auth = auth,
+                group = "master"
             }
         },
         game = {
@@ -147,7 +149,6 @@ local function make_client()
     client.backstack_manager = BackstackManager()
     client.button_event_manager = ButtonEventManager()
     client.text_event_manager = TextEventManager(mocks.make_keyboard())
-    ---@diagnostic disable-next-line: assign-type-mismatch
     client.notification_manager = TestNotificationManager()
     client.asset_manager = AssetManager()
     client.connection_manager = ConnectionManager("localhost", "8080")
@@ -180,6 +181,7 @@ local function make_server(auth)
     server.data = game_data(auth)
     server.asset_manager = AssetManager()
     server.connection_manager = ConnectionManager("localhost", "8080")
+    ---@type table<Connection, Session>
     local sessions = {}
     ---@diagnostic disable-next-line: invisible
     server.connection_manager._on_connect = function(connection)
@@ -213,6 +215,7 @@ local function connect(client, server)
     return client.session:get_connection(), server_connection
 end
 
+---@type table<string, Class>
 local CLASSES = {
     Connection = Connection,
     LoginRp = LoginRp,
@@ -235,16 +238,21 @@ local CLASSES = {
 ---@param log string[]
 ---@param fn fun()
 local function with_release_log(log, fn)
+    ---@type table<string, Destructor>
     local originals = {}
     for name, cls in pairs(CLASSES) do
+        ---@type Destructor
         local release = cls.release
         originals[name] = release
+        ---@param self Object
+        ---@param reason lifetime.Reason
         cls.release = function(self, reason)
             table.insert(log, name .. ":release(" .. tostring(reason) .. ")")
-            return release(self, reason)
+            release(self, reason)
         end
     end
     collectgarbage("stop")
+    ---@type boolean, any
     local ok, err = pcall(fn)
     collectgarbage("restart")
     for name, cls in pairs(CLASSES) do
@@ -255,7 +263,7 @@ local function with_release_log(log, fn)
     end
 end
 
----@param objects table[]
+---@param objects (table|lifetime.Hook)[] What `lifetime.dependents` gives
 ---@return string[]
 local function class_names(objects)
     local names = {}
@@ -266,7 +274,7 @@ local function class_names(objects)
     return names
 end
 
----@param objects table[]
+---@param objects (table|lifetime.Hook)[] What `lifetime.dependents` gives
 ---@return string[]
 local function class_names_but_hooks(objects)
     local names = {}
@@ -302,7 +310,7 @@ end
 ---@field client_connection Connection
 ---@field server_connection Connection
 ---@field sessions table<Connection, Session>
----@field previous_filesystem table|nil
+---@field previous_filesystem love.filesystem|nil
 
 ---@return TestFlow
 local function enter_the_game()
@@ -364,6 +372,7 @@ end
 local function flow_case(name, fn)
     test.case(name, function()
         local flow = enter_the_game()
+        ---@type boolean, any
         local ok, err = pcall(fn, flow)
         finish(flow)
         if not ok then
@@ -390,14 +399,14 @@ flow_case("connect and log in: the session owns the period, which owns the menu,
         "token"
     })
     ---@diagnostic disable-next-line: invisible
-    local period = session._period
+    local period = assert(session._period)
     test.assert_eq(lifetime.format(period), "token logged in")
     test.assert_deep_eq(class_names(lifetime.dependents(period)), {
         "UserMenuScreen",
         "BackstackEntry",
         "GameScreen"
     })
-    local game_screen = client.screen_manager:get_screen()
+    local game_screen = assert(client.screen_manager:get_screen())
     local game_dependents = lifetime.dependents(game_screen)
     test.assert_deep_eq(class_names_but_hooks(game_dependents), {
         "BackstackEntry"
@@ -408,6 +417,7 @@ end)
 flow_case("back from the game: the menu is shown again, the game screen dies with its panels, newest first", function(flow)
     local client = flow.client
     local game_screen = client.screen_manager:get_screen() --[[@as GameScreen]]
+    ---@type Input[]
     local inputs_of_game = {}
     ---@diagnostic disable-next-line: invisible
     for _, input in ipairs(game_screen._inputs) do

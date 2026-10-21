@@ -53,6 +53,7 @@ end)
 test.case("varargs are forwarded to the callback", function()
     mocks.install_app()
     local manager = DeferManager()
+    ---@type (number|string|boolean)[]|nil
     local received
     manager:call_defered(0, function(...)
         received = {
@@ -96,10 +97,12 @@ test.case("call_defered validates its arguments", function()
     mocks.install_app()
     local manager = DeferManager()
     test.assert_error(function()
+        ---@diagnostic disable-next-line: param-type-mismatch
         manager:call_defered("soon", function()
         end)
     end)
     test.assert_error(function()
+        ---@diagnostic disable-next-line: param-type-mismatch
         manager:call_defered(1, "not a function")
     end)
 end)

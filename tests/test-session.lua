@@ -22,6 +22,7 @@ local function make_client()
     return app_mock, connection
 end
 
+---@type table<string, Class>
 local CLASSES = {
     Connection = Connection,
     LoginRp = LoginRp,
@@ -35,15 +36,20 @@ local CLASSES = {
 ---@param log string[]
 ---@param fn fun()
 local function with_release_log(log, fn)
+    ---@type table<string, Destructor>
     local originals = {}
     for name, cls in pairs(CLASSES) do
+        ---@type Destructor
         local release = cls.release
         originals[name] = release
+        ---@param self Object
+        ---@param reason lifetime.Reason
         cls.release = function(self, reason)
             table.insert(log, name .. ":release(" .. tostring(reason) .. ")")
-            return release(self, reason)
+            release(self, reason)
         end
     end
+    ---@type boolean, any
     local ok, err = pcall(fn)
     for name, cls in pairs(CLASSES) do
         cls.release = originals[name]

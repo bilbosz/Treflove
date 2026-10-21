@@ -39,6 +39,7 @@ test.case("push returns the entry; back destroys it before running its callback"
     local manager = BackstackManager()
     local bottom = manager:push(function()
     end)
+    ---@type BackstackEntry|nil
     local depth_in_cb
     local top = manager:push(function()
         depth_in_cb = manager:get_top()
@@ -88,6 +89,7 @@ test.case("push accepts only functions", function()
     mocks.install_app()
     local manager = BackstackManager()
     test.assert_error(function()
+        ---@diagnostic disable-next-line: param-type-mismatch
         manager:push("not a function")
     end)
 end)

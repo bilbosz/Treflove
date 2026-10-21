@@ -5,7 +5,7 @@ local Control = require("controls.control")
 local PreviewArea = require("game.assets.preview-area.preview-area")
 
 ---@class TestDropTarget: Control
----@field files table[] The files handed over, in order
+---@field files love.DroppedFile[] The files handed over, in order
 ---@field fail boolean Raise instead of taking the file
 local TestDropTarget = class("TestDropTarget", Control)
 
@@ -15,7 +15,7 @@ function TestDropTarget:init()
     self.fail = false
 end
 
----@param file table
+---@param file love.DroppedFile
 function TestDropTarget:set_file(file)
     if self.fail then
         error("cannot read the file")
@@ -24,8 +24,9 @@ function TestDropTarget:set_file(file)
 end
 
 ---@param log string[]
----@return table
+---@return TestDroppedFile
 local function make_file(log)
+    ---@class TestDroppedFile: love.DroppedFile
     local file = {}
 
     ---@param mode string

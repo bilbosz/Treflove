@@ -3,7 +3,7 @@ local mocks = require("tests.lib.mocks")
 local Aabb = require("utils.aabb")
 local PointerEventManager = require("events.pointer-event")
 
----@class TestHitControl: Object
+---@class TestHitControl: Control
 ---@field name string
 ---@field visible boolean
 ---@field result boolean|nil Value returned by the handlers
@@ -46,7 +46,7 @@ end
 
 ---@param x number
 ---@param y number
----@param arg any Pointer id or dropped file
+---@param arg PointerId|love.DroppedFile
 ---@return boolean|nil
 function TestHitControl:on_event(x, y, arg)
     table.insert(self.log, string.format("%s:%s,%s,%s", self.name, tostring(x), tostring(y), tostring(arg)))
@@ -85,7 +85,7 @@ end
 ---@return AppMock
 local function _install(tree)
     local app_mock = mocks.install_app()
-    app_mock.root = tree.root --[[@as Control]]
+    app_mock.root = tree.root
     return app_mock
 end
 
@@ -149,7 +149,7 @@ test.case("receive_through controls below a consumer are still called", function
         tree.page,
         tree.token
     })
-    manager:set_receive_through(tree.page --[[@as Control]] , true)
+    manager:set_receive_through(tree.page, true)
 
     manager:dispatch_pointer_down(20, 20, 1)
 
@@ -158,7 +158,7 @@ test.case("receive_through controls below a consumer are still called", function
         "page:20,20,1"
     })
 
-    manager:set_receive_through(tree.page --[[@as Control]] , false)
+    manager:set_receive_through(tree.page, false)
     tree.log[1], tree.log[2] = nil, nil
     manager:dispatch_pointer_down(20, 20, 1)
     test.assert_deep_eq(tree.log, {
@@ -273,10 +273,11 @@ test.case("file drops use the same hit-tested order at the pointer position", fu
         manager.file_dropped:register(ctrl, ctrl.on_event)
     end
     tree.popup.result = true
-    manager:set_receive_through(tree.root --[[@as Control]] , true)
+    manager:set_receive_through(tree.root, true)
     app_mock:set_pointer_position(20, 25)
 
-    manager:file_drop("file" --[[@as love.DroppedFile]] )
+    ---@diagnostic disable-next-line: param-type-mismatch
+    manager:file_drop("file")
 
     test.assert_deep_eq(tree.log, {
         "popup:20,25,file",
