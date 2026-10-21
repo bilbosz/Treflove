@@ -47,6 +47,23 @@ processed.
 
 - Cull controls that fall entirely outside the clip rect (draw + input)
 
+### 6b. Permissions, the next consumers
+
+The permission model ([docs/permissions.md](docs/permissions.md)) resolves
+`read`, `write` and `view` grants; today the server enforces `read` (the
+game data it sends) and `write:assets` (uploads), the client gates token
+editing and dragging.
+
+- A vision system is the consumer of `view`: a player sees what the tokens
+  they own and the tokens they have `view` on see (fog of war); until then
+  the grant is resolved and sent but changes nothing on screen
+- When game state synchronization (milestone 2) brings a write procedure,
+  the server checks `write` on the changed entry before applying it; the
+  client-side gating is a convenience, not the guard
+- Per-player grants are edited by hand in the save file, like the accounts
+  (milestone 7); a game master UI for groups and grants belongs with the
+  account management
+
 ## Milestones from code review
 
 ### 7. Real login flow and user management

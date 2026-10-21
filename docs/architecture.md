@@ -67,6 +67,9 @@ A `Session` ties a connection to a user:
 - Manages the login and logout lifecycle through a `Login`
 - Coordinates the screen transitions (connecting → login → user menu → game)
 - Integrates with the asset manager and backstack navigation
+- Holds the user's `PermissionSet` while logged in: the server resolves it
+  from the game data at login, the client receives the grants with the game
+  data; see [permissions.md](permissions.md)
 - The server keeps a map from connection to session
 - Is anchored to its connection and owns its login, its remote procedures
   and, on the client, the "logged in" token that owns the menu and game
@@ -160,13 +163,24 @@ with a window.
 `AssetManager` tracks assets per session (on the client, the procedures used
 are its own session's), downloads missing assets from the server on demand
 and uploads new ones; `Asset` wraps LÖVE's filesystem. The procedures are
-DownloadAssetRp, DownloadMissingAssetsRp and UploadAssetRp.
+DownloadAssetRp, DownloadMissingAssetsRp and UploadAssetRp; an upload is
+accepted only from a session with `write` on `assets`.
+
+## Permissions
+
+Groups, grants and their enforcement are data in the game state and one
+module (`permissions`) plus one class (`PermissionSet`) used on both sides:
+the server filters the game data it sends by `read`, refuses uploads
+without `write:assets`; the client gates editing and dragging of tokens
+and the upload button. See [permissions.md](permissions.md).
 
 ## Data Persistence
 
 The server persists the game state as a human-readable Lua table:
 `table.to_string()` serializes, `table.from_string()` deserializes; the
-server writes on `save_data()` and reads at startup. The server's data
+server writes on `save_data()` and reads at startup. The state holds the
+pages, tokens and token properties, the players and the permission groups
+(`GameData` in `game/game-data-rp.lua`). The server's data
 directory holds the persisted state and the game assets (tokens, the world
 map); it is data, not source code.
 
