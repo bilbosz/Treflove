@@ -2,12 +2,15 @@ local GameDataRp = require("game.game-data-rp")
 local GameScreen = require("game.game-screen")
 local Login = require("login.login")
 local LoginScreen = require("login.login-screen")
+local PermissionSet = require("game.permission-set")
 local UserMenuScreen = require("screens.user-menu-screen")
 local WaitingScreen = require("screens.waiting-screen")
 local lifetime = require("lifetime")
+local permissions = require("game.permissions")
 
 ---@class Session: Object
 ---@field _user string|nil Logged-in user name
+---@field _permissions PermissionSet|nil While logged in: the server builds it at login from `app.data`, the client receives its grants with the game data
 ---@field _connection Connection|nil
 ---@field _login Login|nil
 ---@field _game_data_rp GameDataRp
@@ -22,6 +25,9 @@ local Session = class("Session")
 local function _on_login(self, user)
     assert(not self._user)
     self._user = user
+    if app.is_server then
+        self._permissions = PermissionSet(user, permissions.resolve(assert(app.data), user))
+    end
     if app.is_client then
         app.text_event_manager:set_text_input(false)
         local period = lifetime.attach(lifetime.token("logged in"), self)
@@ -42,6 +48,7 @@ end
 local function _on_logout(self)
     assert(self._user)
     self._user = nil
+    self._permissions = nil
     if app.is_client then
         lifetime.destroy(self._period)
         self._period = nil
@@ -56,6 +63,7 @@ end
 function Session:init(connection)
     self._connection = connection
     self._user = nil
+    self._permissions = nil
     self._period = nil
     self._user_menu_screen = nil
     self._game_screen = nil
@@ -80,6 +88,17 @@ end
 ---@return string|nil
 function Session:get_user()
     return self._user
+end
+
+---@return PermissionSet
+function Session:get_permissions()
+    return assert(self._permissions, "no permissions before the login (on the client: before the game data)")
+end
+
+---@param grants string[]
+function Session:set_grants(grants)
+    assert(app.is_client)
+    self._permissions = PermissionSet(assert(self._user, "grants need a logged-in user"), grants)
 end
 
 ---@return Connection

@@ -1,7 +1,14 @@
 local test = require("tests.lib.test")
 local mocks = require("tests.lib.mocks")
+local lifetime = require("lifetime")
+local AssetManager = require("data.asset-manager")
 local PermissionSet = require("game.permission-set")
+local Session = require("game.session")
 local permissions = require("game.permissions")
+local Connection = require("networking.connection")
+local ScreenManager = require("screens.screen-manager")
+local BackstackManager = require("utils.backstack-manager")
+local Control = require("controls.control")
 
 local Action = permissions.Action
 
@@ -381,4 +388,100 @@ test.case("reading the game keeps it whole; nothing read gives empty tables, not
         token_properties = {},
         tokens = {}
     }, "write and view do not read")
+end)
+
+test.suite("Session permissions")
+
+---@param overrides {is_client: boolean, is_server: boolean}|nil
+---@return AppMock
+---@return Connection
+local function make_app(overrides)
+    local app_mock = mocks.install_app(overrides)
+    mocks.ensure_love_data()
+    mocks.ensure_love_math()
+    mocks.ensure_love_graphics()
+    app_mock.root = Control()
+    app_mock.width, app_mock.height = 2000, 1500
+    app_mock.screen_manager = ScreenManager()
+    app_mock.backstack_manager = BackstackManager()
+    app_mock.data = game_data()
+    local connection = Connection(mocks.make_channel(), mocks.make_thread(), mocks.make_channel(), mocks.make_thread())
+    return app_mock, connection
+end
+
+---@param session Session
+---@param user string
+local function log_in(session, user)
+    ---@diagnostic disable-next-line: invisible
+    session._login._login_rp.on_login(user)
+end
+
+---@param session Session
+local function log_out(session)
+    ---@diagnostic disable-next-line: invisible
+    session._login._logout_rp.on_logout()
+end
+
+test.case("the server's session resolves its set at login and clears it at logout", function()
+    local previous = mocks.install_love_filesystem({
+        ["server/assets/token/g.png"] = "G"
+    })
+    local app_mock, connection = make_app({
+        is_client = false,
+        is_server = true
+    })
+    app_mock.asset_manager = AssetManager()
+    local session = Session(connection):attach_lifetime(connection)
+    test.assert_error(function()
+        session:get_permissions()
+    end, "not before the login")
+    test.assert_error(function()
+        session:set_grants({
+            "read"
+        })
+    end, "the server resolves its own")
+    log_in(session, "piotr")
+    local set = session:get_permissions()
+    test.assert_eq(set:get_login(), "piotr")
+    test.assert_deep_eq(set:get_grants(), permissions.resolve(assert(app_mock.data), "piotr"))
+    test.assert_true(set:allows(Action.WRITE, "tokens", "Gaben"))
+    log_out(session)
+    test.assert_error(function()
+        session:get_permissions()
+    end, "not after the logout")
+    lifetime.destroy(connection)
+    mocks.restore_love_filesystem(previous)
+end)
+
+test.case("the client's session takes its grants after the login and drops them at logout", function()
+    local app_mock, connection = make_app()
+    app_mock.asset_manager = AssetManager()
+    local session = Session(connection):attach_lifetime(connection)
+    test.assert_error(function()
+        session:get_permissions()
+    end, "not before the login")
+    test.assert_error(function()
+        session:set_grants({
+            "read"
+        })
+    end, "no user yet")
+    log_in(session, "piotr")
+    test.assert_error(function()
+        session:get_permissions()
+    end, "not before the game data")
+    session:set_grants({
+        "read",
+        "write:tokens/@owned"
+    })
+    local set = session:get_permissions()
+    test.assert_eq(set:get_login(), "piotr")
+    test.assert_deep_eq(set:get_grants(), {
+        "read",
+        "write:tokens/@owned"
+    })
+    log_out(session)
+    test.assert_error(function()
+        session:get_permissions()
+    end, "not after the logout")
+    lifetime.destroy(connection)
 end)
