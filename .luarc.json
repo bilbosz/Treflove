@@ -28,6 +28,7 @@
         "get_class_name_of",
         "get_class_of",
         "is_instance_of",
+        "lifetime_destroyerror",
         "prev",
         "ripairs",
         "toboolean"
