@@ -9,8 +9,9 @@ local Text = require("controls.text")
 ---@class TokenData
 ---@field name string
 ---@field diameter number Token diameter in meters
----@field position number[]
+---@field position {[1]: number, [2]: number} Position on the page, in meters
 ---@field avatar string Path of the avatar image asset
+---@field owners string[]|nil Logins of the players who own the token
 
 ---@class Token: Model, Control
 ---@field _diameter number

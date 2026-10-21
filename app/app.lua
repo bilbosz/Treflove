@@ -11,7 +11,7 @@ local lifetime = require("lifetime")
 ---@field public backstack_manager BackstackManager
 ---@field public button_event_manager ButtonEventManager
 ---@field public connection_manager ConnectionManager
----@field public data table
+---@field public data GameData|nil On the server from `load()` on; on the client while the game data is in, until a disconnect
 ---@field public defer_manager DeferManager
 ---@field public file_system_drop_event_manager FileSystemDropEventManager
 ---@field public height number
