@@ -1,9 +1,15 @@
+local lifetime = require("lifetime")
+local Consts = require("app.consts")
+local AssetManager = require("data.asset-manager")
 local Event = require("events.event")
 local FileSystemDropEventManager = require("events.file-drop-event")
 local KeyboardManager = require("events.keyboard")
 local PointerEventManager = require("events.pointer-event")
+local Session = require("game.session")
+local Connection = require("networking.connection")
 local ButtonEventManager = require("ui.button-event")
 local TextEventManager = require("ui.text-event")
+local Utils = require("utils.utils")
 
 local mocks = {}
 
@@ -174,6 +180,106 @@ function mocks.make_channel()
     end
 
     return channel
+end
+
+---Delivers a request to `connection` as its peer would, runs a frame of the
+---global `app` and returns the body of the response the connection sent
+---@param connection Connection Over fake channels
+---@param id string The remote procedure's class name
+---@param body RequestBody
+---@return ResponseBody
+function mocks.request(connection, id, body)
+    ---@type Request
+    local request = {
+        source = app.is_server and "c" or "s",
+        id = id,
+        body = body
+    }
+    connection:get_in_channel():push(love.data.compress("string", Consts.NETWORK_COMPRESSION, table.to_string(request)))
+    app.update_event:trigger(0.016)
+    local payload = assert(connection:get_out_channel():pop(), "the connection sent no response") --[[@as string]]
+    local response = table.from_string(love.data.decompress("string", Consts.NETWORK_COMPRESSION, payload) --[[@as string]] ) --[[@as Response]]
+    assert(response.id == id)
+    return response.body
+end
+
+---@param login string
+---@return string What the client of `login` sends as its auth in these tests
+function mocks.client_auth(login)
+    return "client auth of " .. login
+end
+
+---Under the server app, whose salt it uses
+---@param login string
+---@return string The `PlayerData.auth` that `mocks.client_auth(login)` matches
+function mocks.server_auth(login)
+    return Utils.hash(login .. string.char(0) .. Utils.generate_salt(32) .. string.char(0) .. mocks.client_auth(login))
+end
+
+---Logs a server's session in over its connection, as the client of `login` would
+---@param connection Connection
+---@param login string
+---@return string|nil user The logged-in user, `nil` when the server knows no such auth
+function mocks.log_in(connection, login)
+    local response = mocks.request(connection, "LoginRp", {
+        auth = mocks.client_auth(login)
+    }) --[[@as LoginResponse]]
+    return response.user
+end
+
+---@class TestNotificationManager: NotificationManager
+---@field messages string[] Every notified message, in order
+local TestNotificationManager = class("TestNotificationManager")
+
+function TestNotificationManager:init()
+    self.messages = {}
+end
+
+---@param message string
+function TestNotificationManager:notify(message)
+    table.insert(self.messages, message)
+end
+
+---@return TestNotificationManager
+function mocks.make_notification_manager()
+    return TestNotificationManager()
+end
+
+---@class TestServerSide
+---@field server AppMock The global `app` from `make_server_session` on
+---@field connection Connection Over fake channels, driven with `mocks.request`
+---@field session Session Not logged in; `mocks.log_in` logs it in
+---@field previous_filesystem love.filesystem|nil
+
+---A server app with its asset manager over an in-memory file system and one
+---session on a fake connection; `finish_server_session` tears it down
+---@param make_data fun(): GameData Called under the server app, whose salt the auths need
+---@param files table<string, string> The file system, with something under `server/` for the asset manager to mount
+---@return TestServerSide
+function mocks.make_server_session(make_data, files)
+    local server = mocks.install_app({
+        is_client = false,
+        is_server = true
+    })
+    mocks.ensure_love_data()
+    mocks.ensure_love_math()
+    local previous = mocks.install_love_filesystem(files)
+    server.data = make_data()
+    server.asset_manager = AssetManager()
+    local connection = Connection(mocks.make_channel(), mocks.make_thread(), mocks.make_channel(), mocks.make_thread())
+    local session = Session(connection):attach_lifetime(connection)
+    return {
+        server = server,
+        connection = connection,
+        session = session,
+        previous_filesystem = previous
+    }
+end
+
+---@param side TestServerSide
+function mocks.finish_server_session(side)
+    lifetime.destroy(side.connection)
+    mocks.restore_love_filesystem(side.previous_filesystem)
 end
 
 ---@return FakeThread
@@ -372,6 +478,11 @@ function mocks.ensure_love_data()
         encode = function(_, _, str)
             return (string.gsub(str, ".", function(c)
                 return string.format("%02x", string.byte(c))
+            end))
+        end,
+        decode = function(_, _, str)
+            return (string.gsub(str, "%x%x", function(hex)
+                return string.char(tonumber(hex, 16))
             end))
         end,
         hash = function(_, str)

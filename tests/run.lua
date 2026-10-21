@@ -32,6 +32,7 @@ local TEST_MODULES = {
     "tests.test-defer-manager",
     "tests.test-event",
     "tests.test-fonts",
+    "tests.test-game-data-rp",
     "tests.test-image",
     "tests.test-images",
     "tests.test-input",

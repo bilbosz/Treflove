@@ -134,19 +134,6 @@ local function files()
     }
 end
 
----@class TestNotificationManager: NotificationManager
----@field messages string[]
-local TestNotificationManager = class("TestNotificationManager")
-
-function TestNotificationManager:init()
-    self.messages = {}
-end
-
----@param message string
-function TestNotificationManager:notify(message)
-    table.insert(self.messages, message)
-end
-
 ---@return AppMock
 local function make_client()
     local client = mocks.make_app()
@@ -157,7 +144,7 @@ local function make_client()
     client.backstack_manager = BackstackManager()
     client.button_event_manager = ButtonEventManager()
     client.text_event_manager = TextEventManager(mocks.make_keyboard())
-    client.notification_manager = TestNotificationManager()
+    client.notification_manager = mocks.make_notification_manager()
     client.asset_manager = AssetManager()
     client.connection_manager = ConnectionManager("localhost", "8080")
     client.session = nil
@@ -320,8 +307,9 @@ end
 ---@field sessions table<Connection, Session>
 ---@field previous_filesystem love.filesystem|nil
 
----@return TestFlow
-local function enter_the_game()
+---@param adjust_data (fun(data: GameData))|nil Changes the server's data before anyone connects
+---@return TestFlow flow Connected: the auto-login sent and not answered yet
+local function connect_the_sides(adjust_data)
     destroy_errors = {}
     mocks.ensure_love_data()
     mocks.ensure_love_math()
@@ -330,20 +318,42 @@ local function enter_the_game()
     local previous = mocks.install_love_filesystem(files())
     local auth = server_auth()
     local server, sessions = make_server(auth)
+    if adjust_data then
+        adjust_data(server.data)
+    end
     local client = make_client()
     local client_connection, server_connection = connect(client, server)
     test.assert_eq(get_class_name_of(client.session), "Session")
     test.assert_false(client.session:is_logged_in())
+    return {
+        client = client,
+        server = server,
+        client_connection = client_connection,
+        server_connection = server_connection,
+        sessions = sessions,
+        previous_filesystem = previous
+    }
+end
 
+---@param flow TestFlow
+local function log_in(flow)
+    local client, server = flow.client, flow.server
     frame(server)
     frame(client)
     test.assert_true(client.session:is_logged_in())
-    test.assert_true(sessions[server_connection]:is_logged_in())
+    test.assert_true(flow.sessions[flow.server_connection]:is_logged_in())
     local notifications = client.notification_manager --[[@as TestNotificationManager]]
     test.assert_deep_eq(notifications.messages, {
         "Successfully logged in as adam"
     })
     test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "WaitingScreen")
+end
+
+---@return TestFlow
+local function enter_the_game()
+    local flow = connect_the_sides()
+    local client, server = flow.client, flow.server
+    log_in(flow)
 
     frame(server)
     frame(client)
@@ -353,14 +363,7 @@ local function enter_the_game()
     frame(server)
     frame(client)
     test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "GameScreen")
-    return {
-        client = client,
-        server = server,
-        client_connection = client_connection,
-        server_connection = server_connection,
-        sessions = sessions,
-        previous_filesystem = previous
-    }
+    return flow
 end
 
 ---@param flow TestFlow
@@ -377,9 +380,10 @@ end
 
 ---@param name string
 ---@param fn fun(flow: TestFlow)
-local function flow_case(name, fn)
+---@param begin (fun(): TestFlow)|nil Defaults to `enter_the_game`
+local function flow_case(name, fn, begin)
     test.case(name, function()
-        local flow = enter_the_game()
+        local flow = (begin or enter_the_game)()
         ---@type boolean, any
         local ok, err = pcall(fn, flow)
         finish(flow)
@@ -420,6 +424,44 @@ flow_case("connect and log in: the session owns the period, which owns the menu,
         "BackstackEntry"
     }, "the panels are the control tree's, not anchored")
     test.assert_eq(client.backstack_manager:get_top(), game_dependents[#game_dependents], "the way back is the game screen's entry")
+end)
+
+flow_case("game data with no page the user may read: a notification and the menu again, no game screen in the period", function(flow)
+    local client, server = flow.client, flow.server
+    log_in(flow)
+    frame(server)
+    frame(client)
+    local notifications = client.notification_manager --[[@as TestNotificationManager]]
+    test.assert_deep_eq(notifications.messages, {
+        "Successfully logged in as adam",
+        "Nothing to show: no page you may see"
+    })
+    test.assert_eq(client.data.game.page, nil)
+    test.assert_deep_eq(client.data.tokens.T.owners, {
+        "adam"
+    }, "what the user reads is in")
+    test.assert_deep_eq(client.session:get_permissions():get_grants(), {
+        "read:pages",
+        "read:tokens"
+    })
+    test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "UserMenuScreen")
+    ---@diagnostic disable-next-line: invisible
+    test.assert_deep_eq(class_names(lifetime.dependents(client.session._period)), {
+        "UserMenuScreen",
+        "BackstackEntry"
+    })
+    test.assert_eq(flow.client_connection:get_out_channel():getCount(), 0, "no asset request: the game is not entered")
+end, function()
+    return connect_the_sides(function(data)
+        data.groups.spectator = {
+            title = "Spectator",
+            permissions = {
+                "read:pages",
+                "read:tokens"
+            }
+        }
+        data.players.adam.group = "spectator"
+    end)
 end)
 
 flow_case("back from the game: the menu is shown again, the game screen dies with its panels, newest first", function(flow)
