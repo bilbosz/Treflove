@@ -1,7 +1,7 @@
 # Development
 
-After cloning, fetch the submodules (the LÖVE type annotations and the
-lua-lifetime runtime):
+After cloning, fetch the submodules (the LÖVE and LuaSocket type
+annotations and the lua-lifetime runtime):
 ```bash
 git submodule update --init --recursive
 ```
@@ -56,6 +56,19 @@ Both must pass.
 
 The formatter, the linter and the language server each read their
 configuration file at the repository root.
+
+The language server's configuration is strict, beyond its defaults: every
+local, parameter, field and return must have a known type (`no-unknown`),
+arguments are checked against parameter types, every signature is
+documented, no global exists beyond the declared ones, and a table literal
+returned or assigned as a class must have the class's shape. The command
+line check loads the same constructor plugin the editor uses
+(`.vscode/constructor_hints.lua`), so a `ClassName(...)` call is typed as an
+instance on the command line and in CI as it is in the editor. The
+annotation packages under `annotations/` (LÖVE, LuaSocket) and
+lua-lifetime's own declarations type the external code; see
+[type-annotations.md](type-annotations.md) for how the strict checks are
+satisfied.
 
 Verify changes with `./test-code.sh`, `./lint-code.sh`,
 `./diagnose-code.sh`, and by running the app (`./run.sh`).

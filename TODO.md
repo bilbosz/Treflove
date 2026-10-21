@@ -89,7 +89,23 @@ object lifetimes. Missing areas:
 - Serialization round-trips of real game data (pages, tokens, players)
 - RPC classes beyond Connection (login, asset transfer, game data)
 
-### 12. Texture atlases, once measured
+### 12. Two bugs the strict typing pass found, left as they are
+
+Typing the code made two runtime faults visible; both are behavior
+decisions, so the annotations say what happens today and the code is
+unchanged.
+
+- `networking/detail/connection-dispatcher.lua`: when server-in pushes
+  `false` (it could not bind), the dispatcher logs `"... with port " ..
+  in_port` and raises on the boolean, which kills the dispatcher until the
+  connector restarts it; `tostring(in_port)` is the one-line fix
+- `game/token/token-panel.lua`: a `number` property whose field holds
+  invalid or empty text applies `nil` (`NumberInput:get_number()` returns
+  nil), which deletes the property from the token and, for `diameter`,
+  crashes in the arithmetic of `Token:set_data`; ignoring the field or
+  refusing the apply is the UX call to make
+
+### 13. Texture atlases, once measured
 
 Every image is its own texture, with its mipmaps; LÖVE batches consecutive
 draws of one texture, and the per-path image cache makes the tokens of one
