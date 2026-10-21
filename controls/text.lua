@@ -6,7 +6,7 @@ local REFERENCE_SIZE = fonts.REFERENCE_SIZE
 
 ---@class Text: DrawableControl
 ---@field private _text string
----@field private _kind FontKind
+---@field private _kind fonts.Kind
 ---@field private _color number[]
 ---@field private _text_drawable love.Text
 ---@field private _pixel_size number The size the drawable's font is rasterized at
@@ -41,7 +41,7 @@ end
 ---@param parent Control|nil
 ---@param text string
 ---@param color number[]|nil
----@param kind FontKind|nil
+---@param kind fonts.Kind|nil
 function Text:init(parent, text, color, kind)
     self._kind = kind or fonts.Kind.DISPLAY
     DrawableControl.init(self, parent, 0, 0, function()

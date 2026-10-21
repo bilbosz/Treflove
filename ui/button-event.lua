@@ -65,7 +65,6 @@ local function _find_button(ctrl, buttons, x, y)
         return buttons[ctrl]
     end
     for _, child in ipairs(ctrl:get_children()) do
-        ---@cast child Control
         local found = _find_button(child, buttons, x, y)
         if found then
             return found
