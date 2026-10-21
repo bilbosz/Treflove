@@ -30,7 +30,6 @@ local destroy_errors = {}
 -- luacheck: globals lifetime_destroyerror
 ---@param obj table|function The dying object (a hook: its function's owner)
 ---@param err any
----@diagnostic disable-next-line: lowercase-global
 function lifetime_destroyerror(obj, err)
     local message = tostring(obj) .. ": " .. tostring(err)
     table.insert(destroy_errors, message)
@@ -385,7 +384,7 @@ test.suite("Lifetimes end to end")
 
 flow_case("connect and log in: the session owns the period, which owns the menu, its back entry and the game screen", function(flow)
     local client, client_connection = flow.client, flow.client_connection
-    local session = client.session
+    local session = assert(client.session)
     test.assert_deep_eq(class_names(lifetime.dependents(client_connection)), {
         "Session"
     })
