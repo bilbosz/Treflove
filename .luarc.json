@@ -50,5 +50,8 @@
         "global-element": "Warning",
         "lowercase-global": "Warning"
     },
-    "type.checkTableShape": true
+    "type.checkTableShape": true,
+    "runtime.builtin": {
+        "utf8": "enable"
+    }
 }
