@@ -18,7 +18,7 @@ local lifetime = require("lifetime")
 ---@field private _keys string[]|nil Sorted editable keys of the selected tokens
 ---@field private _selection_set table<Token, boolean>
 ---@field private _cancel_button TextButton|nil
----@field private _apply_button TextButton|nil
+---@field private _apply_button TextButton|nil Absent while the player may not write every selected token
 local TokenPanel = class("TokenPanel", Panel)
 
 ---@param game_screen GameScreen
@@ -50,9 +50,23 @@ end
 function TokenPanel:_update_view()
     self:_release_properties()
     self:_update_property_keys()
-    self:_fill_in_properties()
+    local is_writable = self:_is_selection_writable()
+    self:_fill_in_properties(not is_writable)
     self:_create_cancel_button()
-    self:_create_apply_button()
+    if is_writable then
+        self:_create_apply_button()
+    end
+end
+
+---@private
+---@return boolean
+function TokenPanel:_is_selection_writable()
+    for token in pairs(self._selection_set) do
+        if not token:is_writable() then
+            return false
+        end
+    end
+    return true
 end
 
 ---@private
@@ -79,7 +93,8 @@ function TokenPanel:_update_property_keys()
 end
 
 ---@private
-function TokenPanel:_fill_in_properties()
+---@param read_only boolean
+function TokenPanel:_fill_in_properties(read_only)
     local y = 0
     for _, k in ipairs(self._keys) do
         if app.data.token_properties[k] then
@@ -102,6 +117,7 @@ function TokenPanel:_fill_in_properties()
             do
                 local input = self:_create_property_input(property)
                 property.input = input
+                input:set_read_only(read_only)
                 input:set_position(Consts.PADDING, y)
                 local _, h = input:get_size()
                 ---@type number
