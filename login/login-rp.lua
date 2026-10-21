@@ -24,8 +24,7 @@ end
 ---@return string|nil
 local function _find_user_by_client_auth(client_auth)
     for user_name, user_data in pairs(app.data.players) do
-        local server_auth = _get_server_auth(user_name, client_auth)
-        if server_auth == user_data.auth then
+        if user_data.auth and _get_server_auth(user_name, client_auth) == user_data.auth then
             return user_name
         end
     end
