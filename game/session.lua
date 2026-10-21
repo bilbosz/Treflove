@@ -77,7 +77,7 @@ function Session:init(connection)
         _on_logout(self)
     end):attach_lifetime(self)
     self._login = login
-    self._game_data_rp = GameDataRp(self._connection):attach_lifetime(self)
+    self._game_data_rp = GameDataRp(self):attach_lifetime(self)
     app.asset_manager:register_session(self)
 
     if app.is_client then
@@ -137,9 +137,14 @@ function Session:enter_game()
     app.screen_manager:show(screen)
 end
 
+function Session:show_menu()
+    assert(app.is_client and self._user_menu_screen)
+    app.screen_manager:show(self._user_menu_screen)
+end
+
 function Session:leave_game()
     assert(app.is_client and self._game_screen)
-    app.screen_manager:show(self._user_menu_screen)
+    self:show_menu()
     lifetime.destroy(self._game_screen)
     self._game_screen = nil
 end
