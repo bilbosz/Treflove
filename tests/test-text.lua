@@ -11,6 +11,7 @@ local Text = require("controls.text")
 
 ---@return TestGraphicsLog
 local function install_graphics()
+    ---@type TestGraphicsLog
     local log = {
         calls = {},
         fonts = {},
@@ -37,6 +38,9 @@ local function install_graphics()
     love = love or {}
     ---@diagnostic disable-next-line: missing-fields, assign-type-mismatch
     love.graphics = {
+        ---@param path string
+        ---@param size number
+        ---@return {handle: string, getHeight: fun(): number}
         newFont = function(path, size)
             font_count = font_count + 1
             local handle = string.format("%s@%d", string.match(path, "[^/]+$"), size)

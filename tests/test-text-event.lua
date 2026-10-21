@@ -133,7 +133,7 @@ test.case("init turns text input off and key repeat on", function()
     local keyboard = mocks.make_keyboard()
     keyboard.text_input = true
 
-    local manager = TextEventManager(keyboard --[[@as love.keyboard]] )
+    local manager = TextEventManager(keyboard)
 
     test.assert_false(manager:is_text_input())
     test.assert_true(keyboard.key_repeat)
@@ -143,7 +143,7 @@ test.case("init turns text input off and key repeat on", function()
 end)
 
 test.case("text input is appended to registered fields", function()
-    local manager = TextEventManager(mocks.make_keyboard() --[[@as love.keyboard]] )
+    local manager = TextEventManager(mocks.make_keyboard())
     local field, other = TestTextField(), TestTextField()
     field:register(manager)
 
@@ -156,7 +156,7 @@ end)
 
 test.case("editing keys are routed only while text input is active", function()
     local keyboard = mocks.make_keyboard()
-    local manager = TextEventManager(keyboard --[[@as love.keyboard]] )
+    local manager = TextEventManager(keyboard)
     local field = TestTextField()
     field:register(manager)
     field.buffer:set_text("one two")
@@ -181,7 +181,7 @@ test.case("editing keys are routed only while text input is active", function()
 end)
 
 test.case("unregistered fields stop receiving", function()
-    local manager = TextEventManager(mocks.make_keyboard() --[[@as love.keyboard]] )
+    local manager = TextEventManager(mocks.make_keyboard())
     local field = TestTextField()
     field:register(manager)
     manager.text_appended:unregister(field)

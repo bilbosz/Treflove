@@ -142,7 +142,7 @@ test.case("one texel per screen pixel when the scale is within half a pixel of i
 
     image:set_scale(1.006)
     image:draw()
-    local scale = tonumber(string.match(take_calls(log)[4], "^scale%((.*)%)$"))
+    local scale = assert(tonumber(string.match(take_calls(log)[4], "^scale%((.*)%)$")))
     test.assert_near(scale, 1.006, 1e-5, "the far edge moves by 0.6 px")
     mocks.restore_love_filesystem()
 end)
