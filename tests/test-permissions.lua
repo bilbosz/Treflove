@@ -11,6 +11,7 @@ local BackstackManager = require("utils.backstack-manager")
 local Control = require("controls.control")
 
 local Action = permissions.Action
+local Kind = permissions.Kind
 
 ---@return GameData
 local function game_data()
@@ -123,31 +124,31 @@ test.case("parse reads every form of a grant", function()
     })
     test.assert_deep_eq(permissions.parse("write:tokens"), {
         action = Action.WRITE,
-        kind = "tokens"
+        kind = Kind.TOKENS
     })
     test.assert_deep_eq(permissions.parse("view:tokens/Bilbosz"), {
         action = Action.VIEW,
-        kind = "tokens",
+        kind = Kind.TOKENS,
         key = "Bilbosz"
     })
     test.assert_deep_eq(permissions.parse("read:pages/Old Town"), {
         action = Action.READ,
-        kind = "pages",
+        kind = Kind.PAGES,
         key = "Old Town"
     }, "the key keeps its spaces")
     test.assert_deep_eq(permissions.parse("read:pages/a/b"), {
         action = Action.READ,
-        kind = "pages",
+        kind = Kind.PAGES,
         key = "a/b"
     }, "the key is everything after the first slash")
     test.assert_deep_eq(permissions.parse("write:tokens/@owned"), {
         action = Action.WRITE,
-        kind = "tokens",
+        kind = Kind.TOKENS,
         key = permissions.OWNED
     })
     test.assert_deep_eq(permissions.parse("write:assets"), {
         action = Action.WRITE,
-        kind = "assets"
+        kind = Kind.ASSETS
     })
 end)
 
@@ -191,6 +192,22 @@ test.case("parse raises on a malformed grant, naming it", function()
             permissions.parse(text)
         end)
         test.assert_true(string.find(err, string.format("%q", text), 1, true) ~= nil, err)
+    end
+end)
+
+test.case("parse raises on a kind outside permissions.Kind", function()
+    for _, text in ipairs({
+        "read:token",
+        "read:Tokens",
+        "read: tokens",
+        "read:assets ",
+        "write:token/Bilbosz",
+        "write:assets:x"
+    }) do
+        local err = error_of(function()
+            permissions.parse(text)
+        end)
+        test.assert_true(string.find(err, string.format("Malformed grant %q: unknown kind", text), 1, true) ~= nil, err)
     end
 end)
 
@@ -252,12 +269,12 @@ test.case("a grant without a kind allows everything of its action", function()
         "read"
     })
     test.assert_true(set:allows(Action.READ))
-    test.assert_true(set:allows(Action.READ, "tokens"))
-    test.assert_true(set:allows(Action.READ, "tokens", "Bilbosz"))
-    test.assert_true(set:allows(Action.READ, "assets"))
+    test.assert_true(set:allows(Action.READ, Kind.TOKENS))
+    test.assert_true(set:allows(Action.READ, Kind.TOKENS, "Bilbosz"))
+    test.assert_true(set:allows(Action.READ, Kind.ASSETS))
     test.assert_false(set:allows(Action.WRITE))
-    test.assert_false(set:allows(Action.WRITE, "tokens", "Bilbosz"))
-    test.assert_false(set:allows(Action.VIEW, "tokens", "Bilbosz"))
+    test.assert_false(set:allows(Action.WRITE, Kind.TOKENS, "Bilbosz"))
+    test.assert_false(set:allows(Action.VIEW, Kind.TOKENS, "Bilbosz"))
 end)
 
 test.case("a grant of a kind allows the kind and its entries, nothing else", function()
@@ -265,23 +282,24 @@ test.case("a grant of a kind allows the kind and its entries, nothing else", fun
         "write:tokens"
     })
     test.assert_false(set:allows(Action.WRITE), "not everything")
-    test.assert_true(set:allows(Action.WRITE, "tokens"))
-    test.assert_true(set:allows(Action.WRITE, "tokens", "Bilbosz"))
-    test.assert_false(set:allows(Action.WRITE, "pages"))
-    test.assert_false(set:allows(Action.WRITE, "pages", "Old Town"))
-    test.assert_false(set:allows(Action.READ, "tokens"), "write does not grant read")
+    test.assert_true(set:allows(Action.WRITE, Kind.TOKENS))
+    test.assert_true(set:allows(Action.WRITE, Kind.TOKENS, "Bilbosz"))
+    test.assert_false(set:allows(Action.WRITE, Kind.PAGES))
+    test.assert_false(set:allows(Action.WRITE, Kind.PAGES, "Old Town"))
+    test.assert_false(set:allows(Action.READ, Kind.TOKENS), "write does not grant read")
+    test.assert_true(set:allows(Action.WRITE, "tokens"), "a literal of the enum's value is a kind too")
 end)
 
 test.case("a grant of a key allows that entry only", function()
     local set = PermissionSet("piotr", {
         "view:tokens/Bilbosz"
     })
-    test.assert_true(set:allows(Action.VIEW, "tokens", "Bilbosz"))
-    test.assert_false(set:allows(Action.VIEW, "tokens", "Gaben"))
-    test.assert_false(set:allows(Action.VIEW, "tokens"), "not the whole kind")
+    test.assert_true(set:allows(Action.VIEW, Kind.TOKENS, "Bilbosz"))
+    test.assert_false(set:allows(Action.VIEW, Kind.TOKENS, "Gaben"))
+    test.assert_false(set:allows(Action.VIEW, Kind.TOKENS), "not the whole kind")
     test.assert_false(set:allows(Action.VIEW))
-    test.assert_false(set:allows(Action.VIEW, "pages", "Bilbosz"))
-    test.assert_false(set:allows(Action.READ, "tokens", "Bilbosz"))
+    test.assert_false(set:allows(Action.VIEW, Kind.PAGES, "Bilbosz"))
+    test.assert_false(set:allows(Action.READ, Kind.TOKENS, "Bilbosz"))
     test.assert_error(function()
         set:allows(Action.VIEW, nil, "Bilbosz")
     end, "a key without a kind")
@@ -294,18 +312,18 @@ test.case("@owned matches the entries whose owners list the login, in app.data a
         "write:pages/@owned",
         "write:assets/@owned"
     })
-    test.assert_false(set:allows(Action.WRITE, "tokens", "Gaben"), "no data, nothing owned")
+    test.assert_false(set:allows(Action.WRITE, Kind.TOKENS, "Gaben"), "no data, nothing owned")
     app_mock.data = game_data()
-    test.assert_true(set:allows(Action.WRITE, "tokens", "Gaben"))
-    test.assert_false(set:allows(Action.WRITE, "tokens", "Bilbosz"), "another player's")
-    test.assert_false(set:allows(Action.WRITE, "tokens", "Anonim"), "no owners")
-    test.assert_false(set:allows(Action.WRITE, "tokens", "Nobody"), "no such entry")
-    test.assert_false(set:allows(Action.WRITE, "pages", "Old Town"), "a page has no owners")
-    test.assert_false(set:allows(Action.WRITE, "assets", "token/g.png"), "the kind is not in the data")
-    test.assert_false(set:allows(Action.WRITE, "tokens"), "not the whole kind")
-    test.assert_false(set:allows(Action.READ, "tokens", "Gaben"))
+    test.assert_true(set:allows(Action.WRITE, Kind.TOKENS, "Gaben"))
+    test.assert_false(set:allows(Action.WRITE, Kind.TOKENS, "Bilbosz"), "another player's")
+    test.assert_false(set:allows(Action.WRITE, Kind.TOKENS, "Anonim"), "no owners")
+    test.assert_false(set:allows(Action.WRITE, Kind.TOKENS, "Nobody"), "no such entry")
+    test.assert_false(set:allows(Action.WRITE, Kind.PAGES, "Old Town"), "a page has no owners")
+    test.assert_false(set:allows(Action.WRITE, Kind.ASSETS, "token/g.png"), "the kind is not in the data")
+    test.assert_false(set:allows(Action.WRITE, Kind.TOKENS), "not the whole kind")
+    test.assert_false(set:allows(Action.READ, Kind.TOKENS, "Gaben"))
     table.insert(assert(app_mock.data.tokens.Bilbosz.owners), "piotr")
-    test.assert_true(set:allows(Action.WRITE, "tokens", "Bilbosz"), "evaluated when asked")
+    test.assert_true(set:allows(Action.WRITE, Kind.TOKENS, "Bilbosz"), "evaluated when asked")
 end)
 
 test.suite("permissions.filter")
@@ -444,7 +462,7 @@ test.case("the server's session resolves its set at login and clears it at logou
     local set = session:get_permissions()
     test.assert_eq(set:get_login(), "piotr")
     test.assert_deep_eq(set:get_grants(), permissions.resolve(assert(app_mock.data), "piotr"))
-    test.assert_true(set:allows(Action.WRITE, "tokens", "Gaben"))
+    test.assert_true(set:allows(Action.WRITE, Kind.TOKENS, "Gaben"))
     log_out(session)
     test.assert_error(function()
         session:get_permissions()

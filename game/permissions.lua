@@ -8,11 +8,22 @@ permissions.Action = {
     VIEW = "view"
 }
 
+---@enum permissions.Kind
+permissions.Kind = {
+    GAME = "game",
+    PAGES = "pages",
+    TOKENS = "tokens",
+    TOKEN_PROPERTIES = "token_properties",
+    PLAYERS = "players",
+    GROUPS = "groups",
+    ASSETS = "assets"
+}
+
 permissions.OWNED = "@owned"
 
 ---@class Grant A parsed grant, `<action>[:<kind>[/<key>]]`
 ---@field action permissions.Action
----@field kind string|nil A key of `GameData`, or `assets`; `nil` for every kind
+---@field kind permissions.Kind|nil `nil` for every kind
 ---@field key string|nil An entry key or `permissions.OWNED`; `nil` for every entry of the kind
 
 ---@param text string
@@ -21,6 +32,17 @@ local function _find_action(text)
     for _, action in pairs(permissions.Action) do
         if action == text then
             return action
+        end
+    end
+    return nil
+end
+
+---@param text string
+---@return permissions.Kind|nil
+local function _find_kind(text)
+    for _, kind in pairs(permissions.Kind) do
+        if kind == text then
+            return kind
         end
     end
     return nil
@@ -49,9 +71,13 @@ function permissions.parse(text)
     end
     local scope = string.sub(text, colon + 1)
     local slash = string.find(scope, "/", 1, true)
-    local kind = slash and string.sub(scope, 1, slash - 1) or scope
-    if kind == "" then
+    local kind_text = slash and string.sub(scope, 1, slash - 1) or scope
+    if kind_text == "" then
         error(_malformed(text, "empty kind"), 2)
+    end
+    local kind = _find_kind(kind_text)
+    if not kind then
+        error(_malformed(text, "unknown kind"), 2)
     end
     if not slash then
         return {
@@ -80,7 +106,7 @@ function permissions.format(grant)
     ---@type string
     local text = grant.action
     if grant.kind then
-        text = text .. ":" .. grant.kind
+        text = string.format("%s:%s", text, grant.kind)
     end
     if grant.key then
         text = text .. "/" .. grant.key
@@ -113,7 +139,7 @@ end
 ---@generic V
 ---@param source table<string, V>|nil
 ---@param set PermissionSet
----@param kind string
+---@param kind permissions.Kind
 ---@return table<string, V>
 local function _filter_collection(source, set, kind)
     ---@type table<string, any>
@@ -144,12 +170,12 @@ end
 function permissions.filter(data, set)
     ---@type GameData
     local result = {
-        game = _copy_if(data.game, set:allows(permissions.Action.READ, "game")),
-        groups = _filter_collection(data.groups, set, "groups"),
-        pages = _filter_collection(data.pages, set, "pages"),
-        players = _filter_collection(data.players, set, "players"),
-        token_properties = _filter_collection(data.token_properties, set, "token_properties"),
-        tokens = _filter_collection(data.tokens, set, "tokens")
+        game = _copy_if(data.game, set:allows(permissions.Action.READ, permissions.Kind.GAME)),
+        groups = _filter_collection(data.groups, set, permissions.Kind.GROUPS),
+        pages = _filter_collection(data.pages, set, permissions.Kind.PAGES),
+        players = _filter_collection(data.players, set, permissions.Kind.PLAYERS),
+        token_properties = _filter_collection(data.token_properties, set, permissions.Kind.TOKEN_PROPERTIES),
+        tokens = _filter_collection(data.tokens, set, permissions.Kind.TOKENS)
     }
     for _, page in pairs(result.pages) do
         ---@type string[]

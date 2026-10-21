@@ -31,7 +31,7 @@ function PermissionSet:get_grants()
 end
 
 ---@param login string
----@param kind string
+---@param kind permissions.Kind
 ---@param key string
 ---@return boolean
 local function _is_owned(login, kind, key)
@@ -45,7 +45,7 @@ end
 
 ---@param login string
 ---@param grant Grant
----@param kind string|nil
+---@param kind permissions.Kind|nil
 ---@param key string|nil
 ---@return boolean
 local function _covers(login, grant, kind, key)
@@ -68,7 +68,7 @@ local function _covers(login, grant, kind, key)
 end
 
 ---@param action permissions.Action
----@param kind string|nil `nil` asks about everything
+---@param kind permissions.Kind|nil `nil` asks about everything
 ---@param key string|nil `nil` asks about the whole kind
 ---@return boolean
 function PermissionSet:allows(action, kind, key)
