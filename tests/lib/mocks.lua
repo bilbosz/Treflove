@@ -282,6 +282,44 @@ function mocks.finish_server_session(side)
     mocks.restore_love_filesystem(side.previous_filesystem)
 end
 
+---@class TestClientSide
+---@field client AppMock The global `app` from `make_client_session` on
+---@field connection Connection Over fake channels, nobody behind them
+---@field session Session Not logged in
+---@field notifications TestNotificationManager
+---@field previous_filesystem love.filesystem|nil
+
+---A client app with its asset manager over an in-memory file system and
+---its session on a fake connection, for a procedure's `receive_response`;
+---`finish_client_session` tears it down
+---@param files table<string, string> The file system, the client's copies under `c/assets/`
+---@return TestClientSide
+function mocks.make_client_session(files)
+    local client = mocks.install_app()
+    mocks.ensure_love_data()
+    mocks.ensure_love_math()
+    local previous = mocks.install_love_filesystem(files)
+    local notifications = mocks.make_notification_manager()
+    client.notification_manager = notifications
+    client.asset_manager = AssetManager()
+    local connection = Connection(mocks.make_channel(), mocks.make_thread(), mocks.make_channel(), mocks.make_thread())
+    local session = Session(connection):attach_lifetime(connection)
+    client.session = session
+    return {
+        client = client,
+        connection = connection,
+        session = session,
+        notifications = notifications,
+        previous_filesystem = previous
+    }
+end
+
+---@param side TestClientSide
+function mocks.finish_client_session(side)
+    lifetime.destroy(side.connection)
+    mocks.restore_love_filesystem(side.previous_filesystem)
+end
+
 ---@return FakeThread
 function mocks.make_thread()
     ---@class FakeThread: love.Thread
@@ -370,6 +408,8 @@ function mocks.ensure_love_graphics()
     }
 end
 
+---Files by path; a directory exists with a file under it or once
+---`createDirectory` made it, and `remove` takes only an empty one, as LÖVE's
 ---@param files table<string, string>
 ---@return love.filesystem|nil previous What `love.filesystem` was
 function mocks.install_love_filesystem(files)
@@ -377,16 +417,57 @@ function mocks.install_love_filesystem(files)
     love = love or {}
     local previous = love.filesystem
 
+    ---@type table<string, boolean> Every directory: made explicitly, or a file's parent, until removed
+    local directories = {}
+
+    ---@param path string
+    local function add_directory(path)
+        ---@type string|nil
+        local made
+        for component in string.gmatch(path, "[^/]+") do
+            made = made and made .. "/" .. component or component
+            directories[made] = true
+        end
+    end
+
+    for k in pairs(files) do
+        local parent = string.match(k, "^(.*)/[^/]*$")
+        if parent then
+            add_directory(parent)
+        end
+    end
+
     ---@param path string
     ---@return boolean
     local function is_directory(path)
+        return directories[path] == true
+    end
+
+    ---@param path string
+    ---@return string[]
+    local function directory_items(path)
         local prefix = path .. "/"
-        for k in pairs(files) do
+        ---@type table<string, boolean>, string[]
+        local seen, items = {}, {}
+        ---@param k string
+        local function add(k)
             if string.sub(k, 1, #prefix) == prefix then
-                return true
+                local rest = string.sub(k, #prefix + 1)
+                local item = string.match(rest, "^[^/]+")
+                if item and not seen[item] then
+                    seen[item] = true
+                    table.insert(items, item)
+                end
             end
         end
-        return false
+        for k in pairs(files) do
+            add(k)
+        end
+        for k in pairs(directories) do
+            add(k)
+        end
+        table.sort(items)
+        return items
     end
 
     ---@diagnostic disable-next-line: missing-fields, assign-type-mismatch
@@ -416,40 +497,40 @@ function mocks.install_love_filesystem(files)
             return content, content and #content
         end,
         ---@param path string
+        ---@return string|nil The bytes: what the fake constructors take
+        newFileData = function(path)
+            return files[path]
+        end,
+        ---@param path string
         ---@param content string
         ---@return boolean
         write = function(path, content)
             files[path] = content
-            return true
-        end,
-        ---@return boolean
-        createDirectory = function()
+            local parent = string.match(path, "^(.*)/[^/]*$")
+            if parent then
+                add_directory(parent)
+            end
             return true
         end,
         ---@param path string
-        ---@return string[]
-        getDirectoryItems = function(path)
-            local prefix = path .. "/"
-            ---@type table<string, boolean>, string[]
-            local seen, items = {}, {}
-            for k in pairs(files) do
-                if string.sub(k, 1, #prefix) == prefix then
-                    local rest = string.sub(k, #prefix + 1)
-                    local item = string.match(rest, "^[^/]+")
-                    if item and not seen[item] then
-                        seen[item] = true
-                        table.insert(items, item)
-                    end
-                end
-            end
-            table.sort(items)
-            return items
+        ---@return boolean
+        createDirectory = function(path)
+            add_directory(path)
+            return true
         end,
+        getDirectoryItems = directory_items,
         ---@param path string
         ---@return boolean
         remove = function(path)
-            files[path] = nil
-            return true
+            if files[path] then
+                files[path] = nil
+                return true
+            end
+            if is_directory(path) and #directory_items(path) == 0 then
+                directories[path] = nil
+                return true
+            end
+            return false
         end
     }
     return previous

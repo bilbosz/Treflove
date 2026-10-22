@@ -1,0 +1,179 @@
+local Consts = require("app.consts")
+local Panel = require("ui.panel")
+local PreviewArea = require("game.assets.preview-area.preview-area")
+local Text = require("controls.text")
+local TextButton = require("ui.text-button")
+local TextInput = require("ui.text-input")
+local media = require("utils.media")
+
+---@alias AssetDetailsAction "upload"|"new_folder"|"rename"|"delete" The buttons the workspace enables by its state
+
+---The right side of the assets workspace: the preview (the drop target),
+---the name the actions use, the type, and the action buttons
+---@class AssetDetails: Panel, FileDropTarget
+---@field _screen AssetsWorkspaceScreen
+---@field _preview_area PreviewArea
+---@field _name_input TextInput
+---@field _type_input TextInput
+---@field _action_buttons table<AssetDetailsAction, TextButton>
+---@field _back_button TextButton
+local AssetDetails = class("AssetDetails", Panel)
+
+---@param self AssetDetails
+---@param label string
+---@param y number
+---@return TextInput input
+---@return number bottom The y below the field
+local function _create_field(self, label, y)
+    local w = self:get_size()
+    local text = Text(self, label, Consts.FOREGROUND_COLOR)
+    text:set_scale(Consts.PANEL_FIELD_SCALE)
+    text:set_position(Consts.PADDING, y)
+    local _, text_h = text:get_outer_size()
+
+    local input = TextInput(self, self._screen, w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT, false, function()
+        self._screen:on_name_edited()
+    end)
+    input:set_position(Consts.PADDING, y + text_h + Consts.PADDING * 0.5)
+    local _, input_h = input:get_size()
+    return input, y + text_h + Consts.PADDING * 0.5 + input_h + Consts.PADDING
+end
+
+---@param self AssetDetails
+---@param caption string
+---@param action AssetDetailsAction
+---@return TextButton
+local function _create_action_button(self, caption, action)
+    local button = TextButton(self, self._screen, caption, function()
+        self._screen:run_action(action)
+    end)
+    button:set_scale(Consts.PANEL_FIELD_SCALE)
+    self._action_buttons[action] = button
+    return button
+end
+
+---@param self AssetDetails
+local function _layout_buttons(self)
+    local w, h = self:get_size()
+    local s = Consts.PANEL_FIELD_SCALE
+    ---@param button TextButton
+    ---@return number, number
+    local function outer_size(button)
+        local bw, bh = button:get_size()
+        return bw * s, bh * s
+    end
+
+    local back_w, back_h = outer_size(self._back_button)
+    local bottom_y = h - Consts.PADDING - back_h
+    self._back_button:set_position(Consts.PADDING, bottom_y)
+    local upload = self._action_buttons.upload
+    local upload_w = outer_size(upload)
+    upload:set_position(w - Consts.PADDING - upload_w, bottom_y)
+
+    local x = Consts.PADDING
+    local row_y = bottom_y - Consts.PADDING - back_h
+    ---@type AssetDetailsAction[]
+    local order = {
+        "new_folder",
+        "rename",
+        "delete"
+    }
+    for _, action in ipairs(order) do
+        local button = self._action_buttons[action]
+        local bw = outer_size(button)
+        button:set_position(x, row_y)
+        x = x + bw + Consts.PADDING
+    end
+    assert(back_w and upload_w)
+end
+
+---@param screen AssetsWorkspaceScreen
+---@param parent Control
+---@param width number
+---@param height number
+function AssetDetails:init(screen, parent, width, height)
+    Panel.init(self, parent, width, height)
+    self._screen = screen
+    self._action_buttons = {}
+
+    local side = math.min(width - 2 * Consts.PADDING, height * Consts.ASSETS_WORKSPACE_PREVIEW_SHARE)
+    local preview = PreviewArea(self, side, side)
+    self._preview_area = preview
+    preview:set_position(Consts.PADDING, Consts.PADDING)
+
+    local y = Consts.PADDING + side + Consts.PADDING
+    self._name_input, y = _create_field(self, "Name", y)
+    self._type_input = _create_field(self, "Type", y)
+    self._type_input:set_read_only(true)
+
+    _create_action_button(self, "New Folder", "new_folder")
+    _create_action_button(self, "Rename", "rename")
+    _create_action_button(self, "Delete", "delete")
+    _create_action_button(self, "Upload", "upload")
+    local back = TextButton(self, screen, "Back", function()
+        app.backstack_manager:back()
+    end)
+    back:set_scale(Consts.PANEL_FIELD_SCALE)
+    self._back_button = back
+    _layout_buttons(self)
+end
+
+---The preview area's drop: the file is open for this call only
+---@param file love.DroppedFile
+function AssetDetails:set_file(file)
+    self._screen:take_dropped_file(file)
+end
+
+---@return string
+function AssetDetails:get_name()
+    return self._name_input:get_text()
+end
+
+---@param name string
+function AssetDetails:set_name(name)
+    self._name_input:set_text(name)
+end
+
+---@param value boolean
+function AssetDetails:set_name_editable(value)
+    self._name_input:set_read_only(not value)
+end
+
+---@param text string
+function AssetDetails:set_type_text(text)
+    self._type_input:set_text(text)
+end
+
+---Previews a file's content and names its type
+---@param data media.Source
+function AssetDetails:show_content(data)
+    local media_type, medium = media.get_type_and_medium(data)
+    self._preview_area:show_medium(media_type, medium)
+    self:set_type_text(media_type and tostring(table.find_table_key(media.Type, media_type)) or "Unknown")
+end
+
+function AssetDetails:clear_preview()
+    self._preview_area:reset()
+end
+
+---@param enabled table<AssetDetailsAction, boolean> The actions the state allows; the others are read-only
+function AssetDetails:set_actions(enabled)
+    for action, button in pairs(self._action_buttons) do
+        button:set_read_only(not enabled[action])
+    end
+end
+
+---@param action AssetDetailsAction
+---@return TextButton
+function AssetDetails:get_action_button(action)
+    return self._action_buttons[action]
+end
+
+---@param w number
+---@param h number
+function AssetDetails:on_resize(w, h)
+    Panel.on_resize(self, w, h)
+    _layout_buttons(self)
+end
+
+return AssetDetails

@@ -2,13 +2,21 @@ local ClippingRectangle = require("controls.clipping-rectangle")
 local Control = require("controls.control")
 local Text = require("controls.text")
 local Consts = require("app.consts")
+local PreviewAudioArea = require("game.assets.preview-area.preview-audio-area")
+local PreviewImageArea = require("game.assets.preview-area.preview-image-area")
 local Rectangle = require("controls.rectangle")
 local lifetime = require("lifetime")
+local media = require("utils.media")
 
 ---@alias PreviewComponentClass PreviewImageArea|PreviewAudioArea|fun(preview_area: PreviewArea, love_content: LoveMedium): PreviewImageArea|PreviewAudioArea A preview class table: its class joined by its constructor, as `Class` is
 
+---What a preview area hands a dropped file to: its parent, while the file
+---is open
+---@class FileDropTarget: Control
+---@field set_file fun(self: FileDropTarget, file: love.DroppedFile)
+
 ---@class PreviewArea: ClippingRectangle
----@field parent AssetsPanel
+---@field parent FileDropTarget
 ---@field _preview_labels Control
 ---@field _drop_file_labels Control
 ---@field content_parent Control Parent for preview components, centered in the area
@@ -17,6 +25,15 @@ local PreviewArea = class("PreviewArea", ClippingRectangle)
 
 local PREVIEW_STRING = "Preview"
 local DROP_FILE_STRING = "Drop File Here"
+
+---@type table<media.Type, PreviewComponentClass|nil> The types with a preview
+local PREVIEW_OF_TYPE = {
+    [media.Type.IMAGE] = PreviewImageArea,
+    [media.Type.AUDIO] = PreviewAudioArea,
+    [media.Type.VIDEO] = nil,
+    [media.Type.TEXT] = nil,
+    [media.Type.FONT] = nil
+}
 
 ---@param self PreviewArea
 ---@param str string
@@ -119,6 +136,18 @@ function PreviewArea:set_content(love_content, PreviewComponent)
     self:reset()
     _set_labels(self, self._preview_labels)
     self._preview = PreviewComponent(self, love_content)
+end
+
+---The preview of a medium by its type, or none for a type without one
+---@param media_type media.Type|nil
+---@param medium LoveMedium
+function PreviewArea:show_medium(media_type, medium)
+    local PreviewComponent = media_type and PREVIEW_OF_TYPE[media_type]
+    if PreviewComponent then
+        self:set_content(medium, PreviewComponent)
+    else
+        self:reset()
+    end
 end
 
 function PreviewArea:reset()

@@ -181,7 +181,10 @@ end
 ---@param x number Horizontal wheel movement
 ---@param y number Vertical wheel movement
 function Page:on_wheel_moved(x, y)
-    local real_mouse_x, real_mouse_y = love.mouse.getPosition()
+    if not self._game_screen:is_showed() then -- under another screen
+        return
+    end
+    local real_mouse_x, real_mouse_y = app.pointer_event_manager:get_position()
     local self_mouse_x, self_mouse_y = self:transform_to_local(real_mouse_x, real_mouse_y)
     if self_mouse_x >= 0 and self_mouse_x < self.size[1] and self_mouse_y >= 0 and self_mouse_y < self.size[2] then
         local bg = self._background

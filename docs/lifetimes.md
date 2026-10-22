@@ -41,7 +41,8 @@ Connection                      (a disconnect → lifetime.destroy;
     │   ├── LoginRp
     │   └── LogoutRp
     ├── GameDataRp
-    ├── UploadAssetRp, DownloadAssetRp, DownloadMissingAssetsRp
+    ├── UploadAssetRp, DownloadAssetRp, DownloadMissingAssetsRp,
+    │   ListAssetsRp, CreateAssetFolderRp, RenameAssetRp, DeleteAssetRp
     ├── hook: clears the AssetManager's per-session entries
     ├── LoginScreen                     (client, from a logout to the next login)
     └── token "logged in"               (client)
@@ -49,9 +50,12 @@ Connection                      (a disconnect → lifetime.destroy;
         │   ├── OptionsMenuScreen       (made on the first visit, kept)
         │   └── back entry: return from the options (one per visit)
         ├── back entry: log out
-        └── GameScreen                  (while in the game)
-            ├── its control tree        (the panels, the preview area, the inputs)
-            └── back entry: leave the game
+        ├── GameScreen                  (while in the game)
+        │   ├── its control tree        (the panels, the preview area, the inputs)
+        │   └── back entry: leave the game
+        └── AssetsWorkspaceScreen       (while open, over the menu or the game)
+            ├── its control tree        (the list and its rows, the details with the preview)
+            └── back entry: close the workspace
 ```
 
 The control tree is the other ownership: a destroyed control takes its
@@ -77,10 +81,18 @@ the `release` calls it caused.
   login screen shown next is the session's; the next login destroys it once
   the menu has replaced it.
 - **The game**: the session builds the game screen under the period once the
-  game data and its assets are in; the game screen's back entry shows the
-  session's menu screen again (the same one) and destroys the game screen
-  with its panels. Game data that arrives after a logout belongs to a period
-  that is over and is ignored.
+  game data and its assets are in, and pushes its back entry, anchored to the
+  screen; the entry shows the session's menu screen again (the same one) and
+  destroys the game screen with its panels. Game data that arrives after a
+  logout belongs to a period that is over and is ignored.
+- **The assets workspace**: the session builds it under the period when the
+  menu or the game's assets panel opens it, remembers the screen it was
+  opened from and pushes its back entry, anchored to the workspace; the
+  entry shows that screen again (the game's own entry still below) and
+  destroys the workspace with its list and details. A listing the server
+  refuses closes it the same way. A response that arrives after the
+  workspace died (a listing, a download for a preview) finds its callback
+  asking `lifetime.alive(self)` first.
 - **Back**: the backstack's `push(cb)` returns an entry with a hook that
   removes it from the stack when it dies, wherever it sits; the caller anchors
   it to what the entry is for (a screen, the period). `back()` destroys the

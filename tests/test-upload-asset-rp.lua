@@ -92,6 +92,23 @@ server_case("an upload from a session with write on the assets is mounted", func
     test.assert_eq(asset:read(), "N")
 end)
 
+server_case("an upload onto a folder, or under a bad path, is refused with the reason", function(side)
+    test.assert_eq(mocks.log_in(side.connection, "adam"), "adam")
+    local response = mocks.request(side.connection, "UploadAssetRp", {
+        path = "world",
+        content = love.data.encode("string", "base64", "N")
+    }) --[[@as UploadAssetResponse]]
+    test.assert_false(response.success)
+    test.assert_eq(response.error, "Cannot upload \"world\": it is a folder")
+    test.assert_eq(Asset("world/w.png", false):read(), "W")
+    response = mocks.request(side.connection, "UploadAssetRp", {
+        path = "../escape.png",
+        content = love.data.encode("string", "base64", "N")
+    }) --[[@as UploadAssetResponse]]
+    test.assert_false(response.success)
+    test.assert_eq(response.error, "Cannot upload \"../escape.png\": the name \"..\"")
+end)
+
 test.case("the client notifies a refused upload and nothing else", function()
     local client = mocks.install_app()
     mocks.ensure_love_data()
@@ -110,8 +127,13 @@ test.case("the client notifies a refused upload and nothing else", function()
     rp:receive_response({
         success = false
     })
+    rp:receive_response({
+        success = false,
+        error = "Cannot upload \"world\": it is a folder"
+    })
     test.assert_deep_eq(notifications.messages, {
-        "Not allowed to upload assets"
+        "Not allowed to upload assets",
+        "Cannot upload \"world\": it is a folder"
     })
     lifetime.destroy(connection)
 end)

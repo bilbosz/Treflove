@@ -46,6 +46,7 @@ Milestones that are consider done at this point:
 * classes with inheritance
 * networking
 * asset handling - sending into server and backpropagating
+* assets workspace - browsing the server's assets, folders, renaming and deleting
 * graphical control system
 * simple interactive gui elements
 * event system

@@ -94,7 +94,9 @@ function table.to_string(source)
         ---@param v string
         ---@return string
         ["string"] = function(v)
-            return "\"" .. string.gsub(v, "\n", "\\n") .. "\""
+            -- `%q` escapes the quotes and the backslashes; its line break
+            -- stays on one line here, as before
+            return (string.gsub(string.format("%q", v), "\\\n", "\\n"))
         end,
         ["function"] = nil,
         ["userdata"] = nil,

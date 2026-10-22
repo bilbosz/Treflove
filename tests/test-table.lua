@@ -113,6 +113,19 @@ test.case("is_empty and is_identifier", function()
     test.assert_false(table.is_identifier("has space"))
 end)
 
+test.case("to_string/from_string round-trips quotes, backslashes and line breaks, one line per string", function()
+    local original = {
+        quoted = "say \"hi\"",
+        slashed = "a\\b",
+        multiline = "line1\nline2",
+        both = "\"\\\n\""
+    }
+    local serialized = table.to_string(original)
+    test.assert_true(string.find(serialized, "say \\\"hi\\\"", 1, true) ~= nil, serialized)
+    test.assert_eq(select(2, string.gsub(serialized, "\n", "")), 5, "one line per field, no raw line break inside a string")
+    test.assert_deep_eq(table.from_string(serialized), original)
+end)
+
 test.case("to_string/from_string round-trips nested tables", function()
     local original = {
         1,

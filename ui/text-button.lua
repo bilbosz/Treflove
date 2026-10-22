@@ -8,7 +8,18 @@ local TextButton = class("TextButton", Text, Input)
 
 ---@private
 function TextButton:_update_text_color()
-    self:set_color((self:is_focused() or self:is_selected()) and Consts.BUTTON_SELECT_COLOR or self:is_hovered() and Consts.BUTTON_HOVER_COLOR or Consts.BUTTON_NORMAL_COLOR)
+    ---@type number[]
+    local color
+    if self:is_read_only() then
+        color = Consts.BUTTON_READ_ONLY_COLOR
+    elseif self:is_focused() or self:is_selected() then
+        color = Consts.BUTTON_SELECT_COLOR
+    elseif self:is_hovered() then
+        color = Consts.BUTTON_HOVER_COLOR
+    else
+        color = Consts.BUTTON_NORMAL_COLOR
+    end
+    self:set_color(color)
 end
 
 ---@param parent Control
@@ -53,6 +64,12 @@ end
 
 function TextButton:on_click()
     self._action()
+end
+
+---A read-only button is dimmed; the button manager and the form skip it
+function TextButton:on_read_only_change()
+    Input.on_read_only_change(self)
+    self:_update_text_color()
 end
 
 ---@param key love.KeyConstant

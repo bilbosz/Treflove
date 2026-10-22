@@ -28,8 +28,9 @@ end
 ---@param response DownloadAssetResponse
 function DownloadAssetRp:receive_response(response)
     assert(app.is_client)
-    assert(response.content)
-    app.asset_manager:mount_file(response.path, response.content)
+    if response.content then
+        app.asset_manager:mount_file(response.path, response.content)
+    end
 end
 
 return DownloadAssetRp

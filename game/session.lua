@@ -1,3 +1,4 @@
+local AssetsWorkspaceScreen = require("game.assets.workspace.assets-workspace-screen")
 local GameDataRp = require("game.game-data-rp")
 local GameScreen = require("game.game-screen")
 local Login = require("login.login")
@@ -16,6 +17,8 @@ local permissions = require("game.permissions")
 ---@field _game_data_rp GameDataRp
 ---@field _user_menu_screen UserMenuScreen|nil
 ---@field _game_screen GameScreen|nil The game screen, while the user is in the game (client only)
+---@field _assets_workspace_screen AssetsWorkspaceScreen|nil The assets workspace, while it is open (client only)
+---@field _assets_workspace_return Screen|nil The screen the workspace was opened from, shown again when it closes
 ---@field _login_screen LoginScreen|nil The login screen a logout shows, until the next login (client only)
 ---@field _period lifetime.Token|nil The "logged in" span (client only): the menu screen, the game screen and their back entries die with it
 local Session = class("Session")
@@ -54,6 +57,8 @@ local function _on_logout(self)
         self._period = nil
         self._user_menu_screen = nil
         self._game_screen = nil
+        self._assets_workspace_screen = nil
+        self._assets_workspace_return = nil
         self._login_screen = LoginScreen(self._login):attach_lifetime(self)
         app.screen_manager:show(self._login_screen)
     end
@@ -67,6 +72,8 @@ function Session:init(connection)
     self._period = nil
     self._user_menu_screen = nil
     self._game_screen = nil
+    self._assets_workspace_screen = nil
+    self._assets_workspace_return = nil
     self._login_screen = nil
     local login = Login(self, function(user)
         _on_login(self, user)
@@ -93,6 +100,15 @@ end
 ---@return PermissionSet
 function Session:get_permissions()
     return assert(self._permissions, "no permissions before the login (on the client: before the game data)")
+end
+
+---@param action permissions.Action
+---@param kind permissions.Kind|nil
+---@param key string|nil
+---@return boolean Whether the permissions are in (the login on the server, the game data on the client) and grant it
+function Session:is_allowed(action, kind, key)
+    local set = self._permissions
+    return set ~= nil and set:allows(action, kind, key)
 end
 
 ---@param grants string[]
@@ -135,6 +151,9 @@ function Session:enter_game()
     local screen = GameScreen(app.data.game):attach_lifetime(self._period)
     self._game_screen = screen
     app.screen_manager:show(screen)
+    app.backstack_manager:push(function()
+        self:leave_game()
+    end):attach_lifetime(screen)
 end
 
 function Session:show_menu()
@@ -147,6 +166,31 @@ function Session:leave_game()
     self:show_menu()
     lifetime.destroy(self._game_screen)
     self._game_screen = nil
+end
+
+---The assets workspace over the shown screen (the menu or the game), under
+---the period; its back entry closes it
+function Session:open_assets_workspace()
+    assert(app.is_client and not self._assets_workspace_screen)
+    local period = assert(self._period, "the assets workspace needs a logged-in user")
+    self._assets_workspace_return = assert(app.screen_manager:get_screen())
+    local screen = AssetsWorkspaceScreen():attach_lifetime(period)
+    self._assets_workspace_screen = screen
+    app.screen_manager:show(screen)
+    app.backstack_manager:push(function()
+        self:close_assets_workspace()
+    end):attach_lifetime(screen)
+end
+
+---Shows the screen the workspace was opened from again and destroys the
+---workspace with its lists and fields
+function Session:close_assets_workspace()
+    assert(app.is_client and self._assets_workspace_screen)
+    local screen, return_screen = self._assets_workspace_screen, assert(self._assets_workspace_return)
+    self._assets_workspace_screen = nil
+    self._assets_workspace_return = nil
+    app.screen_manager:show(return_screen)
+    lifetime.destroy(screen)
 end
 
 return Session

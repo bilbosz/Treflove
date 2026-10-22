@@ -47,9 +47,6 @@ end
 function GameScreen:show()
     self:on_resize(app.width, app.height)
     FormScreen.show(self)
-    app.backstack_manager:push(function()
-        app.session:leave_game()
-    end):attach_lifetime(self)
 end
 
 function GameScreen:on_selection_change()
