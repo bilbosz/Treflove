@@ -3,6 +3,7 @@
         "library": [
             "annotations/love2d/library",
             "annotations/luasocket/library",
+            "annotations/enet/library",
             "lib/lua-lifetime/editor/luals/meta"
         ],
         "ignoreDir": [

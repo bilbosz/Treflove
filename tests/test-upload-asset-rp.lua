@@ -99,7 +99,7 @@ test.case("the client notifies a refused upload and nothing else", function()
     local notifications = mocks.make_notification_manager()
     client.notification_manager = notifications
     client.asset_manager = AssetManager()
-    local connection = Connection(mocks.make_channel(), mocks.make_thread(), mocks.make_channel(), mocks.make_thread())
+    local connection = Connection(mocks.make_channel(), mocks.make_channel())
     local session = Session(connection):attach_lifetime(connection)
     ---@diagnostic disable-next-line: invisible
     local rp = client.asset_manager._upload_asset_rp[session]

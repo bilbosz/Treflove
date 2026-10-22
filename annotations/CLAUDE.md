@@ -10,7 +10,10 @@ type checking and diagnostics of external libraries and frameworks (LÖVE).
 ## Structure
 
 Each subdirectory is a separate annotation package, a git submodule pointing
-to an upstream repository that provides the type definitions.
+to an upstream repository that provides the type definitions, except `enet`:
+no upstream package types LÖVE's lua-enet binding, so `enet/library/enet.lua`
+is written here, from the binding's source (`src/libraries/enet/enet.cpp` in
+LÖVE), and maintained with it.
 
 ## Integration
 
@@ -20,8 +23,9 @@ when analyzing code.
 
 ## Important Notes
 
-- **Do not edit** annotation files by hand: they are maintained upstream and
-  often auto-generated
+- **Do not edit** the submodules' annotation files by hand: they are
+  maintained upstream and often auto-generated; `enet` is the one package
+  edited here
 - Update the submodules with `git submodule update --init --recursive`
 
 ## Adding New Annotation Packages

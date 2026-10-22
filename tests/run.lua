@@ -31,6 +31,7 @@ local TEST_MODULES = {
     "tests.test-button-event",
     "tests.test-class",
     "tests.test-connection",
+    "tests.test-connector",
     "tests.test-defer-manager",
     "tests.test-event",
     "tests.test-fonts",

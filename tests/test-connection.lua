@@ -37,9 +37,9 @@ local function make_connection_pair()
     local server_to_client = mocks.make_channel()
 
     app_mock.is_client = true
-    local client_connection = Connection(server_to_client, mocks.make_thread(), client_to_server, mocks.make_thread())
+    local client_connection = Connection(server_to_client, client_to_server)
     app_mock.is_client = false
-    local server_connection = Connection(client_to_server, mocks.make_thread(), server_to_client, mocks.make_thread())
+    local server_connection = Connection(client_to_server, server_to_client)
 
     return client_connection, server_connection
 end
@@ -151,12 +151,14 @@ test.case("responses are matched to requests in FIFO order", function()
     })
 end)
 
-test.case("destroying a connection releases its channels and threads and unregisters it from the update event", function()
+test.case("destroying a connection asks the host thread to disconnect the peer, releases its channels and unregisters it from the update event", function()
     local client_connection = make_connection_pair()
     local in_channel = client_connection:get_in_channel() --[[@as FakeChannel]]
     local out_channel = client_connection:get_out_channel() --[[@as FakeChannel]]
     test.assert_eq(app.update_event:get_handler(client_connection), Connection.on_update)
     lifetime.destroy(client_connection)
+    test.assert_eq(out_channel:pop(), false, "the disconnect request is the last thing on the out channel")
+    test.assert_eq(out_channel:getCount(), 0)
     test.assert_true(in_channel._released)
     test.assert_true(out_channel._released)
     test.assert_eq(app.update_event:get_handler(client_connection), nil)
