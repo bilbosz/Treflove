@@ -20,6 +20,7 @@ Detailed guidance is split into topic files, imported below. To address one topi
 - [docs/type-annotations.md](docs/type-annotations.md) - LuaDoc annotation rules, strict typing, LÖVE types, annotation packages
 - [docs/lifetimes.md](docs/lifetimes.md) - object ownership with lua-lifetime: `lifetime.attach`, hooks, the "logged in" token, `release(reason)` as the destructor
 - [docs/permissions.md](docs/permissions.md) - named user permissions: groups, grants (`action:kind/key`), `PermissionSet`, what the server filters and refuses, what the client gates
+- [docs/scripting.md](docs/scripting.md) - the script sandbox: the environment a script sees, the time and memory limits, how an interruption works and what it rests on, the rules for the host side
 
 @docs/development.md
 
@@ -33,6 +34,8 @@ Detailed guidance is split into topic files, imported below. To address one topi
 
 @docs/permissions.md
 
+@docs/scripting.md
+
 ## Project Status
 
-The README lists completed milestones and known to-dos. Notably **not yet implemented**: game master script handling, game state synchronization, game objects other than tokens, media other than images, and prefabs.
+The README lists completed milestones and known to-dos. Notably **not yet implemented**: game master script handling (the sandbox exists, nothing feeds it yet), game state synchronization, game objects other than tokens, media other than images, and prefabs.

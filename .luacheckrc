@@ -9,6 +9,7 @@ ignore = {"212"}
 std = {
     read_globals = {
         "_G",
+        "_VERSION",
         "arg",
         "assert",
         "collectgarbage",
@@ -17,6 +18,7 @@ std = {
         "getmetatable",
         "io",
         "ipairs",
+        "jit",
         "loadstring",
         "math",
         "next",
@@ -26,6 +28,7 @@ std = {
         "print",
         "require",
         "select",
+        "setfenv",
         "setmetatable",
         "string",
         "tonumber",

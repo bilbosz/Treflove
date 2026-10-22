@@ -9,8 +9,12 @@ High-level milestones. Each one will later be split into smaller, actionable chu
 The core design goal: let the game master define game rules in Lua and modify
 game state (tokens, objects, maps, sound) live during play.
 
-- Decide how GM scripts are loaded, sandboxed, and hot-reloaded on the server
-- Expose a scripting API over game data and sessions
+- Sandboxed: `Sandbox` ([docs/scripting.md](docs/scripting.md)) runs a
+  script in an environment of its own under a time and a memory limit;
+  per player, with the data the host passes
+- Decide how GM scripts are loaded and hot-reloaded on the server
+- Expose a scripting API over game data and sessions: through copies or
+  proxies, by the rules in docs/scripting.md
 
 ### 2. Game state synchronization
 

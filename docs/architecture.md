@@ -175,6 +175,15 @@ the server filters the game data it sends by `read`, refuses uploads
 without `write:assets`; the client gates editing and dragging of tokens
 and the upload button. See [permissions.md](permissions.md).
 
+## Scripting
+
+`Sandbox` (`scripting/sandbox.lua`) runs untrusted Lua in an environment of
+its own (the `environment` module), under a time and a memory limit checked
+by an instruction hook, the script's code kept out of the JIT so the hook
+can stop it; `run(source, name)` and `call(fn, ...)` report `ok`, a
+`Sandbox.Failure` and a message. Nothing feeds it yet; see
+[scripting.md](scripting.md).
+
 ## Data Persistence
 
 The server persists the game state as a human-readable Lua table:
