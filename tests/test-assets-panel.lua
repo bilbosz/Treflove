@@ -42,3 +42,19 @@ test.case("with write on the assets there is an Upload button", function()
         test.assert_true(panel._cancel_button ~= nil)
     end)
 end)
+
+test.case("the Workspace button is there for everyone, above Cancel", function()
+    with_panel({
+        "read"
+    }, function(panel)
+        local button = panel._workspace_button
+        test.assert_true(button ~= nil)
+        local _, cancel_y = panel._cancel_button:get_position()
+        local x, y = button:get_position()
+        test.assert_true(y < cancel_y)
+        test.assert_eq(x, select(1, panel._cancel_button:get_position()))
+        panel:on_resize(300, 900)
+        local _, resized_y = button:get_position()
+        test.assert_true(resized_y < y, "it followed the panel's bottom")
+    end)
+end)

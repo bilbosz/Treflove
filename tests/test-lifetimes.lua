@@ -7,6 +7,9 @@ local DownloadAssetRp = require("data.download-asset-rp")
 local DownloadMissingAssetsRp = require("data.download-missing-assets-rp")
 local UploadAssetRp = require("data.upload-asset-rp")
 local AssetsPanel = require("game.assets.assets-panel")
+local AssetDetails = require("game.assets.workspace.asset-details")
+local AssetList = require("game.assets.workspace.asset-list")
+local AssetsWorkspaceScreen = require("game.assets.workspace.assets-workspace-screen")
 local PreviewArea = require("game.assets.preview-area.preview-area")
 local GameDataRp = require("game.game-data-rp")
 local GameScreen = require("game.game-screen")
@@ -225,7 +228,10 @@ local CLASSES = {
     WaitingScreen = WaitingScreen,
     GameScreen = GameScreen,
     AssetsPanel = AssetsPanel,
-    PreviewArea = PreviewArea
+    PreviewArea = PreviewArea,
+    AssetsWorkspaceScreen = AssetsWorkspaceScreen,
+    AssetList = AssetList,
+    AssetDetails = AssetDetails
 }
 
 ---The collector is stopped meanwhile: a death by `reachable` would land in
@@ -407,6 +413,10 @@ flow_case("connect and log in: the session owns the period, which owns the menu,
         "UploadAssetRp",
         "DownloadAssetRp",
         "DownloadMissingAssetsRp",
+        "ListAssetsRp",
+        "CreateAssetFolderRp",
+        "RenameAssetRp",
+        "DeleteAssetRp",
         "hook",
         "token"
     })
@@ -533,6 +543,99 @@ flow_case("the options: one screen per menu, a way back per visit, both the menu
     test.assert_eq(client.screen_manager:get_screen(), menu)
 end)
 
+flow_case("the assets workspace from the menu: under the period, its way back its own; back destroys it with its list and details", function(flow)
+    local client, server = flow.client, flow.server
+    client.backstack_manager:back()
+    local menu = client.screen_manager:get_screen() --[[@as UserMenuScreen]]
+    local logout_entry = client.backstack_manager:get_top()
+
+    menu:assets()
+    local workspace = client.screen_manager:get_screen() --[[@as AssetsWorkspaceScreen]]
+    test.assert_eq(get_class_name_of(workspace), "AssetsWorkspaceScreen")
+    ---@diagnostic disable-next-line: invisible
+    test.assert_deep_eq(class_names(lifetime.dependents(client.session._period)), {
+        "UserMenuScreen",
+        "BackstackEntry",
+        "AssetsWorkspaceScreen"
+    })
+    local workspace_dependents = lifetime.dependents(workspace)
+    test.assert_deep_eq(class_names_but_hooks(workspace_dependents), {
+        "BackstackEntry"
+    }, "the list and the details are the control tree's")
+    test.assert_eq(client.backstack_manager:get_top(), workspace_dependents[#workspace_dependents])
+    test.assert_deep_eq(workspace:get_shown_entries(), {}, "nothing before the server answers")
+    frame(server)
+    frame(client)
+    test.assert_deep_eq(workspace:get_shown_entries(), {
+        {
+            path = "token",
+            type = "directory"
+        },
+        {
+            path = "world",
+            type = "directory"
+        }
+    })
+    test.assert_true(workspace:is_writable())
+
+    local log = {}
+    with_release_log(log, function()
+        client.backstack_manager:back()
+    end)
+    test.assert_deep_eq(log, {
+        "AssetsWorkspaceScreen:release(destroy)",
+        "AssetDetails:release(destroy)",
+        "PreviewArea:release(destroy)",
+        "AssetList:release(destroy)"
+    }, "the screen's tree newest first: the details with their preview, then the list")
+    test.assert_false(lifetime.alive(workspace))
+    test.assert_eq(client.screen_manager:get_screen(), menu)
+    test.assert_eq(client.backstack_manager:get_top(), logout_entry)
+    ---@diagnostic disable-next-line: invisible
+    test.assert_eq(client.session._assets_workspace_screen, nil)
+    ---@diagnostic disable-next-line: invisible
+    test.assert_deep_eq(class_names(lifetime.dependents(client.session._period)), {
+        "UserMenuScreen",
+        "BackstackEntry"
+    })
+end)
+
+flow_case("the assets workspace from the game dies with the period on a disconnect, before the game screen", function(flow)
+    local client, client_connection = flow.client, flow.client_connection
+    local game_screen = assert(client.screen_manager:get_screen())
+    client.session:open_assets_workspace()
+    local workspace = client.screen_manager:get_screen()
+    test.assert_eq(get_class_name_of(workspace), "AssetsWorkspaceScreen")
+    test.assert_eq(game_screen:get_control():get_parent(), nil, "the game screen is hidden")
+
+    local log = {}
+    with_release_log(log, function()
+        app = client
+        client.connection_manager:remove(client_connection)
+    end)
+    test.assert_deep_eq(log, {
+        "Connection:release(destroy)",
+        "AssetsWorkspaceScreen:release(anchor)",
+        "AssetDetails:release(destroy)",
+        "PreviewArea:release(destroy)",
+        "AssetList:release(destroy)",
+        "GameScreen:release(anchor)",
+        "AssetsPanel:release(destroy)",
+        "PreviewArea:release(destroy)",
+        "UserMenuScreen:release(anchor)",
+        "DownloadMissingAssetsRp:release(anchor)",
+        "DownloadAssetRp:release(anchor)",
+        "UploadAssetRp:release(anchor)",
+        "GameDataRp:release(anchor)",
+        "LogoutRp:release(anchor)",
+        "LoginRp:release(anchor)"
+    })
+    test.assert_false(lifetime.alive(workspace))
+    test.assert_false(lifetime.alive(game_screen))
+    test.assert_deep_eq(client.root:get_children(), {}, "the workspace hid itself")
+    test.assert_eq(client.screen_manager:get_screen(), nil)
+end)
+
 flow_case("logout: the period dies with the menu, the options and the back entries; the login screen is the session's", function(flow)
     local client, server = flow.client, flow.server
     client.backstack_manager:back()
@@ -570,6 +673,10 @@ flow_case("logout: the period dies with the menu, the options and the back entri
         "UploadAssetRp",
         "DownloadAssetRp",
         "DownloadMissingAssetsRp",
+        "ListAssetsRp",
+        "CreateAssetFolderRp",
+        "RenameAssetRp",
+        "DeleteAssetRp",
         "hook",
         "LoginScreen"
     }, "the dead period left the session; the login screen is the session's until the next login")
@@ -618,6 +725,10 @@ flow_case("logging in again from the login screen: the screen dies at the login 
         "UploadAssetRp",
         "DownloadAssetRp",
         "DownloadMissingAssetsRp",
+        "ListAssetsRp",
+        "CreateAssetFolderRp",
+        "RenameAssetRp",
+        "DeleteAssetRp",
         "hook",
         "token"
     }, "the dead login screen left the session")

@@ -32,7 +32,7 @@ end
 ---@field app AppMock
 ---@field connection Connection
 ---@field session Session
----@field game_screen GameScreen
+---@field game_screen GameScreen Set once the game is entered
 ---@field previous_filesystem love.filesystem|nil
 
 ---@return GameData
@@ -115,20 +115,43 @@ function game_client.game_data()
     }
 end
 
+---@param connection Connection
+---@param id string The remote procedure's class name
+---@return RequestBody
+local function _pop_request(connection, id)
+    local out_channel = connection:get_out_channel()
+    while true do
+        local payload = out_channel:pop() --[[@as string|nil]]
+        assert(payload, "the client sent no " .. id .. " request")
+        local request = table.from_string(love.data.decompress("string", Consts.NETWORK_COMPRESSION, payload) --[[@as string]] ) --[[@as Request]]
+        if request.id == id then
+            return request.body
+        end
+    end
+end
+
 ---@param client AppMock
----@param user string
-local function _answer_login(client, user)
+---@param connection Connection
+---@param id string The remote procedure's class name
+---@param body ResponseBody
+local function _answer(client, connection, id, body)
     ---@type Response
     local response = {
         source = "c",
-        id = "LoginRp",
-        body = {
-            user = user
-        }
+        id = id,
+        body = body
     }
-    local in_channel = client.session:get_connection():get_in_channel()
-    in_channel:push(love.data.compress("string", Consts.NETWORK_COMPRESSION, table.to_string(response)))
+    connection:get_in_channel():push(love.data.compress("string", Consts.NETWORK_COMPRESSION, table.to_string(response)))
+    app = client
     client.update_event:trigger(0.016)
+end
+
+---@param client AppMock
+---@param user string
+local function _answer_login(client, user)
+    _answer(client, client.session:get_connection(), "LoginRp", {
+        user = user
+    })
 end
 
 ---Logs `piotr` in and enters the game with `grants` as the permissions
@@ -166,16 +189,26 @@ function game_client.enter(grants)
     end
     client.connection_manager:add_connection(mocks.make_channel(), mocks.make_thread(), mocks.make_channel(), mocks.make_thread())
     local session = assert(client.session)
+    local connection = session:get_connection()
     _answer_login(client, "piotr")
     assert(session:is_logged_in(), "the login answer logged the session in")
-    client.data = game_client.game_data()
-    session:set_grants(grants)
-    session:enter_game()
+    -- the login's menu joined the game: the data, then the assets it needs,
+    -- answered as the server would; nothing stays unanswered on the wire
+    _pop_request(connection, "GameDataRp")
+    _answer(client, connection, "GameDataRp", {
+        data = game_client.game_data(),
+        permissions = grants
+    })
+    _pop_request(connection, "DownloadMissingAssetsRp")
+    _answer(client, connection, "DownloadMissingAssetsRp", {
+        success = true,
+        contents = {}
+    })
     local game_screen = client.screen_manager:get_screen() --[[@as GameScreen]]
     assert(get_class_name_of(game_screen) == "GameScreen")
     return {
         app = client,
-        connection = session:get_connection(),
+        connection = connection,
         session = session,
         game_screen = game_screen,
         previous_filesystem = previous
@@ -190,6 +223,89 @@ function game_client.finish(client)
     client.app.connection_manager:remove_all()
     assert(not lifetime.alive(client.game_screen))
     mocks.restore_love_filesystem(client.previous_filesystem)
+end
+
+---Pops what the client sent until the request of `id`, the oldest one of it
+---@param client GameClient
+---@param id string The remote procedure's class name
+---@return RequestBody
+function game_client.pop_request(client, id)
+    return _pop_request(client.connection, id)
+end
+
+---Answers the client's oldest unanswered request, as the server would, and
+---runs a frame so the response is handled
+---@param client GameClient
+---@param id string The remote procedure's class name
+---@param body ResponseBody
+function game_client.answer(client, id, body)
+    _answer(client.app, client.connection, id, body)
+end
+
+---@return AssetEntry[] A store of two folders and a file, as the server lists it
+function game_client.asset_entries()
+    return {
+        {
+            path = "notes.txt",
+            type = "file",
+            size = 5
+        },
+        {
+            path = "token",
+            type = "directory"
+        },
+        {
+            path = "token/b.png",
+            type = "file",
+            size = 1
+        },
+        {
+            path = "token/s.png",
+            type = "file",
+            size = 1
+        },
+        {
+            path = "world",
+            type = "directory"
+        },
+        {
+            path = "world/w.png",
+            type = "file",
+            size = 1
+        }
+    }
+end
+
+---Opens the assets workspace over the game screen and answers its listing
+---@param client GameClient
+---@param entries AssetEntry[]|nil Defaults to `game_client.asset_entries()`
+---@param writable boolean|nil Defaults to `true`
+---@return AssetsWorkspaceScreen
+function game_client.open_workspace(client, entries, writable)
+    app = client.app
+    client.session:open_assets_workspace()
+    local screen = client.app.screen_manager:get_screen() --[[@as AssetsWorkspaceScreen]]
+    assert(get_class_name_of(screen) == "AssetsWorkspaceScreen")
+    game_client.pop_request(client, "ListAssetsRp")
+    game_client.answer(client, "ListAssetsRp", {
+        success = true,
+        entries = entries or game_client.asset_entries(),
+        writable = writable ~= false
+    })
+    return screen
+end
+
+---A pointer press and release over the middle of `ctrl`
+---@param client GameClient
+---@param ctrl Control
+function game_client.click(client, ctrl)
+    app = client.app
+    local min_x, min_y, max_x, max_y = ctrl:get_global_aabb():get_bounds()
+    local x, y = (min_x + max_x) * 0.5, (min_y + max_y) * 0.5
+    local manager = client.app.button_event_manager
+    manager:dispatch_pointer_move(x, y, 1)
+    manager:dispatch_pointer_down(x, y, 1)
+    manager:dispatch_pointer_up(x, y, 1)
 end
 
 ---@param client GameClient

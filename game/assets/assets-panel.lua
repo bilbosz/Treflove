@@ -1,7 +1,5 @@
 local Panel = require("ui.panel")
 local PreviewArea = require("game.assets.preview-area.preview-area")
-local PreviewAudioArea = require("game.assets.preview-area.preview-audio-area")
-local PreviewImageArea = require("game.assets.preview-area.preview-image-area")
 local Consts = require("app.consts")
 local Text = require("controls.text")
 local TextInput = require("ui.text-input")
@@ -11,7 +9,7 @@ local Utils = require("utils.utils")
 local media = require("utils.media")
 local permissions = require("game.permissions")
 
----@class AssetsPanel: Panel
+---@class AssetsPanel: Panel, FileDropTarget
 ---@field _game_screen GameScreen
 ---@field _location_input TextInput
 ---@field _remote_location_input TextInput
@@ -19,19 +17,11 @@ local permissions = require("game.permissions")
 ---@field _file_type_input TextInput
 ---@field _upload_button TextButton|nil Absent when the player may not write the assets
 ---@field _cancel_button TextButton
+---@field _workspace_button TextButton
 ---@field _media_type media.Type|nil
----@field private _data string|nil Raw content of the dropped file
+---@field private _data love.FileData|nil Content of the dropped file
 ---@field private _data_size number|nil
 local AssetsPanel = class("AssetsPanel", Panel)
-
----@type table<media.Type, PreviewComponentClass|nil>
-local FILE_TYPE_PREVIEW = {
-    [media.Type.IMAGE] = PreviewImageArea,
-    [media.Type.AUDIO] = PreviewAudioArea,
-    [media.Type.VIDEO] = nil,
-    [media.Type.TEXT] = nil,
-    [media.Type.FONT] = nil
-}
 
 ---@param self AssetsPanel
 local function _create_preview_area(self)
@@ -177,20 +167,39 @@ local function _create_cancel_button(self)
 end
 
 ---@param self AssetsPanel
-local function _refresh_action_buttons(self)
-    _refresh_upload_button_geometry(self)
-    _refresh_cancel_button_geometry(self)
+local function _refresh_workspace_button_geometry(self)
+    local _, h = self:get_size()
+    local button = self._workspace_button
+    local s = Consts.PANEL_FIELD_SCALE
+    button:set_scale(s)
+
+    local button_h = select(2, button:get_size())
+    button:set_position(Consts.PADDING, h - 2 * (button_h * s + Consts.PADDING))
 end
 
 ---@param self AssetsPanel
----@param data string Raw file content
+local function _create_workspace_button(self)
+    local button = TextButton(self, self._game_screen, "Workspace", function()
+        assert(app.session):open_assets_workspace()
+    end)
+    self._workspace_button = button
+
+    _refresh_workspace_button_geometry(self)
+end
+
+---@param self AssetsPanel
+local function _refresh_action_buttons(self)
+    _refresh_upload_button_geometry(self)
+    _refresh_cancel_button_geometry(self)
+    _refresh_workspace_button_geometry(self)
+end
+
+---@param self AssetsPanel
+---@param data love.FileData The dropped file's content
 local function _set_file_type(self, data)
     local media_type, medium = media.get_type_and_medium(data)
     self._media_type = media_type
-    local FileTypePreview = FILE_TYPE_PREVIEW[media_type]
-    if FileTypePreview then
-        self._preview_area:set_content(medium, FileTypePreview)
-    end
+    self._preview_area:show_medium(media_type, medium)
     self._file_type_input:set_text(tostring(table.find_table_key(media.Type, media_type)))
 end
 
@@ -208,6 +217,7 @@ function AssetsPanel:init(game_screen, width, height)
     _create_file_type_field(self)
     _create_remote_location_field(self)
     _create_cancel_button(self)
+    _create_workspace_button(self)
     if assert(app.session):get_permissions():allows(permissions.Action.WRITE, permissions.Kind.ASSETS) then
         _create_upload_button(self)
     end
@@ -215,7 +225,7 @@ end
 
 ---@param file love.DroppedFile
 function AssetsPanel:set_file(file)
-    local data = file:read("data") --[[@as string]]
+    local data = file:read("data") --[[@as love.FileData]]
     local size = file:getSize()
     self._data = data
     self._data_size = size

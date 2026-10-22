@@ -6,7 +6,8 @@ local permissions = require("game.permissions")
 ---@field public content string
 
 ---@class UploadAssetResponse: ResponseBody
----@field public success boolean `false` when the session may not write assets: nothing was written
+---@field public success boolean `false` when the session may not write assets, or the path cannot take a file: nothing was written
+---@field public error string|nil Why not, for the user, when the path is the problem
 
 ---@class UploadAssetRp: RemoteProcedure
 ---@field private _session Session
@@ -22,15 +23,15 @@ end
 ---@return UploadAssetResponse
 function UploadAssetRp:send_response(request)
     assert(app.is_server)
-    local session = self._session
-    if not session:is_logged_in() or not session:get_permissions():allows(permissions.Action.WRITE, permissions.Kind.ASSETS) then
+    if not self._session:is_allowed(permissions.Action.WRITE, permissions.Kind.ASSETS) then
         return {
             success = false
         }
     end
-    app.asset_manager:mount_file(request.path, request.content)
+    local ok, err = app.asset_manager:mount_file(request.path, request.content)
     return {
-        success = true
+        success = ok,
+        error = err
     }
 end
 
@@ -38,7 +39,7 @@ end
 function UploadAssetRp:receive_response(response)
     assert(app.is_client)
     if not response.success then
-        app.notification_manager:notify("Not allowed to upload assets")
+        app.notification_manager:notify(response.error or "Not allowed to upload assets")
     end
 end
 

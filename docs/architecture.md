@@ -66,7 +66,8 @@ identifier (`LoginRp`, `UploadAssetRp`, `DownloadAssetRp`, ...).
 
 A `Session` ties a connection to a user:
 - Manages the login and logout lifecycle through a `Login`
-- Coordinates the screen transitions (connecting → login → user menu → game)
+- Coordinates the screen transitions (connecting → login → user menu → game,
+  and the assets workspace over the menu or the game)
 - Integrates with the asset manager and backstack navigation
 - Holds the user's `PermissionSet` while logged in: the server resolves it
   from the game data at login, the client receives the grants with the game
@@ -74,8 +75,8 @@ A `Session` ties a connection to a user:
 - The server keeps a map from connection to session
 - Is anchored to its connection and owns its login, its remote procedures
   and, on the client, the "logged in" token that owns the menu and game
-  screens; the game screen is built under the token and destroyed on the way
-  back, see [lifetimes.md](lifetimes.md)
+  screens; the game screen and the assets workspace are built under the
+  token and destroyed on the way back, see [lifetimes.md](lifetimes.md)
 - **Note**: the client auto-logs in with hardcoded credentials
   ("adam"/"krause") when its session is created
 
@@ -101,7 +102,9 @@ managers (or by `app` directly) and consumers register handlers on it:
 
 Events by source:
 - Broadcast events: `app.update_event` (dt), `app.wheel_event` (x, y, client
-  only), `app.resize_manager.resized` (width, height)
+  only; a consumer asks its screen `is_showed()` and the pointer manager
+  for the position, so a page under the workspace keeps its zoom),
+  `app.resize_manager.resized` (width, height)
 - `KeyboardManager`: `key_pressed`/`key_released` (key), always delivered,
   also during text input (backstack, form navigation, button activation)
 - `PointerEventManager` (`pointer_down/up/move`) and
@@ -156,29 +159,55 @@ keeps its transform.
 
 `ScreenManager` shows one screen at a time (`show(screen)`); screens are
 full-screen UI containers: ConnectingScreen, LoginScreen, UserMenuScreen,
-OptionsMenuScreen, GameScreen, WaitingScreen, and ScreenSaver for a server
-with a window.
+OptionsMenuScreen, GameScreen, AssetsWorkspaceScreen, WaitingScreen, and
+ScreenSaver for a server with a window.
 
 ## Asset Management
 
 `AssetManager` tracks assets per session (on the client, the procedures used
-are its own session's), downloads missing assets from the server on demand
-and uploads new ones; `Asset` wraps LÖVE's filesystem. The procedures are
-DownloadAssetRp, DownloadMissingAssetsRp and UploadAssetRp; an upload is
-accepted only from a session with `write` on `assets`.
+are its own session's), downloads missing assets from the server on demand,
+uploads new ones and changes the store: a folder (`make_folder`), a move
+(`move`, a file or a folder with everything under it) and a removal
+(`remove`), each validated and refused with a reason for the user. `Asset`
+wraps LÖVE's filesystem: one path, read, written, moved, removed, and the
+path helpers (`check_path`, `get_name`, `get_parent`, `join`, `is_under`)
+and the listing of the whole store (`Asset.list`, parents before their
+content). The procedures are DownloadAssetRp, DownloadMissingAssetsRp,
+UploadAssetRp, ListAssetsRp, CreateAssetFolderRp, RenameAssetRp and
+DeleteAssetRp; the listing needs `read` on `assets`, every change `write`
+on `assets`. A rename keeps the game pointing at the renamed assets (the
+pages' images, the tokens' image properties: `asset_usage`), a delete is
+refused while the game uses the asset or something under the folder. The
+client mirrors a rename and a delete on its own copies.
+
+The assets workspace (`game/assets/workspace/`) is the store as a file
+manager, opened from the user menu or from the game's assets panel:
+`AssetList` shows one folder, folders first, scrolled with the wheel, a
+whole-row button (`AssetListRow`) per entry; `AssetDetails` holds the
+preview (the drop target), the name field the actions use, the type and the
+action buttons; `AssetsWorkspaceScreen` keeps the state (the listing, the
+shown folder, the selection, the dropped file), asks the server and gates
+the buttons: a selected folder can be opened (a second click too) and
+deleted, a selected entry renamed to a free name, a free name made a folder,
+a dropped file uploaded under the typed name into the shown folder (over a
+file, never over a folder). A read-only button is dimmed and skipped by the
+pointer and by Tab. What the server refuses is notified with its reason; the
+listing is asked again after every change.
 
 ## Permissions
 
 Groups, grants and their enforcement are data in the game state and one
 module (`permissions`) plus one class (`PermissionSet`) used on both sides:
-the server filters the game data it sends by `read`, refuses uploads
-without `write:assets`; the client gates editing and dragging of tokens
-and the upload button. See [permissions.md](permissions.md).
+the server filters the game data it sends by `read`, lists the assets only
+with `read:assets`, refuses uploads, folders, renames and deletes without
+`write:assets`; the client gates editing and dragging of tokens, the upload
+button and the workspace's actions. See [permissions.md](permissions.md).
 
 ## Data Persistence
 
 The server persists the game state as a human-readable Lua table:
-`table.to_string()` serializes, `table.from_string()` deserializes; the
+`table.to_string()` serializes (a string on one line, its quotes and
+backslashes escaped), `table.from_string()` deserializes; the
 server writes on `save_data()` and reads at startup. The state holds the
 pages, tokens and token properties, the players and the permission groups
 (`GameData` in `game/game-data-rp.lua`). The server's data
@@ -191,7 +220,9 @@ map); it is data, not source code.
 browser history). `push(cb)` returns the entry, which the caller anchors to
 what it is for (a screen, the logged-in token); an entry leaves the stack
 when it dies. On the back key the top entry is destroyed and its callback
-invoked.
+invoked. The session pushes the entries of the screens it opens (the game,
+the assets workspace) once, when it opens them, so a screen shown again
+(the game after the workspace) gets no second entry.
 
 ## Key Design Patterns
 

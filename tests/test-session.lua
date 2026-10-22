@@ -2,8 +2,12 @@ local test = require("tests.lib.test")
 local mocks = require("tests.lib.mocks")
 local lifetime = require("lifetime")
 local AssetManager = require("data.asset-manager")
+local CreateAssetFolderRp = require("data.create-asset-folder-rp")
+local DeleteAssetRp = require("data.delete-asset-rp")
 local DownloadAssetRp = require("data.download-asset-rp")
 local DownloadMissingAssetsRp = require("data.download-missing-assets-rp")
+local ListAssetsRp = require("data.list-assets-rp")
+local RenameAssetRp = require("data.rename-asset-rp")
 local UploadAssetRp = require("data.upload-asset-rp")
 local GameDataRp = require("game.game-data-rp")
 local Session = require("game.session")
@@ -30,7 +34,11 @@ local CLASSES = {
     GameDataRp = GameDataRp,
     UploadAssetRp = UploadAssetRp,
     DownloadAssetRp = DownloadAssetRp,
-    DownloadMissingAssetsRp = DownloadMissingAssetsRp
+    DownloadMissingAssetsRp = DownloadMissingAssetsRp,
+    ListAssetsRp = ListAssetsRp,
+    CreateAssetFolderRp = CreateAssetFolderRp,
+    RenameAssetRp = RenameAssetRp,
+    DeleteAssetRp = DeleteAssetRp
 }
 
 ---@param log string[]
@@ -66,13 +74,17 @@ test.case("a client session owns its login, the game data procedure and the asse
     local session = Session(connection):attach_lifetime(connection)
     test.assert_eq(lifetime.format(lifetime.of(session)), "(" .. tostring(connection) .. ", reachable)")
     local dependents = lifetime.dependents(session)
-    test.assert_eq(#dependents, 6, "login, game data, three asset procedures and the asset manager's hook")
+    test.assert_eq(#dependents, 10, "login, game data, seven asset procedures and the asset manager's hook")
     test.assert_eq(get_class_name_of(dependents[1]), "Login")
     test.assert_eq(get_class_name_of(dependents[2]), "GameDataRp")
     test.assert_eq(get_class_name_of(dependents[3]), "UploadAssetRp")
     test.assert_eq(get_class_name_of(dependents[4]), "DownloadAssetRp")
     test.assert_eq(get_class_name_of(dependents[5]), "DownloadMissingAssetsRp")
-    test.assert_eq(getmetatable(dependents[6]), "hook")
+    test.assert_eq(get_class_name_of(dependents[6]), "ListAssetsRp")
+    test.assert_eq(get_class_name_of(dependents[7]), "CreateAssetFolderRp")
+    test.assert_eq(get_class_name_of(dependents[8]), "RenameAssetRp")
+    test.assert_eq(get_class_name_of(dependents[9]), "DeleteAssetRp")
+    test.assert_eq(getmetatable(dependents[10]), "hook")
     local login_dependents = lifetime.dependents(dependents[1])
     test.assert_eq(get_class_name_of(login_dependents[1]), "LoginRp")
     test.assert_eq(get_class_name_of(login_dependents[2]), "LogoutRp")
@@ -101,6 +113,14 @@ test.case("destroying the connection tears the whole tree down, the connection f
 
     test.assert_deep_eq(log, {
         "Connection:release(destroy)",
+        "DeleteAssetRp:release(anchor)",
+        "  unregister DeleteAssetRp",
+        "RenameAssetRp:release(anchor)",
+        "  unregister RenameAssetRp",
+        "CreateAssetFolderRp:release(anchor)",
+        "  unregister CreateAssetFolderRp",
+        "ListAssetsRp:release(anchor)",
+        "  unregister ListAssetsRp",
         "DownloadMissingAssetsRp:release(anchor)",
         "  unregister DownloadMissingAssetsRp",
         "DownloadAssetRp:release(anchor)",

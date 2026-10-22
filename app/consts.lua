@@ -130,7 +130,26 @@ Usage:
     TOKEN_SELECTION_THICKNESS = 0.2,
     TOKEN_PANEL_PROPERTY_SCALE = 0.5,
     PADDING = 20,
-    QUICK_ACCESS_PANEL_HEIGHT = 75.425
+    QUICK_ACCESS_PANEL_HEIGHT = 75.425,
+    ASSET_LIST_ROW_NORMAL_COLOR = {
+        0,
+        0,
+        0,
+        0
+    },
+    ASSET_LIST_ROW_HOVER_COLOR = {
+        0.5,
+        0.55,
+        0.55
+    },
+    ASSET_LIST_ROW_SELECTED_COLOR = {
+        0.3,
+        0.35,
+        0.4
+    },
+    ASSET_LIST_SCROLL_ROWS = 3,
+    ASSETS_WORKSPACE_LIST_SHARE = 0.55,
+    ASSETS_WORKSPACE_PREVIEW_SHARE = 0.45
 }
 
 Consts.PANEL_FIELD_SCALE = Consts.MENU_FIELD_SCALE

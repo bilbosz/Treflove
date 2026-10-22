@@ -16,6 +16,9 @@ function UserMenuScreen:init(session)
         MenuTextButton(self, "Join Game", function()
             self:join_game()
         end),
+        MenuTextButton(self, "Assets", function()
+            self:assets()
+        end),
         MenuTextButton(self, "Options", function()
             self:options()
         end),
@@ -30,6 +33,10 @@ end
 
 function UserMenuScreen:join_game()
     self._session:join_game()
+end
+
+function UserMenuScreen:assets()
+    self._session:open_assets_workspace()
 end
 
 function UserMenuScreen:options()

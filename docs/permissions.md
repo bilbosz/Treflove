@@ -90,13 +90,18 @@ logout.
   strips every player's `auth`. A collection the player may not read at
   all is an empty table. The response carries the grants, so the client
   asks the same questions the server did.
-- **Uploads** (`UploadAssetRp`): the server mounts the file only with
-  `write` on `assets`; otherwise the response says `success = false` and
-  the client notifies.
+- **The asset store**: the listing (`ListAssetsRp`) answers only a session
+  with `read` on `assets`, and tells it whether it may change the store
+  (`writable`); an upload (`UploadAssetRp`), a folder
+  (`CreateAssetFolderRp`), a rename (`RenameAssetRp`) and a delete
+  (`DeleteAssetRp`) are done only with `write` on `assets`; otherwise the
+  response says `success = false` and the client notifies the reason.
 - **The client's UI**: the token panel is read-only (inputs read-only, no
   Apply) when any selected token is not writable; dragging moves only the
   writable tokens of the selection; the assets panel has no Upload button
-  without `write:assets`.
+  without `write:assets`; the assets workspace gates its name field and its
+  actions by what the listing said, since it may be opened from the menu,
+  before the game data brought the grants.
 
 `view` is resolved and sent like the other actions; its consumer, a vision
 system that shows a player what their tokens see, is future work
