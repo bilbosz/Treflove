@@ -5,8 +5,14 @@ description: Drive the running LÖVE app or the test suite under the VS Code deb
 
 # Debug Live
 
-Treflove runs under `tomblind.local-lua-debugger-vscode` (lldebugger), wired
-by `app/debugger.lua` (see `docs/development.md`, "Debugging").
+Treflove runs under `ismoh-games.second-local-lua-debugger-vscode` (lldebugger), wired
+by `app/debugger.lua` (see `docs/development.md`, "Debugging"). The installed
+copy is the VSIX built from the fork `bilbosz/local-lua-debugger-vscode`
+(branch `continued-event`, cloned in `~/repo`), which adds the `continued`
+event of the Debug Adapter Protocol that the marketplace 0.3.9 does not send;
+debugmcp tracks the pause from the `stopped` and `continued` events alone, so
+without it every tool below believes the program paused forever after its
+first stop.
 The debugmcp tools (`mcp__debugmcp__*`) drive the VS Code session; the same
 tricks work by hand in the Debug Console, the Watch panel and a conditional
 breakpoint. The runtime is LuaJIT, so `setfenv`, `getfenv` and `loadstring`
@@ -25,15 +31,15 @@ exist. Everything below was verified in this project.
 - `get_debug_status` first, always: the user may already be paused somewhere.
   Leave a session the user paused where it was: read and evaluate, do not
   continue or step it without saying so.
-- `get_debug_status` lies about pauses: it reports `paused: true` with an
-  empty stack trace and no file or line while the program runs (and
-  `waitForPauseSeconds` then returns at once instead of blocking). Only a
-  status with a real `stackTrace`, file and line is a pause. The reliable
-  test is `evaluate_expression` of anything (`tostring(app)`): it fails with
-  "No active stack frame" while the program runs and answers at a pause.
-  To wait for a pause, poll that evaluation with a `sleep` in between. A
-  running client also shows CPU in `ps` (it renders); a paused one shows
-  none.
+- `get_debug_status` is reliable with the fork's event: `running` with no
+  stack while the program runs, `paused` with the stack, file and line at a
+  stop, and `waitForPauseSeconds` blocks until the next stop (verified: a
+  conditional breakpoint 400 frames ahead, a wait of 60 seconds returned at
+  it with the stack). `evaluate_expression` of anything (`tostring(app)`) is
+  the second opinion: it fails with "No active stack frame" while the
+  program runs and answers at a pause. With the marketplace 0.3.9 the status
+  reports `paused: true` with an empty stack while the program runs and the
+  wait returns at once.
 - Breakpoints: `add_breakpoint(fileFullPath, line, condition)`,
   `list_breakpoints`, `remove_breakpoint`, `clear_all_breakpoints`.
   **A breakpoint added, changed or removed while the program runs is only
@@ -45,14 +51,13 @@ exist. Everything below was verified in this project.
   own), or `restart_debugging` right after adding them: a launch pauses
   first and takes every breakpoint in. The ones added during the
   conversation stay listed in VS Code and come along with the restart.
-- Stepping: `step_over`, `step_into`, `step_out`. **Do not call
-  `continue_execution`**: it always fails with
-  `MCP server "debugmcp" transport dropped mid-call; response for tool
-  "continue_execution" was lost`. The program does resume despite the
-  message (verified: an evaluation afterwards reports no active frame and
-  the client renders again), but the call is unreliable. Ask the user to
-  continue (F5) instead, and verify the resume with an evaluation when the
-  call has been made anyway.
+- Stepping: `step_over`, `step_into`, `step_out` return at the next pause
+  with its state. `continue_execution` returns at once with `paused: false`
+  and the program running; wait for the next stop with `get_debug_status`
+  and `waitForPauseSeconds`. (With the marketplace 0.3.9 the continue waits
+  for debugmcp's whole timeout, 300 seconds, and Claude Code drops the call
+  first: `MCP server "debugmcp" transport dropped mid-call`; the program
+  resumes all the same.)
 - Inspection: `list_variable_names`, `get_variables_values`,
   `evaluate_expression`.
 - Not available with this adapter: `pause_execution` (a running program cannot
@@ -192,7 +197,7 @@ server is headless on Linux, the client opens a window, the suite is
 `luajit tests/run.lua` or `love . test`:
 
 ```bash
-EXT=$HOME/.vscode/extensions/tomblind.local-lua-debugger-vscode-0.3.3
+EXT=$HOME/.vscode/extensions/ismoh-games.second-local-lua-debugger-vscode-0.3.9
 export LOCAL_LUA_DEBUGGER_VSCODE=1 LOCAL_LUA_DEBUGGER_FILEPATH=$EXT/debugger/lldebugger.lua \
        LOCAL_LUA_DEBUGGER_SCRIPT_ROOTS=$PWD LUA_PATH="$EXT/debugger/?.lua;;"
 timeout 8 love . server localhost 8089 < commands.txt > out.txt 2>&1
@@ -210,18 +215,18 @@ summarizer too.
 
 ## A session, end to end
 
-1. `get_debug_status`, then an evaluation to tell a real pause from the
-   status tool's stale one. No session: start the configuration the question
+1. `get_debug_status`. No session: start the configuration the question
    needs, or ask the user to press F5 when the client's window and their
-   interaction are part of it.
+   interaction are part of it. `start_debugging` returns at the first stop,
+   so start with a breakpoint set (a one-shot condition on the first line
+   of `love.update` does), or it waits for debugmcp's timeout.
 2. Put a breakpoint where the question is, with a condition that narrows it
    (an identity, a field value, a counter). Add it while the program is
    paused, or restart the session right after, so it is delivered. Let the
-   program reach it: poll with an evaluation, since `waitForPauseSeconds`
-   does not block.
+   program reach it: `get_debug_status` with `waitForPauseSeconds`.
 3. At the pause: `list_variable_names`, then evaluations for the facts;
    change state to test a hypothesis; step to watch it propagate.
 4. Clean up while paused (a removal made while running is pending too):
    `clear_all_breakpoints`, remove probe globals, and leave the session as
-   the user had it. Hand the resume to the user (F5), not to
-   `continue_execution`.
+   the user had it: resumed with `continue_execution`, or paused where they
+   had it paused.

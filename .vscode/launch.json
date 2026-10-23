@@ -1,6 +1,6 @@
 {
     // Run and Debug (F5): the program under the Local Lua Debugger
-    // (tomblind.local-lua-debugger-vscode), see docs/development.md
+    // (ismoh-games.second-local-lua-debugger-vscode), see docs/development.md
     "version": "0.2.0",
     "configurations": [
         {

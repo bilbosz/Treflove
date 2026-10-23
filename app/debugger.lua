@@ -1,4 +1,4 @@
----The Local Lua Debugger of VS Code (`tomblind.local-lua-debugger-vscode`).
+---The Local Lua Debugger of VS Code (`ismoh-games.second-local-lua-debugger-vscode`).
 ---A `lua-local` launch configuration sets `LOCAL_LUA_DEBUGGER_VSCODE` in the
 ---program's environment and puts the debugger's module on `LUA_PATH`; without
 ---the variable every function here is a no-op, and the program runs as it

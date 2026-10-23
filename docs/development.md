@@ -27,7 +27,8 @@ Run both server and client together:
 
 The VS Code launch configurations (`.vscode/launch.json`, Run and Debug,
 F5) run the program under the Local Lua Debugger extension
-(`tomblind.local-lua-debugger-vscode`, recommended by the workspace):
+(`ismoh-games.second-local-lua-debugger-vscode`, the maintained
+continuation of tomblind's, recommended by the workspace):
 `Client`, `Server`, the compound `Server + Client` (both at once, one debug
 session each, stopped together) and the test suite, `Tests (LuaJIT)` and
 `Tests (LÖVE)`. Breakpoints, stepping and the inspection of locals work in
