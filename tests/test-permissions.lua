@@ -423,7 +423,7 @@ local function make_app(overrides)
     app_mock.screen_manager = ScreenManager()
     app_mock.backstack_manager = BackstackManager()
     app_mock.data = game_data()
-    local connection = Connection(mocks.make_channel(), mocks.make_thread(), mocks.make_channel(), mocks.make_thread())
+    local connection = Connection(mocks.make_channel(), mocks.make_channel())
     return app_mock, connection
 end
 

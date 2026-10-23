@@ -8,7 +8,6 @@ local lifetime = require("lifetime")
 ---@class ConnectionManager: Object
 ---@field private _connections table<Connection, boolean>
 ---@field private _by_in_channel table<love.Channel, Connection>
----@field private _by_out_channel table<love.Channel, Connection>
 ---@field private _on_connect ConnectionManagerOnConnect
 ---@field private _on_disconnect ConnectionManagerOnDisconnect
 ---@field private _connector Connector
@@ -19,7 +18,6 @@ local ConnectionManager = class("ConnectionManager")
 function ConnectionManager:init(address, port)
     self._connections = {}
     self._by_in_channel = {}
-    self._by_out_channel = {}
     self._on_connect = nil
     self._on_disconnect = nil
     self._connector = Connector(address, port)
@@ -34,43 +32,37 @@ function ConnectionManager:start(on_connect, on_disconnect)
 end
 
 ---@param in_channel love.Channel
----@param in_thread love.Thread
 ---@param out_channel love.Channel
----@param out_thread love.Thread
-function ConnectionManager:add_connection(in_channel, in_thread, out_channel, out_thread)
-    local connection = Connection(in_channel, in_thread, out_channel, out_thread)
+function ConnectionManager:add_connection(in_channel, out_channel)
+    local connection = Connection(in_channel, out_channel)
     self._connections[connection] = true
     self._by_in_channel[in_channel] = connection
-    self._by_out_channel[out_channel] = connection
     self._on_connect(connection)
 end
 
 ---@param in_channel love.Channel
 function ConnectionManager:remove_by_in_channel(in_channel)
-    self:remove(self._by_in_channel[in_channel])
-end
-
----@param out_channel love.Channel
-function ConnectionManager:remove_by_out_channel(out_channel)
-    self:remove(self._by_out_channel[out_channel])
+    local connection = self._by_in_channel[in_channel]
+    if connection then
+        self:remove(connection)
+    end
 end
 
 ---@param connection Connection
 function ConnectionManager:remove(connection)
     self._connections[connection] = nil
     self._by_in_channel[connection:get_in_channel()] = nil
-    self._by_out_channel[connection:get_out_channel()] = nil
     self._on_disconnect(connection)
-    if app.is_client then
-        self._connector:remove_thread()
-    end
     lifetime.destroy(connection)
 end
 
+---Removes every connection in order and stops the connector: the end of
+---the networking, at program end
 function ConnectionManager:remove_all()
     for connection in pairs(table.copy(self._connections)) do
         self:remove(connection)
     end
+    self._connector:stop()
 end
 
 ---@return table<Connection, boolean>

@@ -42,17 +42,37 @@ are reached through the app's managers (`app.screen_manager`,
 
 ## Networking
 
-Thread-based networking on LÖVE's threads and channels:
+ENet (the `enet` module LÖVE bundles: reliable, ordered packets over UDP)
+on one LÖVE thread per side, talking to the main thread over channels:
 
-- **ConnectionManager**: tracks the connections, indexed by their channels;
-  removes them on disconnect and, at program end, all of them in order
-- **Connection**: a pair of channels (in, out) and the threads behind them,
-  for bidirectional communication
-- **Connector**: establishes connections
+- **Connector**: owns the host thread (`networking/detail/server-host.lua`
+  or `client-host.lua`), starts it, starts it again once it ends (after a
+  retry time, logging the error it died with) and turns what it reports
+  into connections: `"a"` (a peer connected, with its in and out channels)
+  and `"d"` (a peer disconnected, with its in channel)
+- **ConnectionManager**: tracks the connections, indexed by their in
+  channel; removes one when its peer is lost and, at program end, all of
+  them in order
+- **Connection**: a pair of channels (in: what the peer sent, out: what to
+  send it), the FIFO of the response handlers and the request handlers by
+  procedure name; its `release` pushes `false` on the out channel, the
+  request to disconnect the peer, and frees the channels
 - **RemoteProcedure**: the base of the request-response pattern
 
-Each connection has its own sending and receiving threads. The server holds
-many connections at once; the client holds one.
+The host thread services its ENet host in a loop (`host:service` with a
+short timeout, then every out channel, then the stop channel): a received
+packet goes on the peer's in channel, a message on an out channel is sent
+reliably, `false` disconnects the peer. The server's host listens on the
+address and port and holds up to `NETWORK_PEER_LIMIT` peers, each with
+channels of its own; the client's host connects out, waits
+`NETWORK_CONNECT_TIMEOUT_MS` for the connection and ends when the peer is
+gone, so the connector reconnects. ENet fragments and reassembles large
+packets (an asset upload is one packet) and gives a peer up after
+`NETWORK_PEER_TIMEOUT_MS` of silence (a process that died, a network that
+went away). At program end `ConnectionManager:remove_all` destroys every
+connection and stops the connector: the host thread disconnects its peers,
+which hear of it at once, and the main thread waits for the
+acknowledgements, at most `NETWORK_DISCONNECT_TIMEOUT_MS`.
 
 ## Remote Procedures
 
@@ -206,7 +226,7 @@ invoked.
   when the object's owner dies, when `lifetime.destroy` is called on it, or
   when the collector finds it; never called by hand, and written only for
   what nothing else frees (a tree node's subtree, a screen's tree, a
-  connection's LÖVE objects, a procedure's handler slot). Ownership is
+  connection's peer and channels, a procedure's handler slot). Ownership is
   declared where objects are created: `X(...):attach_lifetime(owner)`, or by
   the control tree. See [lifetimes.md](lifetimes.md)
 
@@ -216,5 +236,6 @@ invoked.
   Server; `love.quit` removes every connection in order and then tells
   lua-lifetime the program is ending
 - The client uses love.graphics, love.window, love.keyboard, love.mouse and
-  love.touch; both sides use love.thread and love.channel for networking
+  love.touch; both sides use love.thread, love.channel and the bundled
+  `enet` module for networking
 - The server can run headless (no graphics) or with a minimal UI

@@ -20,15 +20,15 @@ local Consts = require("app.consts")
 
 ---@alias ConnectionMessage Request|Response What the channels carry, serialized and compressed
 
+---@alias ConnectionOutgoing string|false What the out channel carries: a serialized and compressed message, or `false`, which asks the host thread to disconnect the peer
+
 ---@alias ConnectionResponseHandler fun(body: ResponseBody) Processes the body of a received response
 ---@alias ConnectionRequestHandler fun(body: RequestBody): ResponseBody Handles a request body and returns the response body
 
 ---@class Connection: Object
 ---@field private _queue ConnectionResponseHandler[] Handlers awaiting responses, in request order
----@field private _in_channel love.Channel
----@field private _in_thread love.Thread
----@field private _out_channel love.Channel
----@field private _out_thread love.Thread
+---@field private _in_channel love.Channel The messages the host thread received from the peer
+---@field private _out_channel love.Channel The messages for the host thread to send to the peer
 ---@field private _source ConnectionSource
 ---@field private _requests_handlers table<string, ConnectionRequestHandler>
 local Connection = class("Connection")
@@ -47,14 +47,10 @@ local function _decompress(payload)
 end
 
 ---@param in_channel love.Channel
----@param in_thread love.Thread
 ---@param out_channel love.Channel
----@param out_thread love.Thread
-function Connection:init(in_channel, in_thread, out_channel, out_thread)
+function Connection:init(in_channel, out_channel)
     self._in_channel = in_channel
-    self._in_thread = in_thread
     self._out_channel = out_channel
-    self._out_thread = out_thread
     self._queue = {}
     self._source = app.is_client and "c" or "s"
     self._requests_handlers = {}
@@ -119,9 +115,8 @@ end
 ---@param reason lifetime.Reason
 function Connection:release(reason)
     app.update_event:unregister(self)
-    self._in_thread:release()
+    self._out_channel:push(false)
     self._in_channel:release()
-    self._out_thread:release()
     self._out_channel:release()
 end
 

@@ -18,7 +18,7 @@ local function make_client()
     mocks.ensure_love_data()
     mocks.ensure_love_math()
     app_mock.asset_manager = AssetManager()
-    local connection = Connection(mocks.make_channel(), mocks.make_thread(), mocks.make_channel(), mocks.make_thread())
+    local connection = Connection(mocks.make_channel(), mocks.make_channel())
     return app_mock, connection
 end
 
