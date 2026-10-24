@@ -18,7 +18,8 @@
 
 ### Git submodules
 - `annotations/love2d` - LÖVE type annotations for the language server
-- `annotations/luasocket` - LuaSocket type annotations (LÖVE bundles the library; the thread scripts use it)
+- `annotations/luasocket` - LuaSocket type annotations (LÖVE bundles the library; the clock uses it)
+- `annotations/enet` is not a submodule: the lua-enet type annotations, written in this repository (LÖVE bundles the library; the host threads use it)
 - `lib/lua-lifetime` - the lua-lifetime runtime (pure Lua; no build step): `git submodule update --init --recursive`
 
 ### Standard Unix Utilities

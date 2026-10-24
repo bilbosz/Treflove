@@ -49,7 +49,7 @@ call of its own accord, caught or not, by a rule of its own that holds for
 the first such call after the start and rarely later: an error the program
 handles is one to continue past.
 
-Out of reach: the networking thread scripts (`networking/detail/`) run in
+Out of reach: the networking host threads (`networking/detail/`) run in
 Lua states of their own, which the debugger does not see. The debugger talks
 over the standard streams, so the LÖVE console (a window of its own, on
 Windows) is switched off while it is attached.
@@ -131,7 +131,8 @@ The suite has no external dependencies:
   stops the run.
 - The test doubles: `install_app()` (a fake global `app` with a controllable
   clock and captured logs), `make_channel()`/`make_thread()` (in-memory LÖVE
-  channel and thread stand-ins), `make_keyboard()` (a fake `love.keyboard`
+  channel and thread stand-ins; the thread records its starts and is ended
+  by hand), `make_keyboard()` (a fake `love.keyboard`
   backend for the text event manager), `ensure_love_data()`,
   `ensure_love_math()`, `ensure_love_graphics()`, `ensure_love_thread()`
   (the real modules under LÖVE where they work without a window; reversible

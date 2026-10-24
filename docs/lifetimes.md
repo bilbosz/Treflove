@@ -27,15 +27,16 @@ by hand on this branch; the runtime calls it when the object's owner dies,
 when `lifetime.destroy` is called on it, or when the collector finds it.
 `reason` is `"anchor"`, `"destroy"`, `"unreachable"` or `"exit"`. Few
 classes implement one: a tree node takes its subtree (`Tree`), a screen its
-control tree (`Screen`), a connection frees its LÖVE threads and channels,
-a remote procedure gives its handler slot back. Everything else is owned
+control tree (`Screen`), a connection asks the host thread to disconnect
+its peer and frees its channels, a remote procedure gives its handler slot
+back. Everything else is owned
 through anchors or the control tree, and a registration on an `Event` or a
 hit-tested manager ends by itself when its owner dies.
 
 ## Who owns what
 
 ```
-Connection                      (a disconnect → lifetime.destroy;
+Connection                      (a lost peer → lifetime.destroy;
 └── Session                      love.quit → every connection in order)
     ├── Login
     │   ├── LoginRp
@@ -70,9 +71,10 @@ a server in one process over fake channels, every step asserting the order of
 the `release` calls it caused.
 
 - **Disconnect**: one `lifetime.destroy(connection)` runs the connection's
-  own `release` (channels, threads, the update event), then the session's
-  tree newest first; every remote procedure's `release` unregisters its
-  handler from the still usable, dying connection. The disconnect callbacks
+  own `release` (the disconnect request for the host thread, the channels,
+  the update event), then the session's tree newest first; every remote
+  procedure's `release` unregisters its handler from the still usable,
+  dying connection. The disconnect callbacks
   of the client and the server only clear their fields: a dead session is a
   tombstone, not `nil`.
 - **Logout**: `lifetime.destroy` of the period token. The back entry leaves
@@ -125,8 +127,10 @@ the `release` calls it caused.
   on every exit path.
 - **Program end**: `love.quit` removes every connection in order (each as a
   disconnect: the callback, then the cascade), while LÖVE's threads and
-  channels are still usable, and then calls `lifetime.set_exiting(true)`, so
-  whatever is left for the closing state reports `"exit"`.
+  channels are still usable, then stops the host thread and waits for it
+  to disconnect its peers (they hear of it at once instead of timing out),
+  and then calls `lifetime.set_exiting(true)`, so whatever is left for the
+  closing state reports `"exit"`.
 
 ## Rules of thumb on this branch
 

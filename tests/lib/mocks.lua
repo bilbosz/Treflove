@@ -266,7 +266,7 @@ function mocks.make_server_session(make_data, files)
     local previous = mocks.install_love_filesystem(files)
     server.data = make_data()
     server.asset_manager = AssetManager()
-    local connection = Connection(mocks.make_channel(), mocks.make_thread(), mocks.make_channel(), mocks.make_thread())
+    local connection = Connection(mocks.make_channel(), mocks.make_channel())
     local session = Session(connection):attach_lifetime(connection)
     return {
         server = server,
@@ -302,7 +302,7 @@ function mocks.make_client_session(files)
     local notifications = mocks.make_notification_manager()
     client.notification_manager = notifications
     client.asset_manager = AssetManager()
-    local connection = Connection(mocks.make_channel(), mocks.make_thread(), mocks.make_channel(), mocks.make_thread())
+    local connection = Connection(mocks.make_channel(), mocks.make_channel())
     local session = Session(connection):attach_lifetime(connection)
     client.session = session
     return {
@@ -320,11 +320,51 @@ function mocks.finish_client_session(side)
     mocks.restore_love_filesystem(side.previous_filesystem)
 end
 
+---A thread that never runs: `start` records its arguments and marks it
+---running until `finish`
 ---@return FakeThread
 function mocks.make_thread()
     ---@class FakeThread: love.Thread
+    ---@field starts any[][] The arguments of every `start`, in order
+    ---@field _running boolean
+    ---@field _error string|nil
     ---@field _released boolean|nil
-    local thread = {}
+    local thread = {
+        starts = {},
+        _running = false,
+        _error = nil
+    }
+
+    ---@param ... any
+    function thread:start(...)
+        table.insert(self.starts, {
+            ...
+        })
+        self._running = true
+        self._error = nil
+    end
+
+    ---Ends the fake run, with `err` as what `getError` reports
+    ---@param err string|nil
+    function thread:finish(err)
+        self._running = false
+        self._error = err
+    end
+
+    ---@return boolean
+    function thread:isRunning()
+        return self._running
+    end
+
+    ---@return string|nil
+    function thread:getError()
+        return self._error
+    end
+
+    ---Blocks until the thread ends: the fake ends it
+    function thread:wait()
+        self._running = false
+    end
 
     function thread:release()
         self._released = true

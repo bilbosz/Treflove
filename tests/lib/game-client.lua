@@ -187,7 +187,7 @@ function game_client.enter(grants)
         client.session = nil
         client.data = nil
     end
-    client.connection_manager:add_connection(mocks.make_channel(), mocks.make_thread(), mocks.make_channel(), mocks.make_thread())
+    client.connection_manager:add_connection(mocks.make_channel(), mocks.make_channel())
     local session = assert(client.session)
     local connection = session:get_connection()
     _answer_login(client, "piotr")

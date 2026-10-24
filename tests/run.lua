@@ -35,6 +35,7 @@ local TEST_MODULES = {
     "tests.test-button-event",
     "tests.test-class",
     "tests.test-connection",
+    "tests.test-connector",
     "tests.test-create-asset-folder-rp",
     "tests.test-defer-manager",
     "tests.test-delete-asset-rp",

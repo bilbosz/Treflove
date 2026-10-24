@@ -1,14 +1,15 @@
 ---@alias ConnectorMessage
----| {[1]: "a", [2]: love.Channel, [3]: love.Thread, [4]: love.Channel, [5]: love.Thread} # A connection is up: its in channel and thread, its out channel and thread
----| {[1]: "i"|"o", [2]: love.Channel} # The receiving ("i") or the sending ("o") side of a connection stopped: its in or out channel
+---| {[1]: "a", [2]: love.Channel, [3]: love.Channel} # A peer connected: its in channel (what it sends) and its out channel (what to send it)
+---| {[1]: "d", [2]: love.Channel} # A peer disconnected: its in channel
 ---@class Connector: Object
 ---@field private _address string
 ---@field private _port string
----@field private _channel love.Channel
+---@field private _channel love.Channel What the host thread reports
+---@field private _stop_channel love.Channel A value on it asks the host thread to disconnect its peers and end
 ---@field private _retry_time number
----@field private _thread love.Thread|nil `nil` until the first start, and on the client once its connection is gone
+---@field private _thread love.Thread|nil The host thread, from `start` on: one per side, started again once it ends, until `stop`
 ---@field private _connection_manager ConnectionManager
----@field private _last_start number|nil Time of the last connection thread start
+---@field private _last_start number|nil Time of the last host thread start
 local Connector = class("Connector")
 
 ---@param address string
@@ -17,6 +18,7 @@ function Connector:init(address, port)
     self._address = address
     self._port = port
     self._channel = love.thread.newChannel()
+    self._stop_channel = love.thread.newChannel()
     self._retry_time = 1
     self._thread = nil
     self._connection_manager = nil
@@ -25,6 +27,11 @@ end
 ---@param connection_manager ConnectionManager
 function Connector:start(connection_manager)
     self._connection_manager = connection_manager
+    if app.is_server then
+        self._thread = love.thread.newThread("networking/detail/server-host.lua")
+    else
+        self._thread = love.thread.newThread("networking/detail/client-host.lua")
+    end
     self:_try_restart_connection()
 
     app.update_event:register(self, self.on_update)
@@ -32,21 +39,35 @@ end
 
 ---@private
 function Connector:_try_restart_connection()
+    local thread = assert(self._thread)
+    if thread:isRunning() then
+        return
+    end
     local now = love.timer.getTime()
-    if not self._thread or not self._thread:isRunning() and (not self._last_start or now - self._last_start >= self._retry_time) then
-        self._last_start = love.timer.getTime()
-        if not self._thread then
-            if app.is_server then
-                self._thread = love.thread.newThread("networking/detail/connection-dispatcher.lua")
-            else
-                self._thread = love.thread.newThread("networking/detail/client-out.lua")
-            end
-        end
-        if app.is_server then
-            self._thread:start(app.logger:get_data(), self._channel, self._address, self._port)
-        else
-            self._thread:start(app.logger:get_data(), self._channel, self._address, self._port, self._thread)
-        end
+    if self._last_start and now - self._last_start < self._retry_time then
+        return
+    end
+    local err = thread:getError()
+    if err then
+        app:log("The host thread failed: " .. err)
+    end
+    self._last_start = now
+    thread:start(app.logger:get_data(), self._channel, self._stop_channel, self._address, self._port)
+end
+
+---Ends the networking: the host thread disconnects its peers, which hear
+---of it at once instead of timing out, and this blocks until it has, up
+---to the disconnect timeout. A connector that was never started has
+---nothing to end.
+function Connector:stop()
+    local thread = self._thread
+    if not thread then
+        return
+    end
+    app.update_event:unregister(self)
+    if thread:isRunning() then
+        self._stop_channel:push(true)
+        thread:wait()
     end
 end
 
@@ -57,19 +78,13 @@ function Connector:_handle_connections()
         if not msg then
             break
         end
-        local action, channel1, thread1, channel2, thread2 = unpack(msg)
+        local action, in_channel, out_channel = unpack(msg)
         if action == "a" then
-            self._connection_manager:add_connection(channel1, thread1, channel2, thread2)
-        elseif action == "i" then
-            self._connection_manager:remove_by_in_channel(channel1)
-        elseif action == "o" then
-            self._connection_manager:remove_by_out_channel(channel1)
+            self._connection_manager:add_connection(in_channel, out_channel)
+        elseif action == "d" then
+            self._connection_manager:remove_by_in_channel(in_channel)
         end
     end
-end
-
-function Connector:remove_thread()
-    self._thread = nil
 end
 
 function Connector:on_update()

@@ -95,7 +95,8 @@ practice:
   not `|nil`, even when only one side has the instance
 - **Thread scripts** (`networking/detail/`) receive their arguments from
   `love.thread`; one `---@type A, B, C` line above the unpacking `local`
-  types them
+  types them. The `enet` module they use is typed by the hand-written
+  package `annotations/enet` (`enet.host`, `enet.peer`, `enet.event`)
 - **Class tables**: the constructor plugin types a class table as its class
   joined by a constructor overload, which the `Class` alias in the class
   system names (`assert_type(x, Aabb)` takes `type|Class`). The overload
@@ -146,7 +147,9 @@ the language server for autocomplete, type checking and diagnostics:
 
 - They are git submodules maintained upstream, often auto-generated:
   **do not edit** them by hand; update them with
-  `git submodule update --init --recursive`
+  `git submodule update --init --recursive`. The one exception is
+  `annotations/enet`, written here from LÖVE's lua-enet binding because
+  no upstream package exists; it is edited when the binding changes
 - They are listed in the language server's workspace library configuration
   at the repository root
 - The external library's documentation is in the annotation files; for

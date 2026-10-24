@@ -206,10 +206,10 @@ local function connect(client, server)
     local client_to_server = mocks.make_channel()
     local server_to_client = mocks.make_channel()
     app = server
-    server.connection_manager:add_connection(client_to_server, mocks.make_thread(), server_to_client, mocks.make_thread())
+    server.connection_manager:add_connection(client_to_server, server_to_client)
     local server_connection = assert(next(server.connection_manager:get_connections()))
     app = client
-    client.connection_manager:add_connection(server_to_client, mocks.make_thread(), client_to_server, mocks.make_thread())
+    client.connection_manager:add_connection(server_to_client, client_to_server)
     return client.session:get_connection(), server_connection
 end
 
