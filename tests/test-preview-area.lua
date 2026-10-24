@@ -4,7 +4,7 @@ local lifetime = require("lifetime")
 local Control = require("controls.control")
 local PreviewArea = require("game.assets.preview-area.preview-area")
 
----@class TestDropTarget: Control
+---@class TestDropTarget: Control, FileDropTarget
 ---@field files love.DroppedFile[] The files handed over, in order
 ---@field fail boolean Raise instead of taking the file
 local TestDropTarget = class("TestDropTarget", Control)
@@ -53,7 +53,7 @@ local function setup()
     mocks.ensure_love_math()
     mocks.ensure_love_graphics()
     local target = TestDropTarget()
-    local area = PreviewArea(target, 100, 100)
+    local area = PreviewArea(target, 100, 100, target)
     return app_mock, target, area
 end
 

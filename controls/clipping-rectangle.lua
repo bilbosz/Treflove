@@ -12,9 +12,15 @@ function ClippingRectangle:init(parent, width, height)
 end
 
 function ClippingRectangle:draw()
-    love.graphics.setScissor(self:get_global_aabb():get_position_and_size())
+    local x, y, w, h = love.graphics.getScissor()
+    love.graphics.intersectScissor(self:get_global_aabb():get_position_and_size())
     Control.draw(self)
-    love.graphics.setScissor()
+    love.graphics.setScissor(x, y, w, h)
+end
+
+---@protected
+function ClippingRectangle:_update_own_global_aabb()
+    self._global_aabb:set(self:get_global_aabb())
 end
 
 return ClippingRectangle

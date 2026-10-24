@@ -128,7 +128,14 @@ Events by source:
   `FileSystemDropEventManager` (`file_dropped`): owners are Controls; dispatch
   is hit-tested instead of broadcast: only visible controls under the point,
   top-most first; a falsy return consumes the event; `set_receive_through`
-  opts a control into events consumed above it
+  opts a control into events consumed above it. A control is under the
+  point when its bounds are, where it and its descendants draw; a clipping
+  control's bounds are its box, so what is clipped from view is not hit. A
+  control that took a press may `capture(ctrl, id)` it: the moves and the
+  release of that press then go to it alone, hit-tested or not, until the
+  release (or `release_capture`); every press has a captor of its own, and
+  a captor that died lets go. The page and the scroll view hold their drags
+  this way, so a drag goes on outside them and ends wherever it is released
 - `ButtonEventManager`: drives the `Button` helper owned by every `Input`
   (hover and selection state; events `clicked`, `selected`, `unselected`,
   `pointer_entered`, `pointer_left`); controls register with
@@ -148,8 +155,16 @@ LÖVE callbacks when it registers them.
 (`add_child`/`remove_child`), transforms (position, scale, rotation),
 axis-aligned bounding boxes for hit testing. `DrawableControl` adds
 rendering; the primitives are Rectangle, Circle, Text and Image;
-`ClippingMask` clips its children to rectangular bounds. Higher-level
-components (Panel, TextButton, Input, TextInput, NumberInput) build on them.
+`ClippingRectangle` and `ClippingMask` clip their children to their box,
+nested clips intersect, and their bounds are the box, so what is clipped is
+neither drawn nor hit. Higher-level components (Panel, TextButton, Input,
+TextInput, NumberInput, ScrollView) build on them. `ScrollView` is a
+viewport over a content control larger than itself (`get_content`,
+`set_content_size`): the content is dragged with `SCROLL_VIEW_DRAG_BUTTON`,
+press, drag, release, no further than its edges, holding the pointer
+meanwhile. Optional indicators of a fixed size (`SCROLL_VIEW_INDICATOR_*`)
+along the overflowed edges mark where the view is. The token panel and the
+assets panel keep what is above their buttons in one.
 A destroyed control takes its subtree with it, newest child first; a screen
 destroys its control tree, see [lifetimes.md](lifetimes.md).
 

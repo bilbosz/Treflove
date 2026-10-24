@@ -8,7 +8,7 @@ local Tree = require("utils.tree")
 ---@field get_parent fun(self: Control): Control|nil
 ---@field protected global_transform love.Transform
 ---@field protected size [number, number]
----@field private _global_aabb Aabb
+---@field protected _global_aabb Aabb Where the control and its enabled descendants draw, in screen coordinates
 ---@field private _is_enabled boolean
 ---@field private _is_visable boolean
 ---@field private _local_transform love.Transform
@@ -37,29 +37,32 @@ function Control:_update_global_transform()
     end
 end
 
----@private
-function Control:_update_global_aabb_children()
+---@protected
+function Control:_update_own_global_aabb()
     self._global_aabb:set(self:get_global_aabb())
     local aabb = self._global_aabb
     for _, child in ipairs(self.children) do
         if child:is_enabled() then
-            child:_update_global_aabb_children()
             aabb:add_aabb(child._global_aabb)
         end
     end
 end
 
 ---@private
+function Control:_update_global_aabb_children()
+    for _, child in ipairs(self.children) do
+        if child:is_enabled() then
+            child:_update_global_aabb_children()
+        end
+    end
+    self:_update_own_global_aabb()
+end
+
+---@private
 function Control:_update_global_aabb_parent()
     local parent = self:get_parent()
     while parent do
-        parent._global_aabb:set(parent:get_global_aabb())
-        local aabb = parent._global_aabb
-        for _, child in ipairs(parent.children) do
-            if child:is_enabled() then
-                aabb:add_aabb(child._global_aabb)
-            end
-        end
+        parent:_update_own_global_aabb()
         parent = parent:get_parent()
     end
 end

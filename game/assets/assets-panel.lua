@@ -6,12 +6,13 @@ local Consts = require("app.consts")
 local Text = require("controls.text")
 local TextInput = require("ui.text-input")
 local TextButton = require("ui.text-button")
+local ScrollView = require("ui.scroll-view")
 local Utils = require("utils.utils")
 
 local media = require("utils.media")
 local permissions = require("game.permissions")
 
----@class AssetsPanel: Panel
+---@class AssetsPanel: Panel, FileDropTarget
 ---@field _game_screen GameScreen
 ---@field _location_input TextInput
 ---@field _remote_location_input TextInput
@@ -19,6 +20,7 @@ local permissions = require("game.permissions")
 ---@field _file_type_input TextInput
 ---@field _upload_button TextButton|nil Absent when the player may not write the assets
 ---@field _cancel_button TextButton
+---@field _scroll_view ScrollView Holds the preview and the fields, above the buttons
 ---@field _media_type media.Type|nil
 ---@field private _data string|nil Raw content of the dropped file
 ---@field private _data_size number|nil
@@ -36,14 +38,14 @@ local FILE_TYPE_PREVIEW = {
 ---@param self AssetsPanel
 local function _create_preview_area(self)
     local w = self:get_size() - 2 * Consts.PADDING
-    self._preview_area = PreviewArea(self, w, w)
+    self._preview_area = PreviewArea(self._scroll_view:get_content(), w, w, self)
     self._preview_area:set_position(Consts.PADDING, Consts.PADDING)
 end
 
 ---@param self AssetsPanel
 ---@return Text
 local function _create_location_label(self)
-    local text = Text(self, "Local path", Consts.FOREGROUND_COLOR)
+    local text = Text(self._scroll_view:get_content(), "Local path", Consts.FOREGROUND_COLOR)
     local _, area_y, _, area_h = self._preview_area:get_position_and_size()
 
     text:set_position(Consts.PADDING, area_y + area_h + Consts.PADDING)
@@ -55,7 +57,7 @@ end
 ---@return TextInput
 local function _create_location_input(self)
     local panel_w = self:get_size()
-    local input = TextInput(self, self._game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT)
+    local input = TextInput(self._scroll_view:get_content(), self._game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT)
     self._location_input = input
 
     input:set_read_only(true)
@@ -74,7 +76,7 @@ end
 ---@param self AssetsPanel
 ---@return Text
 local function _create_file_type_label(self)
-    local text = Text(self, "File type", Consts.FOREGROUND_COLOR)
+    local text = Text(self._scroll_view:get_content(), "File type", Consts.FOREGROUND_COLOR)
     local _, input_y, _, input_h = self._location_input:get_position_and_size()
 
     text:set_position(Consts.PADDING, input_y + input_h + Consts.PADDING)
@@ -86,7 +88,7 @@ end
 ---@return TextInput
 local function _create_file_type_input(self)
     local panel_w = self:get_size()
-    local input = TextInput(self, self._game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT)
+    local input = TextInput(self._scroll_view:get_content(), self._game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT)
     self._file_type_input = input
 
     input:set_read_only(true)
@@ -104,7 +106,7 @@ end
 ---@param self AssetsPanel
 ---@return Text
 local function _create_remote_location_label(self)
-    local text = Text(self, "Remote location", Consts.FOREGROUND_COLOR)
+    local text = Text(self._scroll_view:get_content(), "Remote location", Consts.FOREGROUND_COLOR)
     local _, input_y, _, input_h = self._file_type_input:get_position_and_size()
 
     text:set_position(Consts.PADDING, input_y + input_h + Consts.PADDING)
@@ -116,7 +118,7 @@ end
 ---@return TextInput
 local function _create_remote_location_input(self)
     local panel_w = self:get_size()
-    local input = TextInput(self, self._game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT)
+    local input = TextInput(self._scroll_view:get_content(), self._game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT)
     self._remote_location_input = input
 
     input:set_read_only(true)
@@ -129,6 +131,21 @@ local function _create_remote_location_field(self)
     local text_x, text_y, _, text_h = text:get_position_and_outer_size()
     local input = _create_remote_location_input(self)
     input:set_position(text_x, text_y + text_h + Consts.PADDING)
+end
+
+---@param self AssetsPanel
+local function _fit_scroll_view_content(self)
+    local panel_w = self:get_size()
+    local _, input_y, _, input_h = self._remote_location_input:get_position_and_size()
+    self._scroll_view:set_content_size(panel_w, input_y + input_h + Consts.PADDING)
+end
+
+---@param self AssetsPanel
+local function _layout_scroll_view(self)
+    local w = self:get_size()
+    local _, button_y = self._cancel_button:get_position()
+    self._scroll_view:set_position(0, 0)
+    self._scroll_view:set_size(w, math.max(0, button_y - Consts.PADDING))
 end
 
 ---@param self AssetsPanel
@@ -180,6 +197,7 @@ end
 local function _refresh_action_buttons(self)
     _refresh_upload_button_geometry(self)
     _refresh_cancel_button_geometry(self)
+    _layout_scroll_view(self)
 end
 
 ---@param self AssetsPanel
@@ -203,14 +221,17 @@ function AssetsPanel:init(game_screen, width, height)
     self._media_type = nil
     self._data = nil
     self._data_size = nil
+    self._scroll_view = ScrollView(self, width, height, true)
     _create_preview_area(self)
     _create_location_field(self)
     _create_file_type_field(self)
     _create_remote_location_field(self)
+    _fit_scroll_view_content(self)
     _create_cancel_button(self)
     if assert(app.session):get_permissions():allows(permissions.Action.WRITE, permissions.Kind.ASSETS) then
         _create_upload_button(self)
     end
+    _layout_scroll_view(self)
 end
 
 ---@param file love.DroppedFile

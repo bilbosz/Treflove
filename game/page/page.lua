@@ -96,9 +96,6 @@ end
 ---@param button number|lightuserdata Mouse button or touch id (never nil for down events)
 function Page:on_pointer_down(x, y, button)
     local tx, ty = self:transform_to_local(x, y)
-    if tx < 0 or tx >= self.size[1] or ty < 0 or ty >= self.size[2] then
-        return
-    end
     if button == Consts.PAGE_SELECT_BUTTON and not self._pointer_down_pos[Consts.PAGE_DRAG_TOKEN_BUTTON] then
         local wx, wy = self._page_coordinates:transform_to_local(x, y)
         self._selection:set_start_point(wx, wy)
@@ -126,6 +123,9 @@ function Page:on_pointer_down(x, y, button)
                 }
             end
         end
+    end
+    if self._pointer_down_pos[button] then
+        app.pointer_event_manager:capture(self, button)
     end
 end
 

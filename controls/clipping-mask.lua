@@ -24,6 +24,11 @@ function ClippingMask:draw()
     love.graphics.setStencilTest()
 end
 
+---@protected
+function ClippingMask:_update_own_global_aabb()
+    self._global_aabb:set(self:get_global_aabb())
+end
+
 ---@param draw_mask_cb DrawMaskCallback
 function ClippingMask:set_draw_mask_callback(draw_mask_cb)
     self._stencil_cb = function()

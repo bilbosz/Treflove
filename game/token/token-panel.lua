@@ -4,6 +4,7 @@ local Text = require("controls.text")
 local TextInput = require("ui.text-input")
 local NumberInput = require("ui.number-input")
 local TextButton = require("ui.text-button")
+local ScrollView = require("ui.scroll-view")
 local lifetime = require("lifetime")
 
 ---@class TokenPanelProperty
@@ -19,6 +20,7 @@ local lifetime = require("lifetime")
 ---@field private _selection_set table<Token, boolean>
 ---@field private _cancel_button TextButton|nil
 ---@field private _apply_button TextButton|nil Absent while the player may not write every selected token
+---@field private _scroll_view ScrollView Holds the properties, above the buttons
 local TokenPanel = class("TokenPanel", Panel)
 
 ---@param game_screen GameScreen
@@ -32,6 +34,7 @@ function TokenPanel:init(game_screen, width, height)
     self._selection_set = game_screen:get_selection():get_select_set()
     self._cancel_button = nil
     self._apply_button = nil
+    self._scroll_view = ScrollView(self, width, height, true)
 end
 
 ---@param w number
@@ -56,6 +59,15 @@ function TokenPanel:_update_view()
     if is_writable then
         self:_create_apply_button()
     end
+    self:_layout_scroll_view()
+end
+
+---@private
+function TokenPanel:_layout_scroll_view()
+    local w = self:get_size()
+    local _, button_y = assert(self._cancel_button):get_position()
+    self._scroll_view:set_position(0, 0)
+    self._scroll_view:set_size(w, math.max(0, button_y - Consts.PADDING))
 end
 
 ---@private
@@ -144,13 +156,15 @@ function TokenPanel:_fill_in_properties(read_only)
             y = y + Consts.PADDING
         end
     end
+    local w = self:get_size()
+    self._scroll_view:set_content_size(w, y)
 end
 
 ---@private
 ---@param property TokenPanelProperty
 ---@return Text
 function TokenPanel:_create_property_title(property)
-    local title = Text(self, property.def.title, Consts.FOREGROUND_COLOR)
+    local title = Text(self._scroll_view:get_content(), property.def.title, Consts.FOREGROUND_COLOR)
     title:set_scale(Consts.PANEL_FIELD_SCALE)
     return title
 end
@@ -160,6 +174,7 @@ end
 ---@return TextInput|NumberInput
 function TokenPanel:_create_property_input(property)
     local panel_w = self:get_size()
+    local content = self._scroll_view:get_content()
 
     local t = property.def.type
     local apply = function()
@@ -169,9 +184,9 @@ function TokenPanel:_create_property_input(property)
     ---@type TextInput|NumberInput
     local input
     if t == "string" then
-        input = TextInput(self, self._game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT, false, nil, apply)
+        input = TextInput(content, self._game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT, false, nil, apply)
     elseif t == "number" then
-        input = NumberInput(self, self._game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT, nil, apply)
+        input = NumberInput(content, self._game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT, nil, apply)
     else
         assert_unreachable()
     end

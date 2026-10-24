@@ -77,3 +77,35 @@ test.case("the game master drags the whole selection", function()
         error(err, 0)
     end
 end)
+
+test.case("a view drag holds the pointer: it goes on beyond the page and ends on the release there", function()
+    local client = game_client.enter({
+        "read"
+    })
+    ---@type boolean, any
+    local ok, err = pcall(function()
+        local page = client.game_screen:get_page()
+        local manager = client.app.pointer_event_manager
+        local coordinates = page:get_page_coordinates()
+        local px, py, pw = page:get_position_and_size()
+        local x0, y0 = coordinates:transform_to_global(0, 0)
+
+        manager:dispatch_pointer_down(px + 100, py + 100, Consts.PAGE_DRAG_VIEW_BUTTON)
+        test.assert_eq(manager:get_captor(Consts.PAGE_DRAG_VIEW_BUTTON), page)
+        manager:dispatch_pointer_move(px + pw + 300, py + 130, nil)
+        local x1, y1 = coordinates:transform_to_global(0, 0)
+        test.assert_near(x1 - x0, pw + 200)
+        test.assert_near(y1 - y0, 30)
+
+        manager:dispatch_pointer_up(px + pw + 300, py + 130, Consts.PAGE_DRAG_VIEW_BUTTON)
+        test.assert_eq(manager:get_captor(Consts.PAGE_DRAG_VIEW_BUTTON), nil)
+        manager:dispatch_pointer_move(px + 100, py + 100, nil)
+        local x2, y2 = coordinates:transform_to_global(0, 0)
+        test.assert_near(x2, x1)
+        test.assert_near(y2, y1)
+    end)
+    game_client.finish(client)
+    if not ok then
+        error(err, 0)
+    end
+end)

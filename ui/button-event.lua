@@ -1,3 +1,4 @@
+local Consts = require("app.consts")
 local Input = require("ui.input")
 
 ---@class ButtonEventManager: Object
@@ -81,10 +82,19 @@ function ButtonEventManager:_get_button(x, y)
     return _find_button(app.root, self._buttons, x, y)
 end
 
+---@param id PointerId
+---@return boolean
+local function _is_press(id)
+    return type(id) ~= "number" or id == Consts.LEFT_MOUSE_BUTTON
+end
+
 ---@param x number
 ---@param y number
 ---@param id PointerId
 function ButtonEventManager:dispatch_pointer_down(x, y, id)
+    if not _is_press(id) then
+        return
+    end
     assert(not self._selection)
     local selection = self:_get_button(x, y)
     if not selection then
@@ -98,6 +108,9 @@ end
 ---@param y number
 ---@param id PointerId
 function ButtonEventManager:dispatch_pointer_up(x, y, id)
+    if not _is_press(id) then
+        return
+    end
     local selection = self._selection
     local top = self:_get_button(x, y)
     if selection and selection == top then
