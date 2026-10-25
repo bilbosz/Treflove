@@ -34,8 +34,13 @@ is built from the fork `bilbosz/local-lua-debugger-vscode`, which adds the
 `Client`, `Server`, the compound `Server + Client` (both at once, one debug
 session each, stopped together) and the test suite, `Tests (LuaJIT)` and
 `Tests (LÖVE)`. Breakpoints, stepping and the inspection of locals work in
-every module of the main Lua state. The task `Run Server + Client` runs
-`./run.sh` without a debugger.
+every module of the main Lua state. Each configuration sets
+`breakInProtectedCalls` to false, the fork's default, so a caught error
+never pauses. The compound's `stopAll` acts only on a manual stop, so the
+Client's `postDebugTask`, `Stop the debugged server`, kills the server the
+debugger launched (the one with the debugger's variable in its environment;
+a server started from a shell stays) when the client's session ends, however
+it ends. The task `Run Server + Client` runs `./run.sh` without a debugger.
 
 The wiring: the extension sets `LOCAL_LUA_DEBUGGER_VSCODE` in the program's
 environment and puts its `lldebugger` module on `LUA_PATH`; the entry point
