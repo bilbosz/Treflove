@@ -600,8 +600,11 @@ local function assert_fitted(client, x, y, w, h)
     test.assert_near(gy, cy, 1e-2)
     local x0, y0 = coordinates:transform_to_global(x, y)
     local x1, y1 = coordinates:transform_to_global(x + w, y + h)
-    local scale = math.min((view_w - 2 * Consts.PADDING) / w, (view_h - 2 * Consts.PADDING) / h)
-    test.assert_near(x1 - x0, w * scale, 1e-2, "scaled to fit")
+    local min_units = math.min(view_w - 2 * Consts.PADDING, view_h - 2 * Consts.PADDING) / page:get_data().width
+    local max_units = math.max(Consts.PAGE_MAX_UNITS_PER_METER, min_units)
+    local fit = math.min((view_w - 2 * Consts.PADDING) / w, (view_h - 2 * Consts.PADDING) / h)
+    local scale = math.min(math.max(fit, min_units), max_units)
+    test.assert_near(x1 - x0, w * scale, 1e-2, "scaled to fit, within the limits")
     test.assert_near(y1 - y0, h * scale, 1e-2)
 end
 

@@ -79,6 +79,82 @@ function Page:init(data, game_screen, width, height)
     pointer_event_manager.pointer_move:register(self, self.on_pointer_move)
     pointer_event_manager:set_receive_through(self, true)
     app.wheel_event:register(self, self.on_wheel_moved)
+    self:_constrain_view()
+end
+
+---@private
+---@return number, number The least and the greatest scale of the map, in units per texel: the page fitted to the view, and a page meter spanning `Consts.PAGE_MAX_UNITS_PER_METER`
+function Page:_get_scale_limits()
+    local bg_w, bg_h = self._background:get_size()
+    local view_w, view_h = self:get_size()
+    local min_scale = math.min((view_w - 2 * Consts.PADDING) / bg_w, (view_h - 2 * Consts.PADDING) / bg_h)
+    local max_scale = math.max(Consts.PAGE_MAX_UNITS_PER_METER * self._page_width / bg_w, min_scale)
+    return min_scale, max_scale
+end
+
+---@private
+---@param scale number
+---@return number
+function Page:_clamp_scale(scale)
+    local min_scale, max_scale = self:_get_scale_limits()
+    return math.min(math.max(scale, min_scale), max_scale)
+end
+
+---@param from number The map's near edge on one axis, in view units
+---@param to number Its far edge
+---@param extent number The view's extent on that axis
+---@return number The least shift that keeps `Consts.PAGE_MIN_VISIBLE` of the map in view
+local function _get_pan_shift(from, to, extent)
+    local min_visible = math.min(Consts.PAGE_MIN_VISIBLE, to - from, extent)
+    if to < min_visible then
+        return min_visible - to
+    elseif from > extent - min_visible then
+        return extent - min_visible - from
+    end
+    return 0
+end
+
+---@private
+function Page:_constrain_view()
+    local bg = self._background
+    local view_w, view_h = self:get_size()
+    local scale = bg:get_scale()
+    local clamped = self:_clamp_scale(scale)
+    if clamped ~= scale then
+        bg:set_origin(bg:transform_to_local(self:transform_to_global(view_w * 0.5, view_h * 0.5)))
+        bg:set_position(view_w * 0.5, view_h * 0.5)
+        bg:set_scale(clamped)
+    end
+
+    local bg_w, bg_h = bg:get_size()
+    local origin_x, origin_y = bg:get_origin()
+    local x, y = bg:get_position()
+    local x0, y0 = x - origin_x * clamped, y - origin_y * clamped
+    local dx = _get_pan_shift(x0, x0 + bg_w * clamped, view_w)
+    local dy = _get_pan_shift(y0, y0 + bg_h * clamped, view_h)
+    if dx ~= 0 or dy ~= 0 then
+        bg:set_position(x + dx, y + dy)
+    end
+end
+
+---@private
+---@return boolean
+function Page:_is_zoomed_out()
+    local min_scale = self:_get_scale_limits()
+    return self._background:get_scale() <= min_scale * (1 + 1e-9)
+end
+
+---@param width number
+---@param height number
+function Page:set_size(width, height)
+    local old_w, old_h = self:get_size()
+    local fitted = self:_is_zoomed_out()
+    ClippingRectangle.set_size(self, width, height)
+    if fitted and (width ~= old_w or height ~= old_h) then
+        self:fit_page()
+    else
+        self:_constrain_view()
+    end
 end
 
 ---@return Control
@@ -162,6 +238,7 @@ function Page:on_pointer_move(x, y)
         local bg_x, bg_y = bg:get_position()
         bg:set_position(bg_x + tx - px, bg_y + ty - py)
         self._pointer_down_pos[Consts.PAGE_DRAG_VIEW_BUTTON][1], self._pointer_down_pos[Consts.PAGE_DRAG_VIEW_BUTTON][2] = tx, ty
+        self:_constrain_view()
     end
     if self._pointer_down_pos[Consts.PAGE_SELECT_BUTTON] then
         local wx, wy = self._page_coordinates:transform_to_local(x, y)
@@ -190,13 +267,12 @@ function Page:on_wheel_moved(x, y)
         local bg = self._background
         local bg_mouse_x, bg_mouse_y = bg:transform_to_local(real_mouse_x, real_mouse_y)
 
-        local zoom_inc = math.pow(Consts.PAGE_ZOOM_INCREASE, y)
+        local scale = self:_clamp_scale(bg:get_scale() * math.pow(Consts.PAGE_ZOOM_INCREASE, y))
 
         bg:set_origin(bg_mouse_x, bg_mouse_y)
         bg:set_position(self_mouse_x, self_mouse_y)
-
-        local scale = bg:get_scale() * zoom_inc
         bg:set_scale(scale)
+        self:_constrain_view()
     end
 end
 
@@ -208,6 +284,7 @@ function Page:center_on(x, y)
     bg:set_origin(bg:transform_to_local(gx, gy))
     local w, h = self:get_size()
     bg:set_position(w * 0.5, h * 0.5)
+    self:_constrain_view()
 end
 
 ---@param x number The rectangle, in page meters
