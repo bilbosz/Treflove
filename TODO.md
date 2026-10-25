@@ -63,6 +63,11 @@ editing and dragging.
 - Per-player grants are edited by hand in the save file, like the accounts
   (milestone 7); a game master UI for groups and grants belongs with the
   account management
+- A token's id renamed in the token panel renames the grants on it in the
+  client's copy of the data and in its session's set (`Token:set_id`); the
+  server rebuilds a session's set at login from the save, so once the write
+  procedure exists (milestone 2) the rename travels with it and the server
+  renames the sets of its live sessions the same way
 
 ## Milestones from code review
 

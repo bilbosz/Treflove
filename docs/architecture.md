@@ -199,6 +199,31 @@ full-screen UI containers: ConnectingScreen, LoginScreen, UserMenuScreen,
 OptionsMenuScreen, GameScreen, AssetsWorkspaceScreen, WaitingScreen, and
 ScreenSaver for a server with a window.
 
+## Tokens
+
+A token (`game/token/token.lua`) is a `Model` over its `TokenData` and a
+control on the page: the avatar in a circular clip, the label, the
+selection ring. Its **id** is its key in `GameData.tokens`, what the
+pages' token lists and the grants (`write:tokens/<id>`) name; it is not a
+field of the data and not the display name (`name`). The token panel
+(`TokenPanel`) edits the selection: an Id field above the properties, then
+one field per property of `token_properties` the selected tokens have (a
+`string`, a `number`, an `image` with its button to the assets workspace),
+in a scroll view above Cancel and Apply. The Id field is editable with
+exactly one writable token selected; with several it is read-only and
+multivalue (the yellowish disabled field), since an id is one token's.
+Apply, or Enter in a field, applies the id first, then the properties:
+`token_id.check` (`game/token/token-id.lua`) refuses an empty id, one
+starting with `@` (a grant on it would read as a selector) or one another
+token has, each with a notification carrying the reason; an accepted id
+goes through `Token:set_id`, which renames the key in the data
+(`token_id.rename`: the entry, every page's token list, the grants on the
+token in the groups' and the players' permissions) and in the session's
+permission set (`permissions.rename_key`), so the token stays as writable
+as it was. Like every edit of a token, the change lives in the client's
+copy of the data until game state synchronization (`TODO.md`, milestone
+2).
+
 ## Asset Management
 
 `AssetManager` tracks assets per session (on the client, the procedures used
