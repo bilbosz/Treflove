@@ -24,9 +24,9 @@ end
 ---second call does nothing.
 function debugger.start()
     if debugger.is_attached() and not lldebugger then
-        -- lua-lifetime probes the host when it loads, with an error raised
-        -- inside a coroutine; hooked, the debugger would pause there on every
-        -- start
+        -- lua-lifetime replaces the coroutine functions, and the debugger
+        -- takes them as it finds them when it loads, to hook its own over
+        -- them at the start: loaded first, lifetime's stay under the hook
         require("lifetime")
         ---@type lldebugger
         local module = require("lldebugger")
@@ -38,9 +38,9 @@ end
 ---Pauses the debugger, when attached, on the next line executed, with the
 ---stack as it is: an error handler calls it so that an uncaught runtime error
 ---(an index of `nil`, a bad argument to a LÖVE function) can be inspected in
----the frame that raised it. The extension pauses at an `error` or `assert`
----call on its own too, but only reliably for the first one after the start,
----so a handler asks every time.
+---the frame that raised it. The extension pauses on its own only at an error
+---nothing catches, and under LÖVE everything runs inside the main loop's
+---`xpcall`, so a handler asks every time.
 function debugger.pause()
     if lldebugger then
         lldebugger.requestBreak()

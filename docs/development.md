@@ -28,7 +28,9 @@ Run both server and client together:
 The VS Code launch configurations (`.vscode/launch.json`, Run and Debug,
 F5) run the program under the Local Lua Debugger extension
 (`ismoh-games.second-local-lua-debugger-vscode`, the maintained
-continuation of tomblind's, recommended by the workspace):
+continuation of tomblind's, recommended by the workspace; the installed copy
+is built from the fork `bilbosz/local-lua-debugger-vscode`, which adds the
+`continued` event and the `breakInProtectedCalls` option):
 `Client`, `Server`, the compound `Server + Client` (both at once, one debug
 session each, stopped together) and the test suite, `Tests (LuaJIT)` and
 `Tests (LÖVE)`. Breakpoints, stepping and the inspection of locals work in
@@ -45,10 +47,11 @@ index of `nil`, a bad argument to a LÖVE function), reaches the LÖVE error
 handler, which prints it and asks the debugger to pause with the stack as it
 is: the frame that raised the error and its locals are there to inspect, a
 few frames below the handler; on continue the program exits, as it does
-without the debugger. The extension also pauses at an `error` or `assert`
-call of its own accord, caught or not, by a rule of its own that holds for
-the first such call after the start and rarely later: an error the program
-handles is one to continue past.
+without the debugger. The extension pauses of its own accord only at an `error` or a failed
+`assert` that nothing catches (its `breakInProtectedCalls` option, off: a
+`pcall`, an `xpcall` or a `coroutine.resume` on the stack is a catch), and
+under LÖVE everything runs inside the `xpcall` of the main loop, so there it
+never does: the handler's request is how an error pauses.
 
 Out of reach: the networking host threads (`networking/detail/`) run in
 Lua states of their own, which the debugger does not see. The debugger talks

@@ -9,10 +9,13 @@ Treflove runs under `ismoh-games.second-local-lua-debugger-vscode` (lldebugger),
 by `app/debugger.lua` (see `docs/development.md`, "Debugging"). The installed
 copy is the VSIX built from the fork `bilbosz/local-lua-debugger-vscode`
 (branch `continued-event`, cloned in `~/repo`), which adds the `continued`
-event of the Debug Adapter Protocol that the marketplace 0.3.9 does not send;
-debugmcp tracks the pause from the `stopped` and `continued` events alone, so
+event of the Debug Adapter Protocol that the marketplace 0.3.9 does not send
+(debugmcp tracks the pause from the `stopped` and `continued` events alone, so
 without it every tool below believes the program paused forever after its
-first stop.
+first stop) and the launch option `breakInProtectedCalls`, off by default:
+an `error` or a failed `assert` that a `pcall`, an `xpcall` or a
+`coroutine.resume` catches does not pause (the marketplace build pauses at
+the first such call after a start, caught or not).
 The debugmcp tools (`mcp__debugmcp__*`) drive the VS Code session; the same
 tricks work by hand in the Debug Console, the Watch panel and a conditional
 breakpoint. The runtime is LuaJIT, so `setfenv`, `getfenv` and `loadstring`
@@ -66,10 +69,11 @@ exist. Everything below was verified in this project.
   counts (use the condition trick below), and breakpoints in the networking
   thread scripts (`networking/detail/`, Lua states of their own).
 - Quirks: a breakpoint on a multi-line statement hits twice; the debugger
-  pauses once by itself at the first `error` or failed `assert` after a start,
-  caught or not (continue past it); an uncaught error pauses inside the error
-  handler, and the raising frame is a few frames below (`app/debugger.lua`,
-  `app/app.lua`, boot.lua, then the code).
+  pauses by itself only at an `error` or a failed `assert` that nothing
+  catches, so under LÖVE never, since the main loop runs inside an `xpcall`:
+  an uncaught error pauses inside the error handler, which asks for it, and
+  the raising frame is a few frames below (`app/debugger.lua`, `app/app.lua`,
+  boot.lua, then the code).
 
 ## Run any code: statements inside an expression
 
@@ -136,9 +140,9 @@ of the panel, so its side effects repeat: keep Watches read-only.
   (function() local ok, r = pcall(function() return msg.body.user.name end); if not ok then print("probe: " .. tostring(r)) end; return ok and r == "adam" end)()
   ```
 
-- Do not raise in a probe: `error` and `assert` are overridden by the debugger
-  and can pause with an "exception" before `pcall` catches them (the first time
-  after a start). Test and return a status instead.
+- Do not raise in a probe: a raise inside the `pcall` no longer pauses (the
+  fork's protected-calls rule), but the result then says only that the chunk
+  failed. Test and return a status instead.
 - In an evaluation at a pause, a runtime error fails the evaluation (it shows
   as `[error] ...` in the Debug Console) and nothing is written back to the
   frame; inside `pcall` the chunk succeeds, the work done so far stands, and
