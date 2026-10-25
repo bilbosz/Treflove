@@ -162,7 +162,15 @@ Usage:
     ASSET_LIST_SCROLL_ROWS = 3,
     ASSETS_WORKSPACE_LIST_SHARE = 0.4,
     ASSETS_WORKSPACE_DETAILS_SHARE = 0.35,
-    ASSETS_WORKSPACE_PREVIEW_SHARE = 0.45
+    ASSETS_WORKSPACE_PREVIEW_SHARE = 0.45,
+    FONT_PREVIEW_TEXT = "The quick brown fox jumps over the lazy dog",
+    FONT_PREVIEW_SAMPLE_SCALE = 0.6,
+    MEDIA_PLAYER_TRACK_COLOR = {
+        0.8,
+        0.85,
+        0.9,
+        0.25
+    }
 }
 
 Consts.PANEL_FIELD_SCALE = Consts.MENU_FIELD_SCALE

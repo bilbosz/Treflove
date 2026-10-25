@@ -3,12 +3,14 @@ local Control = require("controls.control")
 local Text = require("controls.text")
 local Consts = require("app.consts")
 local PreviewAudioArea = require("game.assets.preview-area.preview-audio-area")
+local PreviewFontArea = require("game.assets.preview-area.preview-font-area")
 local PreviewImageArea = require("game.assets.preview-area.preview-image-area")
+local PreviewVideoArea = require("game.assets.preview-area.preview-video-area")
 local Rectangle = require("controls.rectangle")
 local lifetime = require("lifetime")
 local media = require("utils.media")
 
----@alias PreviewComponentClass PreviewImageArea|PreviewAudioArea|fun(preview_area: PreviewArea, medium: LoveMedium, data: media.Source): PreviewImageArea|PreviewAudioArea A preview class table: its class joined by its constructor, as `Class` is
+---@alias PreviewComponentClass PreviewImageArea|PreviewAudioArea|PreviewVideoArea|PreviewFontArea|fun(preview_area: PreviewArea, medium: LoveMedium, data: media.Source): PreviewImageArea|PreviewAudioArea|PreviewVideoArea|PreviewFontArea A preview class table: its class joined by its constructor, as `Class` is
 
 ---@class FileDropTarget
 ---@field set_file fun(self: FileDropTarget, file: love.DroppedFile) Takes the file, open during the call only
@@ -19,7 +21,7 @@ local media = require("utils.media")
 ---@field _preview_labels Control
 ---@field _drop_file_labels Control
 ---@field content_parent Control Parent for preview components, centered in the area
----@field private _preview PreviewImageArea|PreviewAudioArea|nil
+---@field private _preview PreviewImageArea|PreviewAudioArea|PreviewVideoArea|PreviewFontArea|nil
 local PreviewArea = class("PreviewArea", ClippingRectangle)
 
 local PREVIEW_STRING = "Preview"
@@ -29,9 +31,9 @@ local DROP_FILE_STRING = "Drop File Here"
 local PREVIEW_OF_TYPE = {
     [media.Type.IMAGE] = PreviewImageArea,
     [media.Type.AUDIO] = PreviewAudioArea,
-    [media.Type.VIDEO] = nil,
+    [media.Type.VIDEO] = PreviewVideoArea,
     [media.Type.TEXT] = nil,
-    [media.Type.FONT] = nil
+    [media.Type.FONT] = PreviewFontArea
 }
 
 ---@param self PreviewArea
