@@ -8,7 +8,7 @@ description: Drive the running LÖVE app or the test suite under the VS Code deb
 Treflove runs under `ismoh-games.second-local-lua-debugger-vscode` (lldebugger), wired
 by `app/debugger.lua` (see `docs/development.md`, "Debugging"). The installed
 copy is the VSIX built from the fork `bilbosz/local-lua-debugger-vscode`
-(branch `continued-event`, cloned in `~/repo`), which adds the `continued`
+(its `master`, cloned in `~/repo`), which adds the `continued`
 event of the Debug Adapter Protocol that the marketplace 0.3.9 does not send
 (debugmcp tracks the pause from the `stopped` and `continued` events alone, so
 without it every tool below believes the program paused forever after its
