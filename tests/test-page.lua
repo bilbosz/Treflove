@@ -79,37 +79,30 @@ test.case("the game master drags the whole selection", function()
     end
 end)
 
-test.case("a view drag holds the pointer: it goes on beyond the page and ends on the release there", function()
-    local client = game_client.enter({
-        "read"
-    })
-    ---@type boolean, any
-    local ok, err = pcall(function()
-        local page = client.game_screen:get_page()
-        local manager = client.app.pointer_event_manager
-        local coordinates = page:get_page_coordinates()
-        local px, py, pw = page:get_position_and_size()
-        local x0, y0 = coordinates:transform_to_global(0, 0)
+---@param page Page
+---@return number, number, number, number The page's rectangle in the view's coordinates, for a square page as the test data's
+local function map_rect(page)
+    local coordinates = page:get_page_coordinates()
+    local width = page:get_data().width
+    local x0, y0 = page:transform_to_local(coordinates:transform_to_global(0, 0))
+    local x1, y1 = page:transform_to_local(coordinates:transform_to_global(width, width))
+    return x0, y0, x1, y1
+end
 
-        manager:dispatch_pointer_down(px + 100, py + 100, Consts.PAGE_DRAG_VIEW_BUTTON)
-        test.assert_eq(manager:get_captor(Consts.PAGE_DRAG_VIEW_BUTTON), page)
-        manager:dispatch_pointer_move(px + pw + 300, py + 130, nil)
-        local x1, y1 = coordinates:transform_to_global(0, 0)
-        test.assert_near(x1 - x0, pw + 200)
-        test.assert_near(y1 - y0, 30)
+---@param page Page
+---@return number
+local function units_per_meter(page)
+    local x0, _, x1 = map_rect(page)
+    return (x1 - x0) / page:get_data().width
+end
 
-        manager:dispatch_pointer_up(px + pw + 300, py + 130, Consts.PAGE_DRAG_VIEW_BUTTON)
-        test.assert_eq(manager:get_captor(Consts.PAGE_DRAG_VIEW_BUTTON), nil)
-        manager:dispatch_pointer_move(px + 100, py + 100, nil)
-        local x2, y2 = coordinates:transform_to_global(0, 0)
-        test.assert_near(x2, x1)
-        test.assert_near(y2, y1)
-    end)
-    game_client.finish(client)
-    if not ok then
-        error(err, 0)
-    end
-end)
+---@param page Page
+---@return number, number The view's units per page meter at the zoom-out and the zoom-in limit, for a square page
+local function zoom_limits(page)
+    local view_w, view_h = page:get_size()
+    local min_units = math.min(view_w - 2 * Consts.PADDING, view_h - 2 * Consts.PADDING) / page:get_data().width
+    return min_units, math.max(Consts.PAGE_MAX_UNITS_PER_METER, min_units)
+end
 
 ---@param client GameClient
 ---@param x number The rectangle, in page meters
@@ -126,12 +119,226 @@ local function assert_fitted(client, x, y, w, h)
     test.assert_near(gy, cy, 1e-2)
     local x0, y0 = coordinates:transform_to_global(x, y)
     local x1, y1 = coordinates:transform_to_global(x + w, y + h)
-    local scale = math.min((view_w - 2 * Consts.PADDING) / w, (view_h - 2 * Consts.PADDING) / h)
-    test.assert_near(x1 - x0, w * scale, 1e-2, "scaled to fit")
+    local min_units, max_units = zoom_limits(page)
+    local fit = math.min((view_w - 2 * Consts.PADDING) / w, (view_h - 2 * Consts.PADDING) / h)
+    local scale = math.min(math.max(fit, min_units), max_units)
+    test.assert_near(x1 - x0, w * scale, 1e-2, "scaled to fit, within the limits")
     test.assert_near(y1 - y0, h * scale, 1e-2)
 end
 
-test.case("the view is fitted to a token of the page, or to the page itself, within a padding", function()
+---@param page Page
+local function assert_pan_limit(page)
+    local view_w, view_h = page:get_size()
+    local x0, y0, x1, y1 = map_rect(page)
+    local visible_x = math.min(Consts.PAGE_MIN_VISIBLE, x1 - x0, view_w)
+    local visible_y = math.min(Consts.PAGE_MIN_VISIBLE, y1 - y0, view_h)
+    test.assert_true(x1 >= visible_x - 1e-3 and x0 <= view_w - visible_x + 1e-3, "the least of the map in view across")
+    test.assert_true(y1 >= visible_y - 1e-3 and y0 <= view_h - visible_y + 1e-3, "and down")
+end
+
+---@param client GameClient
+---@param x number In the page's own coordinates
+---@param y number
+local function point_at(client, x, y)
+    client.app:set_pointer_position(client.game_screen:get_page():transform_to_global(x, y))
+end
+
+---@param client GameClient
+---@param steps number Positive zooms in
+local function wheel(client, steps)
+    local page = client.game_screen:get_page()
+    for _ = 1, math.abs(steps) do
+        page:on_wheel_moved(0, steps > 0 and 1 or -1)
+    end
+end
+
+test.case("on entry the view is the page fitted, within the limits", function()
+    local client = game_client.enter({
+        "read"
+    })
+    ---@type boolean, any
+    local ok, err = pcall(function()
+        assert_fitted(client, 0, 0, 10, 10)
+        assert_pan_limit(client.game_screen:get_page())
+    end)
+    game_client.finish(client)
+    if not ok then
+        error(err, 0)
+    end
+end)
+
+test.case("a view drag holds the pointer: it goes on beyond the page and ends on the release there", function()
+    local client = game_client.enter({
+        "read"
+    })
+    ---@type boolean, any
+    local ok, err = pcall(function()
+        local page = client.game_screen:get_page()
+        local manager = client.app.pointer_event_manager
+        local coordinates = page:get_page_coordinates()
+        local px, py, pw = page:get_position_and_size()
+        local x0, y0 = coordinates:transform_to_global(0, 0)
+
+        manager:dispatch_pointer_down(px + pw - 100, py + 100, Consts.PAGE_DRAG_VIEW_BUTTON)
+        test.assert_eq(manager:get_captor(Consts.PAGE_DRAG_VIEW_BUTTON), page)
+        manager:dispatch_pointer_move(px + pw + 300, py + 130, nil)
+        local x1, y1 = coordinates:transform_to_global(0, 0)
+        test.assert_near(x1 - x0, 400)
+        test.assert_near(y1 - y0, 30)
+
+        manager:dispatch_pointer_up(px + pw + 300, py + 130, Consts.PAGE_DRAG_VIEW_BUTTON)
+        test.assert_eq(manager:get_captor(Consts.PAGE_DRAG_VIEW_BUTTON), nil)
+        manager:dispatch_pointer_move(px + 100, py + 100, nil)
+        local x2, y2 = coordinates:transform_to_global(0, 0)
+        test.assert_near(x2, x1)
+        test.assert_near(y2, y1)
+    end)
+    game_client.finish(client)
+    if not ok then
+        error(err, 0)
+    end
+end)
+
+test.case("a view drag stops with the least of the map in view, at every edge", function()
+    local client = game_client.enter({
+        "read"
+    })
+    ---@type boolean, any
+    local ok, err = pcall(function()
+        local page = client.game_screen:get_page()
+        local manager = client.app.pointer_event_manager
+        local px, py, pw, ph = page:get_position_and_size()
+        local view_w, view_h = page:get_size()
+        local visible = Consts.PAGE_MIN_VISIBLE
+
+        manager:dispatch_pointer_down(px + 100, py + 100, Consts.PAGE_DRAG_VIEW_BUTTON)
+        manager:dispatch_pointer_move(px + pw + 5000, py + 100, nil)
+        local x0, _, x1 = map_rect(page)
+        test.assert_near(x0, view_w - visible, 1e-3, "dragged far right")
+        local width = x1 - x0
+
+        manager:dispatch_pointer_move(px - 5000, py + 100, nil)
+        x0, _, x1 = map_rect(page)
+        test.assert_near(x1, visible, 1e-3, "dragged far left")
+        test.assert_near(x1 - x0, width, 1e-3, "the scale kept")
+
+        manager:dispatch_pointer_move(px - 5000, py + ph + 5000, nil)
+        local _, y0 = map_rect(page)
+        test.assert_near(y0, view_h - visible, 1e-3, "dragged far down")
+
+        manager:dispatch_pointer_move(px - 5000, py - 5000, nil)
+        local _, _, x, y1 = map_rect(page)
+        test.assert_near(y1, visible, 1e-3, "dragged far up")
+        test.assert_near(x, visible, 1e-3, "a square at the corner")
+
+        manager:dispatch_pointer_move(px - 4990, py - 4980, nil)
+        local _, _, x2, y2 = map_rect(page)
+        test.assert_near(x2, visible + 10, 1e-3, "the map follows the pointer back at once")
+        test.assert_near(y2, visible + 20, 1e-3)
+        manager:dispatch_pointer_up(px - 4990, py - 4980, Consts.PAGE_DRAG_VIEW_BUTTON)
+    end)
+    game_client.finish(client)
+    if not ok then
+        error(err, 0)
+    end
+end)
+
+test.case("the wheel zooms about the pointer, out to the page fitted and in to the meter's limit", function()
+    local client = game_client.enter({
+        "read"
+    })
+    ---@type boolean, any
+    local ok, err = pcall(function()
+        local page = client.game_screen:get_page()
+        local coordinates = page:get_page_coordinates()
+        local manager = client.app.pointer_event_manager
+        local view_w, view_h = page:get_size()
+        local min_units, max_units = zoom_limits(page)
+
+        point_at(client, view_w * 0.5, view_h * 0.5)
+        wheel(client, 3)
+        test.assert_true(units_per_meter(page) > min_units, "zoomed in")
+        wheel(client, -50)
+        test.assert_near(units_per_meter(page), min_units, 1e-3, "out no further than the page fitted")
+        local fitted = {
+            map_rect(page)
+        }
+        page:fit_page()
+        local refitted = {
+            map_rect(page)
+        }
+        for i = 1, 4 do
+            test.assert_near(refitted[i], fitted[i], 1e-3, "fitting changes nothing")
+        end
+
+        point_at(client, 300, 400)
+        local mx, my = coordinates:transform_to_local(manager:get_position())
+        wheel(client, 1)
+        test.assert_near(units_per_meter(page), min_units * Consts.PAGE_ZOOM_INCREASE, 1e-3, "one step in")
+        local nx, ny = coordinates:transform_to_local(manager:get_position())
+        test.assert_near(nx, mx, 1e-3, "the point under the pointer stays")
+        test.assert_near(ny, my, 1e-3)
+
+        wheel(client, 1)
+        test.assert_near(units_per_meter(page), max_units, 1e-3, "the step past the limit stops at it")
+        nx, ny = coordinates:transform_to_local(manager:get_position())
+        test.assert_near(nx, mx, 1e-3, "about the pointer still")
+        test.assert_near(ny, my, 1e-3)
+
+        wheel(client, 50)
+        test.assert_near(units_per_meter(page), Consts.PAGE_MAX_UNITS_PER_METER, 1e-3, "in no further than the limit")
+        assert_pan_limit(page)
+    end)
+    game_client.finish(client)
+    if not ok then
+        error(err, 0)
+    end
+end)
+
+test.case("a change of size keeps the view within the limits, and a fitted page fitted", function()
+    local client = game_client.enter({
+        "read"
+    })
+    ---@type boolean, any
+    local ok, err = pcall(function()
+        local page = client.game_screen:get_page()
+        local manager = client.app.pointer_event_manager
+        local view_w, view_h = page:get_size()
+        point_at(client, view_w * 0.5, view_h * 0.5)
+        wheel(client, 1)
+        local zoomed = units_per_meter(page)
+
+        page:set_size(2000, 1900)
+        local min_units = zoom_limits(page)
+        test.assert_true(min_units > zoomed, "a larger view raises the zoom-out limit")
+        test.assert_near(units_per_meter(page), min_units, 1e-3, "the scale raised to it")
+        assert_pan_limit(page)
+
+        wheel(client, 1)
+        zoomed = units_per_meter(page)
+        local px, py = page:get_position()
+        manager:dispatch_pointer_down(px + 100, py + 100, Consts.PAGE_DRAG_VIEW_BUTTON)
+        manager:dispatch_pointer_move(px + 5000, py + 5000, nil)
+        manager:dispatch_pointer_up(px + 5000, py + 5000, Consts.PAGE_DRAG_VIEW_BUTTON)
+        page:set_size(800, 600)
+        test.assert_near(units_per_meter(page), zoomed, 1e-3, "a smaller view keeps the scale")
+        local x0, y0 = map_rect(page)
+        test.assert_near(x0, 800 - Consts.PAGE_MIN_VISIBLE, 1e-3, "the map pulled into the smaller view")
+        test.assert_near(y0, 600 - Consts.PAGE_MIN_VISIBLE, 1e-3)
+
+        page:fit_page()
+        page:set_size(1000, 700)
+        assert_fitted(client, 0, 0, 10, 10)
+        page:set_size(1800, 1600)
+        assert_fitted(client, 0, 0, 10, 10)
+    end)
+    game_client.finish(client)
+    if not ok then
+        error(err, 0)
+    end
+end)
+
+test.case("the view is fitted to a token of the page, no closer than the zoom-in limit, or to the page itself, within a padding", function()
     local client = game_client.enter({
         "read"
     })
