@@ -109,3 +109,34 @@ test.case("a view drag holds the pointer: it goes on beyond the page and ends on
         error(err, 0)
     end
 end)
+
+test.case("the view is centered on a token of the page, or on the page itself", function()
+    local client = game_client.enter({
+        "read"
+    })
+    ---@type boolean, any
+    local ok, err = pcall(function()
+        local page = client.game_screen:get_page()
+        local coordinates = page:get_page_coordinates()
+        local w, h = page:get_size()
+        local cx, cy = page:transform_to_global(w * 0.5, h * 0.5)
+
+        page:center_on_token("Smaug")
+        local x, y = coordinates:transform_to_global(4, 2)
+        test.assert_near(x, cx, 1e-2)
+        test.assert_near(y, cy, 1e-2)
+
+        page:center_on_page()
+        x, y = coordinates:transform_to_global(5, 5)
+        test.assert_near(x, cx, 1e-2)
+        test.assert_near(y, cy, 1e-2)
+
+        test.assert_error(function()
+            page:center_on_token("Gollum")
+        end, "a token on no page")
+    end)
+    game_client.finish(client)
+    if not ok then
+        error(err, 0)
+    end
+end)

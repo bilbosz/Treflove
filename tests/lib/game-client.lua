@@ -65,6 +65,13 @@ function game_client.game_data()
                     "Bilbosza",
                     "Smaug"
                 }
+            },
+            Q = {
+                name = "Q",
+                width = 10,
+                pixel_per_meter = 50,
+                image = "world/q.png",
+                tokens = {}
             }
         },
         token_properties = {
@@ -109,6 +116,15 @@ function game_client.game_data()
                 position = {
                     4,
                     2
+                }
+            },
+            Gollum = {
+                name = "Gollum",
+                diameter = 1,
+                avatar = "token/g.png",
+                position = {
+                    0,
+                    0
                 }
             }
         }
@@ -166,7 +182,9 @@ function game_client.enter(grants)
     local previous = mocks.install_love_filesystem({
         ["c/assets/world/w.png"] = "W",
         ["c/assets/token/b.png"] = "B",
-        ["c/assets/token/s.png"] = "S"
+        ["c/assets/token/s.png"] = "S",
+        ["c/assets/token/g.png"] = "G",
+        ["c/assets/world/q.png"] = "Q"
     })
     local client = mocks.install_app()
     client.root = Control()

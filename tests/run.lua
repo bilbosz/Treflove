@@ -29,7 +29,6 @@ local TEST_MODULES = {
     "tests.test-asset",
     "tests.test-asset-list",
     "tests.test-asset-usage",
-    "tests.test-assets-panel",
     "tests.test-assets-workspace-screen",
     "tests.test-backstack-manager",
     "tests.test-button-event",

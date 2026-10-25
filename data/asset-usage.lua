@@ -1,5 +1,10 @@
 local Asset = require("data.asset")
 
+---@class AssetUse A reference to an asset in the game data
+---@field kind "page"|"token"
+---@field name string The page's or the token's key
+---@field key string|nil The token property that refers, for a token
+
 ---Where the game data refers to assets: a page's image and the token
 ---properties of the `image` type
 ---@class asset_usage
@@ -48,13 +53,17 @@ end
 
 ---@param data GameData
 ---@param path string An asset or a folder
----@return string[] What refers to `path` or to something under it, e.g. `page "Old Town"`, `token "Bilbosz" (avatar)`; empty when nothing does
+---@return AssetUse[] What refers to `path` or to something under it, the pages then the tokens, in name order; empty when nothing does
 function asset_usage.find(data, path)
-    ---@type string[]
+    ---@type AssetUse[]
     local found = {}
     for _, name in ipairs(_sorted_keys(data.pages)) do
         if _refers(data.pages[name].image, path) then
-            table.insert(found, string.format("page %q", name))
+            table.insert(found, {
+                kind = "page",
+                name = name,
+                key = nil
+            })
         end
     end
     local image_keys = _image_keys(data)
@@ -62,11 +71,40 @@ function asset_usage.find(data, path)
         local token = data.tokens[name]
         for _, key in ipairs(image_keys) do
             if _refers(token[key], path) then
-                table.insert(found, string.format("token %q (%s)", name, key))
+                table.insert(found, {
+                    kind = "token",
+                    name = name,
+                    key = key
+                })
             end
         end
     end
     return found
+end
+
+---@param use AssetUse
+---@return string `page "Old Town"`, `token "Bilbosz" (avatar)`
+function asset_usage.describe(use)
+    if use.kind == "page" then
+        return string.format("page %q", use.name)
+    end
+    return string.format("token %q (%s)", use.name, use.key)
+end
+
+---@param data GameData
+---@param use AssetUse
+---@return boolean Whether the use is the shown page or a token placed on it
+function asset_usage.is_on_shown_page(data, use)
+    local game = data.game
+    local shown = game and game.page
+    if not shown then
+        return false
+    end
+    if use.kind == "page" then
+        return use.name == shown
+    end
+    local page = data.pages[shown]
+    return page ~= nil and table.find_array_idx(page.tokens, use.name) ~= nil
 end
 
 ---Points every reference to `path`, or to something under it, at `new_path`

@@ -54,8 +54,8 @@ Connection                      (a lost peer → lifetime.destroy;
         ├── GameScreen                  (while in the game)
         │   ├── its control tree        (the panels, the preview area, the inputs)
         │   └── back entry: leave the game
-        └── AssetsWorkspaceScreen       (while open, over the menu or the game)
-            ├── its control tree        (the list and its rows, the details with the preview)
+        └── AssetsWorkspaceScreen       (while open, over the game)
+            ├── its control tree        (the list and its rows, the details with the preview, the usage list)
             └── back entry: close the workspace
 ```
 
@@ -88,10 +88,11 @@ the `release` calls it caused.
   destroys the game screen with its panels. Game data that arrives after a
   logout belongs to a period that is over and is ignored.
 - **The assets workspace**: the session builds it under the period when the
-  menu or the game's assets panel opens it, remembers the screen it was
-  opened from and pushes its back entry, anchored to the workspace; the
-  entry shows that screen again (the game's own entry still below) and
-  destroys the workspace with its list and details. A listing the server
+  game's Assets entry opens it, remembers the screen it was opened from and
+  pushes its back entry, anchored to the workspace; the entry, or a click on
+  a use, which then centers the game's view, shows the game again (its own
+  entry still below) and destroys the workspace with its list, details and
+  usage list. A listing the server
   refuses closes it the same way. A response that arrives after the
   workspace died (a listing, a download for a preview) finds its callback
   asking `lifetime.alive(self)` first.

@@ -6,7 +6,7 @@ local AssetManager = require("data.asset-manager")
 local DownloadAssetRp = require("data.download-asset-rp")
 local DownloadMissingAssetsRp = require("data.download-missing-assets-rp")
 local UploadAssetRp = require("data.upload-asset-rp")
-local AssetsPanel = require("game.assets.assets-panel")
+local AssetUsageList = require("game.assets.workspace.asset-usage-list")
 local AssetDetails = require("game.assets.workspace.asset-details")
 local AssetList = require("game.assets.workspace.asset-list")
 local AssetsWorkspaceScreen = require("game.assets.workspace.assets-workspace-screen")
@@ -227,7 +227,7 @@ local CLASSES = {
     OptionsMenuScreen = OptionsMenuScreen,
     WaitingScreen = WaitingScreen,
     GameScreen = GameScreen,
-    AssetsPanel = AssetsPanel,
+    AssetUsageList = AssetUsageList,
     PreviewArea = PreviewArea,
     AssetsWorkspaceScreen = AssetsWorkspaceScreen,
     AssetList = AssetList,
@@ -489,9 +489,7 @@ flow_case("back from the game: the menu is shown again, the game screen dies wit
         client.backstack_manager:back()
     end)
     test.assert_deep_eq(log, {
-        "GameScreen:release(destroy)",
-        "AssetsPanel:release(destroy)",
-        "PreviewArea:release(destroy)"
+        "GameScreen:release(destroy)"
     })
     test.assert_false(lifetime.alive(game_screen))
     test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "UserMenuScreen")
@@ -543,25 +541,26 @@ flow_case("the options: one screen per menu, a way back per visit, both the menu
     test.assert_eq(client.screen_manager:get_screen(), menu)
 end)
 
-flow_case("the assets workspace from the menu: under the period, its way back its own; back destroys it with its list and details", function(flow)
+flow_case("the assets workspace from the game: under the period, its way back its own; back destroys it with its usage, details and list, and shows the game again", function(flow)
     local client, server = flow.client, flow.server
-    client.backstack_manager:back()
-    local menu = client.screen_manager:get_screen() --[[@as UserMenuScreen]]
-    local logout_entry = client.backstack_manager:get_top()
+    local game_screen = assert(client.screen_manager:get_screen())
+    local game_entry = client.backstack_manager:get_top()
 
-    menu:assets()
+    client.session:open_assets_workspace()
     local workspace = client.screen_manager:get_screen() --[[@as AssetsWorkspaceScreen]]
     test.assert_eq(get_class_name_of(workspace), "AssetsWorkspaceScreen")
+    test.assert_eq(game_screen:get_control():get_parent(), nil, "the game screen is hidden meanwhile")
     ---@diagnostic disable-next-line: invisible
     test.assert_deep_eq(class_names(lifetime.dependents(client.session._period)), {
         "UserMenuScreen",
         "BackstackEntry",
+        "GameScreen",
         "AssetsWorkspaceScreen"
     })
     local workspace_dependents = lifetime.dependents(workspace)
     test.assert_deep_eq(class_names_but_hooks(workspace_dependents), {
         "BackstackEntry"
-    }, "the list and the details are the control tree's")
+    }, "the list, the details and the usage are the control tree's")
     test.assert_eq(client.backstack_manager:get_top(), workspace_dependents[#workspace_dependents])
     test.assert_deep_eq(workspace:get_shown_entries(), {}, "nothing before the server answers")
     frame(server)
@@ -584,19 +583,21 @@ flow_case("the assets workspace from the menu: under the period, its way back it
     end)
     test.assert_deep_eq(log, {
         "AssetsWorkspaceScreen:release(destroy)",
+        "AssetUsageList:release(destroy)",
         "AssetDetails:release(destroy)",
         "PreviewArea:release(destroy)",
         "AssetList:release(destroy)"
-    }, "the screen's tree newest first: the details with their preview, then the list")
+    }, "the screen's tree newest first: the usage, the details with their preview, then the list")
     test.assert_false(lifetime.alive(workspace))
-    test.assert_eq(client.screen_manager:get_screen(), menu)
-    test.assert_eq(client.backstack_manager:get_top(), logout_entry)
+    test.assert_eq(client.screen_manager:get_screen(), game_screen)
+    test.assert_eq(client.backstack_manager:get_top(), game_entry)
     ---@diagnostic disable-next-line: invisible
     test.assert_eq(client.session._assets_workspace_screen, nil)
     ---@diagnostic disable-next-line: invisible
     test.assert_deep_eq(class_names(lifetime.dependents(client.session._period)), {
         "UserMenuScreen",
-        "BackstackEntry"
+        "BackstackEntry",
+        "GameScreen"
     })
 end)
 
@@ -616,12 +617,11 @@ flow_case("the assets workspace from the game dies with the period on a disconne
     test.assert_deep_eq(log, {
         "Connection:release(destroy)",
         "AssetsWorkspaceScreen:release(anchor)",
+        "AssetUsageList:release(destroy)",
         "AssetDetails:release(destroy)",
         "PreviewArea:release(destroy)",
         "AssetList:release(destroy)",
         "GameScreen:release(anchor)",
-        "AssetsPanel:release(destroy)",
-        "PreviewArea:release(destroy)",
         "UserMenuScreen:release(anchor)",
         "DownloadMissingAssetsRp:release(anchor)",
         "DownloadAssetRp:release(anchor)",
@@ -776,8 +776,6 @@ flow_case("disconnect: one cascade per side, the connection first, then the sess
     test.assert_deep_eq(log, {
         "Connection:release(destroy)",
         "GameScreen:release(anchor)",
-        "AssetsPanel:release(destroy)",
-        "PreviewArea:release(destroy)",
         "UserMenuScreen:release(anchor)",
         "DownloadMissingAssetsRp:release(anchor)",
         "DownloadAssetRp:release(anchor)",
@@ -835,8 +833,6 @@ flow_case("quit: remove_all tears every connection down in order, as love.quit d
         "LoginRp:release(anchor)",
         "Connection:release(destroy)",
         "GameScreen:release(anchor)",
-        "AssetsPanel:release(destroy)",
-        "PreviewArea:release(destroy)",
         "UserMenuScreen:release(anchor)",
         "DownloadMissingAssetsRp:release(anchor)",
         "DownloadAssetRp:release(anchor)",

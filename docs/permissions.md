@@ -98,10 +98,8 @@ logout.
   response says `success = false` and the client notifies the reason.
 - **The client's UI**: the token panel is read-only (inputs read-only, no
   Apply) when any selected token is not writable; dragging moves only the
-  writable tokens of the selection; the assets panel has no Upload button
-  without `write:assets`; the assets workspace gates its name field and its
-  actions by what the listing said, since it may be opened from the menu,
-  before the game data brought the grants.
+  writable tokens of the selection; the assets workspace gates its name
+  field and its actions by what the listing said (`writable`).
 
 `view` is resolved and sent like the other actions; its consumer, a vision
 system that shows a player what their tokens see, is future work

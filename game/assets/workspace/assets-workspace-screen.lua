@@ -1,11 +1,13 @@
 local Asset = require("data.asset")
 local AssetDetails = require("game.assets.workspace.asset-details")
 local AssetList = require("game.assets.workspace.asset-list")
+local AssetUsageList = require("game.assets.workspace.asset-usage-list")
 local Consts = require("app.consts")
 local FormScreen = require("ui.form-screen")
 local Rectangle = require("controls.rectangle")
 local Text = require("controls.text")
 local TextButton = require("ui.text-button")
+local asset_usage = require("data.asset-usage")
 local lifetime = require("lifetime")
 
 ---@class DroppedAsset A file dropped on the workspace, to upload
@@ -13,9 +15,10 @@ local lifetime = require("lifetime")
 ---@field data love.FileData
 
 ---The asset store as a file manager: one folder at a time on the left, the
----selected entry or the dropped file on the right; the name field is what
----Rename, New Folder and Upload act with. The server answers every change;
----the listing is asked again after each one.
+---selected entry or the dropped file in the middle, what uses the selected
+---entry on the right; the name field is what Rename, New Folder and Upload
+---act with. The server answers every change; the listing is asked again
+---after each one.
 ---@class AssetsWorkspaceScreen: FormScreen
 ---@field private _background Rectangle
 ---@field private _title Text
@@ -24,6 +27,7 @@ local lifetime = require("lifetime")
 ---@field private _open_button TextButton
 ---@field private _list AssetList
 ---@field private _details AssetDetails
+---@field private _usage AssetUsageList
 ---@field private _entries AssetEntry[] The whole store, as the server listed it last
 ---@field private _writable boolean Whether the server lets this session change the store
 ---@field private _dir string The shown folder, `""` for the root
@@ -64,8 +68,9 @@ function AssetsWorkspaceScreen:init()
         self:open_selected()
     end)
     self._list = AssetList(self, self.screen, 1, 1)
-    local details_w = w * (1 - Consts.ASSETS_WORKSPACE_LIST_SHARE) - 1.5 * Consts.PADDING
-    self._details = AssetDetails(self, self.screen, details_w, h - 2 * Consts.PADDING)
+    local p = Consts.PADDING
+    self._details = AssetDetails(self, self.screen, w * Consts.ASSETS_WORKSPACE_DETAILS_SHARE - p, h - 2 * p)
+    self._usage = AssetUsageList(self, self.screen, w * (1 - Consts.ASSETS_WORKSPACE_LIST_SHARE - Consts.ASSETS_WORKSPACE_DETAILS_SHARE) - 1.5 * p, h - 2 * p)
     self:on_resize(w, h)
     self:_update_view()
 end
@@ -97,8 +102,14 @@ function AssetsWorkspaceScreen:on_resize(w, h)
     self._list:set_position(p, list_y)
     self._list:on_resize(list_w, h - list_y - p)
 
-    self._details:set_position(w * Consts.ASSETS_WORKSPACE_LIST_SHARE + 0.5 * p, p)
-    self._details:on_resize(w * (1 - Consts.ASSETS_WORKSPACE_LIST_SHARE) - 1.5 * p, h - 2 * p)
+    local details_x = w * Consts.ASSETS_WORKSPACE_LIST_SHARE + 0.5 * p
+    local details_w = w * Consts.ASSETS_WORKSPACE_DETAILS_SHARE - p
+    self._details:set_position(details_x, p)
+    self._details:on_resize(details_w, h - 2 * p)
+
+    local usage_x = details_x + details_w + p
+    self._usage:set_position(usage_x, p)
+    self._usage:on_resize(w - usage_x - p, h - 2 * p)
 end
 
 ---Asks the server for the store again
@@ -176,6 +187,30 @@ function AssetsWorkspaceScreen:get_details()
     return self._details
 end
 
+---@return AssetUsageList
+function AssetsWorkspaceScreen:get_usage()
+    return self._usage
+end
+
+---@private
+function AssetsWorkspaceScreen:_update_usage()
+    local selected = self._selected
+    self._usage:set_uses(selected and asset_usage.find(assert(app.data), selected.path) or {})
+end
+
+---Closes the workspace and centers the game's view on the page or the token
+---@param use AssetUse
+function AssetsWorkspaceScreen:go_to_use(use)
+    local session = assert(app.session)
+    local page = assert(session:get_game_screen()):get_page()
+    session:close_assets_workspace()
+    if use.kind == "page" then
+        page:center_on_page()
+    else
+        page:center_on_token(use.name)
+    end
+end
+
 ---What the typed name would clash with in the shown folder, and whether an
 ---upload may replace it (a file: yes, a folder: no)
 ---@private
@@ -204,6 +239,7 @@ function AssetsWorkspaceScreen:_update_view()
         self._details:set_type_text("")
         self._details:clear_preview()
     end
+    self:_update_usage()
     self:_update_actions()
 end
 
@@ -241,6 +277,7 @@ function AssetsWorkspaceScreen:select_entry(entry)
             end
         end)
     end
+    self:_update_usage()
     self:_update_actions()
 end
 
@@ -294,6 +331,7 @@ function AssetsWorkspaceScreen:take_dropped_file(file)
     self._list:set_selected(nil)
     self._details:set_name(self._dropped.name)
     self._details:show_content(data)
+    self:_update_usage()
     self:_update_actions()
 end
 

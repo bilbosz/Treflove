@@ -87,7 +87,7 @@ identifier (`LoginRp`, `UploadAssetRp`, `DownloadAssetRp`, ...).
 A `Session` ties a connection to a user:
 - Manages the login and logout lifecycle through a `Login`
 - Coordinates the screen transitions (connecting → login → user menu → game,
-  and the assets workspace over the menu or the game)
+  and the assets workspace over the game)
 - Integrates with the asset manager and backstack navigation
 - Holds the user's `PermissionSet` while logged in: the server resolves it
   from the game data at login, the client receives the grants with the game
@@ -167,9 +167,9 @@ viewport over a content control larger than itself (`get_content`,
 `set_content_size`): the content is dragged with `SCROLL_VIEW_DRAG_BUTTON`,
 press, drag, release, no further than its edges, holding the pointer
 meanwhile. Optional indicators of a fixed size (`SCROLL_VIEW_INDICATOR_*`)
-along the overflowed edges mark where the view is. The token panel, the
-assets panel and the workspace's details keep what is above their buttons
-in one.
+along the overflowed edges mark where the view is. The token panel and the
+workspace's details keep what is above their buttons in one, the
+workspace's usage list its buttons.
 A destroyed control takes its subtree with it, newest child first; a screen
 destroys its control tree, see [lifetimes.md](lifetimes.md).
 
@@ -218,11 +218,17 @@ refused while the game uses the asset or something under the folder. The
 client mirrors a rename and a delete on its own copies.
 
 The assets workspace (`game/assets/workspace/`) is the store as a file
-manager, opened from the user menu or from the game's assets panel:
-`AssetList` shows one folder, folders first, scrolled with the wheel, a
-whole-row button (`AssetListRow`) per entry; `AssetDetails` holds the
-preview (the drop target), the name field the actions use, the type and the
-action buttons; `AssetsWorkspaceScreen` keeps the state (the listing, the
+manager, opened from the game's quick access panel (its Assets entry), in
+three columns: `AssetList` shows one folder, folders first, scrolled with
+the wheel, a whole-row button (`AssetListRow`) per entry; `AssetDetails`
+holds the preview (the drop target), the name field the actions use, the
+type and the action buttons; `AssetUsageList` names what uses the selected
+entry (`asset_usage.find`: the pages by their image, the tokens by their
+image properties, a folder by everything under it), a text button per use,
+dimmed when the page or the token is not on the shown page, and a click
+closes the workspace and centers the game's view on it
+(`Page:center_on_page`, `Page:center_on_token`); `AssetsWorkspaceScreen`
+keeps the state (the listing, the
 shown folder, the selection, the dropped file), asks the server and gates
 the buttons: a selected folder can be opened (a second click too) and
 deleted, a selected entry renamed to a free name, a free name made a folder,

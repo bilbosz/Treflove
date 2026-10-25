@@ -200,6 +200,35 @@ function Page:on_wheel_moved(x, y)
     end
 end
 
+---The view moved so that the point, in page meters, is at the middle of
+---the page's box, at the current zoom
+---@param x number
+---@param y number
+function Page:center_on(x, y)
+    local bg = self._background
+    local gx, gy = self._page_coordinates:transform_to_global(x, y)
+    bg:set_origin(bg:transform_to_local(gx, gy))
+    local w, h = self:get_size()
+    bg:set_position(w * 0.5, h * 0.5)
+end
+
+function Page:center_on_page()
+    local bg_w, bg_h = self._background:get_size()
+    local page_w = self._page_width
+    self:center_on(page_w * 0.5, bg_h / bg_w * page_w * 0.5)
+end
+
+---@param key string A token placed on the page
+function Page:center_on_token(key)
+    for _, token in ipairs(self._tokens) do
+        if token:get_key() == key then
+            self:center_on(token:get_position())
+            return
+        end
+    end
+    error(string.format("no token %q on the page", key))
+end
+
 ---@return GameScreen
 function Page:get_game_screen()
     return self._game_screen

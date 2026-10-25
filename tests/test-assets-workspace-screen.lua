@@ -527,16 +527,110 @@ test.case("a folder that is gone from a fresh listing falls back to the nearest 
     end)
 end)
 
-test.case("the Workspace button of the game's assets panel opens it", function()
+test.case("the Assets entry of the game's quick access panel opens it", function()
     with_client({
         "read",
         "write:assets"
     }, function(client)
         ---@diagnostic disable-next-line: invisible
-        local button = client.game_screen._assets_panel._workspace_button
+        local button = client.game_screen._quick_access_panel._buttons.Assets
         game_client.click(client, button)
         test.assert_eq(get_class_name_of(client.app.screen_manager:get_screen()), "AssetsWorkspaceScreen")
         game_client.pop_request(client, "ListAssetsRp")
+    end)
+end)
+
+---@param screen AssetsWorkspaceScreen
+---@return string[] captions
+---@return boolean[] read_only
+local function usage_buttons(screen)
+    ---@type string[], boolean[]
+    local captions, read_only = {}, {}
+    for _, button in ipairs(screen:get_usage():get_buttons()) do
+        table.insert(captions, button:get_text())
+        table.insert(read_only, button:is_read_only())
+    end
+    return captions, read_only
+end
+
+---@param client GameClient
+---@param x number In page meters
+---@param y number
+local function assert_centered_on(client, x, y)
+    local page = client.game_screen:get_page()
+    local w, h = page:get_size()
+    local cx, cy = page:transform_to_global(w * 0.5, h * 0.5)
+    local gx, gy = page:get_page_coordinates():transform_to_global(x, y)
+    test.assert_near(gx, cx, 1e-2)
+    test.assert_near(gy, cy, 1e-2)
+end
+
+test.case("the usage list names what uses the selected entry, dimmed off the shown page; a click returns to the game centered on it", function()
+    with_client({
+        "read",
+        "write"
+    }, function(client)
+        local screen = game_client.open_workspace(client)
+        test.assert_deep_eq({
+            usage_buttons(screen)
+        }, {
+            {},
+            {}
+        }, "nothing selected")
+
+        screen:select_entry(row(screen, "token/"):get_entry())
+        local captions, read_only = usage_buttons(screen)
+        test.assert_deep_eq(captions, {
+            "token \"Bilbosza\" (avatar)",
+            "token \"Gollum\" (avatar)",
+            "token \"Smaug\" (avatar)"
+        })
+        test.assert_deep_eq(read_only, {
+            false,
+            true,
+            false
+        }, "Gollum is on no page")
+
+        screen:select_entry(row(screen, "world/"):get_entry())
+        captions, read_only = usage_buttons(screen)
+        test.assert_deep_eq(captions, {
+            "page \"P\"",
+            "page \"Q\""
+        })
+        test.assert_deep_eq(read_only, {
+            false,
+            true
+        }, "Q is not the shown page")
+
+        screen:take_dropped_file(dropped_file("/home/adam/pictures/dragon.png", "D"))
+        test.assert_deep_eq({
+            usage_buttons(screen)
+        }, {
+            {},
+            {}
+        }, "a dropped file is used by nothing")
+
+        screen:select_entry(row(screen, "world/"):get_entry())
+        screen:open_selected()
+        screen:select_entry(row(screen, "w.png"):get_entry())
+        test.assert_deep_eq((usage_buttons(screen)), {
+            "page \"P\""
+        })
+        game_client.click(client, screen:get_usage():get_buttons()[1])
+        test.assert_eq(client.app.screen_manager:get_screen(), client.game_screen)
+        test.assert_false(lifetime.alive(screen))
+        assert_centered_on(client, 5, 5)
+
+        screen = game_client.open_workspace(client)
+        screen:select_entry(row(screen, "token/"):get_entry())
+        screen:open_selected()
+        screen:select_entry(row(screen, "b.png"):get_entry())
+        test.assert_deep_eq((usage_buttons(screen)), {
+            "token \"Bilbosza\" (avatar)"
+        })
+        game_client.click(client, screen:get_usage():get_buttons()[1])
+        test.assert_eq(client.app.screen_manager:get_screen(), client.game_screen)
+        assert_centered_on(client, 2, 2)
     end)
 end)
 

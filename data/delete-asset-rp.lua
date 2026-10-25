@@ -35,9 +35,14 @@ function DeleteAssetRp:send_response(request)
     end
     local used_by = asset_usage.find(assert(app.data), path)
     if #used_by > 0 then
+        ---@type string[]
+        local names = {}
+        for _, use in ipairs(used_by) do
+            table.insert(names, asset_usage.describe(use))
+        end
         return {
             success = false,
-            error = string.format("Cannot delete %q: used by %s", path, table.concat(used_by, ", ")),
+            error = string.format("Cannot delete %q: used by %s", path, table.concat(names, ", ")),
             path = path
         }
     end

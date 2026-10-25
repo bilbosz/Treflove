@@ -168,8 +168,13 @@ function Session:leave_game()
     self._game_screen = nil
 end
 
----The assets workspace over the shown screen (the menu or the game), under
----the period; its back entry closes it
+---@return GameScreen|nil While the user is in the game
+function Session:get_game_screen()
+    return self._game_screen
+end
+
+---The assets workspace over the game screen, under the period; its back
+---entry closes it
 function Session:open_assets_workspace()
     assert(app.is_client and not self._assets_workspace_screen)
     local period = assert(self._period, "the assets workspace needs a logged-in user")

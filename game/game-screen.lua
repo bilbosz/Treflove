@@ -2,7 +2,6 @@ local Model = require("data.model")
 local FormScreen = require("ui.form-screen")
 local Page = require("game.page.page")
 local TokenPanel = require("game.token.token-panel")
-local AssetsPanel = require("game.assets.assets-panel")
 local QuickAccessPanel = require("game.quick-access-panel")
 local Consts = require("app.consts")
 
@@ -11,7 +10,6 @@ local Consts = require("app.consts")
 ---@field get_data fun(self: GameScreen): GameScreenData
 ---@field private _page Page
 ---@field private _token_panel TokenPanel
----@field private _assets_panel AssetsPanel
 ---@field private _panel Panel|nil Currently selected side panel
 ---@field private _panels Panel[]
 ---@field private _quick_access_panel QuickAccessPanel
@@ -25,23 +23,18 @@ function GameScreen:init(data)
     self._page = Page(app.data.pages[data.page], self, app.width * 0.8, app.height)
 
     self._token_panel = TokenPanel(self, app.width * 0.2, app.height)
-    self._assets_panel = AssetsPanel(self, app.width * 0.2, app.height)
-
-    self._panel = self._assets_panel
-    local panels = {
-        self._token_panel,
-        self._assets_panel
+    self._panel = self._token_panel
+    self._panels = {
+        self._token_panel
     }
-    self._panels = panels
-    for _, v in ipairs(panels) do
-        if v ~= self._panel then
-            v:set_enabled(false)
-        end
-    end
 
     self._quick_access_panel = QuickAccessPanel(self, app.width * 0.8, Consts.QUICK_ACCESS_PANEL_HEIGHT)
-    self._quick_access_panel:add_entry("Tokens", self._token_panel)
-    self._quick_access_panel:add_entry("Assets", self._assets_panel)
+    self._quick_access_panel:add_entry("Tokens", function()
+        self:select_panel(self._token_panel)
+    end)
+    self._quick_access_panel:add_entry("Assets", function()
+        assert(app.session):open_assets_workspace()
+    end)
 end
 
 function GameScreen:show()
@@ -64,9 +57,6 @@ function GameScreen:on_resize(w, h)
 
     self._token_panel:set_position(w * 0.8, 0)
     self._token_panel:on_resize(w * 0.2, h)
-
-    self._assets_panel:set_position(w * 0.8, 0)
-    self._assets_panel:on_resize(w * 0.2, h)
 end
 
 ---@return Page
