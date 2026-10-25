@@ -6,7 +6,7 @@ local REFERENCE_SIZE = fonts.REFERENCE_SIZE
 
 ---@class Text: DrawableControl
 ---@field private _text string
----@field private _kind fonts.Kind
+---@field private _face fonts.Face
 ---@field private _color number[]
 ---@field private _text_drawable love.Text
 ---@field private _pixel_size number The size the drawable's font is rasterized at
@@ -18,7 +18,7 @@ function Text:_draw()
     local px = fonts.pixel_size(scale)
     if px ~= self._pixel_size then
         self._pixel_size = px
-        self._text_drawable:setFont(fonts.get(self._kind, px))
+        self._text_drawable:setFont(fonts.get(self._face, px))
     end
 
     love.graphics.setColor(self._color)
@@ -41,9 +41,9 @@ end
 ---@param parent Control|nil
 ---@param text string
 ---@param color number[]|nil
----@param kind fonts.Kind|nil
-function Text:init(parent, text, color, kind)
-    self._kind = kind or fonts.Kind.DISPLAY
+---@param face fonts.Face|nil The display font by default
+function Text:init(parent, text, color, face)
+    self._face = face or fonts.Kind.DISPLAY
     DrawableControl.init(self, parent, 0, 0, function()
         self:_draw()
     end)
@@ -70,13 +70,19 @@ end
 function Text:set_text(text)
     assert_type(text, "string")
     self._text = text
-    local text_drawable = love.graphics.newText(fonts.reference(self._kind), text)
+    local text_drawable = love.graphics.newText(fonts.reference(self._face), text)
     self._text_drawable = text_drawable
     self._pixel_size = REFERENCE_SIZE
 
     local w, h = text_drawable:getDimensions()
     w, h = w or 0, h or 0
     self:set_size(w, h)
+end
+
+---@param face fonts.Face
+function Text:set_font(face)
+    self._face = face
+    self:set_text(self._text)
 end
 
 ---@return string
@@ -86,7 +92,7 @@ end
 
 ---@return number The line height of the font, in model units
 function Text:get_font_height()
-    return fonts.reference(self._kind):getHeight()
+    return fonts.reference(self._face):getHeight()
 end
 
 return Text

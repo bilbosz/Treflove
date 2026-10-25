@@ -156,11 +156,17 @@ function TextInput:_create_caret()
 end
 
 ---@private
+function TextInput:_center_text_vertically()
+    local text = self._text_ctrl
+    text:set_origin(0, text:get_font_height() * 0.5)
+end
+
+---@private
 function TextInput:_create_text()
     local text = Text(self._content, "", Consts.TEXT_INPUT_FOREGROUND_COLOR, fonts.Kind.USER_INPUT)
     self._text_ctrl = text
 
-    text:set_origin(0, text:get_font_height() * 0.5)
+    self:_center_text_vertically()
     text:set_scale(Consts.MENU_FIELD_SCALE)
 end
 
@@ -305,6 +311,13 @@ end
 ---@param text string
 function TextInput:set_text(text)
     self._buffer:set_text(text)
+    self:_update_view()
+end
+
+---@param face fonts.Face
+function TextInput:set_font(face)
+    self._text_ctrl:set_font(face)
+    self:_center_text_vertically()
     self:_update_view()
 end
 
