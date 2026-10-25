@@ -54,8 +54,6 @@ function DeleteAssetRp:send_response(request)
     }
 end
 
----The client's copy goes too, so a stale one is not taken for an asset
----uploaded under the path later
 ---@param response DeleteAssetResponse
 function DeleteAssetRp:receive_response(response)
     assert(app.is_client)

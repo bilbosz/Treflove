@@ -3,8 +3,6 @@ local Input = require("ui.input")
 local Rectangle = require("controls.rectangle")
 local Text = require("controls.text")
 
----One entry of an `AssetList`: the whole row is the button, its background
----shows the hover and the selection
 ---@class AssetListRow: Rectangle, Input
 ---@field private _list AssetList
 ---@field private _entry AssetEntry

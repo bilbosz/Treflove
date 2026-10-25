@@ -38,7 +38,6 @@ function RenameAssetRp:send_response(request)
     end
     local ok, err = app.asset_manager:move(path, new_path)
     if ok then
-        -- the game keeps pointing at the renamed assets
         asset_usage.rename(assert(app.data), path, new_path)
     end
     return {
@@ -49,8 +48,6 @@ function RenameAssetRp:send_response(request)
     }
 end
 
----The client's copies follow, so a preview of the renamed asset needs no
----download and a stale copy under the new path is not taken for it
 ---@param response RenameAssetResponse
 function RenameAssetRp:receive_response(response)
     assert(app.is_client)

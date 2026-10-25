@@ -210,8 +210,6 @@ function game_client.enter(grants)
     local connection = session:get_connection()
     _answer_login(client, "piotr")
     assert(session:is_logged_in(), "the login answer logged the session in")
-    -- the login's menu joined the game: the data, then the assets it needs,
-    -- answered as the server would; nothing stays unanswered on the wire
     _pop_request(connection, "GameDataRp")
     _answer(client, connection, "GameDataRp", {
         data = game_client.game_data(),
@@ -243,7 +241,6 @@ function game_client.finish(client)
     mocks.restore_love_filesystem(client.previous_filesystem)
 end
 
----Pops what the client sent until the request of `id`, the oldest one of it
 ---@param client GameClient
 ---@param id string The remote procedure's class name
 ---@return RequestBody
@@ -251,8 +248,6 @@ function game_client.pop_request(client, id)
     return _pop_request(client.connection, id)
 end
 
----Answers the client's oldest unanswered request, as the server would, and
----runs a frame so the response is handled
 ---@param client GameClient
 ---@param id string The remote procedure's class name
 ---@param body ResponseBody
@@ -294,7 +289,6 @@ function game_client.asset_entries()
     }
 end
 
----Opens the assets workspace over the game screen and answers its listing
 ---@param client GameClient
 ---@param entries AssetEntry[]|nil Defaults to `game_client.asset_entries()`
 ---@param writable boolean|nil Defaults to `true`
@@ -313,7 +307,6 @@ function game_client.open_workspace(client, entries, writable)
     return screen
 end
 
----A pointer press and release over the middle of `ctrl`
 ---@param client GameClient
 ---@param ctrl Control
 function game_client.click(client, ctrl)

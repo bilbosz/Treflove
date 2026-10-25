@@ -5,8 +5,6 @@ local Asset = require("data.asset")
 ---@field name string The page's or the token's key
 ---@field key string|nil The token property that refers, for a token
 
----Where the game data refers to assets: a page's image and the token
----properties of the `image` type
 ---@class asset_usage
 local asset_usage = {}
 
@@ -107,7 +105,6 @@ function asset_usage.is_on_shown_page(data, use)
     return page ~= nil and table.find_array_idx(page.tokens, use.name) ~= nil
 end
 
----Points every reference to `path`, or to something under it, at `new_path`
 ---@param data GameData
 ---@param path string
 ---@param new_path string

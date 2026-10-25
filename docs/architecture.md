@@ -220,7 +220,8 @@ client mirrors a rename and a delete on its own copies.
 The assets workspace (`game/assets/workspace/`) is the store as a file
 manager, opened from the game's quick access panel (its Assets entry), in
 three columns: `AssetList` shows one folder, folders first, scrolled with
-the wheel, a whole-row button (`AssetListRow`) per entry; `AssetDetails`
+the wheel (the rows out of view disabled, so Tab skips them), a whole-row
+button (`AssetListRow`) per entry; `AssetDetails`
 holds the preview (the drop target), the name field the actions use, the
 type and the action buttons; `AssetUsageList` names what uses the selected
 entry (`asset_usage.find`: the pages by their image, the tokens by their

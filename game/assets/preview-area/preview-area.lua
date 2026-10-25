@@ -11,7 +11,7 @@ local media = require("utils.media")
 ---@alias PreviewComponentClass PreviewImageArea|PreviewAudioArea|fun(preview_area: PreviewArea, love_content: LoveMedium): PreviewImageArea|PreviewAudioArea A preview class table: its class joined by its constructor, as `Class` is
 
 ---@class FileDropTarget
----@field set_file fun(self: FileDropTarget, file: love.DroppedFile)
+---@field set_file fun(self: FileDropTarget, file: love.DroppedFile) Takes the file, open during the call only
 
 ---@class PreviewArea: ClippingRectangle
 ---@field private _drop_target FileDropTarget
@@ -138,7 +138,6 @@ function PreviewArea:set_content(love_content, PreviewComponent)
     self._preview = PreviewComponent(self, love_content)
 end
 
----The preview of a medium by its type, or none for a type without one
 ---@param media_type media.Type|nil
 ---@param medium LoveMedium
 function PreviewArea:show_medium(media_type, medium)

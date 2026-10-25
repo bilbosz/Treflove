@@ -66,7 +66,6 @@ function TextButton:on_click()
     self._action()
 end
 
----A read-only button is dimmed; the button manager and the form skip it
 function TextButton:on_read_only_change()
     Input.on_read_only_change(self)
     self:_update_text_color()

@@ -181,7 +181,7 @@ end
 ---@param x number Horizontal wheel movement
 ---@param y number Vertical wheel movement
 function Page:on_wheel_moved(x, y)
-    if not self._game_screen:is_showed() then -- under another screen
+    if not self._game_screen:is_showed() then
         return
     end
     local real_mouse_x, real_mouse_y = app.pointer_event_manager:get_position()
@@ -200,9 +200,7 @@ function Page:on_wheel_moved(x, y)
     end
 end
 
----The view moved so that the point, in page meters, is at the middle of
----the page's box, at the current zoom
----@param x number
+---@param x number In page meters
 ---@param y number
 function Page:center_on(x, y)
     local bg = self._background
@@ -212,9 +210,7 @@ function Page:center_on(x, y)
     bg:set_position(w * 0.5, h * 0.5)
 end
 
----The view scaled and moved so that the rectangle, in page meters, fills
----the page's box within a padding, as the preview fits an image
----@param x number
+---@param x number The rectangle, in page meters
 ---@param y number
 ---@param w number
 ---@param h number

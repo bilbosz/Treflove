@@ -103,7 +103,6 @@ function Selection:toggle_apply()
     self:on_selection_change()
 end
 
----Exactly these, in place of the selection so far
 ---@param tokens Token[]
 function Selection:select_tokens(tokens)
     self._select_set = {}

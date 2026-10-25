@@ -122,7 +122,6 @@ function AssetManager:get_content(path)
     return love.data.encode("string", "base64", file:read(), file:get_size()) --[[@as string]]
 end
 
----A folder of the store, empty
 ---@param path string
 ---@return boolean ok
 ---@return string|nil err Why not, for the user
@@ -138,7 +137,6 @@ function AssetManager:make_folder(path)
     return true
 end
 
----A file or a folder of the store, with everything under it, under a new path
 ---@param path string
 ---@param new_path string
 ---@return boolean ok
@@ -163,7 +161,6 @@ function AssetManager:move(path, new_path)
     return true
 end
 
----A file or a folder of the store, with everything under it
 ---@param path string
 ---@return boolean ok
 ---@return string|nil err Why not, for the user

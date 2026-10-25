@@ -289,9 +289,6 @@ end
 ---@field notifications TestNotificationManager
 ---@field previous_filesystem love.filesystem|nil
 
----A client app with its asset manager over an in-memory file system and
----its session on a fake connection, for a procedure's `receive_response`;
----`finish_client_session` tears it down
 ---@param files table<string, string> The file system, the client's copies under `c/assets/`
 ---@return TestClientSide
 function mocks.make_client_session(files)
@@ -453,9 +450,7 @@ function mocks.ensure_love_graphics()
     }
 end
 
----Files by path; a directory exists with a file under it or once
----`createDirectory` made it, and `remove` takes only an empty one, as LÖVE's
----@param files table<string, string>
+---@param files table<string, string> By path; a directory exists with a file under it or once `createDirectory` made it, and `remove` takes only an empty one, as LÖVE's
 ---@return love.filesystem|nil previous What `love.filesystem` was
 function mocks.install_love_filesystem(files)
     ---@diagnostic disable-next-line: missing-fields, assign-type-mismatch

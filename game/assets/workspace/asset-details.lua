@@ -9,8 +9,6 @@ local media = require("utils.media")
 
 ---@alias AssetDetailsAction "upload"|"new_folder"|"rename"|"delete" The buttons the workspace enables by its state
 
----The right side of the assets workspace: the preview (the drop target),
----the name the actions use, the type, and the action buttons
 ---@class AssetDetails: Panel, FileDropTarget
 ---@field _screen AssetsWorkspaceScreen
 ---@field _preview_area PreviewArea
@@ -133,7 +131,6 @@ function AssetDetails:init(screen, parent, width, height)
     _layout(self)
 end
 
----The preview area's drop: the file is open for this call only
 ---@param file love.DroppedFile
 function AssetDetails:set_file(file)
     self._screen:take_dropped_file(file)
@@ -159,7 +156,6 @@ function AssetDetails:set_type_text(text)
     self._type_input:set_text(text)
 end
 
----Previews a file's content and names its type
 ---@param data media.Source
 function AssetDetails:show_content(data)
     local media_type, medium = media.get_type_and_medium(data)

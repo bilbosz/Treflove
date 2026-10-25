@@ -101,8 +101,6 @@ function Asset.get_root_path(virtual_path)
     return Asset.get_root() .. "/" .. virtual_path
 end
 
----Why a virtual path cannot name an asset: an absolute or empty path, an
----empty component, `.` or `..`
 ---@param path string
 ---@return string|nil reason `nil` when the path is fine
 function Asset.check_path(path)
@@ -148,7 +146,6 @@ function Asset.join(dir, name)
     return dir .. "/" .. name
 end
 
----Whether `path` is `ancestor` or lies under it
 ---@param path string
 ---@param ancestor string
 ---@return boolean
@@ -156,9 +153,7 @@ function Asset.is_under(path, ancestor)
     return path == ancestor or string.sub(path, 1, #ancestor + 1) == ancestor .. "/"
 end
 
----Every file and directory of the asset store, parents before their
----content, siblings by name
----@return AssetEntry[]
+---@return AssetEntry[] Parents before their content, siblings by name
 function Asset.list()
     ---@type AssetEntry[]
     local entries = {}
@@ -212,13 +207,10 @@ function Asset:get_path()
     return info and self._path
 end
 
----The file, or the directory with everything under it
 function Asset:remove()
     _remove_tree(self._path)
 end
 
----The file, or the directory with everything under it, copied to `other`
----and removed here; `other`'s parents are made as needed
 ---@param other Asset
 function Asset:move_to(other)
     assert(self:get_type(), "nothing to move")

@@ -6,8 +6,6 @@ local Rectangle = require("controls.rectangle")
 local Text = require("controls.text")
 local lifetime = require("lifetime")
 
----The content of one folder of the asset store, a row per entry, folders
----first; scrolled with the wheel
 ---@class AssetList: ClippingRectangle
 ---@field private _screen AssetsWorkspaceScreen
 ---@field private _border Rectangle
@@ -66,17 +64,20 @@ function AssetList:_get_max_scroll()
     return math.max(0, #self._rows * self._row_height - h)
 end
 
----Rows out of view are disabled: hidden by the clip, they must not take the
----pointer either
 ---@private
-function AssetList:_apply_scroll()
-    self._scroll = math.max(0, math.min(self:_get_max_scroll(), self._scroll))
-    self._rows_parent:set_position(0, -self._scroll)
+function AssetList:_disable_rows_out_of_view()
     local _, h = self:get_size()
     for i, row in ipairs(self._rows) do
         local top = (i - 1) * self._row_height - self._scroll
         row:set_enabled(top + self._row_height > 0 and top < h)
     end
+end
+
+---@private
+function AssetList:_apply_scroll()
+    self._scroll = math.max(0, math.min(self:_get_max_scroll(), self._scroll))
+    self._rows_parent:set_position(0, -self._scroll)
+    self:_disable_rows_out_of_view()
 end
 
 ---@param entries AssetEntry[] The folder's content, in any order

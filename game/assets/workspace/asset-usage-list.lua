@@ -54,8 +54,6 @@ function AssetUsageList:_clear()
     end
 end
 
----A button per use, dimmed when the page or the token is not on the shown
----page; a click takes the user back to the game, centered on it
 ---@param uses AssetUse[]
 function AssetUsageList:set_uses(uses)
     self:_clear()

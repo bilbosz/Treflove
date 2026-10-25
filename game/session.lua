@@ -173,8 +173,6 @@ function Session:get_game_screen()
     return self._game_screen
 end
 
----The assets workspace over the game screen, under the period; its back
----entry closes it
 function Session:open_assets_workspace()
     assert(app.is_client and not self._assets_workspace_screen)
     local period = assert(self._period, "the assets workspace needs a logged-in user")
@@ -187,8 +185,6 @@ function Session:open_assets_workspace()
     end):attach_lifetime(screen)
 end
 
----Shows the screen the workspace was opened from again and destroys the
----workspace with its lists and fields
 function Session:close_assets_workspace()
     assert(app.is_client and self._assets_workspace_screen)
     local screen, return_screen = self._assets_workspace_screen, assert(self._assets_workspace_return)

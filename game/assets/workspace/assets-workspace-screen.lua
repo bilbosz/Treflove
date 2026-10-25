@@ -14,11 +14,6 @@ local lifetime = require("lifetime")
 ---@field name string The file's name, what the name field starts with
 ---@field data love.FileData
 
----The asset store as a file manager: one folder at a time on the left, the
----selected entry or the dropped file in the middle, what uses the selected
----entry on the right; the name field is what Rename, New Folder and Upload
----act with. The server answers every change; the listing is asked again
----after each one.
 ---@class AssetsWorkspaceScreen: FormScreen
 ---@field private _background Rectangle
 ---@field private _title Text
@@ -112,7 +107,6 @@ function AssetsWorkspaceScreen:on_resize(w, h)
     self._usage:on_resize(w - usage_x - p, h - 2 * p)
 end
 
----Asks the server for the store again
 function AssetsWorkspaceScreen:refresh()
     app.asset_manager:list_assets(function(response)
         if lifetime.alive(self) then
@@ -135,13 +129,13 @@ end
 
 ---@param response ListAssetsResponse
 function AssetsWorkspaceScreen:on_listing(response)
-    if not response.success then -- the procedure notified; nothing to show
+    if not response.success then
         assert(app.session):close_assets_workspace()
         return
     end
     self._entries = assert(response.entries)
     self._writable = response.writable
-    while self._dir ~= "" and not self:_find_entry(self._dir) do -- the folder is gone meanwhile
+    while self._dir ~= "" and not self:_find_entry(self._dir) do
         self._dir = Asset.get_parent(self._dir)
     end
     if self._selected then
@@ -198,8 +192,6 @@ function AssetsWorkspaceScreen:_update_usage()
     self._usage:set_uses(selected and asset_usage.find(assert(app.data), selected.path) or {})
 end
 
----Closes the workspace and fits the game's view to the page or the token,
----which is selected
 ---@param use AssetUse
 function AssetsWorkspaceScreen:go_to_use(use)
     local session = assert(app.session)
@@ -215,8 +207,6 @@ function AssetsWorkspaceScreen:go_to_use(use)
     end
 end
 
----What the typed name would clash with in the shown folder, and whether an
----upload may replace it (a file: yes, a folder: no)
 ---@private
 function AssetsWorkspaceScreen:_update_actions()
     local selected, name = self._selected, self._details:get_name()
@@ -259,8 +249,6 @@ function AssetsWorkspaceScreen:_show_local_content(path)
     end
 end
 
----The entry's name and type, and a file's content, downloaded when the
----client has no copy
 ---@param entry AssetEntry
 function AssetsWorkspaceScreen:select_entry(entry)
     self._dropped = nil
@@ -285,7 +273,6 @@ function AssetsWorkspaceScreen:select_entry(entry)
     self:_update_actions()
 end
 
----A click on the selected folder opens it; any other click selects
 ---@param entry AssetEntry
 function AssetsWorkspaceScreen:on_entry_clicked(entry)
     if self._selected == entry and entry.type == "directory" then
@@ -318,8 +305,6 @@ function AssetsWorkspaceScreen:go_up()
     end
 end
 
----A dropped file replaces the selection: its name in the field, its content
----previewed, Upload puts it into the shown folder
 ---@param file love.DroppedFile
 function AssetsWorkspaceScreen:take_dropped_file(file)
     local data = file:read("data") --[[@as love.FileData]]
