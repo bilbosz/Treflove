@@ -56,7 +56,15 @@
 - **Comments**: code defends itself; a comment is written only for a gotcha
   the code cannot show (an ordering that matters, a host quirk, a type the
   language server cannot express). What a function does is its name, its
-  annotations and its body.
+  annotations and its body, so no class, module, method or test helper gets
+  a description, and no statement a note on what it does or why the obvious
+  follows. When a fact seems to need a comment, it goes elsewhere first: a
+  contract into the description of the `---@param`, `---@return` or
+  `---@field` it is about (`---@return AssetEntry[] Parents before their
+  content`); a step that needs explaining into a method or a local named
+  for it (`_disable_rows_out_of_view`); a reason that spans subsystems into
+  the docs. A comment that would restate any of these is not written, and
+  one found in a review is removed the same way: into the code, or gone.
 - **Type annotations**: mandatory and strict; see
   [type-annotations.md](type-annotations.md) for the full rules
 
