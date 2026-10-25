@@ -38,6 +38,7 @@ local function wrap(text, limit, char_width)
     ---@type string|nil
     local line
     for word in string.gmatch(text, "%S+") do
+        ---@type string
         local candidate = line and line .. " " .. word or word
         if line and #candidate * char_width > limit then
             table.insert(lines, line)
