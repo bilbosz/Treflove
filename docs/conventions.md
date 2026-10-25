@@ -25,7 +25,8 @@
 - **Destructors**: `release(reason)` is the destructor lua-lifetime runs when
   the object dies; it is never called by hand, and rarely written: a tree
   node takes its subtree, a screen its control tree, a connection frees its
-  LÖVE objects, a remote procedure its handler slot; registrations on events
+  LÖVE objects, a remote procedure its handler slot, a media player stops
+  its playback, a font preview forgets its face; registrations on events
   and hit-tested managers end by themselves when the owner dies. An override
   chains the base class's as `init` does (`Control.release(self, reason)`).
   Objects are anchored where they are created, by chaining the method every

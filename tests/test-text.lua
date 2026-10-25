@@ -38,15 +38,17 @@ local function install_graphics()
     love = love or {}
     ---@diagnostic disable-next-line: missing-fields, assign-type-mismatch
     love.graphics = {
-        ---@param path string
+        ---@param face string|TestFontFile
         ---@param size number
-        ---@return {handle: string, getHeight: fun(): number}
-        newFont = function(path, size)
+        ---@return {handle: string, char_width: number, getHeight: fun(): number}
+        newFont = function(face, size)
             font_count = font_count + 1
-            local handle = string.format("%s@%d", string.match(path, "[^/]+$"), size)
+            local name = type(face) == "string" and string.match(face, "[^/]+$") or face.name
+            local handle = string.format("%s@%d", name, size)
             log.fonts[handle] = size
             return {
                 handle = handle,
+                char_width = type(face) == "string" and 10 or face.char_width,
                 getHeight = function()
                     return size
                 end
@@ -56,7 +58,7 @@ local function install_graphics()
             log.drawable_font = font.handle
             return {
                 getDimensions = function()
-                    return 10 * #text, 20
+                    return font.char_width * #text, 20
                 end,
                 setFont = function(_, new_font)
                     log.drawable_font = new_font.handle
@@ -80,6 +82,20 @@ local function install_graphics()
         draw = record("draw")
     }
     return log
+end
+
+---@param name string
+---@param char_width number The width of every glyph the fake font lays out
+---@return TestFontFile
+local function make_font_file(name, char_width)
+    ---@class TestFontFile: love.FileData
+    ---@field name string
+    ---@field char_width number
+    local file = {
+        name = name,
+        char_width = char_width
+    }
+    return file
 end
 
 ---@return TestGraphicsLog
@@ -188,5 +204,49 @@ test.case("a rotated text keeps its transform and rescales the glyphs in it", fu
         "setFont(OpenSans.ttf@40)",
         "scale(2)",
         "draw()"
+    })
+end)
+
+test.case("a font file's face re-makes the drawable at its reference font and re-sizes the text", function()
+    local log, root = setup()
+    root:set_scale(0.5)
+    local text = Text(root, "abc")
+    text:set_scale(0.325)
+    text:draw()
+    test.assert_eq(take_calls(log)[2], "setFont(OpenSans.ttf@13)")
+
+    local fancy = make_font_file("Fancy.ttf", 15)
+    text:set_font(fancy)
+    test.assert_eq(log.drawable_font, "Fancy.ttf@80")
+    test.assert_deep_eq({
+        text:get_size()
+    }, {
+        45,
+        20
+    })
+    test.assert_eq(text:get_text(), "abc")
+    test.assert_eq(text:get_font_height(), 80)
+
+    text:draw()
+    test.assert_eq(take_calls(log)[2], "setFont(Fancy.ttf@13)", "the pixel size starts over with the face")
+    text:set_text("ab")
+    test.assert_eq(log.drawable_font, "Fancy.ttf@80", "a new text keeps the face")
+    test.assert_deep_eq({
+        text:get_size()
+    }, {
+        30,
+        20
+    })
+end)
+
+test.case("a text made with a font file's face lays out with it", function()
+    local log = setup()
+    local text = Text(nil, "ab", nil, make_font_file("Fancy.ttf", 15))
+    test.assert_eq(log.drawable_font, "Fancy.ttf@80")
+    test.assert_deep_eq({
+        text:get_size()
+    }, {
+        30,
+        20
     })
 end)

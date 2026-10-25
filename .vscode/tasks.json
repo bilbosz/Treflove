@@ -13,6 +13,19 @@
             "type": "shell",
             "command": "./run.sh",
             "problemMatcher": []
+        },
+        {
+            // After a Client session: the server the debugger launched (the one with the debugger's variable in
+            // its environment; a server started from a shell stays), since the compound's stopAll acts only on a
+            // manual stop
+            "label": "Stop the debugged server",
+            "type": "shell",
+            "command": "for p in $(pgrep -f 'love \\. server localhost 8080'); do tr '\\0' '\\n' < /proc/$p/environ 2>/dev/null | grep -qx LOCAL_LUA_DEBUGGER_VSCODE=1 && kill $p; done; true",
+            "presentation": {
+                "reveal": "never",
+                "close": true
+            },
+            "problemMatcher": []
         }
     ]
 }

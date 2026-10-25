@@ -33,11 +33,21 @@ Reusable object templates the GM can instantiate during play.
 
 ### 5. Media other than images
 
-The media module already types sources, fonts and videos, but the asset
-pipeline and the game data handle images only.
+The media module types videos, images, fonts and audio, and the assets
+workspace previews them (a player for a video or an audio file, a text
+field for a font); the game data and the game itself handle images only.
 
-- Audio playback (background music, sound effects)
+- Audio playback in the game (background music, sound effects)
 - Ability to change board and background music at will during a game
+- A dropped video is typed by its Ogg container but not played before it
+  is uploaded: LÖVE opens a video from a file only, and a dropped file is
+  outside its file system; a scratch copy in the save directory would let
+  it play
+- Text and Lua previews (the game master's scripts): LÖVE's audio decoders
+  accept nearly any bytes, so a text type must be detected before audio
+- Typing a file copies its bytes into a Lua string to look for the Theora
+  header, a video twice (its duration); a prefix and a suffix through
+  `love.data.newDataView` would do
 
 ### 6. Clipping of controls outside the clipping rectangle
 

@@ -46,4 +46,23 @@ function DrawableControl:get_screen_placement()
     return scale, is_axis_aligned, tx, ty
 end
 
+---@protected
+---@param drawable love.Drawable
+---@param max_dimension number The drawable's longer side, in texels
+function DrawableControl:draw_texels(drawable, max_dimension)
+    local scale, is_axis_aligned, tx, ty = self:get_screen_placement()
+    if is_axis_aligned then
+        -- One texel per screen pixel when the far edge lands within half a
+        -- pixel of it, at a whole-pixel position either way, so a pan never
+        -- resamples the texels at a drifting sub-pixel offset
+        if math.abs(scale - 1) * max_dimension <= 0.5 then
+            scale = 1
+        end
+        love.graphics.origin()
+        love.graphics.translate(math.floor(tx + 0.5), math.floor(ty + 0.5))
+        love.graphics.scale(scale)
+    end
+    love.graphics.draw(drawable)
+end
+
 return DrawableControl

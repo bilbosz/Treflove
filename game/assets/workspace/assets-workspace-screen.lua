@@ -270,14 +270,15 @@ end
 ---@private
 ---@param path string A file of the store, present locally
 function AssetsWorkspaceScreen:_show_local_content(path)
-    local data = love.filesystem.newFileData(Asset.get_asset_path(path))
+    local asset_path = Asset.get_asset_path(path)
+    local data = love.filesystem.newFileData(asset_path)
     ---@type media.Type|nil, LoveMedium
     local media_type, medium = nil, nil
     if data then
-        media_type, medium = media.get_type_and_medium(data)
+        media_type, medium = media.get_type_and_medium(data, asset_path)
     end
     self._selected_media_type = media_type
-    self._details:show_medium(media_type, medium)
+    self._details:show_medium(media_type, medium, data)
 end
 
 ---@param entry AssetEntry
@@ -353,7 +354,8 @@ function AssetsWorkspaceScreen:take_dropped_file(file)
     self._selected_media_type = nil
     self._list:set_selected(nil)
     self._details:set_name(self._dropped.name)
-    self._details:show_medium(media.get_type_and_medium(data))
+    local media_type, medium = media.get_type_and_medium(data, nil)
+    self._details:show_medium(media_type, medium, data)
     self:_update_usage()
     self:_update_actions()
 end

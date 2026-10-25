@@ -178,10 +178,13 @@ images module, both caches over LÖVE objects that the controls draw with.
 
 `Text` lays out in model units with a reference font (the fonts module's
 `REFERENCE_SIZE`, 80) and, when drawn, rasterizes at the pixel size its
-global transform gives: the fonts module keeps one `love.Font` per kind
-(`fonts.Kind`, display or user input) and integer pixel size. Axis-aligned
+global transform gives: the fonts module keeps one `love.Font` per face
+(`fonts.Face`: one of the program's fonts by its path, `fonts.Kind`, or the
+bytes of a font asset, a `love.FileData`) and integer pixel size, and
+forgets a face on request (`fonts.forget`). Axis-aligned
 text is drawn one glyph texel per screen pixel at a whole-pixel position;
-rotated text keeps its transform and scales the glyphs inside it.
+rotated text keeps its transform and scales the glyphs inside it. A text,
+and a text input through it, changes its face with `set_font`.
 
 `Image` draws a `love.Image` the images module made with its mipmap chain,
 filtered linearly within and between the levels, so a downscaled image (a
@@ -190,7 +193,8 @@ instead of skipping texels; the module keeps one image per file path, which
 the asset manager forgets when it writes the file again. An axis-aligned
 image is drawn at a whole-pixel position and, when its scale is within half
 a pixel of one texel per screen pixel, exactly at that; a rotated image
-keeps its transform.
+keeps its transform. `Video` draws a `love.Video` the same way; both share
+the placement through `DrawableControl`.
 
 ## Screen Management
 
@@ -247,8 +251,9 @@ manager, opened from the game's quick access panel (its Assets entry), in
 three columns: `AssetList` shows one folder, folders first, scrolled with
 the wheel (the rows out of view disabled, so Tab skips them), a whole-row
 button (`AssetListRow`) per entry; `AssetDetails`
-holds the preview (the drop target), the name field the actions use, the
-type and the action buttons; `AssetUsageList` names what uses the selected
+holds the preview (the drop target, see [Media](#media)), the name field
+the actions use, the type and the action buttons; `AssetUsageList` names
+what uses the selected
 entry (`asset_usage.find`: the pages by their image, the tokens by their
 image properties, a folder by everything under it), a text button per use,
 dimmed when the page or the token is not on the shown page, and a click
@@ -268,6 +273,47 @@ a dropped file uploaded under the typed name into the shown folder (over a
 file, never over a folder). A read-only button is dimmed and skipped by the
 pointer and by Tab. What the server refuses is notified with its reason; the
 listing is asked again after every change.
+
+## Media
+
+The media module (`utils/media.lua`) types a file by trying LÖVE's
+constructors on its bytes in a fixed order, the first to succeed deciding
+(`media.get_type_and_medium(data, path)`, the dynamic dispatch pattern of
+[conventions.md](conventions.md)): video, image, font, audio. The order
+matters: LÖVE's audio decoders accept nearly any bytes (a TTF font decodes
+as mp3), so audio is tried last; and LÖVE opens a video only from a file,
+never from its bytes, so a video is recognized by its container instead:
+the `ogg` module (`utils/ogg.lua`, pure Lua) finds the Theora
+identification header among the Ogg pages (`ogg.find_theora`) and reads
+the duration LÖVE does not expose from the last page's granule position
+(`ogg.theora_duration`, `media.video_duration`). The `path` is where LÖVE
+reads the file, for a file of the store; a dropped file has none, so it is
+typed as a video but gets no medium until it is uploaded. A video is opened
+with its audio track when it has one, without when it has none.
+
+The preview area (`game/assets/preview-area/`) shows one component per
+type, built under the workspace's form (`PreviewArea:get_form_screen`) with
+the medium and the file's data, destroyed by `reset` or with the area:
+an image fitted into the area (`PreviewImageArea`); a video (`Video`,
+fitted above the player, `PreviewVideoArea`) or an audio file (the note
+symbol, `PreviewAudioArea`) with a `MediaPlayer` across the bottom; a font
+(`PreviewFontArea`) with a text field whose face is the file's bytes,
+holding a pangram (`FONT_PREVIEW_TEXT`) the player can edit, and the
+same text wrapped above it at a larger scale. Text and Lua files have no
+preview yet.
+
+`MediaPlayer` (`ui/media-player.lua`) drives a `Playback`, the common
+face of a `love.Source` (`SourcePlayback`) and a `love.Video`
+(`VideoPlayback`, with the duration the Ogg pages gave): a Play/Pause
+button, a Stop button, the time as `m:ss / m:ss` (the position alone when
+the duration is unknown), and a `SeekBar` (`ui/seek-bar.lua`) whose
+indicator is the scroll view's, at the fraction played; a press or a drag
+on the bar seeks, the pointer held by capture meanwhile. The player follows
+the playback every frame (`app.update_event`): a playback that ends on its
+own shows Play again, and Play at the end starts over. The player's
+`release` stops the playback, so a preview that is replaced or dies with
+the workspace falls silent; a death the collector found leaves the LÖVE
+objects alone, as [lifetimes.md](lifetimes.md) requires.
 
 ## Permissions
 

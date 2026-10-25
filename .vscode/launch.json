@@ -11,7 +11,9 @@
                 "command": "love"
             },
             "args": [".", "client", "localhost", "8080"],
-            "scriptRoots": ["${workspaceFolder}"]
+            "scriptRoots": ["${workspaceFolder}"],
+            "breakInProtectedCalls": false,
+            "postDebugTask": "Stop the debugged server"
         },
         {
             "name": "Server",
@@ -21,7 +23,8 @@
                 "command": "love"
             },
             "args": [".", "server", "localhost", "8080"],
-            "scriptRoots": ["${workspaceFolder}"]
+            "scriptRoots": ["${workspaceFolder}"],
+            "breakInProtectedCalls": false
         },
         {
             "name": "Tests (LuaJIT)",
@@ -31,7 +34,8 @@
                 "command": "luajit"
             },
             "args": ["tests/run.lua"],
-            "scriptRoots": ["${workspaceFolder}"]
+            "scriptRoots": ["${workspaceFolder}"],
+            "breakInProtectedCalls": false
         },
         {
             "name": "Tests (LÖVE)",
@@ -41,7 +45,8 @@
                 "command": "love"
             },
             "args": [".", "test"],
-            "scriptRoots": ["${workspaceFolder}"]
+            "scriptRoots": ["${workspaceFolder}"],
+            "breakInProtectedCalls": false
         }
     ],
     "compounds": [

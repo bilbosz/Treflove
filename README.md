@@ -47,6 +47,7 @@ Milestones that are consider done at this point:
 * networking
 * asset handling - sending into server and backpropagating
 * assets workspace - browsing the server's assets, folders, renaming and deleting
+* media previews - images, videos and audio with a player, fonts with a sample text
 * graphical control system
 * simple interactive gui elements
 * event system
@@ -59,7 +60,7 @@ Known to-dos:
 * game master script handling
 * game objects other than tokens
 * clipping controls that are out of clipping rectangle
-* handling other media than images
+* handling other media than images in the game (playing sound, a video on a page)
 * ability to change board and background music at will
 * adding prefabs
 * game state synchronization

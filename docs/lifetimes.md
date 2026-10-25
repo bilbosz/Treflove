@@ -29,7 +29,9 @@ when `lifetime.destroy` is called on it, or when the collector finds it.
 classes implement one: a tree node takes its subtree (`Tree`), a screen its
 control tree (`Screen`), a connection asks the host thread to disconnect
 its peer and frees its channels, a remote procedure gives its handler slot
-back. Everything else is owned
+back, a media player stops what it plays (not for `"unreachable"` or
+`"exit"`: the LÖVE objects may be freed already), a font preview forgets
+its face in the fonts cache. Everything else is owned
 through anchors or the control tree, and a registration on an `Event` or a
 hit-tested manager ends by itself when its owner dies.
 
@@ -55,7 +57,8 @@ Connection                      (a lost peer → lifetime.destroy;
         │   ├── its control tree        (the panels, the preview area, the inputs)
         │   └── back entry: leave the game
         └── AssetsWorkspaceScreen       (while open, over the game)
-            ├── its control tree        (the list and its rows, the details with the preview, the usage list)
+            ├── its control tree        (the list and its rows, the details with the preview
+            │                            and its player or text field, the usage list)
             └── back entry: close the workspace
 ```
 
