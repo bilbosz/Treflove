@@ -334,3 +334,35 @@ test.case("a control unregistered by its own click is left once, after the click
         "b:entered"
     })
 end)
+
+test.case("only the left mouse button or a touch presses; another mouse button hovers and clicks nothing", function()
+    local tree = _make_tree()
+    local manager = tree.manager
+    manager:dispatch_pointer_move(20, 20, nil)
+    manager:dispatch_pointer_down(20, 20, 3)
+    manager:dispatch_pointer_move(21, 21, 3)
+    manager:dispatch_pointer_up(21, 21, 3)
+    test.assert_deep_eq(tree.log, {
+        "a:entered"
+    })
+
+    manager:dispatch_pointer_down(20, 20, 1)
+    manager:dispatch_pointer_up(20, 20, 3)
+    test.assert_true(tree.a.button:is_selected(), "a release of another button keeps the press")
+    manager:dispatch_pointer_up(20, 20, 1)
+
+    ---@diagnostic disable-next-line: param-type-mismatch
+    local touch = setmetatable({}, {}) --[[@as lightuserdata]]
+    manager:dispatch_pointer_down(70, 70, touch)
+    manager:dispatch_pointer_up(70, 70, touch)
+
+    test.assert_deep_eq(tree.log, {
+        "a:entered",
+        "a:selected",
+        "a:unselected",
+        "a:clicked",
+        "b:selected",
+        "b:unselected",
+        "b:clicked"
+    })
+end)

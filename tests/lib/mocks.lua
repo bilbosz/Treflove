@@ -442,6 +442,8 @@ function mocks.ensure_love_graphics()
         translate = _no_op,
         scale = _no_op,
         setScissor = _no_op,
+        getScissor = _no_op,
+        intersectScissor = _no_op,
         stencil = _no_op,
         setStencilTest = _no_op,
         setLineWidth = _no_op

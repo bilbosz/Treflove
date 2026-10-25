@@ -10,13 +10,11 @@ local media = require("utils.media")
 
 ---@alias PreviewComponentClass PreviewImageArea|PreviewAudioArea|fun(preview_area: PreviewArea, love_content: LoveMedium): PreviewImageArea|PreviewAudioArea A preview class table: its class joined by its constructor, as `Class` is
 
----What a preview area hands a dropped file to: its parent, while the file
----is open
----@class FileDropTarget: Control
+---@class FileDropTarget
 ---@field set_file fun(self: FileDropTarget, file: love.DroppedFile)
 
 ---@class PreviewArea: ClippingRectangle
----@field parent FileDropTarget
+---@field private _drop_target FileDropTarget
 ---@field _preview_labels Control
 ---@field _drop_file_labels Control
 ---@field content_parent Control Parent for preview components, centered in the area
@@ -105,8 +103,10 @@ end
 ---@param parent Control|nil
 ---@param width number
 ---@param height number
-function PreviewArea:init(parent, width, height)
+---@param drop_target FileDropTarget Takes the file dropped on the area
+function PreviewArea:init(parent, width, height, drop_target)
     ClippingRectangle.init(self, parent, width, height)
+    self._drop_target = drop_target
     _create_background(self)
     _create_content_parent(self)
 
@@ -126,7 +126,7 @@ function PreviewArea:on_file_system_drop(x, y, dropped_file)
         lifetime.hook(function()
             dropped_file:close()
         end, scope)
-        self.parent:set_file(dropped_file)
+        self._drop_target:set_file(dropped_file)
     end)
 end
 

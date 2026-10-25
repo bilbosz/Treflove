@@ -45,6 +45,14 @@
     determines the result: return the tag together with the constructed value
   - Tag results with an `---@enum` table on the module (`media.Type`) instead
     of magic strings or numbers
+- **Hit testing and clipping**: a control is hit within its bounds, where
+  it and its descendants draw (`get_global_recursive_aabb`); a control that
+  clips its children keeps its bounds to its box
+  (`_update_own_global_aabb`), so what is not drawn is never hit, and a new
+  clipping control does the same. A handler therefore checks no bounds of
+  its own. A control that drags holds the pointer
+  (`app.pointer_event_manager:capture(self, id)` on the press), so the drag
+  goes on outside its box and its release arrives wherever it lands.
 - **Comments**: code defends itself; a comment is written only for a gotcha
   the code cannot show (an ordering that matters, a host quirk, a type the
   language server cannot express). What a function does is its name, its

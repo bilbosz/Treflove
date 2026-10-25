@@ -14,7 +14,7 @@
 ### VS Code (optional)
 - the extensions recommended by the workspace (`.vscode/extensions.json`): the
   language server, the formatter and, behind the launch configurations, the
-  Local Lua Debugger (`tomblind.local-lua-debugger-vscode`)
+  Local Lua Debugger (`ismoh-games.second-local-lua-debugger-vscode`)
 
 ### Git submodules
 - `annotations/love2d` - LÖVE type annotations for the language server

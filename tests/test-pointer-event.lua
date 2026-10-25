@@ -1,5 +1,6 @@
 local test = require("tests.lib.test")
 local mocks = require("tests.lib.mocks")
+local lifetime = require("lifetime")
 local Aabb = require("utils.aabb")
 local PointerEventManager = require("events.pointer-event")
 
@@ -255,6 +256,117 @@ test.case("controls unregistered during a dispatch are skipped, new ones are not
 
     test.assert_deep_eq(tree.log, {
         "token:20,20,1"
+    })
+end)
+
+test.case("a captured press sends its moves and its release to the captor alone, wherever they land, then lets go", function()
+    local tree = _make_tree()
+    _install(tree)
+    local manager = PointerEventManager()
+    for _, ctrl in ipairs({
+        tree.page,
+        tree.token,
+        tree.popup
+    }) do
+        manager.pointer_down:register(ctrl, ctrl.on_event)
+        manager.pointer_move:register(ctrl, ctrl.on_event)
+        manager.pointer_up:register(ctrl, ctrl.on_event)
+    end
+    tree.popup.result = true
+    ---@param ctrl TestHitControl
+    ---@param x number
+    ---@param y number
+    ---@param id PointerId
+    local function _capture_on_down(ctrl, x, y, id)
+        ctrl:on_event(x, y, id)
+        manager:capture(ctrl, id)
+    end
+    manager.pointer_down:register(tree.token, _capture_on_down)
+
+    manager:dispatch_pointer_down(20, 20, 3)
+    test.assert_eq(manager:get_captor(3), tree.token)
+    manager:dispatch_pointer_move(25, 25, nil)
+    manager:dispatch_pointer_move(200, 200, nil)
+    manager:dispatch_pointer_down(70, 70, 1)
+    manager:dispatch_pointer_up(70, 70, 1)
+    manager:dispatch_pointer_up(200, 200, 3)
+    test.assert_eq(manager:get_captor(3), nil)
+    manager:dispatch_pointer_move(20, 20, nil)
+    manager:dispatch_pointer_up(20, 20, 3)
+
+    test.assert_deep_eq(tree.log, {
+        "popup:20,20,3",
+        "token:20,20,3",
+        "token:25,25,3",
+        "token:200,200,3",
+        "page:70,70,1",
+        "page:70,70,1",
+        "token:200,200,3",
+        "popup:20,20,nil",
+        "token:20,20,nil",
+        "popup:20,20,3",
+        "token:20,20,3"
+    })
+end)
+
+test.case("every press has a captor of its own: a mouse move goes once to each, a touch move to its own", function()
+    local tree = _make_tree()
+    _install(tree)
+    local manager = PointerEventManager()
+    for _, ctrl in ipairs({
+        tree.page,
+        tree.token,
+        tree.popup
+    }) do
+        manager.pointer_move:register(ctrl, ctrl.on_event)
+        manager.pointer_up:register(ctrl, ctrl.on_event)
+    end
+    manager:capture(tree.token, 1)
+    manager:capture(tree.token, 3)
+    manager:capture(tree.popup, 7)
+
+    manager:dispatch_pointer_move(200, 200, nil)
+    table.sort(tree.log)
+    test.assert_deep_eq(tree.log, {
+        "popup:200,200,nil",
+        "token:200,200,nil"
+    })
+    tree.log[1], tree.log[2] = nil, nil
+
+    manager:dispatch_pointer_move(200, 200, 7)
+    manager:dispatch_pointer_move(200, 200, 8)
+    manager:dispatch_pointer_up(200, 200, 1)
+    manager:dispatch_pointer_up(200, 200, 8)
+    test.assert_deep_eq(tree.log, {
+        "popup:200,200,7",
+        "token:200,200,1"
+    })
+    test.assert_eq(manager:get_captor(1), nil)
+    test.assert_eq(manager:get_captor(3), tree.token)
+    test.assert_eq(manager:get_captor(7), tree.popup)
+
+    manager:release_capture(tree.page)
+    test.assert_eq(manager:get_captor(3), tree.token, "another control's release is not the captor's")
+    manager:release_capture(tree.token)
+    test.assert_eq(manager:get_captor(3), nil)
+    test.assert_eq(manager:get_captor(7), tree.popup)
+end)
+
+test.case("a dead captor lets go", function()
+    local tree = _make_tree()
+    _install(tree)
+    local manager = PointerEventManager()
+    manager.pointer_up:register(tree.page, tree.page.on_event)
+    local loner = TestHitControl("loner", tree.log, 0, 0, 10, 10)
+    manager.pointer_up:register(loner, loner.on_event)
+    manager:capture(loner, 7)
+    lifetime.destroy(loner)
+
+    manager:dispatch_pointer_up(70, 70, 7)
+
+    test.assert_eq(manager:get_captor(7), nil)
+    test.assert_deep_eq(tree.log, {
+        "page:70,70,7"
     })
 end)
 

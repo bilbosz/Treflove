@@ -97,7 +97,7 @@ function AssetDetails:init(screen, parent, width, height)
     self._action_buttons = {}
 
     local side = math.min(width - 2 * Consts.PADDING, height * Consts.ASSETS_WORKSPACE_PREVIEW_SHARE)
-    local preview = PreviewArea(self, side, side)
+    local preview = PreviewArea(self, side, side, self)
     self._preview_area = preview
     preview:set_position(Consts.PADDING, Consts.PADDING)
 

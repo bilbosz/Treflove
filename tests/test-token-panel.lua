@@ -1,5 +1,6 @@
 local test = require("tests.lib.test")
 local game_client = require("tests.lib.game-client")
+local Consts = require("app.consts")
 
 ---@param client GameClient
 ---@return TokenPanelProperty[]
@@ -122,5 +123,42 @@ test.case("the game master writes every token", function()
         })
         assert_inputs_read_only(client, false, "editable")
         test.assert_true(apply_button(client) ~= nil)
+    end)
+end)
+
+test.case("the properties sit in a scroll view that ends a padding above the buttons", function()
+    with_client({
+        "read",
+        "write"
+    }, function(client)
+        game_client.select(client, {
+            "Bilbosza"
+        })
+        local panel = client.game_screen:get_token_panel()
+        ---@diagnostic disable-next-line: invisible
+        local view = panel._scroll_view
+        local content = view:get_content()
+        for _, property in ipairs(properties(client)) do
+            test.assert_eq(assert(property.title):get_parent(), content)
+            test.assert_eq(assert(property.input):get_parent(), content)
+        end
+        local panel_w = panel:get_size()
+        local view_w, view_h = view:get_size()
+        local _, cancel_y = assert(cancel_button(client)):get_position()
+        test.assert_eq(view_w, panel_w)
+        test.assert_eq(view_h, cancel_y - Consts.PADDING)
+        local content_w, content_h = view:get_content_size()
+        test.assert_eq(content_w, panel_w)
+        local last = properties(client)[#properties(client)]
+        local _, input_y, _, input_h = assert(last.input):get_position_and_size()
+        test.assert_eq(content_h, input_y + input_h + Consts.PADDING)
+
+        panel:on_resize(panel_w, 100)
+        ---@diagnostic disable-next-line: invisible
+        test.assert_eq(view, panel._scroll_view, "the same view after a rebuild")
+        _, cancel_y = assert(cancel_button(client)):get_position()
+        test.assert_eq(select(2, view:get_size()), cancel_y - Consts.PADDING)
+        local _, max_y = view:get_max_scroll()
+        test.assert_true(max_y > 0, "the properties overflow a short panel")
     end)
 end)
