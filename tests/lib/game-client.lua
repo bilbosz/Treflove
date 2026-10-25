@@ -320,18 +320,18 @@ function game_client.click(client, ctrl)
 end
 
 ---@param client GameClient
----@param keys string[] Keys of `GameData.tokens`, the tokens to select
-function game_client.select(client, keys)
+---@param ids string[] Ids of the tokens to select
+function game_client.select(client, ids)
     local page = client.game_screen:get_page()
     local selection = page:get_selection()
     selection:unselect()
     ---@type table<string, boolean>
     local selected = {}
-    for _, key in ipairs(keys) do
-        selected[key] = true
+    for _, id in ipairs(ids) do
+        selected[id] = true
     end
     for _, token in ipairs(page:get_tokens()) do
-        if selected[token:get_key()] then
+        if selected[token:get_id()] then
             local x, y = token:get_position()
             selection:set_start_point(x, y)
             selection:set_end_point(x, y)
@@ -342,15 +342,15 @@ function game_client.select(client, keys)
 end
 
 ---@param client GameClient
----@param key string A key of `GameData.tokens`
+---@param id string A token's id
 ---@return Token
-function game_client.find_token(client, key)
+function game_client.find_token(client, id)
     for _, token in ipairs(client.game_screen:get_page():get_tokens()) do
-        if token:get_key() == key then
+        if token:get_id() == id then
             return token
         end
     end
-    error("no token " .. key)
+    error("no token " .. id)
 end
 
 return game_client

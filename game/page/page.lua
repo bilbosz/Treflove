@@ -11,7 +11,7 @@ local Consts = require("app.consts")
 ---@field pixel_per_meter number
 ---@field width number Page width in meters
 ---@field image string Path of the background image asset
----@field tokens string[] Names of the tokens placed on the page
+---@field tokens string[] Ids of the tokens placed on the page
 
 ---@class Page: Model, ClippingRectangle
 ---@field data PageData
@@ -69,8 +69,8 @@ function Page:init(data, game_screen, width, height)
     self._selection = Selection(self)
 
     self._tokens = {}
-    for _, name in ipairs(data.tokens) do
-        table.insert(self._tokens, Token(name, app.data.tokens[name], self._page_coordinates))
+    for _, id in ipairs(data.tokens) do
+        table.insert(self._tokens, Token(id, app.data.tokens[id], self._page_coordinates))
     end
 
     local pointer_event_manager = app.pointer_event_manager
@@ -229,20 +229,20 @@ function Page:fit_page()
     self:fit(0, 0, page_w, bg_h / bg_w * page_w)
 end
 
----@param key string A token placed on the page
+---@param id string A token placed on the page
 ---@return Token
-function Page:find_token(key)
+function Page:find_token(id)
     for _, token in ipairs(self._tokens) do
-        if token:get_key() == key then
+        if token:get_id() == id then
             return token
         end
     end
-    error(string.format("no token %q on the page", key))
+    error(string.format("no token %q on the page", id))
 end
 
----@param key string A token placed on the page
-function Page:fit_token(key)
-    local token = self:find_token(key)
+---@param id string A token placed on the page
+function Page:fit_token(id)
+    local token = self:find_token(id)
     local x, y = token:get_position()
     local r = token:get_radius()
     self:fit(x - r, y - r, 2 * r, 2 * r)

@@ -50,7 +50,7 @@ back by `permissions.format`.
 | --- | --- | --- |
 | `action` | `permissions.Action`: `read` (the data reaches the player's client and is shown), `write` (the player may change it; the server accepts changes to it), `view` (the player shares the view of that token: sees the game through it as its owner does) | required |
 | `kind` | `permissions.Kind`: a collection of `GameData` by its key (`pages`, `tokens`, `players`, `token_properties`, `groups`, `game`), or `assets` (the server's asset store) | every kind |
-| `key` | an entry of the collection by its key (`tokens/Bilbosz`, `pages/Old Town`: everything after the first `/`), or the selector `@owned`: the entries whose `owners` array lists the player's login | every entry of the kind |
+| `key` | an entry of the collection by its key (`tokens/Bilbosz`, the token's id; `pages/Old Town`; everything after the first `/`), or the selector `@owned`: the entries whose `owners` array lists the player's login | every entry of the kind |
 
 Parsing is strict: an action outside `permissions.Action`, a kind outside
 `permissions.Kind` (so a typo grants nothing silently), an empty kind or
@@ -102,6 +102,13 @@ logout.
   any selected token is not writable; dragging moves only the
   writable tokens of the selection; the assets workspace gates its name
   field and its actions by what the listing said (`writable`).
+- **A token's id**: renaming it in the token panel renames the grants
+  naming it, so `view:tokens/Bilbosz` follows `Bilbosz` renamed to `Bilbo`:
+  `permissions.rename_key(grants, kind, key, new_key)` rewrites a list of
+  grants, `token_id.rename` applies it to every group's and every player's
+  permissions in the data, and `Token:set_id` to the client session's set
+  (`Session:set_grants`). An `@owned` grant needs nothing: ownership is
+  read from the data under the new key.
 
 `view` is resolved and sent like the other actions; its consumer, a vision
 system that shows a player what their tokens see, is future work

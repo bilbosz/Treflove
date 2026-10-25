@@ -114,6 +114,25 @@ function permissions.format(grant)
     return text
 end
 
+---@param grants string[]
+---@param kind permissions.Kind
+---@param key string
+---@param new_key string
+---@return string[] A copy of `grants`, every grant on `kind/key` (any action) renamed to `kind/new_key`, the rest as they were
+function permissions.rename_key(grants, kind, key, new_key)
+    ---@type string[]
+    local result = {}
+    for _, text in ipairs(grants) do
+        local grant = permissions.parse(text)
+        if grant.kind == kind and grant.key == key then
+            grant.key = new_key
+            text = permissions.format(grant)
+        end
+        table.insert(result, text)
+    end
+    return result
+end
+
 ---@param data GameData
 ---@param login string
 ---@return string[] The group's grants followed by the player's own

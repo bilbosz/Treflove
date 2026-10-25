@@ -240,6 +240,38 @@ test.case("resolve takes nothing from an unknown group and logs it; an unknown l
     test.assert_true(string.find(err, "mallory", 1, true) ~= nil, err)
 end)
 
+test.case("rename_key renames every action on the key and keeps the rest, in a copy", function()
+    local grants = {
+        "read",
+        "write:tokens",
+        "write:tokens/Bilbosz",
+        "view:tokens/Bilbosz",
+        "write:tokens/@owned",
+        "read:pages/Bilbosz",
+        "view:tokens/Gaben"
+    }
+    local renamed = permissions.rename_key(grants, Kind.TOKENS, "Bilbosz", "Bilbo")
+    test.assert_deep_eq(renamed, {
+        "read",
+        "write:tokens",
+        "write:tokens/Bilbo",
+        "view:tokens/Bilbo",
+        "write:tokens/@owned",
+        "read:pages/Bilbosz",
+        "view:tokens/Gaben"
+    })
+    test.assert_deep_eq(grants, {
+        "read",
+        "write:tokens",
+        "write:tokens/Bilbosz",
+        "view:tokens/Bilbosz",
+        "write:tokens/@owned",
+        "read:pages/Bilbosz",
+        "view:tokens/Gaben"
+    }, "the input is unchanged")
+    test.assert_true(renamed ~= grants)
+end)
+
 test.suite("PermissionSet")
 
 test.case("echoes its login and its grants, as given", function()
