@@ -21,11 +21,12 @@ local function _create_preview(self, love_content)
 end
 
 ---@param preview_area PreviewArea
----@param love_content love.Image
-function PreviewImageArea:init(preview_area, love_content)
+---@param medium love.Image
+---@param data media.Source
+function PreviewImageArea:init(preview_area, medium, data)
     self._preview_area = preview_area
     Control.init(self, preview_area.content_parent)
-    _create_preview(self, love_content)
+    _create_preview(self, medium)
 end
 
 return PreviewImageArea

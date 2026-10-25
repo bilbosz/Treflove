@@ -8,13 +8,14 @@ local Rectangle = require("controls.rectangle")
 local lifetime = require("lifetime")
 local media = require("utils.media")
 
----@alias PreviewComponentClass PreviewImageArea|PreviewAudioArea|fun(preview_area: PreviewArea, love_content: LoveMedium): PreviewImageArea|PreviewAudioArea A preview class table: its class joined by its constructor, as `Class` is
+---@alias PreviewComponentClass PreviewImageArea|PreviewAudioArea|fun(preview_area: PreviewArea, medium: LoveMedium, data: media.Source): PreviewImageArea|PreviewAudioArea A preview class table: its class joined by its constructor, as `Class` is
 
 ---@class FileDropTarget
 ---@field set_file fun(self: FileDropTarget, file: love.DroppedFile) Takes the file, open during the call only
 
 ---@class PreviewArea: ClippingRectangle
 ---@field private _drop_target FileDropTarget
+---@field private _form_screen FormScreen The screen the previews' inputs belong to
 ---@field _preview_labels Control
 ---@field _drop_file_labels Control
 ---@field content_parent Control Parent for preview components, centered in the area
@@ -104,9 +105,11 @@ end
 ---@param width number
 ---@param height number
 ---@param drop_target FileDropTarget Takes the file dropped on the area
-function PreviewArea:init(parent, width, height, drop_target)
+---@param form_screen FormScreen The screen the previews' inputs belong to
+function PreviewArea:init(parent, width, height, drop_target, form_screen)
     ClippingRectangle.init(self, parent, width, height)
     self._drop_target = drop_target
+    self._form_screen = form_screen
     _create_background(self)
     _create_content_parent(self)
 
@@ -130,20 +133,27 @@ function PreviewArea:on_file_system_drop(x, y, dropped_file)
     end)
 end
 
----@param love_content LoveMedium
+---@return FormScreen
+function PreviewArea:get_form_screen()
+    return self._form_screen
+end
+
+---@param medium LoveMedium
+---@param data media.Source The file the medium was made of
 ---@param PreviewComponent PreviewComponentClass
-function PreviewArea:set_content(love_content, PreviewComponent)
+function PreviewArea:set_content(medium, data, PreviewComponent)
     self:reset()
     _set_labels(self, self._preview_labels)
-    self._preview = PreviewComponent(self, love_content)
+    self._preview = PreviewComponent(self, medium, data)
 end
 
 ---@param media_type media.Type|nil
----@param medium LoveMedium
-function PreviewArea:show_medium(media_type, medium)
+---@param medium LoveMedium Absent for a type LÖVE could not open from these bytes: no preview then
+---@param data media.Source|nil The file, when it was read
+function PreviewArea:show_medium(media_type, medium, data)
     local PreviewComponent = media_type and PREVIEW_OF_TYPE[media_type]
-    if PreviewComponent then
-        self:set_content(medium, PreviewComponent)
+    if PreviewComponent and medium and data then
+        self:set_content(medium, data, PreviewComponent)
     else
         self:reset()
     end

@@ -2,6 +2,7 @@ local test = require("tests.lib.test")
 local mocks = require("tests.lib.mocks")
 local lifetime = require("lifetime")
 local Control = require("controls.control")
+local FormScreen = require("ui.form-screen")
 local PreviewArea = require("game.assets.preview-area.preview-area")
 
 ---@class TestDropTarget: Control, FileDropTarget
@@ -53,7 +54,7 @@ local function setup()
     mocks.ensure_love_math()
     mocks.ensure_love_graphics()
     local target = TestDropTarget()
-    local area = PreviewArea(target, 100, 100, target)
+    local area = PreviewArea(target, 100, 100, target, FormScreen())
     return app_mock, target, area
 end
 

@@ -113,7 +113,7 @@ function AssetDetails:init(screen, parent, width, height, with_use)
     self._scroll_view = ScrollView(self, width, height, true)
 
     local side = math.min(width - 2 * Consts.PADDING, height * Consts.ASSETS_WORKSPACE_PREVIEW_SHARE)
-    local preview = PreviewArea(self._scroll_view:get_content(), side, side, self)
+    local preview = PreviewArea(self._scroll_view:get_content(), side, side, self, screen)
     self._preview_area = preview
     preview:set_position(Consts.PADDING, Consts.PADDING)
 
@@ -165,8 +165,9 @@ end
 
 ---@param media_type media.Type|nil
 ---@param medium LoveMedium
-function AssetDetails:show_medium(media_type, medium)
-    self._preview_area:show_medium(media_type, medium)
+---@param data media.Source|nil The file, when it was read
+function AssetDetails:show_medium(media_type, medium, data)
+    self._preview_area:show_medium(media_type, medium, data)
     self:set_type_text(media_type and tostring(table.find_table_key(media.Type, media_type)) or "Unknown")
 end
 

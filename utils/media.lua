@@ -7,7 +7,7 @@ local media = {}
 
 ---@alias media.Source love.FileData A file's bytes, which every LÖVE constructor takes in place of a path
 
----@alias media.Constructor fun(data: media.Source): LoveMedium Raises when `data` is not of its type
+---@alias media.Constructor fun(data: media.Source, path: string|nil): LoveMedium Raises when `data` is not of its type; `path` is where LÖVE reads the file, for a constructor that opens it instead of taking its bytes
 
 ---@alias media.Candidate {[1]: media.Constructor, [2]: media.Type}
 
@@ -41,9 +41,10 @@ local function _try_create_font_file(data)
 end
 
 ---@param data media.Source
+---@param path string|nil
 ---@return love.Video
-local function _try_create_video_file(data)
-    return love.graphics.newVideo(data --[[@as string]] )
+local function _try_create_video_file(data, path)
+    return love.graphics.newVideo(assert(path, "a video opens from its file"))
 end
 
 ---@type media.Candidate[] Ordered so ambiguous data resolves to the preferred type
@@ -67,11 +68,12 @@ local MATCH_FILE = {
 }
 
 ---@param data media.Source
+---@param path string|nil Where LÖVE reads the file, when it can: a file of the store, not a dropped one
 ---@return media.Type|nil, LoveMedium
-function media.get_type_and_medium(data)
+function media.get_type_and_medium(data, path)
     for _, v in ipairs(MATCH_FILE) do
         local f, t = unpack(v)
-        local is_ok, medium = pcall(f, data)
+        local is_ok, medium = pcall(f, data, path)
         if is_ok then
             return t, medium
         end
