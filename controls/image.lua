@@ -26,4 +26,9 @@ function Image:init(parent, path_or_love_image)
     end)
 end
 
+---@return love.Image
+function Image:get_love_image()
+    return self._love_image
+end
+
 return Image
