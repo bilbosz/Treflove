@@ -52,6 +52,7 @@ local TEST_MODULES = {
     "tests.test-media-player",
     "tests.test-ogg",
     "tests.test-page",
+    "tests.test-page-surroundings",
     "tests.test-permissions",
     "tests.test-pointer-event",
     "tests.test-rectangle",

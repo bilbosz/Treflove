@@ -421,7 +421,14 @@ function mocks.ensure_love_graphics()
             }
         end,
         newShader = function()
-            return {}
+            return {
+                send = _no_op
+            }
+        end,
+        newQuad = function()
+            return {
+                setViewport = _no_op
+            }
         end,
         getDimensions = function()
             return 800, 600
