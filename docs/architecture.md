@@ -203,6 +203,43 @@ full-screen UI containers: ConnectingScreen, LoginScreen, UserMenuScreen,
 OptionsMenuScreen, GameScreen, AssetsWorkspaceScreen, WaitingScreen, and
 ScreenSaver for a server with a window.
 
+## The Page
+
+`Page` (`game/page/page.lua`) is the view of a page: a `ClippingRectangle`
+over the game screen's map area, with the map image as the camera (its
+position, origin and scale are the view) and, under the image, a `Control`
+scaled to page meters that the tokens and the selection live in. The wheel
+zooms about the pointer, the view-drag button pans, `fit`, `fit_page`,
+`fit_token` and `center_on` place the view, and the game screen resizes it
+with the window. Every one of these ends in the same constraint: the scale
+stays between the zoom-out limit, where the whole page fits the view within
+`PADDING` (exactly what `fit_page` sets), and the zoom-in limit,
+`PAGE_MAX_UNITS_PER_METER` model units per page meter (a centimeter of the
+page is two units, about a screen pixel or two; a page so small that its
+fit exceeds the limit has a range of one scale), and the map keeps at least
+`PAGE_MIN_VISIBLE` units in view along each axis, a strip along an edge or
+a square at a corner. The wheel clamps its target scale first, so a zoom at
+the limit still zooms about the pointer; a fit that would exceed the zoom-in
+limit (a 1 m token) ends at the limit with the rectangle centered; a drag
+that hits the limit leaves the map at it until the pointer comes back; a
+page at the zoom-out limit is fitted again when the view's size changes, so
+a fully zoomed-out map stays whole through a window resize.
+
+Beyond the map's edges the view shows `PageSurroundings`
+(`game/page/page-surroundings.lua`), the page's first child: one draw of the
+map image over the whole view, with a quad whose viewport is the view in map
+texels (a viewport beyond the texture samples the edge texels, the `clamp`
+wrap every image has), under a shader that blurs each fragment by its
+distance beyond the edge: sigma is `PAGE_SURROUNDINGS_BLUR_GROWTH` times the
+distance, capped at `PAGE_SURROUNDINGS_BLUR_LIMIT` model units; a 5x5
+binomial kernel on taps half a sigma apart, sampled from the mip level whose
+texel is about half a sigma, never below the level an ordinary draw would
+use at this zoom. The level is explicit (`textureLod`, so the shader is
+`glsl3`): the taps' offsets change with the distance, so the level the
+sampler derives from screen derivatives would differ between the taps and
+jump where the cap is reached, a visible line. Under the map the taps
+collapse to the plain sample, and the map image, drawn after it, covers it.
+A GPU without `glsl3` gets no surroundings: the clear color, as before.
 ## Tokens
 
 A token (`game/token/token.lua`) is a `Model` over its `TokenData` and a
