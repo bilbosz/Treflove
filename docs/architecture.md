@@ -166,8 +166,9 @@ viewport over a content control larger than itself (`get_content`,
 `set_content_size`): the content is dragged with `SCROLL_VIEW_DRAG_BUTTON`,
 press, drag, release, no further than its edges, holding the pointer
 meanwhile. Optional indicators of a fixed size (`SCROLL_VIEW_INDICATOR_*`)
-along the overflowed edges mark where the view is. The token panel and the
-assets panel keep what is above their buttons in one.
+along the overflowed edges mark where the view is. The token panel, the
+assets panel and the workspace's details keep what is above their buttons
+in one.
 A destroyed control takes its subtree with it, newest child first; a screen
 destroys its control tree, see [lifetimes.md](lifetimes.md).
 

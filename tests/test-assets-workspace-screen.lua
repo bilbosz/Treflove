@@ -1,6 +1,7 @@
 local test = require("tests.lib.test")
 local game_client = require("tests.lib.game-client")
 local lifetime = require("lifetime")
+local Consts = require("app.consts")
 local Asset = require("data.asset")
 local AssetListRow = require("game.assets.workspace.asset-list-row")
 
@@ -93,6 +94,14 @@ local function dropped_file(name, content)
     ---@return string
     function file:read()
         return content
+    end
+    ---@return boolean
+    function file:open()
+        return true
+    end
+    ---@return boolean
+    function file:close()
+        return true
     end
     return file --[[@as love.DroppedFile]]
 end
@@ -528,5 +537,51 @@ test.case("the Workspace button of the game's assets panel opens it", function()
         game_client.click(client, button)
         test.assert_eq(get_class_name_of(client.app.screen_manager:get_screen()), "AssetsWorkspaceScreen")
         game_client.pop_request(client, "ListAssetsRp")
+    end)
+end)
+
+test.case("the details keep the preview and the fields in a scroll view above the buttons, where a drop lands", function()
+    with_client({
+        "read",
+        "write"
+    }, function(client)
+        local screen = game_client.open_workspace(client)
+        local details = screen:get_details()
+        local view = details._scroll_view
+        local content = view:get_content()
+        test.assert_eq(details._preview_area:get_parent(), content)
+        test.assert_eq(details._name_input:get_parent(), content)
+        test.assert_eq(details._type_input:get_parent(), content)
+
+        ---@param w number
+        local function assert_layout(w)
+            local view_w, view_h = view:get_size()
+            local _, top_y = details:get_action_button("new_folder"):get_position()
+            local _, back_y = details._back_button:get_position()
+            test.assert_true(top_y < back_y)
+            test.assert_eq(view_w, w)
+            test.assert_eq(view_h, math.max(0, top_y - Consts.PADDING))
+            local _, input_y, _, input_h = details._type_input:get_position_and_size()
+            test.assert_eq(select(2, view:get_content_size()), input_y + input_h + Consts.PADDING)
+        end
+        local w = details:get_size()
+        assert_layout(w)
+
+        local min_x, min_y, max_x, max_y = details._preview_area:get_global_aabb():get_bounds()
+        client.app:set_pointer_position((min_x + max_x) * 0.5, (min_y + max_y) * 0.5)
+        client.app.file_system_drop_event_manager:file_drop(dropped_file("/home/adam/pictures/dragon.png", "D"))
+        test.assert_eq(details:get_name(), "dragon.png", "dropped on the preview, in the view")
+
+        details:on_resize(w, 200)
+        assert_layout(w)
+        local _, max_scroll = view:get_max_scroll()
+        test.assert_true(max_scroll > 0, "the preview and the fields overflow a short panel")
+        view:set_scroll(0, max_scroll)
+        min_x, min_y, max_x, max_y = details._preview_area:get_global_aabb():get_bounds()
+        test.assert_true(max_y < view:get_global_aabb():get_min_y(), "the preview is scrolled out")
+        details:set_name("")
+        client.app:set_pointer_position((min_x + max_x) * 0.5, (min_y + max_y) * 0.5)
+        client.app.file_system_drop_event_manager:file_drop(dropped_file("/home/adam/pictures/other.png", "D"))
+        test.assert_eq(details:get_name(), "", "dropped where the scrolled-out preview is, outside the view")
     end)
 end)
