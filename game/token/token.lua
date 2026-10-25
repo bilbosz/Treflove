@@ -6,6 +6,7 @@ local Consts = require("app.consts")
 local Circle = require("controls.circle")
 local Text = require("controls.text")
 local permissions = require("game.permissions")
+local lifetime = require("lifetime")
 
 ---@alias TokenDataValue string|number|string[]|number[] The value of a token property, by its `TokenPropertyType`: `string`, `number`, `image` (an asset path) or `array`
 
@@ -33,6 +34,17 @@ local permissions = require("game.permissions")
 local Token = class("Token", Model, Control)
 
 ---@param self Token
+local function _fit_avatar(self)
+    local d = self._diameter
+    local r = d * 0.5
+    local img = self._image
+    local img_w, img_h = img:get_size()
+    img:set_origin(img_w * 0.5, img_h * 0.5)
+    img:set_scale(math.max(d / img_w, d / img_h))
+    img:set_position(r, r)
+end
+
+---@param self Token
 ---@param path string Avatar image asset path
 local function _create_avatar(self, path)
     local d = self._diameter
@@ -42,15 +54,8 @@ local function _create_avatar(self, path)
     end)
     self._clip = clip
     clip:set_origin(r, r)
-
-    local img = Image(clip, path)
-    self._image = img
-
-    local img_w, img_h = img:get_size()
-    local scale_w, scale_h = d / img_w, d / img_h
-    img:set_origin(img_w * 0.5, img_h * 0.5)
-    img:set_scale(math.max(scale_w, scale_h))
-    img:set_position(r, r)
+    self._image = Image(clip, path)
+    _fit_avatar(self)
 end
 
 ---@param self Token
@@ -169,12 +174,7 @@ function Token:set_data(key, value)
             love.graphics.circle("fill", r, r, r)
         end)
 
-        local img = self._image
-        local img_w, img_h = img:get_size()
-        local scale_w, scale_h = d / img_w, d / img_h
-        img:set_origin(img_w * 0.5, img_h * 0.5)
-        img:set_scale(math.max(scale_w, scale_h))
-        img:set_position(r, r)
+        _fit_avatar(self)
 
         local selection_r = self._diameter * 0.5 - Consts.TOKEN_SELECTION_THICKNESS * 0.5
         local selection = self._selection
@@ -182,6 +182,10 @@ function Token:set_data(key, value)
         selection:set_position(-selection_r, -selection_r)
 
         _center_label(self)
+    elseif key == "avatar" then
+        lifetime.destroy(self._image)
+        self._image = Image(self._clip, self.data.avatar)
+        _fit_avatar(self)
     end
 end
 

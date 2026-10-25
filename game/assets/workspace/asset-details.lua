@@ -7,7 +7,7 @@ local TextButton = require("ui.text-button")
 local TextInput = require("ui.text-input")
 local media = require("utils.media")
 
----@alias AssetDetailsAction "upload"|"new_folder"|"rename"|"delete" The buttons the workspace enables by its state
+---@alias AssetDetailsAction "upload"|"new_folder"|"rename"|"delete"|"use" The buttons the workspace enables by its state; `use` only when it picks a file
 
 ---@class AssetDetails: Panel, FileDropTarget
 ---@field _screen AssetsWorkspaceScreen
@@ -68,6 +68,10 @@ local function _layout_buttons(self)
     local back_w, back_h = outer_size(self._back_button)
     local bottom_y = h - Consts.PADDING - back_h
     self._back_button:set_position(Consts.PADDING, bottom_y)
+    local use = self._action_buttons.use
+    if use then
+        use:set_position(Consts.PADDING + back_w + Consts.PADDING, bottom_y)
+    end
     local upload = self._action_buttons.upload
     local upload_w = outer_size(upload)
     upload:set_position(w - Consts.PADDING - upload_w, bottom_y)
@@ -86,7 +90,6 @@ local function _layout_buttons(self)
         button:set_position(x, row_y)
         x = x + bw + Consts.PADDING
     end
-    assert(back_w and upload_w)
     return row_y
 end
 
@@ -102,7 +105,8 @@ end
 ---@param parent Control
 ---@param width number
 ---@param height number
-function AssetDetails:init(screen, parent, width, height)
+---@param with_use boolean Whether the workspace picks a file: a Use button
+function AssetDetails:init(screen, parent, width, height, with_use)
     Panel.init(self, parent, width, height)
     self._screen = screen
     self._action_buttons = {}
@@ -123,6 +127,9 @@ function AssetDetails:init(screen, parent, width, height)
     _create_action_button(self, "Rename", "rename")
     _create_action_button(self, "Delete", "delete")
     _create_action_button(self, "Upload", "upload")
+    if with_use then
+        _create_action_button(self, "Use", "use")
+    end
     local back = TextButton(self, screen, "Back", function()
         app.backstack_manager:back()
     end)
@@ -156,9 +163,9 @@ function AssetDetails:set_type_text(text)
     self._type_input:set_text(text)
 end
 
----@param data media.Source
-function AssetDetails:show_content(data)
-    local media_type, medium = media.get_type_and_medium(data)
+---@param media_type media.Type|nil
+---@param medium LoveMedium
+function AssetDetails:show_medium(media_type, medium)
     self._preview_area:show_medium(media_type, medium)
     self:set_type_text(media_type and tostring(table.find_table_key(media.Type, media_type)) or "Unknown")
 end
@@ -175,7 +182,7 @@ function AssetDetails:set_actions(enabled)
 end
 
 ---@param action AssetDetailsAction
----@return TextButton
+---@return TextButton|nil Absent for `use` unless the workspace picks a file
 function AssetDetails:get_action_button(action)
     return self._action_buttons[action]
 end

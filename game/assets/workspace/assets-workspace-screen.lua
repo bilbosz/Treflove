@@ -9,6 +9,12 @@ local Text = require("controls.text")
 local TextButton = require("ui.text-button")
 local asset_usage = require("data.asset-usage")
 local lifetime = require("lifetime")
+local media = require("utils.media")
+
+---@class AssetPick What the workspace is opened to choose
+---@field path string|nil The file shown selected at first, the current one
+---@field media_type media.Type The type a chosen file must have
+---@field on_pick fun(path: string)|nil Run with the chosen file once the workspace closed; absent, nothing is chosen, the current file is only shown
 
 ---@class DroppedAsset A file dropped on the workspace, to upload
 ---@field name string The file's name, what the name field starts with
@@ -27,7 +33,10 @@ local lifetime = require("lifetime")
 ---@field private _writable boolean Whether the server lets this session change the store
 ---@field private _dir string The shown folder, `""` for the root
 ---@field private _selected AssetEntry|nil
+---@field private _selected_media_type media.Type|nil Of the selected file, once its content is shown
 ---@field private _dropped DroppedAsset|nil
+---@field private _pick AssetPick|nil
+---@field private _pick_shown boolean Whether the pick's file was looked for in a listing
 local AssetsWorkspaceScreen = class("AssetsWorkspaceScreen", FormScreen)
 
 ---@param self AssetsWorkspaceScreen
@@ -40,13 +49,17 @@ local function _create_header_button(self, caption, action)
     return button
 end
 
-function AssetsWorkspaceScreen:init()
+---@param pick AssetPick|nil
+function AssetsWorkspaceScreen:init(pick)
     FormScreen.init(self)
     self._entries = {}
     self._writable = false
     self._dir = ""
     self._selected = nil
+    self._selected_media_type = nil
     self._dropped = nil
+    self._pick = pick
+    self._pick_shown = false
 
     local w, h = assert(app.width), assert(app.height)
     self._background = Rectangle(self.screen, w, h, Consts.BACKGROUND_COLOR)
@@ -64,7 +77,7 @@ function AssetsWorkspaceScreen:init()
     end)
     self._list = AssetList(self, self.screen, 1, 1)
     local p = Consts.PADDING
-    self._details = AssetDetails(self, self.screen, w * Consts.ASSETS_WORKSPACE_DETAILS_SHARE - p, h - 2 * p)
+    self._details = AssetDetails(self, self.screen, w * Consts.ASSETS_WORKSPACE_DETAILS_SHARE - p, h - 2 * p, pick ~= nil and pick.on_pick ~= nil)
     self._usage = AssetUsageList(self, self.screen, w * (1 - Consts.ASSETS_WORKSPACE_LIST_SHARE - Consts.ASSETS_WORKSPACE_DETAILS_SHARE) - 1.5 * p, h - 2 * p)
     self:on_resize(w, h)
     self:_update_view()
@@ -141,7 +154,22 @@ function AssetsWorkspaceScreen:on_listing(response)
     if self._selected then
         self._selected = self:_find_entry(self._selected.path)
     end
+    self:_show_pick_once()
     self:_update_view()
+end
+
+---@private
+function AssetsWorkspaceScreen:_show_pick_once()
+    local pick = self._pick
+    if self._pick_shown or not pick or not pick.path then
+        return
+    end
+    self._pick_shown = true
+    local entry = self:_find_entry(pick.path)
+    if entry then
+        self:_show_dir(Asset.get_parent(entry.path))
+        self:select_entry(entry)
+    end
 end
 
 ---@return AssetEntry[] The entries of the shown folder
@@ -213,11 +241,13 @@ function AssetsWorkspaceScreen:_update_actions()
     local writable = self._writable
     local taken = name ~= "" and self:_find_entry(Asset.join(self._dir, name)) or nil
     local free = name ~= "" and not taken
+    local pick = self._pick
     self._details:set_actions({
         upload = writable and name ~= "" and self._dropped ~= nil and (not taken or taken.type == "file"),
         new_folder = writable and free,
         rename = writable and free and selected ~= nil,
-        delete = writable and selected ~= nil
+        delete = writable and selected ~= nil,
+        use = pick ~= nil and selected ~= nil and selected.type == "file" and self._selected_media_type == pick.media_type
     })
     self._up_button:set_read_only(self._dir == "")
     self._open_button:set_read_only(not (selected and selected.type == "directory"))
@@ -241,18 +271,20 @@ end
 ---@param path string A file of the store, present locally
 function AssetsWorkspaceScreen:_show_local_content(path)
     local data = love.filesystem.newFileData(Asset.get_asset_path(path))
+    ---@type media.Type|nil, LoveMedium
+    local media_type, medium = nil, nil
     if data then
-        self._details:show_content(data)
-    else
-        self._details:clear_preview()
-        self._details:set_type_text("Unknown")
+        media_type, medium = media.get_type_and_medium(data)
     end
+    self._selected_media_type = media_type
+    self._details:show_medium(media_type, medium)
 end
 
 ---@param entry AssetEntry
 function AssetsWorkspaceScreen:select_entry(entry)
     self._dropped = nil
     self._selected = entry
+    self._selected_media_type = nil
     self._list:set_selected(entry.path)
     self._details:set_name(Asset.get_name(entry.path))
     if entry.type == "directory" then
@@ -266,6 +298,7 @@ function AssetsWorkspaceScreen:select_entry(entry)
         app.asset_manager:download_asset(entry.path, function()
             if lifetime.alive(self) and self._selected == entry and Asset(entry.path, false):get_type() == "file" then
                 self:_show_local_content(entry.path)
+                self:_update_actions()
             end
         end)
     end
@@ -317,9 +350,10 @@ function AssetsWorkspaceScreen:take_dropped_file(file)
         data = data
     }
     self._selected = nil
+    self._selected_media_type = nil
     self._list:set_selected(nil)
     self._details:set_name(self._dropped.name)
-    self._details:show_content(data)
+    self._details:show_medium(media.get_type_and_medium(data))
     self:_update_usage()
     self:_update_actions()
 end
@@ -347,7 +381,8 @@ end
 ---@param action AssetDetailsAction
 function AssetsWorkspaceScreen:run_action(action)
     local details = self._details
-    if details:get_action_button(action):is_read_only() then
+    local button = details:get_action_button(action)
+    if not button or button:is_read_only() then
         return
     end
     local target = Asset.join(self._dir, details:get_name())
@@ -359,6 +394,11 @@ function AssetsWorkspaceScreen:run_action(action)
         app.asset_manager:rename_asset(assert(self._selected).path, target, self:_after_change())
     elseif action == "delete" then
         app.asset_manager:delete_asset(assert(self._selected).path, self:_after_change())
+    elseif action == "use" then
+        local on_pick = assert(assert(self._pick).on_pick)
+        local path = assert(self._selected).path
+        assert(app.session):close_assets_workspace()
+        on_pick(path)
     else
         assert_unreachable()
     end

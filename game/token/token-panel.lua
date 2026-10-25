@@ -6,12 +6,14 @@ local NumberInput = require("ui.number-input")
 local TextButton = require("ui.text-button")
 local ScrollView = require("ui.scroll-view")
 local lifetime = require("lifetime")
+local media = require("utils.media")
 
 ---@class TokenPanelProperty
 ---@field key string Token data key
 ---@field def TokenProperty Property definition from `token_properties`
 ---@field title Text|nil Set once the property is filled in
----@field input TextInput|NumberInput|nil Set once the property is filled in, a `NumberInput` for a `number` property
+---@field input TextInput|NumberInput|nil Set once the property is filled in, a `NumberInput` for a `number` property, read-only for an `image` property
+---@field button TextButton|nil For an `image` property: opens the assets workspace at the asset
 
 ---@class TokenPanel: Panel
 ---@field private _game_screen GameScreen
@@ -96,7 +98,7 @@ function TokenPanel:_update_property_keys()
     local keys = {}
     for k in pairs(unique_keys) do
         local t = app.data.token_properties[k].type
-        if t == "string" or t == "number" then
+        if t == "string" or t == "number" or t == "image" then
             table.insert(keys, k)
         end
     end
@@ -115,7 +117,8 @@ function TokenPanel:_fill_in_properties(read_only)
                 key = k,
                 def = app.data.token_properties[k],
                 title = nil,
-                input = nil
+                input = nil,
+                button = nil
             }
 
             do
@@ -126,10 +129,11 @@ function TokenPanel:_fill_in_properties(read_only)
                 y = y + h * title:get_scale()
             end
 
+            local t = property.def.type
             do
                 local input = self:_create_property_input(property)
                 property.input = input
-                input:set_read_only(read_only)
+                input:set_read_only(read_only or t == "image")
                 input:set_position(Consts.PADDING, y)
                 local _, h = input:get_size()
                 ---@type number
@@ -137,8 +141,7 @@ function TokenPanel:_fill_in_properties(read_only)
 
                 local is_single_value, value = self:_get_value_by_key(k)
                 if is_single_value then
-                    local t = property.def.type
-                    if t == "string" then
+                    if t == "string" or t == "image" then
                         ---@cast value string
                         input:set_text(value)
                     elseif t == "number" then
@@ -149,6 +152,14 @@ function TokenPanel:_fill_in_properties(read_only)
                 else
                     input:set_multivalue(true)
                 end
+            end
+
+            if t == "image" then
+                local button = self:_create_assets_button(property)
+                property.button = button
+                button:set_position(Consts.PADDING, y + Consts.PADDING * 0.5)
+                local _, h = button:get_size()
+                y = y + Consts.PADDING * 0.5 + h * Consts.PANEL_FIELD_SCALE
             end
 
             table.insert(self._properties, property)
@@ -187,10 +198,53 @@ function TokenPanel:_create_property_input(property)
         input = TextInput(content, self._game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT, false, nil, apply)
     elseif t == "number" then
         input = NumberInput(content, self._game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT, nil, apply)
+    elseif t == "image" then
+        input = TextInput(content, self._game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT)
     else
         assert_unreachable()
     end
     return input
+end
+
+---@private
+---@param property TokenPanelProperty
+---@return TextButton
+function TokenPanel:_create_assets_button(property)
+    local button = TextButton(self._scroll_view:get_content(), self._game_screen, "Assets", function()
+        self:_open_assets(property.key)
+    end)
+    button:set_scale(Consts.PANEL_FIELD_SCALE)
+    return button
+end
+
+---@private
+---@param key string An `image` property
+function TokenPanel:_open_assets(key)
+    local is_single_value, value = self:_get_value_by_key(key)
+    ---@type AssetPick
+    local pick = {
+        path = is_single_value and type(value) == "string" and value or nil,
+        media_type = media.Type.IMAGE,
+        on_pick = nil
+    }
+    if self:_is_selection_writable() then
+        pick.on_pick = function(path)
+            self:_set_image(key, path)
+        end
+    end
+    assert(app.session):open_assets_workspace(pick)
+end
+
+---@private
+---@param key string An `image` property
+---@param path string
+function TokenPanel:_set_image(key, path)
+    for token in pairs(self._selection_set) do
+        if token:get_data()[key] ~= path then
+            token:set_data(key, path)
+        end
+    end
+    self:_update_view()
 end
 
 ---@private
@@ -250,6 +304,9 @@ function TokenPanel:_release_properties()
     for _, v in ipairs(self._properties) do
         lifetime.destroy(v.title)
         lifetime.destroy(v.input)
+        if v.button then
+            lifetime.destroy(v.button)
+        end
     end
     self._properties = {}
 
@@ -287,7 +344,7 @@ function TokenPanel:_apply()
                         token:set_data(key, value)
                     end
                 end
-            else
+            elseif t ~= "image" then
                 assert_unreachable()
             end
         end

@@ -30,8 +30,22 @@ local function assert_inputs_read_only(client, read_only, message)
     local fields = properties(client)
     test.assert_true(#fields > 0, "the selection has properties")
     for _, property in ipairs(fields) do
-        test.assert_eq(assert(property.input):is_read_only(), read_only, message .. ": " .. property.key)
+        if property.def.type ~= "image" then
+            test.assert_eq(assert(property.input):is_read_only(), read_only, message .. ": " .. property.key)
+        end
     end
+end
+
+---@param client GameClient
+---@param key string
+---@return TokenPanelProperty
+local function property_by_key(client, key)
+    for _, property in ipairs(properties(client)) do
+        if property.key == key then
+            return property
+        end
+    end
+    error("no property " .. key)
 end
 
 ---@param grants string[]
@@ -160,5 +174,30 @@ test.case("the properties sit in a scroll view that ends a padding above the but
         test.assert_eq(select(2, view:get_size()), cancel_y - Consts.PADDING)
         local _, max_y = view:get_max_scroll()
         test.assert_true(max_y > 0, "the properties overflow a short panel")
+    end)
+end)
+
+test.case("an image property shows its path read-only, with an Assets button; differing values are multivalue", function()
+    with_client({
+        "read",
+        "write"
+    }, function(client)
+        game_client.select(client, {
+            "Bilbosza"
+        })
+        local avatar = property_by_key(client, "avatar")
+        test.assert_eq(assert(avatar.input):get_text(), "token/b.png")
+        test.assert_true(avatar.input:is_read_only(), "chosen in the workspace, not typed")
+        test.assert_true(avatar.button ~= nil)
+        local _, input_y, _, input_h = avatar.input:get_position_and_size()
+        local _, button_y = assert(avatar.button):get_position()
+        test.assert_true(button_y >= input_y + input_h, "the button under the path")
+
+        game_client.select(client, {
+            "Bilbosza",
+            "Smaug"
+        })
+        avatar = property_by_key(client, "avatar")
+        test.assert_true(assert(avatar.input):is_multivalue_default())
     end)
 end)

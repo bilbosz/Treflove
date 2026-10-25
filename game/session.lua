@@ -173,11 +173,12 @@ function Session:get_game_screen()
     return self._game_screen
 end
 
-function Session:open_assets_workspace()
+---@param pick AssetPick|nil A file to choose, for a token's image property
+function Session:open_assets_workspace(pick)
     assert(app.is_client and not self._assets_workspace_screen)
     local period = assert(self._period, "the assets workspace needs a logged-in user")
     self._assets_workspace_return = assert(app.screen_manager:get_screen())
-    local screen = AssetsWorkspaceScreen():attach_lifetime(period)
+    local screen = AssetsWorkspaceScreen(pick):attach_lifetime(period)
     self._assets_workspace_screen = screen
     app.screen_manager:show(screen)
     app.backstack_manager:push(function()

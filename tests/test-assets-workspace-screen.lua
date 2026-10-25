@@ -49,14 +49,46 @@ local function enabled_actions(screen)
         "upload",
         "new_folder",
         "rename",
-        "delete"
+        "delete",
+        "use"
     }
     for _, action in ipairs(actions) do
-        if not screen:get_details():get_action_button(action):is_read_only() then
+        local button = screen:get_details():get_action_button(action)
+        if button and not button:is_read_only() then
             result[action] = true
         end
     end
     return result
+end
+
+---@param client GameClient
+---@param key string
+---@return TokenPanelProperty
+local function token_property(client, key)
+    ---@diagnostic disable-next-line: invisible
+    for _, property in ipairs(client.game_screen:get_token_panel()._properties) do
+        if property.key == key then
+            return property
+        end
+    end
+    error("no property " .. key)
+end
+
+---Opens the workspace from the token panel's button of `key` and answers the listing
+---@param client GameClient
+---@param key string
+---@return AssetsWorkspaceScreen
+local function open_from_token_property(client, key)
+    game_client.click(client, assert(token_property(client, key).button))
+    local screen = client.app.screen_manager:get_screen() --[[@as AssetsWorkspaceScreen]]
+    test.assert_eq(get_class_name_of(screen), "AssetsWorkspaceScreen")
+    game_client.pop_request(client, "ListAssetsRp")
+    game_client.answer(client, "ListAssetsRp", {
+        success = true,
+        entries = game_client.asset_entries(),
+        writable = true
+    })
+    return screen
 end
 
 ---@param screen AssetsWorkspaceScreen
@@ -706,5 +738,60 @@ test.case("the details keep the preview and the fields in a scroll view above th
         client.app:set_pointer_position((min_x + max_x) * 0.5, (min_y + max_y) * 0.5)
         client.app.file_system_drop_event_manager:file_drop(dropped_file("/home/adam/pictures/other.png", "D"))
         test.assert_eq(details:get_name(), "", "dropped where the scrolled-out preview is, outside the view")
+    end)
+end)
+
+test.case("opened from a token's image property, the workspace starts at the asset; Use on an image file sets it and returns to the game", function()
+    with_client({
+        "read",
+        "write:tokens/@owned"
+    }, function(client)
+        game_client.select(client, {
+            "Bilbosza"
+        })
+        local screen = open_from_token_property(client, "avatar")
+        test.assert_eq(screen:get_dir(), "token")
+        test.assert_eq(assert(screen:get_selected()).path, "token/b.png")
+        test.assert_deep_eq(enabled_actions(screen), {
+            delete = true,
+            use = true
+        })
+
+        screen:go_up()
+        screen:select_entry(row(screen, "token/"):get_entry())
+        test.assert_eq(enabled_actions(screen).use, nil, "a folder cannot be used")
+        screen:select_entry(row(screen, "notes.txt"):get_entry())
+        test.assert_eq(enabled_actions(screen).use, nil, "not downloaded yet, its type unknown")
+
+        screen:select_entry(row(screen, "token/"):get_entry())
+        screen:open_selected()
+        screen:select_entry(row(screen, "s.png"):get_entry())
+        test.assert_true(enabled_actions(screen).use)
+        screen:run_action("use")
+        test.assert_eq(client.app.screen_manager:get_screen(), client.game_screen)
+        test.assert_false(lifetime.alive(screen))
+        test.assert_eq(game_client.find_token(client, "Bilbosza"):get_data().avatar, "token/s.png")
+        test.assert_eq(assert(token_property(client, "avatar").input):get_text(), "token/s.png", "the panel shows the chosen one")
+    end)
+end)
+
+test.case("for a token the player may not write, the workspace shows the asset without Use; from the quick access there is neither", function()
+    with_client({
+        "read",
+        "write:tokens/@owned"
+    }, function(client)
+        game_client.select(client, {
+            "Smaug"
+        })
+        local screen = open_from_token_property(client, "avatar")
+        test.assert_eq(assert(screen:get_selected()).path, "token/s.png")
+        test.assert_eq(screen:get_details():get_action_button("use"), nil)
+        client.app.backstack_manager:back()
+        test.assert_eq(client.app.screen_manager:get_screen(), client.game_screen)
+
+        screen = game_client.open_workspace(client)
+        test.assert_eq(screen:get_details():get_action_button("use"), nil)
+        test.assert_eq(screen:get_selected(), nil)
+        test.assert_eq(screen:get_dir(), "")
     end)
 end)

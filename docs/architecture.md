@@ -229,7 +229,11 @@ image properties, a folder by everything under it), a text button per use,
 dimmed when the page or the token is not on the shown page, and a click
 closes the workspace and fits the game's view to it, as the preview fits an
 image (`Page:fit_page`, `Page:fit_token`), a token selected on its own
-(`Selection:select_tokens`); `AssetsWorkspaceScreen`
+(`Selection:select_tokens`). The way there and back from a token: an
+`image` property in the token panel shows its path read-only with an
+Assets button, which opens the workspace at that asset (`AssetPick`), and
+the workspace then offers Use on an image file, which sets the property on
+the selected tokens and returns to the game; `AssetsWorkspaceScreen`
 keeps the state (the listing, the
 shown folder, the selection, the dropped file), asks the server and gates
 the buttons: a selected folder can be opened (a second click too) and

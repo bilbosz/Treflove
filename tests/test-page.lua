@@ -1,5 +1,6 @@
 local test = require("tests.lib.test")
 local game_client = require("tests.lib.game-client")
+local lifetime = require("lifetime")
 local Consts = require("app.consts")
 
 ---@param token Token
@@ -144,6 +145,35 @@ test.case("the view is fitted to a token of the page, or to the page itself, wit
         test.assert_error(function()
             page:fit_token("Gollum")
         end, "a token on no page")
+    end)
+    game_client.finish(client)
+    if not ok then
+        error(err, 0)
+    end
+end)
+
+test.case("a token's avatar follows its data, fitted to the token", function()
+    local client = game_client.enter({
+        "read"
+    })
+    ---@type boolean, any
+    local ok, err = pcall(function()
+        local token = game_client.find_token(client, "Bilbosza")
+        local old = token._image
+        token:set_data("avatar", "token/s.png")
+        test.assert_false(lifetime.alive(old))
+        local image = token._image
+        test.assert_true(image ~= old)
+        test.assert_eq(image:get_parent(), token._clip)
+        local w, h = image:get_size()
+        local d = token:get_data().diameter
+        test.assert_near((image:get_scale()), math.max(d / w, d / h))
+        test.assert_deep_eq({
+            image:get_position()
+        }, {
+            d * 0.5,
+            d * 0.5
+        })
     end)
     game_client.finish(client)
     if not ok then
