@@ -212,21 +212,44 @@ function Page:center_on(x, y)
     bg:set_position(w * 0.5, h * 0.5)
 end
 
-function Page:center_on_page()
+---The view scaled and moved so that the rectangle, in page meters, fills
+---the page's box within a padding, as the preview fits an image
+---@param x number
+---@param y number
+---@param w number
+---@param h number
+function Page:fit(x, y, w, h)
+    local bg = self._background
+    local bg_w = bg:get_size()
+    local view_w, view_h = self:get_size()
+    local meters_to_view = math.min((view_w - 2 * Consts.PADDING) / w, (view_h - 2 * Consts.PADDING) / h)
+    bg:set_scale(meters_to_view * self._page_width / bg_w)
+    self:center_on(x + w * 0.5, y + h * 0.5)
+end
+
+function Page:fit_page()
     local bg_w, bg_h = self._background:get_size()
     local page_w = self._page_width
-    self:center_on(page_w * 0.5, bg_h / bg_w * page_w * 0.5)
+    self:fit(0, 0, page_w, bg_h / bg_w * page_w)
 end
 
 ---@param key string A token placed on the page
-function Page:center_on_token(key)
+---@return Token
+function Page:find_token(key)
     for _, token in ipairs(self._tokens) do
         if token:get_key() == key then
-            self:center_on(token:get_position())
-            return
+            return token
         end
     end
     error(string.format("no token %q on the page", key))
+end
+
+---@param key string A token placed on the page
+function Page:fit_token(key)
+    local token = self:find_token(key)
+    local x, y = token:get_position()
+    local r = token:get_radius()
+    self:fit(x - r, y - r, 2 * r, 2 * r)
 end
 
 ---@return GameScreen

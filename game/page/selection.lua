@@ -103,6 +103,19 @@ function Selection:toggle_apply()
     self:on_selection_change()
 end
 
+---Exactly these, in place of the selection so far
+---@param tokens Token[]
+function Selection:select_tokens(tokens)
+    self._select_set = {}
+    for _, token in ipairs(tokens) do
+        self._select_set[token] = true
+    end
+    for _, token in ipairs(self._page:get_tokens()) do
+        token:set_select(self._select_set[token] == true)
+    end
+    self:on_selection_change()
+end
+
 function Selection:unselect()
     for _, token in ipairs(self._page:get_tokens()) do
         self._select_set[token] = nil

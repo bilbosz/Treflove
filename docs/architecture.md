@@ -226,8 +226,9 @@ type and the action buttons; `AssetUsageList` names what uses the selected
 entry (`asset_usage.find`: the pages by their image, the tokens by their
 image properties, a folder by everything under it), a text button per use,
 dimmed when the page or the token is not on the shown page, and a click
-closes the workspace and centers the game's view on it
-(`Page:center_on_page`, `Page:center_on_token`); `AssetsWorkspaceScreen`
+closes the workspace and fits the game's view to it, as the preview fits an
+image (`Page:fit_page`, `Page:fit_token`), a token selected on its own
+(`Selection:select_tokens`); `AssetsWorkspaceScreen`
 keeps the state (the listing, the
 shown folder, the selection, the dropped file), asks the server and gates
 the buttons: a selected folder can be opened (a second click too) and

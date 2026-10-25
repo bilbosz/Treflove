@@ -554,18 +554,38 @@ local function usage_buttons(screen)
 end
 
 ---@param client GameClient
----@param x number In page meters
+---@param x number The rectangle, in page meters
 ---@param y number
-local function assert_centered_on(client, x, y)
+---@param w number
+---@param h number
+local function assert_fitted(client, x, y, w, h)
     local page = client.game_screen:get_page()
-    local w, h = page:get_size()
-    local cx, cy = page:transform_to_global(w * 0.5, h * 0.5)
-    local gx, gy = page:get_page_coordinates():transform_to_global(x, y)
-    test.assert_near(gx, cx, 1e-2)
+    local view_w, view_h = page:get_size()
+    local cx, cy = page:transform_to_global(view_w * 0.5, view_h * 0.5)
+    local coordinates = page:get_page_coordinates()
+    local gx, gy = coordinates:transform_to_global(x + w * 0.5, y + h * 0.5)
+    test.assert_near(gx, cx, 1e-2, "centered")
     test.assert_near(gy, cy, 1e-2)
+    local x0, y0 = coordinates:transform_to_global(x, y)
+    local x1, y1 = coordinates:transform_to_global(x + w, y + h)
+    local scale = math.min((view_w - 2 * Consts.PADDING) / w, (view_h - 2 * Consts.PADDING) / h)
+    test.assert_near(x1 - x0, w * scale, 1e-2, "scaled to fit")
+    test.assert_near(y1 - y0, h * scale, 1e-2)
 end
 
-test.case("the usage list names what uses the selected entry, dimmed off the shown page; a click returns to the game centered on it", function()
+---@param client GameClient
+---@return string[] The keys of the selected tokens, sorted
+local function selected_keys(client)
+    ---@type string[]
+    local keys = {}
+    for token in pairs(client.game_screen:get_selection():get_select_set()) do
+        table.insert(keys, token:get_key())
+    end
+    table.sort(keys)
+    return keys
+end
+
+test.case("the usage list names what uses the selected entry, dimmed off the shown page; a click returns to the game fitted to it, a token selected", function()
     with_client({
         "read",
         "write"
@@ -616,10 +636,16 @@ test.case("the usage list names what uses the selected entry, dimmed off the sho
         test.assert_deep_eq((usage_buttons(screen)), {
             "page \"P\""
         })
+        game_client.select(client, {
+            "Smaug"
+        })
         game_client.click(client, screen:get_usage():get_buttons()[1])
         test.assert_eq(client.app.screen_manager:get_screen(), client.game_screen)
         test.assert_false(lifetime.alive(screen))
-        assert_centered_on(client, 5, 5)
+        assert_fitted(client, 0, 0, 10, 10)
+        test.assert_deep_eq(selected_keys(client), {
+            "Smaug"
+        }, "a page is not selectable: the selection stays")
 
         screen = game_client.open_workspace(client)
         screen:select_entry(row(screen, "token/"):get_entry())
@@ -630,7 +656,10 @@ test.case("the usage list names what uses the selected entry, dimmed off the sho
         })
         game_client.click(client, screen:get_usage():get_buttons()[1])
         test.assert_eq(client.app.screen_manager:get_screen(), client.game_screen)
-        assert_centered_on(client, 2, 2)
+        assert_fitted(client, 1.5, 1.5, 1, 1)
+        test.assert_deep_eq(selected_keys(client), {
+            "Bilbosza"
+        }, "the token alone is selected")
     end)
 end)
 

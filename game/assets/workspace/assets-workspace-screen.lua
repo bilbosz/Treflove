@@ -198,16 +198,20 @@ function AssetsWorkspaceScreen:_update_usage()
     self._usage:set_uses(selected and asset_usage.find(assert(app.data), selected.path) or {})
 end
 
----Closes the workspace and centers the game's view on the page or the token
+---Closes the workspace and fits the game's view to the page or the token,
+---which is selected
 ---@param use AssetUse
 function AssetsWorkspaceScreen:go_to_use(use)
     local session = assert(app.session)
     local page = assert(session:get_game_screen()):get_page()
     session:close_assets_workspace()
     if use.kind == "page" then
-        page:center_on_page()
+        page:fit_page()
     else
-        page:center_on_token(use.name)
+        page:fit_token(use.name)
+        page:get_selection():select_tokens({
+            page:find_token(use.name)
+        })
     end
 end
 
