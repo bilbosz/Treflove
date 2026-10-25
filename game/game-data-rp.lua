@@ -6,7 +6,7 @@ local permissions = require("game.permissions")
 ---@field game GameScreenData
 ---@field pages table<string, PageData> By page name
 ---@field token_properties table<string, TokenProperty> By token data key
----@field tokens table<string, TokenData> By token name, as `PageData.tokens` lists them
+---@field tokens table<string, TokenData> By token id: the key the pages' token lists and the grants name
 ---@field players table<string, PlayerData> By login
 ---@field groups table<string, GroupData> By group name, as `PlayerData.group` names them
 

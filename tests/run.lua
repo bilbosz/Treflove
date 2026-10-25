@@ -68,6 +68,7 @@ local TEST_MODULES = {
     "tests.test-table",
     "tests.test-text",
     "tests.test-text-event",
+    "tests.test-token-id",
     "tests.test-token-panel",
     "tests.test-tree",
     "tests.test-upload-asset-rp",

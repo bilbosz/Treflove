@@ -6,6 +6,7 @@ local Consts = require("app.consts")
 local Circle = require("controls.circle")
 local Text = require("controls.text")
 local permissions = require("game.permissions")
+local token_id = require("game.token.token-id")
 local lifetime = require("lifetime")
 
 ---@alias TokenDataValue string|number|string[]|number[] The value of a token property, by its `TokenPropertyType`: `string`, `number`, `image` (an asset path) or `array`
@@ -21,7 +22,7 @@ local lifetime = require("lifetime")
 ---@class Token: Model, Control
 ---@field data TokenData
 ---@field get_data fun(self: Token): TokenData
----@field private _key string The token's key in `GameData.tokens`
+---@field private _id string The token's key in `GameData.tokens`
 ---@field _diameter number
 ---@field _clip ClippingMask
 ---@field _image Image
@@ -85,14 +86,14 @@ local function _create_selection_effect(self)
     self._selection:set_enabled(false)
 end
 
----@param key string The token's key in `GameData.tokens`, which the permissions name
+---@param id string The token's key in `GameData.tokens`, which the pages and the permissions name
 ---@param data TokenData
 ---@param parent Control
-function Token:init(key, data, parent)
-    assert_type(key, "string")
+function Token:init(id, data, parent)
+    assert_type(id, "string")
     Model.init(self, data)
     Control.init(self, parent)
-    self._key = key
+    self._id = id
 
     self._drag_mouse_button = 1
     self._prev_drag_mouse_x, self._prev_drag_mouse_y = nil, nil
@@ -119,13 +120,22 @@ function Token:on_pointer_event(x, y, id)
 end
 
 ---@return string
-function Token:get_key()
-    return self._key
+function Token:get_id()
+    return self._id
+end
+
+---@param id string One `token_id.check` accepts
+function Token:set_id(id)
+    local old = self._id
+    token_id.rename(assert(app.data), old, id)
+    self._id = id
+    local session = assert(app.session)
+    session:set_grants(permissions.rename_key(session:get_permissions():get_grants(), permissions.Kind.TOKENS, old, id))
 end
 
 ---@return boolean Whether the logged-in player may change the token
 function Token:is_writable()
-    return assert(app.session):get_permissions():allows(permissions.Action.WRITE, permissions.Kind.TOKENS, self._key)
+    return assert(app.session):get_permissions():allows(permissions.Action.WRITE, permissions.Kind.TOKENS, self._id)
 end
 
 ---@return number

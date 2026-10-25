@@ -611,7 +611,7 @@ local function selected_keys(client)
     ---@type string[]
     local keys = {}
     for token in pairs(client.game_screen:get_selection():get_select_set()) do
-        table.insert(keys, token:get_key())
+        table.insert(keys, token:get_id())
     end
     table.sort(keys)
     return keys

@@ -7,6 +7,7 @@ local TextButton = require("ui.text-button")
 local ScrollView = require("ui.scroll-view")
 local lifetime = require("lifetime")
 local media = require("utils.media")
+local token_id = require("game.token.token-id")
 
 ---@class TokenPanelProperty
 ---@field key string Token data key
@@ -23,6 +24,8 @@ local media = require("utils.media")
 ---@field private _cancel_button TextButton|nil
 ---@field private _apply_button TextButton|nil Absent while the player may not write every selected token
 ---@field private _scroll_view ScrollView Holds the properties, above the buttons
+---@field private _id_title Text|nil Set while a token is selected
+---@field private _id_input TextInput|nil Set while a token is selected; read-only and multivalue while several are
 local TokenPanel = class("TokenPanel", Panel)
 
 ---@param game_screen GameScreen
@@ -37,6 +40,8 @@ function TokenPanel:init(game_screen, width, height)
     self._cancel_button = nil
     self._apply_button = nil
     self._scroll_view = ScrollView(self, width, height, true)
+    self._id_title = nil
+    self._id_input = nil
 end
 
 ---@param w number
@@ -84,6 +89,16 @@ function TokenPanel:_is_selection_writable()
 end
 
 ---@private
+---@return Token|nil The selected token when exactly one is
+function TokenPanel:_get_single_token()
+    local token = next(self._selection_set)
+    if token == nil or next(self._selection_set, token) ~= nil then
+        return nil
+    end
+    return token
+end
+
+---@private
 function TokenPanel:_update_property_keys()
     ---@type table<string, boolean>
     local unique_keys = {}
@@ -109,7 +124,7 @@ end
 ---@private
 ---@param read_only boolean
 function TokenPanel:_fill_in_properties(read_only)
-    local y = 0
+    local y = self:_create_id_field(read_only)
     for _, k in ipairs(self._keys) do
         if app.data.token_properties[k] then
             ---@type TokenPanelProperty
@@ -122,7 +137,7 @@ function TokenPanel:_fill_in_properties(read_only)
             }
 
             do
-                local title = self:_create_property_title(property)
+                local title = self:_create_field_title(property.def.title)
                 property.title = title
                 title:set_position(Consts.PADDING, y)
                 local _, h = title:get_size()
@@ -172,10 +187,41 @@ function TokenPanel:_fill_in_properties(read_only)
 end
 
 ---@private
----@param property TokenPanelProperty
+---@param read_only boolean
+---@return number The height of the field and the padding below it; `0` with no token selected
+function TokenPanel:_create_id_field(read_only)
+    if next(self._selection_set) == nil then
+        return 0
+    end
+    local title = self:_create_field_title("Id")
+    self._id_title = title
+    title:set_position(Consts.PADDING, 0)
+    local _, title_h = title:get_size()
+    local y = title_h * title:get_scale()
+
+    local panel_w = self:get_size()
+    local input = TextInput(self._scroll_view:get_content(), self._game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT, false, nil, function()
+        self:_apply()
+    end)
+    self._id_input = input
+    input:set_position(Consts.PADDING, y)
+    local token = self:_get_single_token()
+    if token then
+        input:set_read_only(read_only)
+        input:set_text(token:get_id())
+    else
+        input:set_read_only(true)
+        input:set_multivalue(true)
+    end
+    local _, input_h = input:get_size()
+    return y + input_h + Consts.PADDING
+end
+
+---@private
+---@param text string
 ---@return Text
-function TokenPanel:_create_property_title(property)
-    local title = Text(self._scroll_view:get_content(), property.def.title, Consts.FOREGROUND_COLOR)
+function TokenPanel:_create_field_title(text)
+    local title = Text(self._scroll_view:get_content(), text, Consts.FOREGROUND_COLOR)
     title:set_scale(Consts.PANEL_FIELD_SCALE)
     return title
 end
@@ -311,6 +357,16 @@ function TokenPanel:_release_properties()
     end
     self._properties = {}
 
+    if self._id_title then
+        lifetime.destroy(self._id_title)
+        self._id_title = nil
+    end
+
+    if self._id_input then
+        lifetime.destroy(self._id_input)
+        self._id_input = nil
+    end
+
     if self._cancel_button then
         lifetime.destroy(self._cancel_button)
         self._cancel_button = nil
@@ -323,7 +379,26 @@ function TokenPanel:_release_properties()
 end
 
 ---@private
+function TokenPanel:_apply_id()
+    local token, input = self:_get_single_token(), self._id_input
+    if not token or not input or input:is_read_only() then
+        return
+    end
+    local id = input:get_text()
+    if id == token:get_id() then
+        return
+    end
+    local reason = token_id.check(assert(app.data), id)
+    if reason then
+        app.notification_manager:notify(reason)
+        return
+    end
+    token:set_id(id)
+end
+
+---@private
 function TokenPanel:_apply()
+    self:_apply_id()
     for _, property in ipairs(self._properties) do
         if not property.input:is_multivalue_default() then
             local t = property.def.type
