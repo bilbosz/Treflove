@@ -135,9 +135,9 @@ test.case("a hidden workspace's list ignores the wheel, and the shown game page 
         test.assert_true(scrolled > 0, "the shown list scrolled")
 
         client.app.screen_manager:show(client.game_screen)
-        client.app.wheel_event:trigger(0, -1)
+        client.app.wheel_event:trigger(0, 1)
         ---@diagnostic disable-next-line: invisible
         test.assert_eq(list._scroll, scrolled, "the hidden list stays")
-        test.assert_true(background:get_scale() < scale, "the shown page zoomed out")
+        test.assert_true(background:get_scale() > scale, "the shown page zoomed in")
     end)
 end)

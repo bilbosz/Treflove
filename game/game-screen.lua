@@ -20,7 +20,7 @@ function GameScreen:init(data)
     Model.init(self, data)
     FormScreen.init(self)
 
-    self._page = Page(app.data.pages[data.page], self, app.width * 0.8, app.height)
+    self._page = Page(app.data.pages[data.page], self, app.width * 0.8, app.height - Consts.QUICK_ACCESS_PANEL_HEIGHT)
 
     self._token_panel = TokenPanel(self, app.width * 0.2, app.height)
     self._panel = self._token_panel

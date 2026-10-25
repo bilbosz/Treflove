@@ -338,6 +338,40 @@ test.case("a change of size keeps the view within the limits, and a fitted page 
     end
 end)
 
+test.case("the page draws its surroundings under the map, sized to the view", function()
+    local client = game_client.enter({
+        "read"
+    })
+    ---@type boolean, any
+    local ok, err = pcall(function()
+        local page = client.game_screen:get_page()
+        local children = page:get_children()
+        ---@diagnostic disable-next-line: invisible
+        local surroundings = page._surroundings
+        test.assert_eq(children[1], surroundings)
+        ---@diagnostic disable-next-line: invisible
+        test.assert_eq(children[2], page._background)
+        test.assert_deep_eq({
+            surroundings:get_size()
+        }, {
+            page:get_size()
+        })
+        page:draw()
+        page:set_size(1000, 700)
+        test.assert_deep_eq({
+            surroundings:get_size()
+        }, {
+            1000,
+            700
+        })
+        page:draw()
+    end)
+    game_client.finish(client)
+    if not ok then
+        error(err, 0)
+    end
+end)
+
 test.case("the view is fitted to a token of the page, no closer than the zoom-in limit, or to the page itself, within a padding", function()
     local client = game_client.enter({
         "read"

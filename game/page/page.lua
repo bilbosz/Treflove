@@ -1,4 +1,5 @@
 local Image = require("controls.image")
+local PageSurroundings = require("game.page.page-surroundings")
 local Control = require("controls.control")
 local Model = require("data.model")
 local ClippingRectangle = require("controls.clipping-rectangle")
@@ -17,6 +18,7 @@ local Consts = require("app.consts")
 ---@field data PageData
 ---@field get_data fun(self: Page): PageData
 ---@field private _background Image
+---@field private _surroundings PageSurroundings
 ---@field private _page_coordinates Control Coordinate system scaled to page meters
 ---@field private _name string
 ---@field private _pixel_per_meter number
@@ -31,7 +33,9 @@ local Page = class("Page", Model, ClippingRectangle)
 ---@private
 ---@param path string
 function Page:_create_background(path)
-    local bg = Image(self, path)
+    local bg = Image(nil, path)
+    self._surroundings = PageSurroundings(self, bg)
+    self:add_child(bg)
     self._background = bg
     local bg_w, bg_h = bg:get_size()
 
@@ -150,6 +154,7 @@ function Page:set_size(width, height)
     local old_w, old_h = self:get_size()
     local fitted = self:_is_zoomed_out()
     ClippingRectangle.set_size(self, width, height)
+    self._surroundings:set_size(width, height)
     if fitted and (width ~= old_w or height ~= old_h) then
         self:fit_page()
     else
