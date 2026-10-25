@@ -188,7 +188,7 @@ test.case("an image property shows its path read-only, with an Assets button; di
         local avatar = property_by_key(client, "avatar")
         test.assert_eq(assert(avatar.input):get_text(), "token/b.png")
         test.assert_true(avatar.input:is_read_only(), "chosen in the workspace, not typed")
-        test.assert_true(avatar.button ~= nil)
+        test.assert_eq(assert(avatar.button):get_text(), "Browse...")
         local _, input_y, _, input_h = avatar.input:get_position_and_size()
         local _, button_y = assert(avatar.button):get_position()
         test.assert_true(button_y >= input_y + input_h, "the button under the path")
@@ -199,5 +199,17 @@ test.case("an image property shows its path read-only, with an Assets button; di
         })
         avatar = property_by_key(client, "avatar")
         test.assert_true(assert(avatar.input):is_multivalue_default())
+    end)
+end)
+
+test.case("a read-only selection's image property only shows its asset", function()
+    with_client({
+        "read",
+        "write:tokens/@owned"
+    }, function(client)
+        game_client.select(client, {
+            "Smaug"
+        })
+        test.assert_eq(assert(property_by_key(client, "avatar").button):get_text(), "Show in assets...")
     end)
 end)

@@ -13,7 +13,7 @@ local media = require("utils.media")
 ---@field def TokenProperty Property definition from `token_properties`
 ---@field title Text|nil Set once the property is filled in
 ---@field input TextInput|NumberInput|nil Set once the property is filled in, a `NumberInput` for a `number` property, read-only for an `image` property
----@field button TextButton|nil For an `image` property: opens the assets workspace at the asset
+---@field button TextButton|nil For an `image` property: opens the assets workspace at the asset, to browse for another or, read-only, to show it
 
 ---@class TokenPanel: Panel
 ---@field private _game_screen GameScreen
@@ -155,7 +155,7 @@ function TokenPanel:_fill_in_properties(read_only)
             end
 
             if t == "image" then
-                local button = self:_create_assets_button(property)
+                local button = self:_create_assets_button(property, read_only and "Show in assets..." or "Browse...")
                 property.button = button
                 button:set_position(Consts.PADDING, y + Consts.PADDING * 0.5)
                 local _, h = button:get_size()
@@ -208,9 +208,10 @@ end
 
 ---@private
 ---@param property TokenPanelProperty
+---@param caption string
 ---@return TextButton
-function TokenPanel:_create_assets_button(property)
-    local button = TextButton(self._scroll_view:get_content(), self._game_screen, "Assets", function()
+function TokenPanel:_create_assets_button(property, caption)
+    local button = TextButton(self._scroll_view:get_content(), self._game_screen, caption, function()
         self:_open_assets(property.key)
     end)
     button:set_scale(Consts.PANEL_FIELD_SCALE)
