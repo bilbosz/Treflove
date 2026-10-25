@@ -420,6 +420,11 @@ function mocks.ensure_love_graphics()
                 setMipmapFilter = _no_op
             }
         end,
+        getSupported = function()
+            return {
+                glsl3 = true
+            }
+        end,
         newShader = function()
             return {
                 send = _no_op

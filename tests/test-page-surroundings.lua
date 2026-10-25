@@ -17,6 +17,7 @@ local PageSurroundings = require("game.page.page-surroundings")
 ---@field image love.Image The image every `newImage` returns
 ---@field quad love.Quad|nil The quad made
 ---@field shader love.Shader|nil The shader made
+---@field shader_source string|nil The source it was made from
 ---@field current_shader love.Shader|nil The shader set
 
 ---@return TestSurroundingsImage
@@ -78,8 +79,9 @@ local function make_shader(log)
     return shader
 end
 
+---@param glsl3 boolean What `getSupported` reports
 ---@return TestSurroundingsGraphicsLog
-local function install_graphics()
+local function install_graphics(glsl3)
     ---@type TestSurroundingsGraphicsLog
     local log = {
         calls = {},
@@ -105,7 +107,13 @@ local function install_graphics()
             log.quad = quad
             return quad
         end,
-        newShader = function()
+        getSupported = function()
+            return {
+                glsl3 = glsl3
+            }
+        end,
+        newShader = function(source)
+            log.shader_source = source
             local shader = make_shader(log)
             log.shader = shader
             return shader
@@ -146,12 +154,13 @@ end
 ---@field surroundings PageSurroundings
 
 ---A 400 x 300 page drawn at half a pixel per unit; the 100 x 50 texel map centered at (200, 150), half a unit per texel
+---@param glsl3 boolean|nil Whether `getSupported` reports GLSL 3; it does by default
 ---@return TestSurroundingsSetup
-local function setup()
+local function setup(glsl3)
     mocks.install_app()
     mocks.ensure_love_math()
     mocks.install_love_filesystem({})
-    local log = install_graphics()
+    local log = install_graphics(glsl3 ~= false)
     images.clear()
     local root = Control()
     root:set_scale(0.5)
@@ -239,8 +248,9 @@ test.case("sends the uniforms of the map's placement", function()
     mocks.restore_love_filesystem()
 end)
 
-test.case("sets its shader for its draw alone", function()
+test.case("sets its shader, which samples at an explicit level, for its draw alone", function()
     local s = setup()
+    test.assert_true(string.find(assert(s.log.shader_source), "textureLod", 1, true) ~= nil)
     s.surroundings:draw()
     test.assert_deep_eq(s.log.calls, {
         "setShader(shader)",
@@ -248,6 +258,16 @@ test.case("sets its shader for its draw alone", function()
         "setShader()"
     })
     test.assert_false(s.log.sent_unset, "the uniforms sent to the set shader")
+    mocks.restore_love_filesystem()
+end)
+
+test.case("without GLSL 3 makes no shader and draws nothing", function()
+    local s = setup(false)
+    test.assert_eq(s.log.shader, nil, "no shader made")
+    s.surroundings:draw()
+    test.assert_deep_eq(s.log.calls, {})
+    test.assert_eq(s.log.drawn, nil)
+    test.assert_deep_eq(s.log.viewport, {})
     mocks.restore_love_filesystem()
 end)
 
