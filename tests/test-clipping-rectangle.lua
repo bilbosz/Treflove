@@ -99,6 +99,23 @@ end
 
 test.suite("ClippingRectangle")
 
+test.case("a clip covers every pixel its box touches", function()
+    mocks.install_app()
+    mocks.ensure_love_math()
+    local draws = install_graphics()
+    local root = Control()
+    local clip = ClippingRectangle(root, 100, 100)
+    clip:set_position(10.3, 10.6)
+    Rectangle(clip, 500, 500)
+
+    root:draw()
+
+    test.assert_deep_eq(draws, {
+        "10,10,101,101"
+    })
+    lifetime.destroy(root)
+end)
+
 test.case("a nested clip is the intersection, and the enclosing clip is back for what follows it", function()
     mocks.install_app()
     mocks.ensure_love_math()

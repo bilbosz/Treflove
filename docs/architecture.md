@@ -157,10 +157,11 @@ LÖVE callbacks when it registers them.
 `Control` is the base of every UI element: parent-child relationships
 (`add_child`/`remove_child`), transforms (position, scale, rotation),
 axis-aligned bounding boxes for hit testing. `DrawableControl` adds
-rendering; the primitives are Rectangle, Circle, Text and Image;
-`ClippingRectangle` and `ClippingMask` clip their children to their box,
-nested clips intersect, and their bounds are the box, so what is clipped is
-neither drawn nor hit. Higher-level components (Panel, TextButton, Input,
+rendering; the primitives are Rectangle, Circle, Text and Image; a
+border-only `Rectangle` draws its line inside its box.
+`ClippingRectangle` and `ClippingMask` clip their children to their box
+(every pixel the box touches), nested clips intersect, and their bounds are
+the box, so what is clipped is neither drawn nor hit. Higher-level components (Panel, TextButton, Input,
 TextInput, NumberInput, ScrollView) build on them. `ScrollView` is a
 viewport over a content control larger than itself (`get_content`,
 `set_content_size`): the content is dragged with `SCROLL_VIEW_DRAG_BUTTON`,

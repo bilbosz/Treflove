@@ -52,6 +52,7 @@ local TEST_MODULES = {
     "tests.test-page",
     "tests.test-permissions",
     "tests.test-pointer-event",
+    "tests.test-rectangle",
     "tests.test-preview-area",
     "tests.test-rename-asset-rp",
     "tests.test-screen-manager",

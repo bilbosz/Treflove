@@ -13,7 +13,9 @@ end
 
 function ClippingRectangle:draw()
     local x, y, w, h = love.graphics.getScissor()
-    love.graphics.intersectScissor(self:get_global_aabb():get_position_and_size())
+    local min_x, min_y, max_x, max_y = self:get_global_aabb():get_bounds()
+    local left, top = math.floor(min_x), math.floor(min_y)
+    love.graphics.intersectScissor(left, top, math.ceil(max_x) - left, math.ceil(max_y) - top)
     Control.draw(self)
     love.graphics.setScissor(x, y, w, h)
 end

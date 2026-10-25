@@ -446,7 +446,10 @@ function mocks.ensure_love_graphics()
         intersectScissor = _no_op,
         stencil = _no_op,
         setStencilTest = _no_op,
-        setLineWidth = _no_op
+        setLineWidth = _no_op,
+        getLineWidth = function()
+            return 1
+        end
     }
 end
 

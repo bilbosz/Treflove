@@ -37,7 +37,13 @@ function Rectangle:draw()
     love.graphics.setColor(unpack(self._color))
     do
         love.graphics.replaceTransform(self.global_transform)
-        love.graphics.rectangle(self._mode, 0, 0, unpack(self.size))
+        local w, h = self:get_size()
+        if self._mode == "line" then
+            local inset = love.graphics.getLineWidth() * 0.5
+            love.graphics.rectangle("line", inset, inset, w - 2 * inset, h - 2 * inset)
+        else
+            love.graphics.rectangle("fill", 0, 0, w, h)
+        end
     end
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.pop()
