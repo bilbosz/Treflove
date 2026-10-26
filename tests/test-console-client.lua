@@ -324,19 +324,53 @@ test.case("takes the port and the chunk, the chunk from stdin without one or for
     })
 end)
 
-test.case("takes the host and follow before the port", function()
-    test.assert_deep_eq(console_cli.parse({
-        "--follow",
-        "--host",
-        "localhost",
-        "9391",
-        "log(true)"
-    }), {
+test.case("takes the host and follow anywhere: before the port, between the port and the chunk, after both", function()
+    ---@type ConsoleCliOptions
+    local expected = {
         host = "localhost",
         port = "9391",
         chunk = "log(true)",
         follow = true
-    })
+    }
+    for _, args in ipairs({
+        {
+            "--follow",
+            "--host",
+            "localhost",
+            "9391",
+            "log(true)"
+        },
+        {
+            "9391",
+            "--host",
+            "localhost",
+            "log(true)",
+            "--follow"
+        },
+        {
+            "9391",
+            "log(true)",
+            "--follow",
+            "--host",
+            "localhost"
+        }
+    }) do
+        test.assert_deep_eq(console_cli.parse(args), expected, table.concat(args, " "))
+    end
+end)
+
+test.case("takes watch before or after the port", function()
+    local before = assert(console_cli.parse({
+        "--watch",
+        "app:get_time()",
+        "9391"
+    }))
+    local after = assert(console_cli.parse({
+        "9391",
+        "--watch",
+        "app:get_time()"
+    }))
+    test.assert_deep_eq(after, before)
 end)
 
 test.case("watch sends a watch of the expression under its own text and follows", function()
@@ -380,6 +414,20 @@ test.case("refuses a missing or bad port, an unknown, repeated or valueless opti
         {
             "--verbose",
             "9391"
+        },
+        {
+            "9391",
+            "--host"
+        },
+        {
+            "9391",
+            "return 1",
+            "--watch"
+        },
+        {
+            "9391",
+            "--follow",
+            "--follow"
         },
         {
             "--follow",
