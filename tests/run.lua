@@ -66,6 +66,7 @@ local TEST_MODULES = {
     "tests.test-preview-video-area",
     "tests.test-rename-asset-rp",
     "tests.test-scenario-driver",
+    "tests.test-scenario-peer-run",
     "tests.test-scenario-runner",
     "tests.test-screen-manager",
     "tests.test-scroll-view",

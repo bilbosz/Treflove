@@ -1,17 +1,23 @@
 local Consts = require("app.consts")
 local ConsoleClient = require("utils.console-client")
+local ScenarioPeerRun = require("app.scenario-peer-run")
 local Text = require("controls.text")
 local TextInput = require("ui.text-input")
 local Utils = require("utils.utils")
 
 ---@class ScenarioDriver: Object
 ---@field public headless boolean The run has a fixed frame delta and no window on screen
----@field private _tcp ConsoleSocketFactory|nil What the server console's client connects with, LuaSocket's by default
+---@field private _tcp ConsoleSocketFactory|nil What the server's and the peers' console clients connect with, LuaSocket's by default
 ---@field private _server_console ConsoleClient|nil Connected by the first `server` call
+---@field private _peer_consoles table<string, ConsoleClient> By the peer's name, each connected by the first `client` call for its peer
 ---@field private _exit_code integer|nil What `quit` asked for
 local ScenarioDriver = class("ScenarioDriver")
 
-local DRIVER_SOURCE = debug.getinfo(1, "S").source
+---@type table<string, boolean>
+local DRIVER_SOURCES = {
+    [debug.getinfo(1, "S").source] = true,
+    [debug.getinfo(ScenarioPeerRun.wait, "S").source] = true
+}
 local UTF8_CHARACTER = "[%z\1-\127\194-\244][\128-\191]*"
 
 ---@param message string
@@ -19,7 +25,7 @@ local function _fail_at_caller(message)
     local level = 2
     while true do
         local info = debug.getinfo(level, "S")
-        if not info or info.source ~= DRIVER_SOURCE then
+        if not info or not DRIVER_SOURCES[info.source] then
             break
         end
         level = level + 1
@@ -63,18 +69,25 @@ local function _has_text(ctrl, text)
     return _has_descendant_text(ctrl, text)
 end
 
----@param tcp ConsoleSocketFactory|nil What `server` connects with, LuaSocket's `socket.tcp` by default
+---@param tcp ConsoleSocketFactory|nil What `server` and `client` connect with, LuaSocket's `socket.tcp` by default
 function ScenarioDriver:init(tcp)
     self.headless = app.params.headless
     self._tcp = tcp
     self._server_console = nil
+    self._peer_consoles = {}
     self._exit_code = nil
 end
 
 ---@param reason lifetime.Reason
 function ScenarioDriver:release(reason)
-    if self._server_console and reason ~= "unreachable" and reason ~= "exit" then
+    if reason == "unreachable" or reason == "exit" then
+        return
+    end
+    if self._server_console then
         self._server_console:close()
+    end
+    for _, console in pairs(self._peer_consoles) do
+        console:close()
     end
 end
 
@@ -248,6 +261,34 @@ function ScenarioDriver:server(chunk)
         _fail_at_caller("the server console raised: " .. body)
     end
     return body
+end
+
+---@return string[] The names of the peers the command line gave, sorted
+function ScenarioDriver:peers()
+    ---@type string[]
+    local names = {}
+    for name in pairs(app.params.peers or {}) do
+        table.insert(names, name)
+    end
+    table.sort(names)
+    return names
+end
+
+---@param name string One of `peers()`
+---@param chunk string Scenario code the peer runs with `driver` and `steps` in scope
+---@return ScenarioPeerRun
+function ScenarioDriver:client(name, chunk)
+    assert_type(chunk, "string")
+    local port = app.params.peers and app.params.peers[name]
+    if not port then
+        _fail_at_caller("no peer " .. name)
+    end
+    local console = self._peer_consoles[name]
+    if not console then
+        console = ConsoleClient(assert(port), nil, self._tcp)
+        self._peer_consoles[name] = console
+    end
+    return ScenarioPeerRun(self, name, console, console:request_async(string.format("run(%q)", chunk)))
 end
 
 ---@param name string A file name in the save directory, its extension the image format
