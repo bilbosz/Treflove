@@ -93,6 +93,11 @@ The console port is the other way into the live program: any Lua between
 two frames, watches, a real pause, screenshots, from a shell and without
 VS Code; see [scenarios-and-console.md](scenarios-and-console.md) and, for
 Claude, the `live-console` skill (`.claude/skills/live-console/SKILL.md`).
+Two more skills under `.claude/skills/` carry the practice of the
+scenarios: `scenario-authoring` (writing, running and reading one, the
+fixture, a script that computes a player's auth) and `headless-smoke`
+(a headless check of a change in the real program, with scripts that
+start and stop an offscreen client and server pair on ports of their own).
 
 ## Development Commands
 

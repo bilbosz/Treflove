@@ -5,8 +5,10 @@ scenario drives the client through its UI from a Lua file, headless or in
 a window; the headless run gives the client a real OpenGL window that is
 not on screen; the console is a localhost port that runs Lua inside the
 live program, watches values and pauses the loop. They share the command
-line and the project's own main loop. The practice, for Claude, is the
-`live-console` skill (`.claude/skills/live-console/SKILL.md`).
+line and the project's own main loop. The practice, for Claude, is in
+three skills under `.claude/skills/`: `scenario-authoring` (writing and
+running scenarios, the fixture), `live-console` (the console and the
+monitor) and `headless-smoke` (a headless check of a change).
 
 ## The command line
 
