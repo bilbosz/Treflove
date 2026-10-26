@@ -5,6 +5,7 @@ local MainLoop = require("app.main-loop")
 local Control = require("controls.control")
 local Event = require("events.event")
 local Logger = require("utils.logger")
+local ScenarioRunner = require("app.scenario-runner")
 
 ---@class TestMainLoop: MainLoop
 ---@field calls string[] Every pause, resume and step, in order
@@ -219,6 +220,35 @@ local function eval(side, stream, chunk)
     stream.buffer = stream.buffer .. frame("eval", chunk)
     service(side)
     return take_frames(stream)
+end
+
+---@param side TestConsoleSide
+---@return ScenarioRunner
+local function make_runner(side)
+    mocks.ensure_love_math()
+    side.app.params = {
+        app_type = "client",
+        address = "localhost",
+        port = "8080",
+        headless = true
+    }
+    local runner = ScenarioRunner()
+    side.app.scenario_runner = runner
+    return runner
+end
+
+---@param side TestConsoleSide
+---@param n integer
+local function updates(side, n)
+    for _ = 1, n do
+        side.app.update_event:trigger(1 / 60)
+    end
+end
+
+---@param chunk string
+---@return string An eval chunk running `chunk` as a peer
+local function run_chunk(chunk)
+    return string.format("run(%q)", chunk)
 end
 
 test.suite("Console")
@@ -675,4 +705,143 @@ test.case("with a window the watches show on the overlay", function()
     test.assert_deep_eq(overlay:get_lines(), {
         "v: y"
     })
+end)
+
+test.case("run replies once its run passes, with the chunk's return values serialized as an eval's, and never quits", function()
+    local side = make_console()
+    local runner = make_runner(side)
+    local stream = connect(side)
+    test.assert_deep_eq(eval(side, stream, run_chunk("driver:frames(2) return 1, {a = 2}, steps.LOGIN, driver.headless")), {})
+    test.assert_true(runner:is_running())
+    updates(side, 2)
+    service(side)
+    test.assert_deep_eq(take_frames(stream), {}, "the run is waiting its frames")
+    updates(side, 1)
+    test.assert_false(runner:is_running())
+    service(side)
+    test.assert_deep_eq(take_frames(stream), {
+        {
+            "ok",
+            "1\t{\n    a = 2,\n}\tadam\ttrue"
+        }
+    })
+    test.assert_eq(assert(runner:get_result()).name, "peer")
+    test.assert_deep_eq(side.quits, {}, "a headless run started by the console leaves the program running")
+end)
+
+test.case("a failing run replies error with the message and the traceback of the run", function()
+    local side = make_console()
+    make_runner(side)
+    local stream = connect(side)
+    eval(side, stream, run_chunk("driver:frames(1)\ndriver:expect(false, 'nope')"))
+    updates(side, 2)
+    service(side)
+    local frames = take_frames(stream)
+    test.assert_eq(#frames, 1)
+    test.assert_eq(frames[1][1], "error")
+    test.assert_eq(string.find(frames[1][2], "peer:2: nope\nstack traceback:\n", 1, true), 1, frames[1][2])
+end)
+
+test.case("no frame is taken from a client while its run is pending; the next eval is answered after the run's reply", function()
+    local side = make_console()
+    make_runner(side)
+    local stream = connect(side)
+    ---@type string[]
+    local marks = {}
+    side.console:add_function("mark", function(name)
+        table.insert(marks, name)
+    end)
+    local other = connect(side)
+    stream.buffer = frame("eval", run_chunk("driver:frames(1) return 'ran'")) .. frame("eval", "mark('after') return 'next'")
+    service(side)
+    test.assert_deep_eq(eval(side, other, "mark('other') return 'other'"), {
+        {
+            "ok",
+            "other"
+        }
+    }, "another client is answered meanwhile")
+    test.assert_deep_eq(marks, {
+        "other"
+    })
+    test.assert_deep_eq(take_frames(stream), {})
+    updates(side, 2)
+    test.assert_deep_eq(marks, {
+        "other"
+    }, "the eval waits in the buffer")
+    service(side)
+    test.assert_deep_eq(take_frames(stream), {
+        {
+            "ok",
+            "ran"
+        },
+        {
+            "ok",
+            "next"
+        }
+    })
+    test.assert_deep_eq(marks, {
+        "other",
+        "after"
+    })
+end)
+
+test.case("run raises while the runner is busy, on a compile error and without a runner", function()
+    local side = make_console()
+    local runner = make_runner(side)
+    local a, b = connect(side), connect(side)
+    eval(side, a, run_chunk("driver:frames(1)"))
+    local frames = eval(side, b, run_chunk("return 1"))
+    test.assert_eq(frames[1][1], "error")
+    test.assert_true(string.find(frames[1][2], "a scenario is running", 1, true), frames[1][2])
+    updates(side, 2)
+    service(side)
+    test.assert_deep_eq(take_frames(a), {
+        {
+            "ok",
+            ""
+        }
+    }, "the busy runner's run replies as it would")
+    frames = eval(side, b, run_chunk("return return"))
+    test.assert_eq(frames[1][1], "error")
+    test.assert_eq(string.find(frames[1][2], "peer:1: "), 1, frames[1][2])
+    test.assert_false(runner:is_running())
+    side.app.scenario_runner = nil
+    frames = eval(side, b, run_chunk("return 1"))
+    test.assert_eq(frames[1][1], "error")
+    test.assert_true(string.find(frames[1][2], "run needs a scenario runner", 1, true), frames[1][2])
+end)
+
+test.case("a chunk that raises after its run started replies its error alone; the run goes on silently", function()
+    local side = make_console()
+    local runner = make_runner(side)
+    local stream = connect(side)
+    local frames = eval(side, stream, run_chunk("driver:frames(1) return 'ran'") .. " error('after')")
+    test.assert_eq(#frames, 1)
+    test.assert_eq(frames[1][1], "error")
+    test.assert_true(runner:is_running())
+    test.assert_deep_eq(eval(side, stream, "return 2"), {
+        {
+            "ok",
+            "2"
+        }
+    })
+    updates(side, 2)
+    test.assert_true(assert(runner:get_result()).ok)
+    service(side)
+    test.assert_deep_eq(take_frames(stream), {})
+end)
+
+test.case("a client that closes while its run is pending drops the reply; the run goes on", function()
+    local side = make_console()
+    local runner = make_runner(side)
+    local stream = connect(side)
+    eval(side, stream, run_chunk("driver:frames(2) return 'ran'"))
+    stream.peer_closed = true
+    service(side)
+    test.assert_true(stream.closed)
+    test.assert_true(runner:is_running())
+    updates(side, 3)
+    test.assert_true(assert(runner:get_result()).ok)
+    service(side)
+    test.assert_eq(stream.sent, "")
 end)
