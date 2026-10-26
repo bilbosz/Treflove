@@ -10,6 +10,7 @@ Options:
     --identity <name>        the LÖVE save directory identity
     --fixture <path>         server only: a directory of the source tree that seeds the server root at load
     --headless               fixed frame delta, no sleep, no vsync
+    --peers <name>:<port>,.. client only: the console ports of the peer clients a scenario drives
 ]],
     APP_SUCCESS_EXIT_CODE = 0,
     NETWORK_COMPRESSION = "lz4",
