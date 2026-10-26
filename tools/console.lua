@@ -16,10 +16,10 @@ local console_cli = {}
 
 console_cli.USAGE = [[
 Usage:
-    luajit tools/console.lua [options] <port> [chunk]
+    luajit tools/console.lua <port> [chunk] [options]
 Sends the Lua chunk (stdin until its end without one, or for "-") to the
 console port and prints its results; a failure goes to stderr.
-Options:
+Options, anywhere among the arguments:
     --host <host>    the console's host, 127.0.0.1 by default
     --follow         after the reply, print every watch and log frame until the connection closes
     --watch <expr>   watch the expression under its own text and follow
@@ -47,26 +47,38 @@ end
 function console_cli.parse(args)
     ---@type string|nil, string|nil, boolean
     local host, watch, follow = nil, nil, false
+    ---@type string[]
+    local positional = {}
     local i = 1
-    while args[i] and string.sub(args[i], 1, 2) == "--" do
-        local option, value = args[i], args[i + 1]
-        if option == "--follow" and not follow then
+    while args[i] do
+        local argument, value = args[i], args[i + 1]
+        if argument == "--follow" then
+            if follow then
+                return nil
+            end
             follow = true
             i = i + 1
-        elseif option == "--host" and not host and value then
+        elseif argument == "--host" then
+            if host or not value then
+                return nil
+            end
             host = value
             i = i + 2
-        elseif option == "--watch" and not watch and value then
+        elseif argument == "--watch" then
+            if watch or not value then
+                return nil
+            end
             watch = value
             i = i + 2
         else
-            return nil
+            table.insert(positional, argument)
+            i = i + 1
         end
     end
     ---@type string|nil, string|nil
-    local port, chunk = args[i], args[i + 1]
+    local port, chunk = positional[1], positional[2]
     local number = tonumber(port)
-    if not port or not string.match(port, "^%d+$") or not number or number < 1 or number > 65535 or args[i + 2] then
+    if not port or not string.match(port, "^%d+$") or not number or number < 1 or number > 65535 or positional[3] then
         return nil
     end
     if watch then
