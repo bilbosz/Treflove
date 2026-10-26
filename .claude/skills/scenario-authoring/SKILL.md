@@ -10,7 +10,10 @@ file: the client is driven through its real UI by the same LÖVE events a
 hand would cause, headless in under a second or in a window the user
 watches. The design is `docs/scenarios-and-console.md`; this skill is the
 practice. The full driver API is `references/driver-api.md`; read it
-before writing a scenario that does more than the examples here.
+before writing a scenario that does more than the examples here. The
+sibling skills: `headless-smoke` for a check of the real program without
+writing a scenario, `live-console` for a program already running,
+`debug-live` for breakpoints.
 
 ## The shape
 
@@ -68,15 +71,19 @@ script starts one extra client per peer (see "Several clients").
   the menu screen), `join_game` (returns the game screen), `log_out`,
   `open_assets_workspace`, `server_sessions`; a step used by two
   scenarios goes there, named for what it reaches. The folder is skipped
-  by `./format-code.sh` like `tests/lib/`, so run `lua-format -i` on it
-  by hand; a single file is checked with `./lint-code.sh <file>` and
-  `./diagnose-code.sh <file>`.
+  by `./format-code.sh`, which skips every path containing `lib/` and
+  rewrites the whole project, so one file is formatted with `lua-format
+  -i <file>` and checked with `lua-format --check <file>`,
+  `./lint-code.sh <file>` and `./diagnose-code.sh <file>` (`{}` when
+  clean).
 - **List it.** A new scenario is named in `docs/scenarios-and-console.md`
   next to the others, with what it covers in a few words.
 - **Ask the server with `driver:server(chunk)`**: the chunk runs on the
   server's console; several return values come back tab-joined as one
   string, a table serialized. Compare strings, or `string.match` the
-  tab-separated fields.
+  tab-separated fields. A scenario that proves a login or a change also
+  asks the server (`steps.server_sessions`, the data), since the client's
+  screen alone does not show what the server holds.
 - The pointer release is `release_button`, since `release` is every
   object's destructor on this branch.
 
@@ -123,17 +130,22 @@ and add the player to `players` as `{name = ..., auth = ..., group =
 ...}`, with `permissions = {...}` for grants of its own (`PlayerData` in
 `game/game-data-rp.lua`, the grants in `docs/permissions.md`); a new
 token goes into `tokens` and into its page's `tokens` list; a new image
-into `assets/`. Every run reseeds the server root from the fixture, so a
+into `assets/`. A fixture change is written into the fixture paragraphs
+of `docs/scenarios-and-console.md` and of `references/driver-api.md`. Every run reseeds the server root from the fixture, so a
 scenario never depends on a previous run; the client's cache (`c/` under
 the run's identity) stays, which is harmless.
 
 ## Running and reading a failure
 
 ```bash
-./scenario.sh <name>                                   # headless; exit 0 or 1; the client log printed
-./scenario.sh <name> --port 8282 --console 9290 --server-console 9291 --identity mine   # beside other runs
+./scenario.sh <name>                                   # headless, nothing on screen, the server included; the client log printed
+./scenario.sh <name> --port 8282 --console 9270 --server-console 9271 --identity mine   # beside other runs; peers on 9280, 9281, ...
 ./scenario.sh <name> --windowed                        # only when the user asked to watch
 ```
+
+Exit codes: 0 passed, 1 failed, 2 a usage error or a console port in
+use, 124 the client killed by the timeout. The log's time column is the
+wall clock, so headless steps lie milliseconds apart, not frames.
 
 The script starts the server, the peers and the client, and stops the
 server and the peers by PID when it exits, so a run leaves nothing to
@@ -174,3 +186,6 @@ runs it under the debugger with breakpoints in the scenario file
   `string.format("%q")` when it carries a value.
 - The scenario given on the command line quits a headless client at its
   end; one started through the console leaves it running.
+- Escape on the user menu logs out (it is the logged-in period's back
+  entry): one Escape too many in a menu scenario lands on the login
+  screen.

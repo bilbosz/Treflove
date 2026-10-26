@@ -15,17 +15,26 @@ the pair scripts here for the boilerplate of starting and stopping.
 ## The run
 
 ```bash
+cd <repository root>                                    # the paths below are relative to it; the working directory may reset between calls
 pgrep -a -x love                                        # what runs before you start: the user's own instance stays as it is
-S=.claude/skills/headless-smoke/scripts                 # from the repository root
+S=.claude/skills/headless-smoke/scripts
 $S/start-pair.sh check                                  # a server and an offscreen client, consoles 9191 and 9190
+read -r port server_console client_console < /tmp/treflove-smoke/check/ports   # the ports, when you passed others
+luajit tools/console.lua 9190 'return app.params.identity'                     # smoke-check-client: the right program answers
 luajit tools/console.lua 9190 'run([[ steps.log_in(driver) ]])'   # drive to a state through the real UI; replies when done
 luajit tools/console.lua 9190 'scenario("join-game")'   # a whole scenario on the live client; poll is_running (below)
 luajit tools/console.lua 9190 'app.session:login("adam", "krause")'   # or Lua that skips the UI
 luajit tools/console.lua 9190 'return get_class_name_of(app.screen_manager:get_screen())'
-luajit tools/console.lua 9190 'return require("utils.utils").dump_controls(app.root)'    # the screen as text
-luajit tools/console.lua 9190 'return screenshot("check.png")'                           # the path; Read it
+luajit tools/console.lua 9190 'return require("utils.utils").dump_controls(app.root)'    # the screen as a tree, with captions
+luajit tools/console.lua 9190 < $S/list-inputs.lua      # the clickable controls with caption and position, top to bottom
+shot=$(luajit tools/console.lua 9190 'return screenshot("check.png")'); until [ -s "$shot" ]; do luajit -e "require('socket').sleep(0.2)"; done   # Read it
 $S/stop-pair.sh check                                   # by PID; prints the log tails
 ```
+
+A `run` chunk logs `scenario peer: started` and `scenario peer: passed` in
+the client log, peer or not. `Utils.get_caption(ctrl)` gives a control's
+words in a chunk of your own; `list-inputs.lua` answers "which buttons,
+in what order" without one.
 
 `start-pair.sh <tag>` refuses a console port that is in use and a tag
 that is still running; `--port`, `--server-console`, `--client-console`
@@ -55,14 +64,16 @@ what it shows; the control dump is the screen as a tree, every control
 with its flags and its caption, when pixels are not the question. When
 done, copy what the user should see into the scratchpad or name its path,
 then remove the pair's leftovers: `~/.local/share/love/smoke-<tag>-*` and
-`/tmp/treflove-smoke/<tag>/`. Compare `pgrep -a -x love` with the start:
+`/tmp/treflove-smoke/<tag>/`, your tag only, since other `smoke-*`
+entries may be another session's. Compare `pgrep -a -x love` with the start:
 the user's processes must still be there, and if they are not, say so
 rather than restart them, which would open windows.
 
 ## Before and after
 
-For a change whose effect is visual, take the same screenshot on
-`master` first: a detached worktree of the committed tree
+A check of what the program does today needs no comparison. For a
+change whose effect is visual, take the same screenshot on `master`
+first: a detached worktree of the committed tree
 (`git worktree add --detach /tmp/treflove-wt/before master`, submodules
 cloned from the checkout) started with `start-pair.sh before --port 8291
 --server-console 9291 --client-console 9290` from that worktree, the same
