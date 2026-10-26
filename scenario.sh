@@ -6,11 +6,11 @@
 #          client more for every peer the scenario names
 # Usage: ./scenario.sh <name> [--windowed] [--port <udp port>]
 #        [--console <port>] [--server-console <port>] [--fixture <dir>]
-#        [--timeout <seconds>]
+#        [--timeout <seconds>] [--identity <name>]
 #==============================================================================
 
 usage() {
-    echo "Usage: $0 <name> [--windowed] [--port <udp port>] [--console <port>] [--server-console <port>] [--fixture <dir>] [--timeout <seconds>]" >&2
+    echo "Usage: $0 <name> [--windowed] [--port <udp port>] [--console <port>] [--server-console <port>] [--fixture <dir>] [--timeout <seconds>] [--identity <name>]" >&2
     exit 2
 }
 
@@ -23,6 +23,7 @@ console=9090
 server_console=9091
 fixture="scenarios/fixtures/basic"
 timeout_seconds=120
+identity=treflove-scenario
 while [ $# -gt 0 ]; do
     case "$1" in
         --windowed) windowed=1; shift ;;
@@ -31,6 +32,7 @@ while [ $# -gt 0 ]; do
         --server-console) [ $# -ge 2 ] || usage; server_console="$2"; shift 2 ;;
         --fixture) [ $# -ge 2 ] || usage; fixture="$2"; shift 2 ;;
         --timeout) [ $# -ge 2 ] || usage; timeout_seconds="$2"; shift 2 ;;
+        --identity) [ $# -ge 2 ] || usage; identity="$2"; shift 2 ;;
         *) usage ;;
     esac
 done
@@ -86,7 +88,12 @@ for i in "${!peer_names[@]}"; do
     refuse_console_in_use $((console + 10 + i))
 done
 
-log_dir="/tmp/treflove-scenario/$name"
+# Runs with an identity of their own (several at once) keep their save directories and logs apart
+if [ "$identity" = treflove-scenario ]; then
+    log_dir="/tmp/treflove-scenario/$name"
+else
+    log_dir="/tmp/treflove-scenario/$identity/$name"
+fi
 mkdir -p "$log_dir"
 server_log="$log_dir/server.log"
 client_log="$log_dir/client.log"
@@ -105,7 +112,7 @@ stop_all() {
 }
 trap stop_all EXIT
 
-love . server localhost "$port" --identity treflove-scenario --fixture "$fixture" --console "$server_console" > "$server_log" 2>&1 &
+love . server localhost "$port" --identity "$identity" --fixture "$fixture" --console "$server_console" > "$server_log" 2>&1 &
 server_pid=$!
 
 peer_consoles=()
@@ -113,7 +120,7 @@ for i in "${!peer_names[@]}"; do
     peer="${peer_names[$i]}"
     peer_console=$((console + 10 + i))
     peer_log="$log_dir/$peer.log"
-    peer_args=(. client localhost "$port" --identity "treflove-scenario-$peer" --console "$peer_console" --server-console "$server_console")
+    peer_args=(. client localhost "$port" --identity "$identity-$peer" --console "$peer_console" --server-console "$server_console")
     if [ "$windowed" -eq 1 ]; then
         love "${peer_args[@]}" > "$peer_log" 2>&1 &
     else
@@ -131,7 +138,7 @@ for i in "${!peer_names[@]}"; do
     peer_option+=("${peer_names[$i]}:${peer_consoles[$i]}")
 done
 
-client_args=(. client localhost "$port" --identity treflove-scenario --scenario "$name" --console "$console" --server-console "$server_console")
+client_args=(. client localhost "$port" --identity "$identity" --scenario "$name" --console "$console" --server-console "$server_console")
 if [ ${#peer_option[@]} -gt 0 ]; then
     client_args+=(--peers "$(IFS=,; echo "${peer_option[*]}")")
 fi

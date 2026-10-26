@@ -36,8 +36,8 @@ number comes back as its string.
 
 The shared steps (`scenarios/lib/steps.lua`): `log_in(driver, login?,
 password?)` (waits for the login screen, fills both fields, "Sign In",
-waits for the menu), `join_game(driver, login?, password?)` (then "Join
-Game", waits for the game screen, returns it), `log_out(driver)` (Escape
+waits for the menu, returns it), `join_game(driver, login?, password?)`
+(then "Join Game", waits for the game screen, returns it), `log_out(driver)` (Escape
 to the menu, "Log Out", waits for the login screen),
 `open_assets_workspace(driver)` ("Assets", waits for the listing),
 `server_sessions(driver)` (the server's connection count and its

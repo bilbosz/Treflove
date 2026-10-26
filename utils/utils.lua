@@ -28,6 +28,23 @@ function Utils.draw_aabbs(ctrl)
 end
 
 ---@param ctrl Control
+---@return string|nil The words a text, a field or a button shows, so a dump reads with them
+function Utils.get_caption(ctrl)
+    -- Required here, not at the top: the controls require this module
+    local Text = require("controls.text")
+    local TextButton = require("ui.text-button")
+    local TextInput = require("ui.text-input")
+    if is_instance_of(ctrl, Text) then
+        return (ctrl --[[@as Text]] ):get_text()
+    elseif is_instance_of(ctrl, TextButton) then
+        return (ctrl --[[@as TextButton]] ):get_text()
+    elseif is_instance_of(ctrl, TextInput) then
+        return (ctrl --[[@as TextInput]] ):get_text()
+    end
+    return nil
+end
+
+---@param ctrl Control
 ---@param indent string|nil
 ---@return string
 function Utils.dump_controls(ctrl, indent)
@@ -38,7 +55,12 @@ function Utils.dump_controls(ctrl, indent)
     table.insert(dump, ctrl:is_enabled() and "e" or " ")
     table.insert(dump, ctrl:is_visible() and "v" or " ")
     table.insert(dump, ctrl:are_all_predecessors_enabled() and "a" or " ")
-    table.insert(dump, "]\n")
+    table.insert(dump, "]")
+    local text = Utils.get_caption(ctrl)
+    if text then
+        table.insert(dump, string.format(" %q", text))
+    end
+    table.insert(dump, "\n")
     for _, child in ipairs(ctrl:get_children()) do
         table.insert(dump, Utils.dump_controls(child, indent .. "|   "))
     end

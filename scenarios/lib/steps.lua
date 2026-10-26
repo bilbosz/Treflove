@@ -24,6 +24,7 @@ local SERVER_SESSIONS = [[
 ---@param driver ScenarioDriver
 ---@param login string|nil Defaults to `steps.LOGIN`
 ---@param password string|nil Defaults to `steps.PASSWORD`
+---@return UserMenuScreen
 function steps.log_in(driver, login, password)
     driver:wait_screen("LoginScreen")
     driver:click("TextInput", nil, 1)
@@ -31,8 +32,9 @@ function steps.log_in(driver, login, password)
     driver:click("TextInput", nil, 2)
     driver:type(password or steps.PASSWORD)
     driver:click("TextButton", "Sign In")
-    driver:wait_screen("UserMenuScreen")
+    local screen = driver:wait_screen("UserMenuScreen") --[[@as UserMenuScreen]]
     driver:log("logged in")
+    return screen
 end
 
 ---@param driver ScenarioDriver

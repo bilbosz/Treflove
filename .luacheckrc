@@ -65,6 +65,8 @@ std = {
 
 exclude_files = {
     "doc/**",
+    -- the skills' tooling, LÖVE games of their own with a love.conf each
+    ".claude/**",
     -- lua-lifetime, a git submodule with a luacheck setup of its own
     "lib/**",
     -- third-party type annotation packages (see annotations/CLAUDE.md)

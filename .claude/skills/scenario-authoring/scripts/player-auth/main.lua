@@ -10,9 +10,13 @@ local root = love.filesystem.getSource():gsub("/%.claude/skills/scenario%-author
 package.path = root .. "/?.lua;" .. root .. "/lib/lua-lifetime/?.lua;" .. root .. "/lib/lua-lifetime/?/init.lua;" .. package.path
 require("app.globals")
 local Utils = require("utils.utils")
-app = { is_server = false }
+app = {
+    is_server = false
+}
 local client_auth = Utils.hash(login .. string.char(0) .. Utils.generate_salt(32) .. string.char(0) .. password)
-app = { is_server = true }
+app = {
+    is_server = true
+}
 local server_auth = Utils.hash(login .. string.char(0) .. Utils.generate_salt(32) .. string.char(0) .. client_auth)
 print(server_auth)
 io.stdout:flush()

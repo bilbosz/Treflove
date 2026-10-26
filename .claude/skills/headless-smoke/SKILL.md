@@ -15,10 +15,12 @@ the pair scripts here for the boilerplate of starting and stopping.
 ## The run
 
 ```bash
-S=.claude/skills/headless-smoke/scripts
+pgrep -a -x love                                        # what runs before you start: the user's own instance stays as it is
+S=.claude/skills/headless-smoke/scripts                 # from the repository root
 $S/start-pair.sh check                                  # a server and an offscreen client, consoles 9191 and 9190
-luajit tools/console.lua 9190 'scenario("join-game")'   # drive to the state: a scenario on the live client...
-luajit tools/console.lua 9190 'app.session:login("adam", "krause")'   # ...or Lua, step by step
+luajit tools/console.lua 9190 'run([[ steps.log_in(driver) ]])'   # drive to a state through the real UI; replies when done
+luajit tools/console.lua 9190 'scenario("join-game")'   # a whole scenario on the live client; poll is_running (below)
+luajit tools/console.lua 9190 'app.session:login("adam", "krause")'   # or Lua that skips the UI
 luajit tools/console.lua 9190 'return get_class_name_of(app.screen_manager:get_screen())'
 luajit tools/console.lua 9190 'return require("utils.utils").dump_controls(app.root)'    # the screen as text
 luajit tools/console.lua 9190 'return screenshot("check.png")'                           # the path; Read it
@@ -27,11 +29,17 @@ $S/stop-pair.sh check                                   # by PID; prints the log
 
 `start-pair.sh <tag>` refuses a console port that is in use and a tag
 that is still running; `--port`, `--server-console`, `--client-console`
-pick others, `--scenario <name>` starts the client with a scenario,
+pick others (the UDP game port is not checked: `ss -ulnp | grep :<port>`
+first), `--scenario <name>` starts the client with a scenario,
 `--fixture <dir>` another fixture, `--windowed` a window on the user's
 screen (only when they asked). The identities are `smoke-<tag>-server`
 and `smoke-<tag>-client`, so the user's own save directory is never
-touched; the logs are under `/tmp/treflove-smoke/<tag>/`.
+touched; the logs are under `/tmp/treflove-smoke/<tag>/`. The offscreen
+window is 800 by 600, the size of every screenshot. A `run` chunk is the
+way to a mid-flow state: it goes through the real UI with the shared
+steps and `driver` in scope, and its reply comes when it has finished, so
+nothing has to be polled; `scenario(name)` runs a whole file and returns
+at once.
 
 Wait for a state with a short loop over a console question, never with a
 fixed sleep, and never with `sleep` itself, which the harness blocks:
@@ -43,8 +51,13 @@ for i in $(seq 20); do [ "$(luajit tools/console.lua 9190 'return app.scenario_r
 A screenshot is taken at the end of the frame the chunk runs in: ask for
 it after the state is reached, and read the file once the reply names it
 (headless frames are fast). Read the screenshot with the Read tool and say
-what it shows; the control dump is the screen as a tree when pixels are
-not the question.
+what it shows; the control dump is the screen as a tree, every control
+with its flags and its caption, when pixels are not the question. When
+done, copy what the user should see into the scratchpad or name its path,
+then remove the pair's leftovers: `~/.local/share/love/smoke-<tag>-*` and
+`/tmp/treflove-smoke/<tag>/`. Compare `pgrep -a -x love` with the start:
+the user's processes must still be there, and if they are not, say so
+rather than restart them, which would open windows.
 
 ## Before and after
 

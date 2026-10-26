@@ -15,6 +15,7 @@ before writing a scenario that does more than the examples here.
 ## The shape
 
 ```lua
+local Consts = require("app.consts")
 local steps = require("scenarios.lib.steps")
 
 ---@param driver ScenarioDriver
@@ -23,7 +24,7 @@ return function(driver)
     driver:click("TextButton", "Assets")                 -- a control by class and caption
     driver:wait_screen("AssetsWorkspaceScreen")
     driver:expect(driver:try_find("AssetListRow", "token/"), "the store's token folder is listed")
-    driver:key("escape")
+    driver:key(Consts.BACKSTACK_KEY)                     -- Escape: the back key, as the steps write it
     driver:wait_screen("GameScreen")
 end
 ```
@@ -38,11 +39,14 @@ script starts one extra client per peer (see "Several clients").
 - **Find, never aim.** `find(class_name, caption, index)` walks the
   shown controls in draw order and matches the class name exactly and
   the caption against the control's own text (a `Text` or a `TextInput`)
-  or a descendant `Text`. A button is `("TextButton", "Sign In")`; a
-  text field has no caption of its own, so the login fields are
-  `("TextInput", nil, 1)` and `("TextInput", nil, 2)`; a token is
-  `("Token", "Bilbo Baggins")`, a workspace row `("AssetListRow",
-  "token/")`. Coordinates break with the layout; names do not.
+  or a descendant `Text`. A button is `("TextButton", "Sign In")`, on
+  the menus too (their entries, `MenuTextButton` and `MenuTextInput`, are
+  not controls: they build a `TextButton` or a `TextInput`); a text field
+  has no caption of its own, so the login fields are `("TextInput", nil,
+  1)` and `("TextInput", nil, 2)`; a token is `("Token", "Bilbo
+  Baggins")`, a workspace row `("AssetListRow", "token/")`. Coordinates
+  break with the layout; names do not. When unsure what a screen holds,
+  the control dump names every control with its caption.
 - **Wait on state, never on time.** `wait_screen("GameScreen")` and
   `wait_for(function() return ... end, timeout, "what")` yield frames
   until the condition holds and time out on the wall clock (10 s by
@@ -60,11 +64,15 @@ script starts one extra client per peer (see "Several clients").
   to be delivered.
 - **Expect with the value in the message**: `driver:expect(n == 2, "two
   tokens on the page: " .. n)`, so the failure log says what was found.
-- **Share the steps.** `scenarios/lib/steps.lua` holds `log_in`,
-  `join_game`, `log_out`, `open_assets_workspace`, `server_sessions`; a
-  step used by two scenarios goes there, named for what it reaches. The
-  folder is skipped by `./format-code.sh` like `tests/lib/`, so run
-  `lua-format -i` on it by hand.
+- **Share the steps.** `scenarios/lib/steps.lua` holds `log_in` (returns
+  the menu screen), `join_game` (returns the game screen), `log_out`,
+  `open_assets_workspace`, `server_sessions`; a step used by two
+  scenarios goes there, named for what it reaches. The folder is skipped
+  by `./format-code.sh` like `tests/lib/`, so run `lua-format -i` on it
+  by hand; a single file is checked with `./lint-code.sh <file>` and
+  `./diagnose-code.sh <file>`.
+- **List it.** A new scenario is named in `docs/scenarios-and-console.md`
+  next to the others, with what it covers in a few words.
 - **Ask the server with `driver:server(chunk)`**: the chunk runs on the
   server's console; several return values come back tab-joined as one
   string, a table serialized. Compare strings, or `string.match` the
@@ -111,30 +119,41 @@ under LÖVE:
 .claude/skills/scenario-authoring/scripts/player-auth.sh gandalf mellon
 ```
 
-and add the player to `players` with its `group`; a new token goes into
-`tokens` and into its page's `tokens` list; a new image into `assets/`.
-Every run reseeds the server root from the fixture, so a scenario never
-depends on a previous run; the client's cache (`c/` under
-`treflove-scenario`) stays, which is harmless.
+and add the player to `players` as `{name = ..., auth = ..., group =
+...}`, with `permissions = {...}` for grants of its own (`PlayerData` in
+`game/game-data-rp.lua`, the grants in `docs/permissions.md`); a new
+token goes into `tokens` and into its page's `tokens` list; a new image
+into `assets/`. Every run reseeds the server root from the fixture, so a
+scenario never depends on a previous run; the client's cache (`c/` under
+the run's identity) stays, which is harmless.
 
 ## Running and reading a failure
 
 ```bash
-./scenario.sh <name>                                   # headless; exit 0 or 1; both logs printed
-./scenario.sh <name> --port 8282 --console 9290 --server-console 9291   # when the defaults are in use
+./scenario.sh <name>                                   # headless; exit 0 or 1; the client log printed
+./scenario.sh <name> --port 8282 --console 9290 --server-console 9291 --identity mine   # beside other runs
 ./scenario.sh <name> --windowed                        # only when the user asked to watch
 ```
 
-The script refuses to start when one of its console ports is in use,
-because `run.sh`'s client and server listen on the same defaults and the
-scenario's server calls would reach the user's server: pass ports of your
-own then, and never kill the user's processes. A failure logs
+The script starts the server, the peers and the client, and stops the
+server and the peers by PID when it exits, so a run leaves nothing to
+kill. The logs are `/tmp/treflove-scenario/<name>/client.log`,
+`server.log` and `<peer>.log` (under `/tmp/treflove-scenario/<identity>/`
+with `--identity`); only the client's is printed. The script refuses to
+start when one of its console ports is in use, because `run.sh`'s client
+and server listen on the same defaults and the scenario's server calls
+would reach the user's server: pass ports of your own then (the peers
+take `console + 10 + i`, so leave room; the UDP game port is not checked,
+`ss -ulnp` shows it), and never kill the user's processes. Two runs at
+once need identities of their own (`--identity`), since a run reseeds its
+server's save directory at startup. A failure logs
 `scenario <name>: failed: scenarios/<name>.lua:<line>: <message>`, the
 traceback and the control dump (`Utils.dump_controls`): the screen as a
 tree of class names with `e` enabled, `v` visible, `a` all predecessors
-enabled. Read the dump before a screenshot: a `find` that failed names
-what it looked for, and the dump shows what was there instead (the
-screen still loading, a button disabled, a caption that differs).
+enabled, and the caption of every text, field and button. Read the dump
+before a screenshot: a `find` that failed names what it looked for, and
+the dump shows what was there instead (the screen still loading, a
+button disabled, a caption that differs).
 
 To stop at the failure state: run the scenario on a live client through
 its console, `luajit tools/console.lua 9090 'scenario("<name>")'`, which
