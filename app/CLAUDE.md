@@ -89,8 +89,8 @@ A module (not a class) with one `parse` function. It validates the app type
 (`localhost` or an IPv4) and the port (1024 to 65535, kept as a string), and
 returns a typed result table, or `nil` for invalid input, in which case the
 usage message is shown. The options after the port (`--scenario`,
-`--console`, `--server-console`, `--identity`, `--fixture`, `--headless`)
-are a table of name, parser and side; one on the wrong side, unknown,
+`--console`, `--server-console`, `--identity`, `--fixture`, `--headless`,
+`--peers`) are a table of name, parser and side; one on the wrong side, unknown,
 repeated, or without its value makes the whole line invalid.
 
 ## Constants

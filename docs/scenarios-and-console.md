@@ -20,6 +20,8 @@ love . <client|server> <address> <port> [options]
   --fixture <path>         server only: a directory of the source tree whose
                            content seeds the server root at load
   --headless               fixed frame delta, no sleep, no vsync
+  --peers <name>:<port>,.. client only: the console ports of the peer clients a
+                           scenario drives
 ```
 
 An option on the wrong side, an unknown option, a missing value (a value
@@ -118,6 +120,48 @@ the launch configurations), `assets-workspace` (the workspace from the
 game, its listing against the server's store, back) and `logout` (out and
 in again).
 
+### Several clients
+
+A scenario that drives other clients returns a table instead of a
+function: `peers` names them, `run` is the scenario. The script starts one
+client per peer, with its own save directory identity and a console port,
+and hands their ports to the lead with `--peers`. The lead sends a peer a
+chunk of scenario code with `driver:client(name, chunk)`; the peer runs it
+as a scenario of its own, with `driver` and `steps` in scope, through the
+console verb `run`, whose reply comes only when the chunk's coroutine has
+finished. The call returns a handle at once, so the lead goes on; its
+`wait` yields frames until the peer is done and raises with the peer's name
+when the peer's run failed. A chunk that only returns a value is a run that
+ends at once, so one primitive serves both steps and questions.
+
+```lua
+local steps = require("scenarios.lib.steps")
+
+return {
+    peers = {"bob"},
+    ---@param driver ScenarioDriver
+    run = function(driver)
+        local bob = driver:client("bob", [[
+            steps.log_in(driver, "piotr", "secret")
+            driver:click("TextButton", "Join Game")
+            driver:wait_screen("GameScreen")
+        ]])
+        steps.join_game(driver)
+        bob:wait()
+        local seen = driver:client("bob", [[ return driver:try_find("Token", "Smaug") ~= nil ]]):wait()
+        driver:expect(seen == "false", "bob reads only the tokens he owns")
+    end
+}
+```
+
+What the server can show across clients today, and the scenarios that
+show it: `two-players` (each player's game filtered by their grants, two
+logged-in sessions on the server), `shared-store` (a folder made by one
+client listed by the other) and `peer-logout` (one peer out, the other
+still in the game). Seeing each other's moves waits for game state
+synchronization (`TODO.md`, milestone 2), whose acceptance test these
+scenarios will be.
+
 ### The fixture
 
 `--fixture <path>` names a directory of the source tree mirroring the
@@ -125,7 +169,9 @@ server root: `scenarios/fixtures/basic/save.lua` and its `assets/`. At
 load the server empties its root in the save directory and copies the
 fixture in (`data/fixture.lua`), so every run starts from the same state.
 The basic fixture: the player `adam` (password `krause`) in the master
-group, one page with a small image, two tokens with small avatars.
+group, the player `piotr` (password `secret`) in a player group that
+reads the tokens he owns only, one page with a small image, two tokens
+with small avatars, Bilbo owned by piotr.
 
 ### Running one
 
@@ -166,6 +212,7 @@ chunk runs under an environment over `_G` that carries:
 | `screenshot(name)` | the absolute path; the file exists once the frame is drawn |
 | `log(enabled)` | the app's log lines streamed as `log` frames |
 | `scenario(name)` | client only: runs a scenario on the live program, which stays afterwards |
+| `run(chunk)` | client only: runs the chunk as a scenario with `driver` and `steps` in scope; the reply comes when it has finished, `ok` with its return values or `error` with the traceback; no other frame of that connection is read meanwhile |
 | `quit(exit_code)` | |
 
 The command line client:

@@ -169,6 +169,10 @@ port drives the live program ([docs/scenarios-and-console.md](docs/scenarios-and
   and the fixture, so a bug reproduced by hand becomes a scenario
 - The suite's own click helpers (the lifetimes suite, the game client
   harness) could use the scenario driver's `find` and `click`
+- Multi-client scenarios drive peers from a lead client; a conductor
+  outside every client (a `luajit` script over the console ports) would
+  serve symmetric cases, and milestone 2 gets its acceptance scenarios
+  (one client moves a token, the other sees it) once changes propagate
 - A windowed client started from a shell on this machine presents at one
   frame per second (adaptive vsync under XWayland, `love.window.getVSync()`
   reports -1; `vblank_mode=0` gives hundreds), on `master` as well, so a

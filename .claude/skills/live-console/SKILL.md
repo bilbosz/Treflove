@@ -25,6 +25,12 @@ failure logs `scenario <name>: failed: <error>` with the traceback and the
 control dump (`Utils.dump_controls`), which is the screen as text; read
 it before reaching for a screenshot.
 
+A multi-client scenario (`two-players`, `shared-store`, `peer-logout`)
+returns a table with `peers`; the script starts the peers itself, and the
+lead drives them with `driver:client(name, chunk)` and `:wait()`; a peer's
+failure comes back with its name, and each peer has its own log next to
+the client's.
+
 To write one: copy the closest file under `scenarios/`, keep the shared
 steps from `scenarios/lib/steps.lua`, find controls by class and caption
 (`driver:click("TextButton", "Join Game")`), never by coordinates, wait
