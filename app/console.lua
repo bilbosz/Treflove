@@ -24,6 +24,8 @@ local WatchOverlay = require("ui.watch-overlay")
 ---@class ConsoleWatch
 ---@field fn fun(): ...: any
 ---@field value string|nil What the last evaluation serialized to, `nil` before the first
+---@field frame integer The main loop's frame of that evaluation
+---@field time number The app time of that evaluation
 
 ---@class ConsoleResults
 ---@field n integer
@@ -215,7 +217,9 @@ function Console:_watch(name, fn)
     end
     self._watches[name] = {
         fn = fn,
-        value = nil
+        value = nil,
+        frame = 0,
+        time = 0
     }
 end
 
@@ -353,7 +357,8 @@ function Console:_accept()
             return
         end
         stream:settimeout(0)
-        table.insert(self._peers, {
+        ---@type ConsolePeer
+        local peer = {
             socket = stream,
             input = "",
             kind = nil,
@@ -362,8 +367,29 @@ function Console:_accept()
             logging = false,
             closed = false,
             run = nil
-        })
+        }
+        table.insert(self._peers, peer)
+        self:_send_watches(peer)
     end
+end
+
+---@private
+---@param peer ConsolePeer
+function Console:_send_watches(peer)
+    for _, name in ipairs(self._watch_names) do
+        local watch = self._watches[name]
+        if watch and watch.value then
+            self:_queue(peer, "watch", self:_watch_body(name, watch))
+        end
+    end
+end
+
+---@private
+---@param name string
+---@param watch ConsoleWatch
+---@return string
+function Console:_watch_body(name, watch)
+    return string.format("%s\t%d\t%.3f\t%s", name, watch.frame, watch.time, watch.value)
 end
 
 ---@private
@@ -470,9 +496,9 @@ function Console:_evaluate_watches()
             local results = _pack(pcall(watch.fn))
             local value = results[1] and _serialize(results, 2) or _serialize_value(results[2])
             if value ~= watch.value then
-                watch.value = value
+                watch.value, watch.frame, watch.time = value, app.main_loop:get_frame(), app:get_time()
                 self._overlay_stale = true
-                local body = string.format("%s\t%d\t%.3f\t%s", name, app.main_loop:get_frame(), app:get_time(), value)
+                local body = self:_watch_body(name, watch)
                 for _, peer in ipairs(self._peers) do
                     self:_queue(peer, "watch", body)
                 end

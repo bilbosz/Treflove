@@ -495,6 +495,53 @@ test.case("a watch's name is a non-empty string without a tab or a line break", 
     end
 end)
 
+test.case("a client that connects later gets every evaluated watch at its first service, with its last value, frame and time", function()
+    local side = make_console()
+    local hp = 10
+    side.console:add_function("hp", function()
+        return hp
+    end)
+    local first = connect(side)
+    side.loop.frame = 3
+    side.app:advance_time(0.25)
+    eval(side, first, "watch('hp', hp) watch('b', function() return 'x' end)")
+    hp = 9
+    side.loop.frame = 4
+    service(side)
+    take_frames(first)
+    side.loop.frame = 9
+    side.app:advance_time(1)
+    local late = connect(side)
+    service(side)
+    test.assert_deep_eq(take_frames(late), {
+        {
+            "watch",
+            "b\t3\t0.250\tx"
+        },
+        {
+            "watch",
+            "hp\t4\t0.250\t9"
+        }
+    })
+    test.assert_deep_eq(take_frames(first), {}, "the others hear nothing again")
+    service(side)
+    test.assert_deep_eq(take_frames(late), {}, "once")
+end)
+
+test.case("a watch not evaluated yet when a client connects reaches it once, at its first evaluation", function()
+    local side = make_console()
+    local first = connect(side)
+    service(side)
+    local late = connect(side)
+    eval(side, first, "watch('w', function() return 1 end)")
+    test.assert_deep_eq(take_frames(late), {
+        {
+            "watch",
+            "w\t0\t0.000\t1"
+        }
+    })
+end)
+
 test.case("pause, frames and resume reach the main loop; frames pauses only a running loop", function()
     local side = make_console()
     local stream = connect(side)
