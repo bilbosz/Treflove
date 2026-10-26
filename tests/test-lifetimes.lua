@@ -157,7 +157,9 @@ local function make_client()
     end)
     ---@diagnostic disable-next-line: invisible
     client.connection_manager._on_connect = function(connection)
-        client.session = Session(connection):attach_lifetime(connection)
+        local session = Session(connection):attach_lifetime(connection)
+        client.session = session
+        session:show_login()
     end
     ---@diagnostic disable-next-line: invisible
     client.connection_manager._on_disconnect = function()
@@ -314,7 +316,7 @@ end
 ---@field previous_filesystem love.filesystem|nil
 
 ---@param adjust_data (fun(data: GameData))|nil Changes the server's data before anyone connects
----@return TestFlow flow Connected: the auto-login sent and not answered yet
+---@return TestFlow flow Connected: the login screen shown, no login sent
 local function connect_the_sides(adjust_data)
     destroy_errors = {}
     mocks.ensure_love_data()
@@ -331,6 +333,8 @@ local function connect_the_sides(adjust_data)
     local client_connection, server_connection = connect(client, server)
     test.assert_eq(get_class_name_of(client.session), "Session")
     test.assert_false(client.session:is_logged_in())
+    test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "LoginScreen")
+    test.assert_eq(client_connection:get_out_channel():getCount(), 0, "no login before the user signs in")
     return {
         client = client,
         server = server,
@@ -344,6 +348,8 @@ end
 ---@param flow TestFlow
 local function log_in(flow)
     local client, server = flow.client, flow.server
+    app = client
+    client.session:login("adam", "krause")
     frame(server)
     frame(client)
     test.assert_true(client.session:is_logged_in())

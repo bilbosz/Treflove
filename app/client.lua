@@ -49,7 +49,9 @@ function Client:load()
     local connecting_screen = ConnectingScreen()
     self.screen_manager:show(connecting_screen)
     self.connection_manager:start(function(connection)
-        self.session = Session(connection):attach_lifetime(connection)
+        local session = Session(connection):attach_lifetime(connection)
+        self.session = session
+        session:show_login()
     end, function()
         self.screen_manager:show(connecting_screen)
         self.session = nil

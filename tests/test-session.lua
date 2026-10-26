@@ -90,7 +90,9 @@ test.case("a client session owns its login, the game data procedure and the asse
     test.assert_eq(get_class_name_of(login_dependents[2]), "LogoutRp")
     ---@diagnostic disable-next-line: invisible
     test.assert_eq(app_mock.asset_manager._upload_asset_rp[session], dependents[3])
-    test.assert_eq(connection:get_out_channel():getCount(), 1, "the auto-login request was sent")
+    test.assert_eq(connection:get_out_channel():getCount(), 0, "no login before one is asked for")
+    session:login("adam", "krause")
+    test.assert_eq(connection:get_out_channel():getCount(), 1, "the login request was sent")
     lifetime.destroy(connection)
 end)
 

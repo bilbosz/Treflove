@@ -19,7 +19,7 @@ local permissions = require("game.permissions")
 ---@field _game_screen GameScreen|nil The game screen, while the user is in the game (client only)
 ---@field _assets_workspace_screen AssetsWorkspaceScreen|nil The assets workspace, while it is open (client only)
 ---@field _assets_workspace_return Screen|nil The screen the workspace was opened from, shown again when it closes
----@field _login_screen LoginScreen|nil The login screen a logout shows, until the next login (client only)
+---@field _login_screen LoginScreen|nil The login screen, from `show_login` (at the connect, at a logout) to the next login (client only)
 ---@field _period lifetime.Token|nil The "logged in" span (client only): the menu screen, the game screen and their back entries die with it
 local Session = class("Session")
 
@@ -59,8 +59,7 @@ local function _on_logout(self)
         self._game_screen = nil
         self._assets_workspace_screen = nil
         self._assets_workspace_return = nil
-        self._login_screen = LoginScreen(self._login):attach_lifetime(self)
-        app.screen_manager:show(self._login_screen)
+        self:show_login()
     end
 end
 
@@ -86,10 +85,6 @@ function Session:init(connection)
     self._login = login
     self._game_data_rp = GameDataRp(self):attach_lifetime(self)
     app.asset_manager:register_session(self)
-
-    if app.is_client then
-        login:login("adam", "krause")
-    end
 end
 
 ---@return string|nil
@@ -120,6 +115,14 @@ end
 ---@return Connection
 function Session:get_connection()
     return self._connection
+end
+
+function Session:show_login()
+    assert(app.is_client and not self._user)
+    if not self._login_screen then
+        self._login_screen = LoginScreen(self._login):attach_lifetime(self)
+    end
+    app.screen_manager:show(self._login_screen)
 end
 
 ---@param user string

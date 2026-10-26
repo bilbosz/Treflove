@@ -198,7 +198,9 @@ function game_client.enter(grants)
     client.connection_manager = ConnectionManager("localhost", "8080")
     ---@diagnostic disable-next-line: invisible
     client.connection_manager._on_connect = function(connection)
-        client.session = Session(connection):attach_lifetime(connection)
+        local session = Session(connection):attach_lifetime(connection)
+        client.session = session
+        session:show_login()
     end
     ---@diagnostic disable-next-line: invisible
     client.connection_manager._on_disconnect = function()
@@ -208,6 +210,8 @@ function game_client.enter(grants)
     client.connection_manager:add_connection(mocks.make_channel(), mocks.make_channel())
     local session = assert(client.session)
     local connection = session:get_connection()
+    session:login("piotr", "")
+    _pop_request(connection, "LoginRp")
     _answer_login(client, "piotr")
     assert(session:is_logged_in(), "the login answer logged the session in")
     _pop_request(connection, "GameDataRp")
