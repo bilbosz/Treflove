@@ -74,7 +74,8 @@ local function setup(headless)
         address = "localhost",
         port = "8080",
         server_console = "9191",
-        headless = headless
+        headless = headless,
+        follow = false
     }
     app_mock.root = Control()
     app_mock.screen_manager = ScreenManager()

@@ -197,6 +197,7 @@ local function setup(server_console, tcp, peers)
         port = "8080",
         server_console = server_console,
         headless = true,
+        follow = false,
         peers = peers
     }
     app_mock.main_loop = main_loop

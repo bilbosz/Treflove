@@ -10,11 +10,12 @@ local Consts = require("app.consts")
 local Utils = require("utils.utils")
 
 local arg_parser = require("app.arg-parser")
+local ConsoleSession = require("utils.console-session")
 
 local params = arg_parser.parse(arg)
 if not params then
     io.write(Consts.APP_USAGE_MESSAGE)
-    love.event.quit(Consts.APP_SUCCESS_EXIT_CODE)
+    love.event.quit(arg[2] == "console" and ConsoleSession.EXIT_FAILURE or Consts.APP_SUCCESS_EXIT_CODE)
 elseif params.app_type == "client" then
     xpcall(function()
         require("app.client")(params)
@@ -23,6 +24,8 @@ elseif params.app_type == "server" then
     require("app.server")(params)
 elseif params.app_type == "console" then
     require("app.console-app")(params):install()
+elseif params.app_type == "monitor" then
+    require("app.monitor")(params)
 else
     assert_unreachable()
 end

@@ -81,7 +81,8 @@ local function setup()
         app_type = "client",
         address = "localhost",
         port = "8080",
-        headless = true
+        headless = true,
+        follow = false
     }
     local socket = make_socket()
     local driver = ScenarioDriver()

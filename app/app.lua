@@ -93,7 +93,7 @@ function App:register_love_callbacks()
     if debug then
         ---@param msg string
         function love.errorhandler(msg)
-            print(string.format("%s error: \"%s\"", app.is_client and "Client" or "Server", msg))
+            print(string.format("%s error: \"%s\"", get_class_name_of(self), msg))
             print(Utils.get_stack_trace(2))
             debugger.pause()
         end
@@ -104,7 +104,7 @@ function App:register_love_callbacks()
     end
 
     function love.quit()
-        self.connection_manager:remove_all()
+        self:on_quit()
         lifetime.set_exiting(true)
     end
 
@@ -127,6 +127,12 @@ function App:_draw_overlay()
         overlay:draw()
         love.graphics.reset()
     end
+end
+
+---Ends what must end while LÖVE's objects are still usable: the connections, in order
+---@protected
+function App:on_quit()
+    self.connection_manager:remove_all()
 end
 
 ---@return number The sum of the frame deltas so far, with what the main loop skipped

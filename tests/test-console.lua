@@ -230,7 +230,8 @@ local function make_runner(side)
         app_type = "client",
         address = "localhost",
         port = "8080",
-        headless = true
+        headless = true,
+        follow = false
     }
     local runner = ScenarioRunner()
     side.app.scenario_runner = runner

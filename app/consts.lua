@@ -3,14 +3,23 @@ local Consts = {
     APP_USAGE_MESSAGE = [[
 Usage:
     love . <client|server> <address> <port> [options]
+    love . console <address> <port> [chunk] [--follow] [--watch <expr>]
+    love . monitor <address> <name>:<port>[,<name>:<port>...] [--console <port>] [--headless]
 Options:
     --scenario <name>        client only: run scenarios/<name>.lua at start
-    --console <port>         the console port on 127.0.0.1
+    --console <port>         client, server and monitor: the console port on 127.0.0.1
     --server-console <port>  client only: the server's console port, for the scenario's server calls
-    --identity <name>        the LÖVE save directory identity
+    --identity <name>        client and server: the LÖVE save directory identity
     --fixture <path>         server only: a directory of the source tree that seeds the server root at load
-    --headless               fixed frame delta, no sleep, no vsync
+    --headless               client, server and monitor: fixed frame delta, no sleep, no vsync
     --peers <name>:<port>,.. client only: the console ports of the peer clients a scenario drives
+Console:
+    chunk                    the Lua chunk to evaluate on the console at <address>:<port>; stdin until its end without one, or for "-"
+    --follow                 after the reply, print every watch and log frame until the connection closes
+    --watch <expr>           watch the expression under its own text and follow; no chunk with it
+    exit code                0 for a result, 1 for an error, 2 for a usage or connection failure or an interrupt (Ctrl-C)
+Monitor:
+    <name>:<port>,..         the console ports at <address> to watch, each under its name
 ]],
     APP_SUCCESS_EXIT_CODE = 0,
     NETWORK_COMPRESSION = "lz4",

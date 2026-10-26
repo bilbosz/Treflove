@@ -176,9 +176,10 @@ The suite has no external dependencies:
   `restore_love_filesystem()` (an in-memory file system over a table).
 - A pure-Lua `utf8` shim is preloaded under plain LuaJIT (LÖVE bundles the
   real one).
-- The main loop, the console, the console client, the scenario driver and
-  the runner are tested under fakes of their own: a `love.event` queue and
-  timer, LuaSocket stand-ins, a fake main loop.
+- The main loop, the console, the console client and session, the
+  console command, the monitor, the scenario driver and the runner are
+  tested under fakes of their own: a `love.event` queue and timer, the
+  LuaSocket stand-in of `tests/lib/console-socket.lua`, a fake main loop.
 
 Conventions: pure calculation modules (AABB, the table utilities, the class
 system, the tree, the argument parser) are tested with plain asserts; modules with

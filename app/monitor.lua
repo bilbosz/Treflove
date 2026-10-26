@@ -54,14 +54,9 @@ function Monitor:on_update(dt)
 end
 
 ---@protected
-function Monitor:register_love_callbacks()
-    UiApp.register_love_callbacks(self)
-    ---@diagnostic disable-next-line: duplicate-set-field
-    function love.quit()
-        for _, target in ipairs(self._targets) do
-            lifetime.destroy(target)
-        end
-        lifetime.set_exiting(true)
+function Monitor:on_quit()
+    for _, target in ipairs(self._targets) do
+        lifetime.destroy(target)
     end
 end
 

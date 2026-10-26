@@ -56,6 +56,8 @@ local TEST_MODULES = {
     "tests.test-main-loop",
     "tests.test-media",
     "tests.test-media-player",
+    "tests.test-monitor-screen",
+    "tests.test-monitor-target",
     "tests.test-ogg",
     "tests.test-page",
     "tests.test-page-surroundings",
