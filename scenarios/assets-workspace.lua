@@ -4,11 +4,7 @@ local steps = require("scenarios.lib.steps")
 ---@param driver ScenarioDriver
 return function(driver)
     steps.join_game(driver)
-    driver:click("TextButton", "Assets")
-    driver:wait_screen("AssetsWorkspaceScreen")
-    driver:wait_for(function()
-        return driver:try_find("AssetListRow", "token/")
-    end, nil, "the listing")
+    steps.open_assets_workspace(driver)
     driver:find("AssetListRow", "world/")
     local store = driver:server([[
         local Asset = require("data.asset")
