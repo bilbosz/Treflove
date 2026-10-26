@@ -298,6 +298,130 @@ test.case("close closes the socket once", function()
     test.assert_false(client:poll())
 end)
 
+test.case("two async requests in flight are completed in order by poll, the frames between them handled", function()
+    local fake = make_socket()
+    local client = connect(fake)
+    ---@type string[]
+    local handled = {}
+    client:set_frame_handler(function(kind, body)
+        table.insert(handled, kind .. " " .. body)
+    end)
+    local first = client:request_async("return 1")
+    local second = client:request_async("error('two')")
+    test.assert_eq(fake.sent, "eval 8\nreturn 1eval 12\nerror('two')")
+    test.assert_false(first:is_done())
+    test.assert_error(function()
+        first:get_result()
+    end, "no reply yet")
+    test.assert_true(client:poll())
+    test.assert_false(first:is_done(), "nothing arrived")
+    fake.arriving = {
+        frame("ok", "1") .. frame("log", "between") .. "error 3\nt"
+    }
+    test.assert_true(client:poll())
+    test.assert_true(first:is_done())
+    test.assert_false(second:is_done(), "its reply is not whole")
+    test.assert_deep_eq({
+        first:get_result()
+    }, {
+        true,
+        "1"
+    })
+    fake.arriving = {
+        "wo"
+    }
+    client:poll()
+    test.assert_true(second:is_done())
+    test.assert_deep_eq({
+        second:get_result()
+    }, {
+        false,
+        "two"
+    })
+    test.assert_deep_eq(handled, {
+        "log between"
+    })
+end)
+
+test.case("a request waits behind the async requests sent before it, its reply the one after theirs", function()
+    local fake = make_socket()
+    local client = connect(fake)
+    local async = client:request_async("return 'a'")
+    fake.arriving = {
+        frame("ok", "a"),
+        frame("ok", "b")
+    }
+    local ok, body = client:request("return 'b'")
+    test.assert_true(ok)
+    test.assert_eq(body, "b")
+    test.assert_true(async:is_done())
+    test.assert_deep_eq({
+        async:get_result()
+    }, {
+        true,
+        "a"
+    })
+end)
+
+test.case("the late reply of a request that timed out completes it, not the next request", function()
+    local fake = make_socket()
+    local client = connect(fake)
+    test.assert_error(function()
+        client:request("return 'late'", 0.01)
+    end)
+    fake.arriving = {
+        frame("ok", "late"),
+        frame("ok", "next")
+    }
+    local _, body = client:request("return 'next'")
+    test.assert_eq(body, "next")
+end)
+
+test.case("a closed connection fails every pending request, and an ok or error frame without one goes to the frame handler", function()
+    local fake = make_socket()
+    local client = connect(fake)
+    ---@type string[]
+    local handled = {}
+    client:set_frame_handler(function(kind, body)
+        table.insert(handled, kind .. " " .. body)
+    end)
+    fake.arriving = {
+        frame("ok", "stray")
+    }
+    client:poll()
+    test.assert_deep_eq(handled, {
+        "ok stray"
+    })
+    local first = client:request_async("return 1")
+    local second = client:request_async("return 2")
+    fake.peer_closed = true
+    test.assert_false(client:poll())
+    test.assert_true(fake.closed)
+    for _, request in ipairs({
+        first,
+        second
+    }) do
+        test.assert_true(request:is_done())
+        local ok, err = pcall(request.get_result, request)
+        test.assert_false(ok)
+        test.assert_eq(err, "the console connection closed")
+    end
+    test.assert_error(function()
+        client:request_async("return 3")
+    end, "a request on a closed connection")
+end)
+
+test.case("close fails the pending requests", function()
+    local fake = make_socket()
+    local client = connect(fake)
+    local request = client:request_async("return 1")
+    client:close()
+    test.assert_true(request:is_done())
+    test.assert_error(function()
+        request:get_result()
+    end)
+end)
+
 test.suite("console CLI")
 
 test.case("takes the port and the chunk, the chunk from stdin without one or for -", function()
