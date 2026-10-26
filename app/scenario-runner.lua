@@ -16,6 +16,7 @@ local lifetime = require("lifetime")
 ---@field private _driver ScenarioDriver|nil The running scenario's
 ---@field private _tcp ConsoleSocketFactory|nil Given to every driver
 ---@field private _result ScenarioResult|nil The last run's
+---@field private _quit_at_end boolean The running scenario's run ends the program when headless
 local ScenarioRunner = class("ScenarioRunner")
 
 ---@param name string
@@ -44,16 +45,19 @@ function ScenarioRunner:init(tcp)
     self._driver = nil
     self._tcp = tcp
     self._result = nil
+    self._quit_at_end = false
     app.update_event:register(self, self.on_update)
 end
 
 ---@param name string A file under `Consts.SCENARIO_DIRECTORY`, without its extension
-function ScenarioRunner:start(name)
+---@param quit_at_end boolean|nil When headless, the end of the run quits with its outcome's exit code: the command line's scenario, not one started on a live program
+function ScenarioRunner:start(name, quit_at_end)
     assert_type(name, "string")
     assert(not self:is_running(), "a scenario is running")
     local driver = ScenarioDriver(self._tcp):attach_lifetime(self)
     self._name = name
     self._driver = driver
+    self._quit_at_end = quit_at_end == true
     self._coroutine = coroutine.create(function()
         _load(name)(driver)
     end)
@@ -107,11 +111,13 @@ function ScenarioRunner:_finish(driver, result, report)
     self._coroutine = nil
     self._driver = nil
     self._result = result
+    local quit = self._quit_at_end and app.params.headless
+    self._quit_at_end = false
     app:log(report)
     io.stdout:flush()
     local exit_code = driver:get_exit_code()
     lifetime.destroy(driver)
-    if app.params.headless then
+    if quit then
         app:quit(result.ok and (exit_code or Consts.APP_SUCCESS_EXIT_CODE) or Consts.SCENARIO_FAILURE_EXIT_CODE)
     end
 end

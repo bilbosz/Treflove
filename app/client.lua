@@ -66,7 +66,7 @@ function Client:load()
         local runner = ScenarioRunner()
         self.scenario_runner = runner
         if self.params.scenario then
-            runner:start(self.params.scenario)
+            runner:start(self.params.scenario, true)
         end
         if self.console then
             ---@param name string
