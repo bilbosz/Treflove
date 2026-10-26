@@ -103,6 +103,8 @@ Options:
         0,
         0.6
     },
+    MONITOR_RECONNECT_SECONDS = 2,
+    MONITOR_LOG_LINES = 500,
     NOTIFICATION_DURATION = 2,
     NOTIFICATION_COLOR = {
         0.97,
