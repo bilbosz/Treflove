@@ -375,15 +375,13 @@ local function log_in(flow)
     test.assert_deep_eq(notifications.messages, {
         "Successfully logged in as adam"
     })
-    test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "WaitingScreen")
+    test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "UserMenuScreen", "a login lands on the menu")
 end
 
----@return TestFlow
-local function enter_the_game()
-    local flow = connect_the_sides()
+---@param flow TestFlow The game data requested
+local function load_the_game(flow)
     local client, server = flow.client, flow.server
-    log_in(flow)
-
+    test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "WaitingScreen")
     frame(server)
     frame(client)
     test.assert_eq(client.data.game.page, "P")
@@ -392,6 +390,15 @@ local function enter_the_game()
     frame(server)
     frame(client)
     test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "GameScreen")
+end
+
+---@return TestFlow
+local function enter_the_game()
+    local flow = connect_the_sides()
+    log_in(flow)
+    app = flow.client
+    flow.client.session:join_game()
+    load_the_game(flow)
     return flow
 end
 
@@ -459,7 +466,7 @@ flow_case("connect and log in: the session owns the period, which owns the menu,
     test.assert_eq(client.backstack_manager:get_top(), game_dependents[#game_dependents], "the way back is the game screen's entry")
 end)
 
-flow_case("connect: the login screen is the session's; signing in through its fields destroys it at the login", function(flow)
+flow_case("connect: the login screen is the session's; signing in through its fields destroys it at the login and shows the menu, whose Join Game enters the game", function(flow)
     local client, server = flow.client, flow.server
     local login_screen = client.screen_manager:get_screen() --[[@as LoginScreen]]
     test.assert_deep_eq(class_names(lifetime.dependents(client.session)), {
@@ -507,6 +514,11 @@ flow_case("connect: the login screen is the session's; signing in through its fi
         "hook",
         "token"
     }, "the dead login screen left the session")
+    local menu = client.screen_manager:get_screen() --[[@as UserMenuScreen]]
+    test.assert_eq(get_class_name_of(menu), "UserMenuScreen")
+    test.assert_eq(flow.client_connection:get_out_channel():getCount(), 0, "no game data asked for before Join Game")
+    click(client, button_of(menu, "Join Game"))
+    load_the_game(flow)
     move(client, 0, 0)
 end, connect_the_sides)
 
@@ -536,6 +548,7 @@ end, connect_the_sides)
 flow_case("game data with no page the user may read: a notification and the menu again, no game screen in the period", function(flow)
     local client, server = flow.client, flow.server
     log_in(flow)
+    client.session:join_game()
     frame(server)
     frame(client)
     local notifications = client.notification_manager --[[@as TestNotificationManager]]
@@ -829,11 +842,9 @@ flow_case("logging in again from the login screen: the screen dies at the login 
         "hook",
         "token"
     }, "the dead login screen left the session")
-    frame(server)
-    frame(client)
-    frame(server)
-    frame(client)
-    test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "GameScreen")
+    test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "UserMenuScreen")
+    client.session:join_game()
+    load_the_game(flow)
 
     -- under `love . test` their release runs while LÖVE frees their controls'
     -- transforms in the same collection

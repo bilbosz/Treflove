@@ -76,9 +76,6 @@ function Session:init(connection)
     self._login_screen = nil
     local login = Login(self, function(user)
         _on_login(self, user)
-        if app.is_client then
-            self._user_menu_screen:join_game()
-        end
     end, function()
         _on_logout(self)
     end):attach_lifetime(self)

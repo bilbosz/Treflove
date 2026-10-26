@@ -170,7 +170,7 @@ local function _answer_login(client, user)
     })
 end
 
----Logs `piotr` in and enters the game with `grants` as the permissions
+---Logs `piotr` in, joins the game and enters it with `grants` as the permissions
 ---the server would have sent with `game_client.game_data()`
 ---@param grants string[]
 ---@return GameClient
@@ -214,6 +214,8 @@ function game_client.enter(grants)
     _pop_request(connection, "LoginRp")
     _answer_login(client, "piotr")
     assert(session:is_logged_in(), "the login answer logged the session in")
+    assert(get_class_name_of(client.screen_manager:get_screen()) == "UserMenuScreen", "a login lands on the menu")
+    session:join_game()
     _pop_request(connection, "GameDataRp")
     _answer(client, connection, "GameDataRp", {
         data = game_client.game_data(),
