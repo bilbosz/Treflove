@@ -9,8 +9,6 @@ local ScreenManager = require("screens.screen-manager")
 local Text = require("controls.text")
 local TextButton = require("ui.text-button")
 local TextInput = require("ui.text-input")
--- Not among the linter's globals
-local coroutine = require("coroutine")
 
 ---@class TestScenarioBox: Control
 local TestScenarioBox = class("TestScenarioBox", Control)

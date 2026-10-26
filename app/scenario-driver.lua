@@ -3,8 +3,6 @@ local ConsoleClient = require("utils.console-client")
 local Text = require("controls.text")
 local TextInput = require("ui.text-input")
 local Utils = require("utils.utils")
--- Not among the linter's globals
-local coroutine = require("coroutine")
 
 ---@class ScenarioDriver: Object
 ---@field public headless boolean The run has a fixed frame delta and no window on screen

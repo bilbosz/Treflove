@@ -13,6 +13,7 @@ local lifetime = require("lifetime")
 ---@field public backstack_manager BackstackManager
 ---@field public button_event_manager ButtonEventManager
 ---@field public connection_manager ConnectionManager
+---@field public console Console|nil With `--console`
 ---@field public data GameData|nil On the server from `load()` on; on the client while the game data is in, until a disconnect
 ---@field public defer_manager DeferManager
 ---@field public file_system_drop_event_manager FileSystemDropEventManager
@@ -28,6 +29,7 @@ local lifetime = require("lifetime")
 ---@field public pointer_event_manager PointerEventManager
 ---@field public resize_manager ResizeManager
 ---@field public root Control|nil With a window
+---@field public scenario_runner ScenarioRunner|nil On the client, with `--scenario` or `--console`
 ---@field public screen_manager ScreenManager|nil On the client, and on a server with a window
 ---@field public service_event Event Triggered without arguments once per main loop iteration, before the update, paused or not
 ---@field public session Session|nil The client's, while connected
@@ -36,7 +38,7 @@ local lifetime = require("lifetime")
 ---@field public wheel_event Event Triggered with (x, y) wheel movement (client only)
 ---@field public width number|nil Model width, with a window
 ---@field protected load fun(self:App)
----@field protected params ArgParserResult
+---@field public params ArgParserResult The parsed command line
 ---@field private _draw_aabbs boolean
 ---@field private _exit_code integer|nil Set by `quit`, honored by the next update
 ---@field private _start_time number The wall clock at construction, the logger's start

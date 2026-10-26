@@ -2,8 +2,6 @@ local Consts = require("app.consts")
 local ScenarioDriver = require("app.scenario-driver")
 local Utils = require("utils.utils")
 local lifetime = require("lifetime")
--- Not among the linter's globals
-local coroutine = require("coroutine")
 
 ---@alias Scenario fun(driver: ScenarioDriver)
 

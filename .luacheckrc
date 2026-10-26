@@ -12,6 +12,7 @@ std = {
         "arg",
         "assert",
         "collectgarbage",
+        "coroutine",
         "debug",
         "error",
         "getmetatable",

@@ -35,12 +35,14 @@ local TEST_MODULES = {
     "tests.test-class",
     "tests.test-clipping-rectangle",
     "tests.test-connection",
+    "tests.test-console",
     "tests.test-console-client",
     "tests.test-connector",
     "tests.test-create-asset-folder-rp",
     "tests.test-defer-manager",
     "tests.test-delete-asset-rp",
     "tests.test-event",
+    "tests.test-fixture",
     "tests.test-fonts",
     "tests.test-game-data-rp",
     "tests.test-image",
@@ -63,6 +65,8 @@ local TEST_MODULES = {
     "tests.test-preview-font-area",
     "tests.test-preview-video-area",
     "tests.test-rename-asset-rp",
+    "tests.test-scenario-driver",
+    "tests.test-scenario-runner",
     "tests.test-screen-manager",
     "tests.test-scroll-view",
     "tests.test-seek-bar",
@@ -77,7 +81,8 @@ local TEST_MODULES = {
     "tests.test-upload-asset-rp",
     "tests.test-video",
     "tests.test-video-playback",
-    "tests.test-waiting-screen"
+    "tests.test-waiting-screen",
+    "tests.test-watch-overlay"
 }
 
 for _, module_name in ipairs(TEST_MODULES) do

@@ -1,5 +1,6 @@
 local App = require("app.app")
 local Consts = require("app.consts")
+local Console = require("app.console")
 local AssetManager = require("data.asset-manager")
 local Event = require("events.event")
 local FileSystemDropEventManager = require("events.file-drop-event")
@@ -11,6 +12,7 @@ local OptionsManager = require("game.options-manager")
 local Session = require("game.session")
 local ConnectionManager = require("networking.connection-manager")
 local ConnectingScreen = require("screens.connecting-screen")
+local ScenarioRunner = require("app.scenario-runner")
 local ScreenManager = require("screens.screen-manager")
 local BackstackManager = require("utils.backstack-manager")
 local ButtonEventManager = require("ui.button-event")
@@ -39,6 +41,9 @@ function Client:init(params)
     self.backstack_manager = BackstackManager()
     self.file_system_drop_event_manager = FileSystemDropEventManager()
     self.session = nil
+    if params.console then
+        self.console = Console(params.console)
+    end
 end
 
 ---@protected
@@ -57,6 +62,19 @@ function Client:load()
         self.session = nil
         self.data = nil
     end)
+    if self.params.scenario or self.params.console then
+        local runner = ScenarioRunner()
+        self.scenario_runner = runner
+        if self.params.scenario then
+            runner:start(self.params.scenario)
+        end
+        if self.console then
+            ---@param name string
+            self.console:add_function("scenario", function(name)
+                runner:start(name)
+            end)
+        end
+    end
 end
 
 ---@protected

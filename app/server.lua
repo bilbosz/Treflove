@@ -1,6 +1,8 @@
 local App = require("app.app")
+local Console = require("app.console")
 local Asset = require("data.asset")
 local AssetManager = require("data.asset-manager")
+local fixture = require("data.fixture")
 local Session = require("game.session")
 local ConnectionManager = require("networking.connection-manager")
 local ScreenManager = require("screens.screen-manager")
@@ -25,10 +27,16 @@ function Server:init(params)
     self._sessions = {}
     self.connection_manager = ConnectionManager(params.address, params.port)
     self.asset_manager = AssetManager()
+    if params.console then
+        self.console = Console(params.console)
+    end
 end
 
 ---@protected
 function Server:load()
+    if self.params.fixture then
+        fixture.seed(self.params.fixture, Asset.get_root())
+    end
     self:_load_data()
     self.connection_manager:start(function(connection)
         self._sessions[connection] = Session(connection):attach_lifetime(connection)
