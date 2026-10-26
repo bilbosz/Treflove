@@ -38,6 +38,17 @@
             "breakInProtectedCalls": false
         },
         {
+            "name": "Monitor",
+            "type": "lua-local",
+            "request": "launch",
+            "program": {
+                "command": "love"
+            },
+            "args": [".", "monitor", "127.0.0.1", "client:9090,server:9091"],
+            "scriptRoots": ["${workspaceFolder}"],
+            "breakInProtectedCalls": false
+        },
+        {
             "name": "Scenario (headless)",
             "type": "lua-local",
             "request": "launch",

@@ -43,6 +43,11 @@ jump app time with `advance(seconds)`, check the server with
 
 The client of `run.sh` and the launch configurations listens on 9090, the
 server on 9091 (localhost only; `--console <port>` on the command line).
+`love . console 127.0.0.1 9090 '<lua>'` is the same command under LÖVE,
+for a machine without LuaJIT; it starts slower, so scripts keep `luajit`.
+`love . monitor 127.0.0.1 client:9090,server:9091` is the user's window
+over the watches and the log; it has a console of its own with
+`--console <port>`, which is how to screenshot it headless.
 
 ```bash
 luajit tools/console.lua 9090 'return get_class_name_of(app.screen_manager:get_screen())'

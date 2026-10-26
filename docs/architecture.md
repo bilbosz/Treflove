@@ -4,16 +4,21 @@
 
 The entry point starts the debugger when VS Code attached one (see
 [development.md](development.md#debugging)), parses the command line and
-instantiates either the Client or the Server:
+instantiates the Client, the Server, the console command or the Monitor:
 - **Client**: the full UI application, with the event managers (pointer,
   keyboard, wheel, button, text, file-drop, resize), the screen manager, the
   connection manager, the asset manager, backstack navigation, notifications
   and session management
 - **Server**: runs headless or with a screen saver, manages one session per
   connection, persists the game state in human-readable form
+- **Console** (`love . console`): the console client as a command, no
+  window, a `love.run` of its own; **Monitor** (`love . monitor`): a window
+  showing the watches and the log of one or more consoles
 
-Both inherit from `App`, which registers the LÖVE callbacks and installs the
-project's own main loop (`MainLoop`, the `love.run`). The command line takes
+The Client, the Server and the Monitor inherit from `App`, which registers
+the LÖVE callbacks and installs the project's own main loop (`MainLoop`,
+the `love.run`); the Client and the Monitor through `UiApp`, which holds
+the UI managers and wires the input callbacks. The command line takes
 options after the port (`--scenario`, `--console`, `--server-console`,
 `--identity`, `--fixture`, `--headless`): see
 [scenarios-and-console.md](scenarios-and-console.md).

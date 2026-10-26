@@ -39,6 +39,11 @@ To run a scenario headless (the client driven through its UI; exit code 0 or 1):
 
     ./scenario.sh join-game
 
+To run Lua inside a running client or server, and to watch their values in a window:
+
+    love . console 127.0.0.1 9090 'return app:get_time()'
+    love . monitor 127.0.0.1 client:9090,server:9091
+
 To debug, use the VS Code launch configurations (Run and Debug): the client,
 the server, both at once, a scenario headless, or the test suite; see
 [docs/development.md](docs/development.md#debugging).
@@ -60,6 +65,7 @@ Milestones that are consider done at this point:
 * storing client settings in user directory
 * human readable data serialization
 * scenarios driving the client through its UI, headless or in a window, and a console port into the live program
+* the console as a command and a monitor window over the watches and the log of client and server
 
 Known to-dos:
 * game master script handling

@@ -32,6 +32,13 @@ as a test with an exit code:
 ```
 See [scenarios-and-console.md](scenarios-and-console.md).
 
+The console client as a LÖVE command, and the monitor window over one or
+more consoles:
+```bash
+love . console 127.0.0.1 9090 'return app:get_time()'
+love . monitor 127.0.0.1 client:9090,server:9091
+```
+
 ## Debugging
 
 The VS Code launch configurations (`.vscode/launch.json`, Run and Debug,
@@ -45,7 +52,8 @@ uses), `Client (login screen)` (no scenario), `Server`, the compound
 `Server + Client` (both at once, one debug session each, stopped together),
 `Scenario (headless)` (a scenario by name, asked for at launch, on the
 offscreen driver against a server its tasks start and stop; breakpoints in
-the scenario file work) and the test suite, `Tests (LuaJIT)` and
+the scenario file work), `Monitor` (the window over the client's and the
+server's consoles) and the test suite, `Tests (LuaJIT)` and
 `Tests (LÖVE)`. Breakpoints, stepping and the inspection of locals work in
 every module of the main Lua state. Each configuration sets
 `breakInProtectedCalls` to false, the fork's default, so a caught error

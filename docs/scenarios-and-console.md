@@ -12,6 +12,8 @@ line and the project's own main loop. The practice, for Claude, is the
 
 ```
 love . <client|server> <address> <port> [options]
+love . console <address> <port> [chunk] [--follow] [--watch <expr>]
+love . monitor <address> <name>:<port>[,<name>:<port>...] [--headless] [--console <port>]
   --scenario <name>        client only: run scenarios/<name>.lua at start
   --console <port>         the console port on 127.0.0.1
   --server-console <port>  client only: the server's console port, for the
@@ -234,12 +236,43 @@ luajit tools/console.lua 9090 < probe.lua                                       
 The options go before or after the port. Exit codes: 0 for a result, 1
 for an error reply, 2 for a usage or connection failure.
 
-`ConsoleClient` (`utils/console-client.lua`) is the client end both the
-CLI and the scenario driver use.
+The same command runs under LÖVE, so a user needs no LuaJIT on the path:
+`love . console 127.0.0.1 9090 'return 1 + 1'`, with the chunk from the
+argument or stdin, `--follow` and `--watch` as above and the same exit
+codes; it pumps LÖVE's events between short polls, so Ctrl-C ends a
+following session as it does under LuaJIT, which simply dies. Both entry
+points share `ConsoleSession` (`utils/console-session.lua`); the LÖVE one
+is `ConsoleApp` (`app/console-app.lua`), a `love.run` of its own without
+a window. LÖVE starts in a fifth of a second, LuaJIT at once, so scripts
+that fire many calls keep the LuaJIT entry.
+
+`ConsoleClient` (`utils/console-client.lua`) is the client end the CLI,
+the monitor and the scenario driver use.
 
 The watch overlay (`ui/watch-overlay.lua`, on `app.overlay`, drawn after
 the root and never hit) shows the watches' current values in the window;
 `TOGGLE_WATCH_OVERLAY_KEY` (F3) shows and hides it.
+
+### The monitor
+
+`love . monitor <address> client:9090,server:9091` opens a window of its
+own (`Monitor`, `app/monitor.lua`, built with the project's controls on
+`UiApp`, the part of the client every windowed app shares) connected to
+every target named: a button per target across the top with its name and
+state, the selected target's watches on the left (`name: value`, live),
+its log on the right (the console streams it with `log(true)` at every
+connect), and a line along the bottom: Enter evaluates the text on the
+selected target and logs the reply with a `>`; a leading `=` adds the
+rest as a watch. A target that is not up yet, or that quit, is retried
+every `MONITOR_RECONNECT_SECONDS`, and the console tells a newly
+connected client the watches it holds with their current values, so the
+monitor shows them at once after a restart. This is the window for
+watching values through a transition: set the watches here or from the
+CLI, keep the window beside the game, and play; the server, which has no
+window, shows here too. `MonitorTarget` (`app/monitor-target.lua`) is one
+connection with its state, watches and log; `MonitorScreen`
+(`screens/monitor-screen.lua`) the screen. With `--console` the monitor
+has a console of its own, which is how it is driven headless.
 
 ### The console and the debugger
 

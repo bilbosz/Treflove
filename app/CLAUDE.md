@@ -10,10 +10,13 @@ constants.
    debugger module, a no-op otherwise), loads the global utilities (the class
    system, the table utilities, `dump` in debug mode) and parses the command
    line:
-   `love . <client|server> <address> <port> [options]` (the options:
+   `love . <client|server> <address> <port> [options]`, or
+   `love . console <address> <port> [chunk] [options]`, or
+   `love . monitor <address> <name>:<port>,... [options]` (the options:
    [docs/scenarios-and-console.md](../docs/scenarios-and-console.md))
-2. Client or Server is instantiated with the parsed parameters and assigns
-   itself to the global `app`
+2. Client, Server or Monitor is instantiated with the parsed parameters and
+   assigns itself to the global `app`; the console command is `ConsoleApp`,
+   not an `App`: no managers, a `love.run` that polls a `ConsoleSession`
 3. The instance registers the LÖVE callbacks and installs the main loop
    (`MainLoop`, the project's `love.run`); `love.load` then calls the
    instance's `load`
@@ -51,9 +54,15 @@ run without a window.
 The class declares every manager field that may exist on either side; not
 all exist on every instance (a headless server has no pointer manager).
 
-## Client
+## UiApp, Client and Monitor
 
-Creates the UI managers: connection, resize, screen, pointer, button,
+`UiApp` creates the UI managers every windowed app shares (resize, screen,
+pointer, wheel event, button, keyboard, text, notification, backstack, file
+drop) and wires the input callbacks; the Client adds the connection, options
+and asset managers and the session, the Monitor its targets
+(`MonitorTarget`, one console connection each) and the `MonitorScreen`.
+
+The Client creates the managers: connection, resize, screen, pointer, button,
 keyboard, text, notification, options, asset, backstack, file drop, and the
 wheel event. `load` pushes the quit callback onto the backstack (the back key
 quits), shows the connecting screen and starts connecting; a connection
@@ -85,7 +94,9 @@ are independent but share `app.data`.
 ## Argument parser
 
 A module (not a class) with one `parse` function. It validates the app type
-(`"server"` or `"client"`, typed as a literal union), the address
+(`"server"`, `"client"`, `"console"` or `"monitor"`, typed as a literal
+union; the console's chunk and the monitor's targets take the place of the
+port's neighbours), the address
 (`localhost` or an IPv4) and the port (1024 to 65535, kept as a string), and
 returns a typed result table, or `nil` for invalid input, in which case the
 usage message is shown. The options after the port (`--scenario`,
