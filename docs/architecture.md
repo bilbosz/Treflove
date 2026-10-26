@@ -231,14 +231,20 @@ map image over the whole view, with a quad whose viewport is the view in map
 texels (a viewport beyond the texture samples the edge texels, the `clamp`
 wrap every image has), under a shader that blurs each fragment by its
 distance beyond the edge: sigma is `PAGE_SURROUNDINGS_BLUR_GROWTH` times the
-distance, capped at `PAGE_SURROUNDINGS_BLUR_LIMIT` model units; a 5x5
+distance, capped at `PAGE_SURROUNDINGS_BLUR_LIMIT` page meters, so the belt
+where the blur grows is fixed in the world and widens on screen as the view
+zooms in; a 5x5
 binomial kernel on taps half a sigma apart, sampled from the mip level whose
 texel is about half a sigma, never below the level an ordinary draw would
 use at this zoom. The level is explicit (`textureLod`, so the shader is
 `glsl3`): the taps' offsets change with the distance, so the level the
 sampler derives from screen derivatives would differ between the taps and
-jump where the cap is reached, a visible line. Under the map the taps
-collapse to the plain sample, and the map image, drawn after it, covers it.
+jump where the cap is reached, a visible line. Everything beyond the edge
+is scaled by `PAGE_SURROUNDINGS_BLUR_BRIGHTNESS` (above 1 brighter, below 1
+dimmer), stepping over one screen pixel at the edge (`base_lod` gives the
+texels per pixel), so the end of the map shows as the step in brightness
+while what lies beyond it stays soft. Under the map the taps collapse to
+the plain sample, and the map image, drawn after it, covers it.
 A GPU without `glsl3` gets no surroundings: the clear color, as before.
 ## Tokens
 

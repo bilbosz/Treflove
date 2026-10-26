@@ -34,7 +34,7 @@ local Page = class("Page", Model, ClippingRectangle)
 ---@param path string
 function Page:_create_background(path)
     local bg = Image(nil, path)
-    self._surroundings = PageSurroundings(self, bg)
+    self._surroundings = PageSurroundings(self, bg, self._page_width)
     self:add_child(bg)
     self._background = bg
     local bg_w, bg_h = bg:get_size()

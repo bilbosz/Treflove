@@ -153,7 +153,7 @@ end
 ---@field map Image
 ---@field surroundings PageSurroundings
 
----A 400 x 300 page drawn at half a pixel per unit; the 100 x 50 texel map centered at (200, 150), half a unit per texel
+---A 400 x 300 page drawn at half a pixel per unit; the 100 x 50 texel map, 10 m wide, centered at (200, 150), half a unit per texel
 ---@param glsl3 boolean|nil Whether `getSupported` reports GLSL 3; it does by default
 ---@return TestSurroundingsSetup
 local function setup(glsl3)
@@ -166,7 +166,7 @@ local function setup(glsl3)
     root:set_scale(0.5)
     local page = Control(root, 400, 300)
     local map = Image(nil, "map.png")
-    local surroundings = PageSurroundings(page, map)
+    local surroundings = PageSurroundings(page, map, 10)
     page:add_child(map)
     map:set_origin(50, 25)
     map:set_position(200, 150)
@@ -239,9 +239,12 @@ test.case("sends the uniforms of the map's placement", function()
     assert_numbers(uniforms.growth, {
         Consts.PAGE_SURROUNDINGS_BLUR_GROWTH
     }, "unit-free")
+    assert_numbers(uniforms.brightness, {
+        Consts.PAGE_SURROUNDINGS_BLUR_BRIGHTNESS
+    }, "the shade the far surroundings reach")
     assert_numbers(uniforms.sigma_limit, {
-        Consts.PAGE_SURROUNDINGS_BLUR_LIMIT * 2
-    }, "two texels per unit")
+        Consts.PAGE_SURROUNDINGS_BLUR_LIMIT * 10
+    }, "ten texels per meter: a 100-texel map 10 m wide")
     assert_numbers(uniforms.base_lod, {
         2
     }, "four texels per screen pixel")
