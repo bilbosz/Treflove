@@ -19,6 +19,7 @@ local WatchOverlay = require("ui.watch-overlay")
 ---@field output string Queued, not yet sent
 ---@field logging boolean The app's log lines go to it
 ---@field closed boolean
+---@field run integer|nil The id of the run whose reply it awaits; no frame of its input is taken meanwhile
 
 ---@class ConsoleWatch
 ---@field fn fun(): ...: any
@@ -37,6 +38,7 @@ local WatchOverlay = require("ui.watch-overlay")
 ---@field private _listener ConsoleListener|nil `nil` when the port could not be bound
 ---@field private _peers ConsolePeer[]
 ---@field private _current ConsolePeer|nil The client whose chunk runs
+---@field private _runs integer The runs started so far, the last one's id
 ---@field private _watches table<string, ConsoleWatch>
 ---@field private _watch_names string[] Sorted
 ---@field private _overlay WatchOverlay|nil On `app.overlay`, with a window
@@ -104,6 +106,7 @@ function Console:init(port, bind)
     self._listener = nil
     self._peers = {}
     self._current = nil
+    self._runs = 0
     self._watches = {}
     self._watch_names = {}
     self._overlay = nil
@@ -182,6 +185,9 @@ function Console:_make_environment()
         log = function(enabled)
             self:_set_logging(enabled ~= false)
         end,
+        run = function(chunk)
+            self:_run(chunk)
+        end,
         quit = function(exit_code)
             app:quit(exit_code)
             -- A quit is honored by the next update, and a paused loop runs none
@@ -241,6 +247,47 @@ function Console:_screenshot(name)
     assert(app.root, "a screenshot needs a window")
     love.graphics.captureScreenshot(name)
     return love.filesystem.getSaveDirectory() .. "/" .. name
+end
+
+---@private
+---@param text string A Lua chunk, run as a scenario over `driver` and `steps`
+function Console:_run(text)
+    assert_type(text, "string")
+    local peer = assert(self._current, "run replies to the client whose chunk calls it")
+    local runner = assert(app.scenario_runner, "run needs a scenario runner, the client's")
+    assert(not runner:is_running(), "a scenario is running")
+    local chunk, err = loadstring(text, "=peer")
+    if not chunk then
+        error(err, 0)
+    end
+    self._runs = self._runs + 1
+    local id = self._runs
+    peer.run = id
+    ---@param driver ScenarioDriver
+    ---@return any ...
+    local function scenario(driver)
+        debug.setfenv(chunk, setmetatable({
+            driver = driver,
+            steps = require("scenarios.lib.steps")
+        }, {
+            __index = _G
+        }))
+        return chunk()
+    end
+    ---@param result ScenarioResult
+    ---@param ... any
+    local function on_end(result, ...)
+        if peer.run ~= id then
+            return
+        end
+        peer.run = nil
+        if result.ok then
+            self:_queue(peer, "ok", _serialize(_pack(...), 1))
+        else
+            self:_queue(peer, "error", result.traceback or tostring(result.error))
+        end
+    end
+    runner:start_function("peer", scenario, false, on_end)
 end
 
 ---@private
@@ -313,7 +360,8 @@ function Console:_accept()
             length = 0,
             output = "",
             logging = false,
-            closed = false
+            closed = false,
+            run = nil
         })
     end
 end
@@ -359,7 +407,7 @@ end
 ---@private
 ---@param peer ConsolePeer
 function Console:_take_frames(peer)
-    while not peer.closed do
+    while not peer.closed and not peer.run do
         if not peer.kind then
             local newline = string.find(peer.input, "\n", 1, true)
             if not newline then
@@ -405,10 +453,12 @@ function Console:_evaluate(peer, text)
     self._current = peer
     local results = _pack(xpcall(chunk, debug.traceback))
     self._current = nil
-    if results[1] then
-        self:_queue(peer, "ok", _serialize(results, 2))
-    else
+    if not results[1] then
+        -- A run the chunk started before it raised replies nothing: this error is the eval's one reply
+        peer.run = nil
         self:_queue(peer, "error", _serialize_value(results[2]))
+    elseif not peer.run then
+        self:_queue(peer, "ok", _serialize(results, 2))
     end
 end
 

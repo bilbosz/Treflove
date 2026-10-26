@@ -18,7 +18,11 @@ local SCENARIOS = {
     quit = "return function(driver) driver:quit(3) end",
     console = "return function(driver) driver:server('return 1') end",
     broken = "return function(driver",
-    nothing = "return 42"
+    nothing = "return 42",
+    shaped = "return {peers = {'bob', 'eve'}, run = function(driver) driver:frames(1) driver:log('shaped') end}",
+    alone = "return {run = function(driver) driver:log('alone') end}",
+    runless = "return {peers = {'bob'}}",
+    badpeers = "return {peers = {'bob', 3}, run = function() end}"
 }
 
 ---@param headless boolean
@@ -207,7 +211,7 @@ test.case("a missing, broken or functionless scenario file fails its run", funct
     test.assert_true(assert(assert(world.runner:get_result()).error):find("scenarios/broken.lua:1:", 1, true) ~= nil)
     world.runner:start("nothing", true)
     updates(world, 1)
-    test.assert_eq(assert(world.runner:get_result()).error, "scenarios/nothing.lua returns no function")
+    test.assert_eq(assert(world.runner:get_result()).error, "scenarios/nothing.lua returns no function and no table")
     test.assert_deep_eq(world.exit_codes, {
         1,
         1,
@@ -216,11 +220,119 @@ test.case("a missing, broken or functionless scenario file fails its run", funct
     finish(world)
 end)
 
+test.case("a scenario file may return a table with its run function and, optionally, its peers", function()
+    local world = setup(true)
+    world.runner:start("shaped", true)
+    updates(world, 2)
+    test.assert_true(assert(world.runner:get_result()).ok)
+    world.runner:start("alone", true)
+    updates(world, 1)
+    test.assert_true(assert(world.runner:get_result()).ok)
+    test.assert_deep_eq(log_lines(world), {
+        "scenario shaped: started",
+        "scenario: shaped",
+        "scenario shaped: passed",
+        "scenario alone: started",
+        "scenario: alone",
+        "scenario alone: passed"
+    })
+    finish(world)
+end)
+
+test.case("a table without a run function, or with peers that are not a list of strings, fails its run", function()
+    local world = setup(true)
+    world.runner:start("runless", true)
+    updates(world, 1)
+    test.assert_eq(assert(world.runner:get_result()).error, "scenarios/runless.lua returns a table without a run function")
+    world.runner:start("badpeers", true)
+    updates(world, 1)
+    test.assert_eq(assert(world.runner:get_result()).error, "scenarios/badpeers.lua returns peers that are not a list of strings")
+    test.assert_deep_eq(world.exit_codes, {
+        1,
+        1
+    })
+    finish(world)
+end)
+
+test.case("start_function runs a function as a scenario and calls on_end once, after the outcome is logged, with its return values", function()
+    local world = setup(true)
+    ---@type any[][]
+    local ends = {}
+    ---@type ScenarioDriver|nil
+    local seen = nil
+    world.runner:start_function("probe", function(driver)
+        seen = driver
+        driver:frames(1)
+        return 1, nil, {
+            a = 2
+        }
+    end, false, function(result, ...)
+        table.insert(ends, {
+            result,
+            select("#", ...),
+            ...
+        })
+        test.assert_eq(log_lines(world)[2], "scenario probe: passed", "logged first")
+        test.assert_false(world.runner:is_running(), "the run is over")
+    end)
+    test.assert_true(world.runner:is_running())
+    updates(world, 1)
+    test.assert_true(seen ~= nil, "the function got the driver")
+    test.assert_deep_eq(ends, {})
+    updates(world, 3)
+    test.assert_deep_eq(ends, {
+        {
+            {
+                name = "probe",
+                ok = true
+            },
+            3,
+            1,
+            nil,
+            {
+                a = 2
+            }
+        }
+    })
+    test.assert_deep_eq(world.exit_codes, {}, "a run not asked to quit leaves the program running")
+    finish(world)
+end)
+
+test.case("on_end gets a failed run's result alone, with the error and its traceback", function()
+    local world = setup(true)
+    ---@type ScenarioResult[]
+    local results = {}
+    ---@type integer[]
+    local counts = {}
+    world.runner:start_function("probe", function()
+        error("boom", 0)
+    end, false, function(result, ...)
+        table.insert(results, result)
+        table.insert(counts, select("#", ...))
+    end)
+    updates(world, 2)
+    test.assert_eq(#results, 1)
+    test.assert_deep_eq(counts, {
+        0
+    })
+    local result = results[1]
+    test.assert_false(result.ok)
+    test.assert_eq(result.error, "boom")
+    local traceback = assert(result.traceback)
+    test.assert_eq(traceback:find("boom\nstack traceback:\n", 1, true), 1, traceback)
+    test.assert_eq(result, world.runner:get_result())
+    finish(world)
+end)
+
 test.case("one scenario at a time", function()
     local world = setup(true)
     world.runner:start("pass")
     test.assert_error(function()
         world.runner:start("pass")
+    end)
+    test.assert_error(function()
+        world.runner:start_function("probe", function()
+        end)
     end)
     updates(world, 3)
     finish(world)

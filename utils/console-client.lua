@@ -12,9 +12,54 @@ local socket = require("socket")
 ---@alias ConsoleSocketFactory fun(): ConsoleSocket
 ---@alias ConsoleFrameHandler fun(kind: string, body: string)
 
+---@class ConsoleRequest: Object
+---@field private _done boolean
+---@field private _ok boolean
+---@field private _body string
+---@field private _failure string|nil Why the request got no reply
+local ConsoleRequest = class("ConsoleRequest")
+
+function ConsoleRequest:init()
+    self._done = false
+    self._ok = false
+    self._body = ""
+    self._failure = nil
+end
+
+---@return boolean done Its reply came, or the connection closed before it
+function ConsoleRequest:is_done()
+    return self._done
+end
+
+---@return boolean ok `false` for an `error` reply
+---@return string body The chunk's results, or the error with its traceback
+function ConsoleRequest:get_result()
+    if not self._done then
+        error("the console request has no reply yet", 2)
+    end
+    if self._failure then
+        error(self._failure, 0)
+    end
+    return self._ok, self._body
+end
+
+---@package
+---@param ok boolean
+---@param body string
+function ConsoleRequest:_complete(ok, body)
+    self._done, self._ok, self._body = true, ok, body
+end
+
+---@package
+---@param failure string
+function ConsoleRequest:_fail(failure)
+    self._done, self._failure = true, failure
+end
+
 ---@class ConsoleClient: Object
 ---@field DEFAULT_TIMEOUT number Seconds a request waits for its reply
 ---@field private _socket ConsoleSocket
+---@field private _pending ConsoleRequest[] Sent, awaiting their replies, oldest first
 ---@field private _frame_handler ConsoleFrameHandler|nil
 ---@field private _kind string|nil The kind of the frame whose body is being received
 ---@field private _length integer The length of that body
@@ -47,6 +92,7 @@ function ConsoleClient:init(port, host, tcp)
     self._length = 0
     self._partial = ""
     self._closed = false
+    self._pending = {}
     self._socket:settimeout(ConsoleClient.DEFAULT_TIMEOUT)
     local ok, err = self._socket:connect(host, assert(tonumber(port), "the port is a number"))
     if not ok then
@@ -56,23 +102,23 @@ function ConsoleClient:init(port, host, tcp)
 end
 
 ---@param chunk string
+---@return ConsoleRequest request Done once `poll` received its reply
+function ConsoleClient:request_async(chunk)
+    return self:_send_request(chunk, socket.gettime() + ConsoleClient.DEFAULT_TIMEOUT)
+end
+
+---@param chunk string
 ---@param timeout number|nil Seconds, defaults to `DEFAULT_TIMEOUT`
 ---@return boolean ok `false` for an `error` reply
 ---@return string body The chunk's results, or the error with its traceback
 function ConsoleClient:request(chunk, timeout)
-    assert_type(chunk, "string")
     local deadline = socket.gettime() + (timeout or ConsoleClient.DEFAULT_TIMEOUT)
-    self:_send_frame("eval", chunk, deadline)
-    while true do
-        local kind, body = self:_receive_frame(deadline)
-        if not kind or not body then
-            error(self._closed and "the console connection closed" or "the console request timed out", 0)
-        end
-        if kind == "ok" or kind == "error" then
-            return kind == "ok", body
-        end
-        self:_dispatch(kind, body)
+    local request = self:_send_request(chunk, deadline)
+    self:_receive_until(deadline, request)
+    if not request:is_done() then
+        error("the console request timed out", 0)
     end
+    return request:get_result()
 end
 
 ---@param fn ConsoleFrameHandler
@@ -84,14 +130,7 @@ end
 ---@param timeout number|nil Seconds, defaults to 0
 ---@return boolean open `false` once the connection closed
 function ConsoleClient:poll(timeout)
-    local deadline = socket.gettime() + (timeout or 0)
-    while not self._closed do
-        local kind, body = self:_receive_frame(deadline)
-        if not kind or not body then
-            break
-        end
-        self:_dispatch(kind, body)
-    end
+    self:_receive_until(socket.gettime() + (timeout or 0), nil)
     return not self._closed
 end
 
@@ -99,6 +138,36 @@ function ConsoleClient:close()
     if not self._closed then
         self._closed = true
         self._socket:close()
+        local pending = self._pending
+        self._pending = {}
+        for _, request in ipairs(pending) do
+            request:_fail("the console connection closed")
+        end
+    end
+end
+
+---@private
+---@param chunk string
+---@param deadline number
+---@return ConsoleRequest
+function ConsoleClient:_send_request(chunk, deadline)
+    assert_type(chunk, "string")
+    self:_send_frame("eval", chunk, deadline)
+    local request = ConsoleRequest()
+    table.insert(self._pending, request)
+    return request
+end
+
+---@private
+---@param deadline number
+---@param request ConsoleRequest|nil Stops once it is done
+function ConsoleClient:_receive_until(deadline, request)
+    while not self._closed and not (request and request:is_done()) do
+        local kind, body = self:_receive_frame(deadline)
+        if not kind or not body then
+            return
+        end
+        self:_dispatch(kind, body)
     end
 end
 
@@ -106,7 +175,9 @@ end
 ---@param kind string
 ---@param body string
 function ConsoleClient:_dispatch(kind, body)
-    if self._frame_handler then
+    if (kind == "ok" or kind == "error") and self._pending[1] then
+        table.remove(self._pending, 1):_complete(kind == "ok", body)
+    elseif self._frame_handler then
         self._frame_handler(kind, body)
     end
 end
