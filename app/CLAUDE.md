@@ -10,10 +10,12 @@ constants.
    debugger module, a no-op otherwise), loads the global utilities (the class
    system, the table utilities, `dump` in debug mode) and parses the command
    line:
-   `love . <client|server> <address> <port>`
+   `love . <client|server> <address> <port> [options]` (the options:
+   [docs/scenarios-and-console.md](../docs/scenarios-and-console.md))
 2. Client or Server is instantiated with the parsed parameters and assigns
    itself to the global `app`
-3. The instance registers the LÖVE callbacks; `love.load` then calls the
+3. The instance registers the LÖVE callbacks and installs the main loop
+   (`MainLoop`, the project's `love.run`); `love.load` then calls the
    instance's `load`
 
 The LÖVE configuration callback parses the same command line, so a server can
@@ -21,16 +23,23 @@ run without a window.
 
 ## The App base class
 
-- **Time**: a start time taken at construction and a frame time updated every
-  `love.update`, read with `app:get_time()`
+- **Time**: `app:get_time()` is the app's own clock, the sum of the frame
+  deltas from zero (plus what the main loop's `skip` added); the wall clock
+  taken at construction serves the logger only
+- **Main loop**: `app.main_loop` (`MainLoop`) is `love.run`: the events,
+  `app.service_event` (no arguments, once per iteration, paused or not),
+  the update, the draw of the root and of `app.overlay`; `pause`, `resume`,
+  `step(n)` and `skip(seconds)` serve the console and the scenarios;
+  headless, a fixed delta and no sleep
 - **Update**: every frame runs the defer manager, honours a pending quit,
   updates the time, triggers `update_event` (dt) and runs a collector step
 - **Root control**: with a window, `app.root` is the top-level `Control` of
   all UI, scaled so that the model width (2000 units) fits the real window
   width; the model height follows from the aspect ratio. Headless, there is
   no root and no draw callback
-- **Quit**: `app:quit()` marks the app; the next update calls
-  `love.event.quit`, so a quit never happens mid-frame. `love.quit` removes
+- **Quit**: `app:quit(exit_code)` marks the app; the next update calls
+  `love.event.quit` with the code, so a quit never happens mid-frame (and a
+  paused loop is resumed to quit). `love.quit` removes
   every connection in order (each session's tree is torn down while LÖVE's
   threads and channels are still usable) and then tells lua-lifetime the
   program is ending
@@ -48,8 +57,10 @@ Creates the UI managers: connection, resize, screen, pointer, button,
 keyboard, text, notification, options, asset, backstack, file drop, and the
 wheel event. `load` pushes the quit callback onto the backstack (the back key
 quits), shows the connecting screen and starts connecting; a connection
-creates the session (anchored to the connection), a disconnect shows the
-connecting screen again and clears the session and the data.
+creates the session (anchored to the connection) and shows its login
+screen, a disconnect shows the connecting screen again and clears the
+session and the data. With `--console` the client opens its console in the
+constructor; with `--scenario`, `load` starts the scenario runner.
 
 The client wires every LÖVE input callback: a key press first goes to the
 app (debug keys), then toggles fullscreen or is dispatched to the keyboard
@@ -62,8 +73,9 @@ go to their managers.
 ## Server
 
 Owns the save file, a map from connection to session, the connection manager
-and the asset manager; with a window it shows a screen saver. `load` reads
-the persisted state, then listens: a connection creates a session (anchored
+and the asset manager; with a window it shows a screen saver, with
+`--console` its console. `load` seeds the server root from the fixture when
+`--fixture` names one, reads the persisted state, then listens: a connection creates a session (anchored
 to the connection), a disconnect removes the map entry.
 
 Persistence is a human-readable Lua table: `save_data()` serializes `app.data`
@@ -76,7 +88,10 @@ A module (not a class) with one `parse` function. It validates the app type
 (`"server"` or `"client"`, typed as a literal union), the address
 (`localhost` or an IPv4) and the port (1024 to 65535, kept as a string), and
 returns a typed result table, or `nil` for invalid input, in which case the
-usage message is shown.
+usage message is shown. The options after the port (`--scenario`,
+`--console`, `--server-console`, `--identity`, `--fixture`, `--headless`)
+are a table of name, parser and side; one on the wrong side, unknown,
+repeated, or without its value makes the whole line invalid.
 
 ## Constants
 

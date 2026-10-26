@@ -10,10 +10,21 @@
             "program": {
                 "command": "love"
             },
-            "args": [".", "client", "localhost", "8080"],
+            "args": [".", "client", "localhost", "8080", "--scenario", "join-game", "--console", "9090", "--server-console", "9091"],
             "scriptRoots": ["${workspaceFolder}"],
             "breakInProtectedCalls": false,
             "postDebugTask": "Stop the debugged server"
+        },
+        {
+            "name": "Client (login screen)",
+            "type": "lua-local",
+            "request": "launch",
+            "program": {
+                "command": "love"
+            },
+            "args": [".", "client", "localhost", "8080", "--console", "9090", "--server-console", "9091"],
+            "scriptRoots": ["${workspaceFolder}"],
+            "breakInProtectedCalls": false
         },
         {
             "name": "Server",
@@ -22,9 +33,26 @@
             "program": {
                 "command": "love"
             },
-            "args": [".", "server", "localhost", "8080"],
+            "args": [".", "server", "localhost", "8080", "--console", "9091"],
             "scriptRoots": ["${workspaceFolder}"],
             "breakInProtectedCalls": false
+        },
+        {
+            "name": "Scenario (headless)",
+            "type": "lua-local",
+            "request": "launch",
+            "program": {
+                "command": "love"
+            },
+            "args": [".", "client", "localhost", "8181", "--identity", "treflove-scenario", "--scenario", "${input:scenario}", "--headless", "--console", "9090", "--server-console", "9091"],
+            "env": {
+                "SDL_VIDEODRIVER": "offscreen",
+                "SDL_AUDIODRIVER": "dummy"
+            },
+            "scriptRoots": ["${workspaceFolder}"],
+            "breakInProtectedCalls": false,
+            "preLaunchTask": "Start the scenario server",
+            "postDebugTask": "Stop the scenario server"
         },
         {
             "name": "Tests (LuaJIT)",
@@ -54,6 +82,14 @@
             "name": "Server + Client",
             "configurations": ["Server", "Client"],
             "stopAll": true
+        }
+    ],
+    "inputs": [
+        {
+            "id": "scenario",
+            "type": "promptString",
+            "description": "The scenario to run (a file under scenarios/)",
+            "default": "join-game"
         }
     ]
 }

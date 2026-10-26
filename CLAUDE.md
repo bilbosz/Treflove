@@ -20,6 +20,7 @@ Detailed guidance is split into topic files, imported below. To address one topi
 - [docs/type-annotations.md](docs/type-annotations.md) - LuaDoc annotation rules, strict typing, LÖVE types, annotation packages
 - [docs/lifetimes.md](docs/lifetimes.md) - object ownership with lua-lifetime: `lifetime.attach`, hooks, the "logged in" token, `release(reason)` as the destructor
 - [docs/permissions.md](docs/permissions.md) - named user permissions: groups, grants (`action:kind/key`), `PermissionSet`, what the server filters and refuses, what the client gates
+- [docs/scenarios-and-console.md](docs/scenarios-and-console.md) - scenarios driving the client through its UI, the headless run on the offscreen driver, the project's main loop, the console port and its CLI, the watch overlay
 
 @docs/development.md
 
@@ -32,6 +33,8 @@ Detailed guidance is split into topic files, imported below. To address one topi
 @docs/lifetimes.md
 
 @docs/permissions.md
+
+@docs/scenarios-and-console.md
 
 ## Project Status
 

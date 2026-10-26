@@ -26,6 +26,29 @@
                 "close": true
             },
             "problemMatcher": []
+        },
+        {
+            // The server of the Scenario (headless) launch configuration: its own port, identity and fixture, a
+            // console for the scenario's server calls; detached, so the task ends while the server lives
+            "label": "Start the scenario server",
+            "type": "shell",
+            "command": "mkdir -p /tmp/treflove-scenario && setsid love . server localhost 8181 --identity treflove-scenario --fixture scenarios/fixtures/basic --console 9091 > /tmp/treflove-scenario/debug-server.log 2>&1 < /dev/null & disown; sleep 1; true",
+            "presentation": {
+                "reveal": "never",
+                "close": true
+            },
+            "problemMatcher": []
+        },
+        {
+            // By the process name and the identity, so neither the task's shell nor the user's own server matches
+            "label": "Stop the scenario server",
+            "type": "shell",
+            "command": "for p in $(pgrep -x love); do tr '\\0' ' ' < /proc/$p/cmdline 2>/dev/null | grep -q -- '--identity treflove-scenario' && kill $p; done; true",
+            "presentation": {
+                "reveal": "never",
+                "close": true
+            },
+            "problemMatcher": []
         }
     ]
 }

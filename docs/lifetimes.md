@@ -47,7 +47,7 @@ Connection                      (a lost peer → lifetime.destroy;
     ├── UploadAssetRp, DownloadAssetRp, DownloadMissingAssetsRp,
     │   ListAssetsRp, CreateAssetFolderRp, RenameAssetRp, DeleteAssetRp
     ├── hook: clears the AssetManager's per-session entries
-    ├── LoginScreen                     (client, from a logout to the next login)
+    ├── LoginScreen                     (client, from the connect or a logout to the next login)
     └── token "logged in"               (client)
         ├── UserMenuScreen              (shown again after the game)
         │   ├── OptionsMenuScreen       (made on the first visit, kept)

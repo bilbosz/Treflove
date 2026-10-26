@@ -23,8 +23,13 @@ exist. Everything below was verified in this project.
 
 ## The session
 
-- Launch configurations (`.vscode/launch.json`): `Client`, `Server`,
-  `Tests (LuaJIT)`, `Tests (LÖVE)`, and the compound `Server + Client`.
+- Launch configurations (`.vscode/launch.json`): `Client` (with the
+  `join-game` scenario and the console ports), `Client (login screen)`,
+  `Server`, `Scenario (headless)` (a scenario by name on the offscreen
+  driver, its server started by a task), `Tests (LuaJIT)`, `Tests (LÖVE)`,
+  and the compound `Server + Client`. For a question that needs no
+  breakpoint, the console port is the cheaper way in: the `live-console`
+  skill.
   `start_debugging` takes `configurationName` plus `fileFullPath` (`main.lua`)
   and `workingDirectory` (the repository). debugmcp controls one session; to
   debug the client against a server, run the server from a shell

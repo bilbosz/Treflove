@@ -23,6 +23,15 @@ Run both server and client together:
 ./run.sh
 ```
 
+Both take options after the port (a scenario to run, a console port, the
+save directory identity, a fixture, a headless run); `run.sh` passes the
+`join-game` scenario and a console port to each side. A scenario headless,
+as a test with an exit code:
+```bash
+./scenario.sh join-game
+```
+See [scenarios-and-console.md](scenarios-and-console.md).
+
 ## Debugging
 
 The VS Code launch configurations (`.vscode/launch.json`, Run and Debug,
@@ -31,8 +40,12 @@ F5) run the program under the Local Lua Debugger extension
 continuation of tomblind's, recommended by the workspace; the installed copy
 is built from the fork `bilbosz/local-lua-debugger-vscode`, which adds the
 `continued` event and the `breakInProtectedCalls` option):
-`Client`, `Server`, the compound `Server + Client` (both at once, one debug
-session each, stopped together) and the test suite, `Tests (LuaJIT)` and
+`Client` (with the `join-game` scenario and the console ports `run.sh`
+uses), `Client (login screen)` (no scenario), `Server`, the compound
+`Server + Client` (both at once, one debug session each, stopped together),
+`Scenario (headless)` (a scenario by name, asked for at launch, on the
+offscreen driver against a server its tasks start and stop; breakpoints in
+the scenario file work) and the test suite, `Tests (LuaJIT)` and
 `Tests (LÖVE)`. Breakpoints, stepping and the inspection of locals work in
 every module of the main Lua state. Each configuration sets
 `breakInProtectedCalls` to false, the fork's default, so a caught error
@@ -67,6 +80,11 @@ Driving the debugger, by Claude through its debugmcp tools or by hand, and
 running any Lua from an evaluation, a Watch or a breakpoint condition: the
 `debug-live` skill, `.claude/skills/debug-live/SKILL.md`, which the debugmcp
 tools ask for by name.
+
+The console port is the other way into the live program: any Lua between
+two frames, watches, a real pause, screenshots, from a shell and without
+VS Code; see [scenarios-and-console.md](scenarios-and-console.md) and, for
+Claude, the `live-console` skill (`.claude/skills/live-console/SKILL.md`).
 
 ## Development Commands
 
@@ -150,6 +168,9 @@ The suite has no external dependencies:
   `restore_love_filesystem()` (an in-memory file system over a table).
 - A pure-Lua `utf8` shim is preloaded under plain LuaJIT (LÖVE bundles the
   real one).
+- The main loop, the console, the console client, the scenario driver and
+  the runner are tested under fakes of their own: a `love.event` queue and
+  timer, LuaSocket stand-ins, a fake main loop.
 
 Conventions: pure calculation modules (AABB, the table utilities, the class
 system, the tree, the argument parser) are tested with plain asserts; modules with

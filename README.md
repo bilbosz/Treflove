@@ -35,8 +35,12 @@ To run single instance of client and server use:
 
     ./run.sh
 
+To run a scenario headless (the client driven through its UI; exit code 0 or 1):
+
+    ./scenario.sh join-game
+
 To debug, use the VS Code launch configurations (Run and Debug): the client,
-the server, both at once, or the test suite; see
+the server, both at once, a scenario headless, or the test suite; see
 [docs/development.md](docs/development.md#debugging).
 
 ## Project status
@@ -55,6 +59,7 @@ Milestones that are consider done at this point:
 * storing assets and game state on server's user directory
 * storing client settings in user directory
 * human readable data serialization
+* scenarios driving the client through its UI, headless or in a window, and a console port into the live program
 
 Known to-dos:
 * game master script handling

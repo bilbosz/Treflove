@@ -12,7 +12,11 @@ instantiates either the Client or the Server:
 - **Server**: runs headless or with a screen saver, manages one session per
   connection, persists the game state in human-readable form
 
-Both inherit from `App`, which registers the LÖVE callbacks.
+Both inherit from `App`, which registers the LÖVE callbacks and installs the
+project's own main loop (`MainLoop`, the `love.run`). The command line takes
+options after the port (`--scenario`, `--console`, `--server-console`,
+`--identity`, `--fixture`, `--headless`): see
+[scenarios-and-console.md](scenarios-and-console.md).
 
 ## Custom Class System
 
@@ -97,8 +101,10 @@ A `Session` ties a connection to a user:
   and, on the client, the "logged in" token that owns the menu and game
   screens; the game screen and the assets workspace are built under the
   token and destroyed on the way back, see [lifetimes.md](lifetimes.md)
-- **Note**: the client auto-logs in with hardcoded credentials
-  ("adam"/"krause") when its session is created
+- The client shows the session's login screen on connect
+  (`Session:show_login`); a login lands on the user menu and the game is
+  joined from there, by the user or by a scenario
+  ([scenarios-and-console.md](scenarios-and-console.md))
 
 ## Event System
 
@@ -410,6 +416,10 @@ the assets workspace) once, when it opens them, so a screen shown again
 - The LÖVE callbacks are registered by `App` and extended by Client and
   Server; `love.quit` removes every connection in order and then tells
   lua-lifetime the program is ending
+- `love.run` is the project's `MainLoop` (`app/main-loop.lua`): the events,
+  `app.service_event` (the console's turn), the update with its delta (the
+  real one, or a fixed one without sleep headless, plus a skip), the draw of
+  the root and of `app.overlay`; the app's clock is the sum of the deltas
 - The client uses love.graphics, love.window, love.keyboard, love.mouse and
   love.touch; both sides use love.thread, love.channel and the bundled
   `enet` module for networking

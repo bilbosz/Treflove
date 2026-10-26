@@ -83,8 +83,6 @@ editing and dragging.
 
 ### 7. Real login flow and user management
 
-- Remove the hardcoded dev auto-login (`"adam"/"krause"`) from the session's
-  constructor, or gate it behind a debug flag
 - Users are currently added by hand-editing the server's save file, which
   also carries plaintext passwords in comments; add a way to create and
   manage accounts
@@ -153,3 +151,21 @@ token is drawn inside its own stencil mask today, which ends a batch anyway.
 - A page image larger than the texture size limit
   (`love.graphics.getSystemLimits().texturesize`) cannot be loaded at all;
   split such an image into tiles on the server or at load
+
+### 14. Scenarios and the console, next steps
+
+The scenarios run headless on the offscreen SDL driver and the console
+port drives the live program ([docs/scenarios-and-console.md](docs/scenarios-and-console.md)).
+
+- A CI job for the scenarios: GitHub's runners have no GPU, and the
+  offscreen driver needs a working EGL; try `xvfb-run` with llvmpipe or a
+  software EGL on the runner before adding the job
+- An in-process tier: both apps in one Lua state over crossed channels, as
+  the lifetimes suite does, for scenarios in milliseconds; needs the apps to
+  stop registering the LÖVE callbacks themselves, and lives with the global
+  `app` swap
+- Record and replay: the input callbacks and the incoming wire of a windowed
+  session to a file, replayed headless against the seeded random generator
+  and the fixture, so a bug reproduced by hand becomes a scenario
+- The suite's own click helpers (the lifetimes suite, the game client
+  harness) could use the scenario driver's `find` and `click`
