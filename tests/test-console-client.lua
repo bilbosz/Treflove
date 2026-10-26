@@ -1,5 +1,6 @@
 local test = require("tests.lib.test")
 local ConsoleClient = require("utils.console-client")
+local console_cli = require("tools.console")
 
 ---@return TestFakeSocket
 local function make_socket()
@@ -295,4 +296,118 @@ test.case("close closes the socket once", function()
     client:close()
     test.assert_false(fake.closed)
     test.assert_false(client:poll())
+end)
+
+test.suite("console CLI")
+
+test.case("takes the port and the chunk, the chunk from stdin without one or for -", function()
+    test.assert_deep_eq(console_cli.parse({
+        "9391",
+        "return 1"
+    }), {
+        port = "9391",
+        chunk = "return 1",
+        follow = false
+    })
+    test.assert_deep_eq(console_cli.parse({
+        "9391"
+    }), {
+        port = "9391",
+        follow = false
+    })
+    test.assert_deep_eq(console_cli.parse({
+        "9391",
+        "-"
+    }), {
+        port = "9391",
+        follow = false
+    })
+end)
+
+test.case("takes the host and follow before the port", function()
+    test.assert_deep_eq(console_cli.parse({
+        "--follow",
+        "--host",
+        "localhost",
+        "9391",
+        "log(true)"
+    }), {
+        host = "localhost",
+        port = "9391",
+        chunk = "log(true)",
+        follow = true
+    })
+end)
+
+test.case("watch sends a watch of the expression under its own text and follows", function()
+    local options = assert(console_cli.parse({
+        "--watch",
+        "app:get_time()",
+        "9391"
+    }))
+    test.assert_true(options.follow)
+    test.assert_eq(options.chunk, console_cli.watch_chunk("app:get_time()"))
+    ---@type string, fun(): any
+    local name, fn
+    local chunk = assert(loadstring(assert(options.chunk)))
+    debug.setfenv(chunk, {
+        watch = function(n, f)
+            name, fn = n, f
+        end,
+        app = {
+            get_time = function()
+                return 1.5
+            end
+        }
+    })
+    chunk()
+    test.assert_eq(name, "app:get_time()")
+    test.assert_eq(fn(), 1.5)
+end)
+
+test.case("refuses a missing or bad port, an unknown, repeated or valueless option, extra arguments", function()
+    for _, args in ipairs({
+        {},
+        {
+            "port"
+        },
+        {
+            "0"
+        },
+        {
+            "65536"
+        },
+        {
+            "--verbose",
+            "9391"
+        },
+        {
+            "--follow",
+            "--follow",
+            "9391"
+        },
+        {
+            "--host",
+            "a",
+            "--host",
+            "b",
+            "9391"
+        },
+        {
+            "9391",
+            "return 1",
+            "extra"
+        },
+        {
+            "--watch",
+            "x",
+            "9391",
+            "return 1"
+        },
+        {
+            "--host"
+        }
+    }) do
+        test.assert_eq(console_cli.parse(args), nil, table.concat(args, " "))
+    end
 end)
