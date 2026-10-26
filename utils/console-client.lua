@@ -1,11 +1,13 @@
 local socket = require("socket")
 
----@class ConsoleSocket The part of a connected LuaSocket TCP object the client uses
+---@class ConsoleStream The part of a connected LuaSocket TCP object both ends of the console use
+---@field settimeout fun(self: ConsoleStream, value: number|nil)
+---@field send fun(self: ConsoleStream, data: string, i: integer|nil): integer|nil, string|nil, integer|nil The index of the last byte sent, or `nil`, the error and the index of the last byte sent before it
+---@field receive fun(self: ConsoleStream, pattern: "*l"|integer): string|nil, string|nil, string|nil The data, or `nil`, the error and what was received before it
+---@field close fun(self: ConsoleStream)
+
+---@class ConsoleSocket: ConsoleStream The client's, connected by itself
 ---@field connect fun(self: ConsoleSocket, address: string, port: integer): integer|nil, string|nil
----@field settimeout fun(self: ConsoleSocket, value: number|nil)
----@field send fun(self: ConsoleSocket, data: string, i: integer|nil): integer|nil, string|nil, integer|nil The index of the last byte sent, or `nil`, the error and the index of the last byte sent before it
----@field receive fun(self: ConsoleSocket, pattern: "*l"|integer): string|nil, string|nil, string|nil The data, or `nil`, the error and what was received before it
----@field close fun(self: ConsoleSocket)
 
 ---@alias ConsoleSocketFactory fun(): ConsoleSocket
 ---@alias ConsoleFrameHandler fun(kind: string, body: string)
