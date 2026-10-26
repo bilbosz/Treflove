@@ -3,6 +3,7 @@ local debugger = require("app.debugger")
 
 ---@class love.ConfigTable
 ---@field console boolean
+---@field identity string|nil
 ---@field window love.WindowConfig|nil
 
 ---@class love.WindowConfig
@@ -15,6 +16,7 @@ local debugger = require("app.debugger")
 ---@field height number
 ---@field minwidth number
 ---@field minheight number
+---@field vsync number
 
 ---@param t love.ConfigTable
 function love.conf(t)
@@ -50,6 +52,13 @@ function love.conf(t)
     if t.window then
         t.window.width, t.window.height = 800, 600
         t.window.minwidth, t.window.minheight = 600, 600
+        if params and params.headless then
+            t.window.vsync = 0
+        end
+    end
+
+    if params and params.identity then
+        t.identity = params.identity
     end
 
     if debugger.is_attached() then

@@ -2,7 +2,14 @@
 local Consts = {
     APP_USAGE_MESSAGE = [[
 Usage:
-    treflun <app_type> <address> <port>
+    love . <client|server> <address> <port> [options]
+Options:
+    --scenario <name>        client only: run scenarios/<name>.lua at start
+    --console <port>         the console port on 127.0.0.1
+    --server-console <port>  client only: the server's console port, for the scenario's server calls
+    --identity <name>        the LÖVE save directory identity
+    --fixture <path>         server only: a directory of the source tree that seeds the server root at load
+    --headless               fixed frame delta, no sleep, no vsync
 ]],
     APP_SUCCESS_EXIT_CODE = 0,
     NETWORK_COMPRESSION = "lz4",
