@@ -134,6 +134,13 @@ finished. The call returns a handle at once, so the lead goes on; its
 when the peer's run failed. A chunk that only returns a value is a run that
 ends at once, so one primitive serves both steps and questions.
 
+Underneath: the runner's `start_function` runs any function as a scenario
+and calls an `on_end` handler with the result (its `traceback` set for a
+failed run) and the values a passing run returned; the console client's
+`request_async` sends without waiting and `poll` completes the pending
+requests in order as their replies arrive, which is what the handle polls
+once per frame.
+
 ```lua
 local steps = require("scenarios.lib.steps")
 
