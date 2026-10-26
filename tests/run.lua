@@ -48,6 +48,7 @@ local TEST_MODULES = {
     "tests.test-keyboard",
     "tests.test-lifetimes",
     "tests.test-list-assets-rp",
+    "tests.test-main-loop",
     "tests.test-media",
     "tests.test-media-player",
     "tests.test-ogg",
