@@ -24,6 +24,7 @@ local ScreenManager = require("screens.screen-manager")
 local UserMenuScreen = require("screens.user-menu-screen")
 local WaitingScreen = require("screens.waiting-screen")
 local ButtonEventManager = require("ui.button-event")
+local TextButton = require("ui.text-button")
 local TextEventManager = require("ui.text-event")
 local BackstackManager = require("utils.backstack-manager")
 local Control = require("controls.control")
@@ -307,6 +308,22 @@ local function click(client, ctrl)
     client.button_event_manager:dispatch_pointer_up(x, y, 1)
 end
 
+---@param screen FormScreen
+---@param text string
+---@return TextButton
+local function button_of(screen, text)
+    ---@diagnostic disable-next-line: invisible
+    for _, input in ipairs(screen._inputs) do
+        if is_instance_of(input, TextButton) then
+            ---@cast input TextButton
+            if input:get_text() == text then
+                return input
+            end
+        end
+    end
+    error("no button " .. text)
+end
+
 ---@class TestFlow
 ---@field client AppMock
 ---@field server AppMock
@@ -441,6 +458,80 @@ flow_case("connect and log in: the session owns the period, which owns the menu,
     }, "the panels are the control tree's, not anchored")
     test.assert_eq(client.backstack_manager:get_top(), game_dependents[#game_dependents], "the way back is the game screen's entry")
 end)
+
+flow_case("connect: the login screen is the session's; signing in through its fields destroys it at the login", function(flow)
+    local client, server = flow.client, flow.server
+    local login_screen = client.screen_manager:get_screen() --[[@as LoginScreen]]
+    test.assert_deep_eq(class_names(lifetime.dependents(client.session)), {
+        "Login",
+        "GameDataRp",
+        "UploadAssetRp",
+        "DownloadAssetRp",
+        "DownloadMissingAssetsRp",
+        "ListAssetsRp",
+        "CreateAssetFolderRp",
+        "RenameAssetRp",
+        "DeleteAssetRp",
+        "hook",
+        "LoginScreen"
+    }, "the login screen is the session's from the connect on")
+
+    ---@diagnostic disable-next-line: invisible
+    local login_input, password_input = login_screen._login_input._input, login_screen._password_input._input
+    click(client, login_input)
+    client.text_event_manager:text_input("adam")
+    click(client, password_input)
+    client.text_event_manager:text_input("krause")
+    local log = {}
+    with_release_log(log, function()
+        click(client, button_of(login_screen, "Sign In"))
+        frame(server)
+        test.assert_deep_eq(log, {}, "nothing dies before the response is in")
+        frame(client)
+    end)
+    test.assert_deep_eq(log, {
+        "LoginScreen:release(destroy)"
+    }, "logged in: the login screen is over, destroyed rather than left to the collector")
+    test.assert_false(lifetime.alive(login_screen))
+    test.assert_true(client.session:is_logged_in())
+    test.assert_deep_eq(class_names(lifetime.dependents(client.session)), {
+        "Login",
+        "GameDataRp",
+        "UploadAssetRp",
+        "DownloadAssetRp",
+        "DownloadMissingAssetsRp",
+        "ListAssetsRp",
+        "CreateAssetFolderRp",
+        "RenameAssetRp",
+        "DeleteAssetRp",
+        "hook",
+        "token"
+    }, "the dead login screen left the session")
+    move(client, 0, 0)
+end, connect_the_sides)
+
+flow_case("disconnect before the login: the login screen dies with the session, newest first", function(flow)
+    local client, client_connection = flow.client, flow.client_connection
+    local login_screen = client.screen_manager:get_screen()
+    local log = {}
+    with_release_log(log, function()
+        app = client
+        client.connection_manager:remove(client_connection)
+    end)
+    test.assert_deep_eq(log, {
+        "Connection:release(destroy)",
+        "LoginScreen:release(anchor)",
+        "DownloadMissingAssetsRp:release(anchor)",
+        "DownloadAssetRp:release(anchor)",
+        "UploadAssetRp:release(anchor)",
+        "GameDataRp:release(anchor)",
+        "LogoutRp:release(anchor)",
+        "LoginRp:release(anchor)"
+    })
+    test.assert_false(lifetime.alive(login_screen))
+    test.assert_deep_eq(client.root:get_children(), {}, "the login screen hid itself")
+    test.assert_eq(client.screen_manager:get_screen(), nil)
+end, connect_the_sides)
 
 flow_case("game data with no page the user may read: a notification and the menu again, no game screen in the period", function(flow)
     local client, server = flow.client, flow.server

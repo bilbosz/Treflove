@@ -14,6 +14,9 @@ local Session = require("game.session")
 local LoginRp = require("login.login-rp")
 local LogoutRp = require("login.logout-rp")
 local Connection = require("networking.connection")
+local Control = require("controls.control")
+local ScreenManager = require("screens.screen-manager")
+local BackstackManager = require("utils.backstack-manager")
 
 ---@return AppMock
 ---@return Connection
@@ -94,6 +97,66 @@ test.case("a client session owns its login, the game data procedure and the asse
     session:login("adam", "krause")
     test.assert_eq(connection:get_out_channel():getCount(), 1, "the login request was sent")
     lifetime.destroy(connection)
+end)
+
+---@param app_mock AppMock
+local function add_screens(app_mock)
+    mocks.ensure_love_graphics()
+    app_mock.root = Control()
+    app_mock.width, app_mock.height = 2000, 1500
+    app_mock.screen_manager = ScreenManager()
+    app_mock.backstack_manager = BackstackManager()
+end
+
+test.case("show_login shows the session's login screen, the same one until it is over; the constructor shows nothing", function()
+    local app_mock, connection = make_client()
+    add_screens(app_mock)
+    local session = Session(connection):attach_lifetime(connection)
+    test.assert_eq(app_mock.screen_manager:get_screen(), nil)
+    session:show_login()
+    local login_screen = assert(app_mock.screen_manager:get_screen())
+    test.assert_eq(get_class_name_of(login_screen), "LoginScreen")
+    local dependents = lifetime.dependents(session)
+    test.assert_eq(dependents[#dependents], login_screen, "anchored to the session, after its procedures")
+    session:show_login()
+    test.assert_eq(app_mock.screen_manager:get_screen(), login_screen, "shown again, not built again")
+    test.assert_eq(#lifetime.dependents(session), #dependents)
+    test.assert_eq(connection:get_out_channel():getCount(), 0, "showing the screen sends nothing")
+    lifetime.destroy(connection)
+    test.assert_false(lifetime.alive(login_screen))
+    test.assert_eq(app_mock.screen_manager:get_screen(), nil)
+end)
+
+test.case("show_login needs a client session that is not logged in", function()
+    local app_mock, connection = make_client()
+    add_screens(app_mock)
+    local session = Session(connection):attach_lifetime(connection)
+    session:show_login()
+    local login_screen = app_mock.screen_manager:get_screen()
+    ---@diagnostic disable-next-line: invisible
+    session._login._login_rp.on_login("adam")
+    test.assert_true(session:is_logged_in())
+    test.assert_false(lifetime.alive(login_screen), "the login destroyed it")
+    test.assert_error(function()
+        session:show_login()
+    end)
+    lifetime.destroy(connection)
+
+    local previous = mocks.install_love_filesystem({
+        ["server/assets/token/g.png"] = "G"
+    })
+    local server_mock = mocks.install_app({
+        is_client = false,
+        is_server = true
+    })
+    server_mock.asset_manager = AssetManager()
+    local server_connection = Connection(mocks.make_channel(), mocks.make_channel())
+    local server_session = Session(server_connection):attach_lifetime(server_connection)
+    test.assert_error(function()
+        server_session:show_login()
+    end)
+    lifetime.destroy(server_connection)
+    mocks.restore_love_filesystem(previous)
 end)
 
 test.case("destroying the connection tears the whole tree down, the connection first, then newest first", function()
