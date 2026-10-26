@@ -59,7 +59,28 @@ local function _parse_relative_path(str)
     return str
 end
 
----@alias ArgParserOptionField "scenario"|"console"|"server_console"|"identity"|"fixture"|"headless"
+---@param str string
+---@return table<string, string>|nil ports The port of every peer by its name, `nil` for a malformed entry or a repeated name
+local function _parse_peer_ports(str)
+    ---@type table<string, string>
+    local ports = {}
+    for entry in (str .. ","):gmatch("(.-),") do
+        local name, port = entry:match("^([^:]*):(.*)$")
+        if not name or not _parse_name(name) or not _parse_port(port) or ports[name] then
+            return nil
+        end
+        ports[name] = port
+    end
+    return ports
+end
+
+---@param str string
+---@return string|nil Input string or `nil` when it is not a comma-separated list of `<name>:<port>` with distinct names
+local function _parse_peers(str)
+    return _parse_peer_ports(str) and str or nil
+end
+
+---@alias ArgParserOptionField "scenario"|"console"|"server_console"|"identity"|"fixture"|"headless"|"peers"
 
 ---@class ArgParserOption
 ---@field field ArgParserOptionField
@@ -93,6 +114,11 @@ local OPTIONS = {
     },
     ["--headless"] = {
         field = "headless"
+    },
+    ["--peers"] = {
+        field = "peers",
+        parse = _parse_peers,
+        side = "client"
     }
 }
 
@@ -106,6 +132,7 @@ local OPTIONS = {
 ---@field public identity string|nil The LÖVE save directory identity
 ---@field public fixture string|nil Server only: a directory of the source tree that seeds the server root at load
 ---@field public headless boolean Fixed frame delta, no sleep, no vsync
+---@field public peers table<string, string>|nil Client only: the console port of every peer client a scenario drives, by the peer's name
 
 ---@param args string[]
 ---@param first integer The index of the first option
@@ -162,7 +189,8 @@ function arg_parser.parse(args)
         server_console = values.server_console,
         identity = values.identity,
         fixture = values.fixture,
-        headless = flags.headless == true
+        headless = flags.headless == true,
+        peers = values.peers and assert(_parse_peer_ports(values.peers))
     }
 end
 
