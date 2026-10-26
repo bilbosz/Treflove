@@ -2,6 +2,8 @@ local Consts = require("app.consts")
 local Model = require("data.model")
 local Utils = require("utils.utils")
 
+---@alias LoggerSink fun(line: string)
+
 ---@class LoggerData
 ---@field public start_time number
 
@@ -12,6 +14,9 @@ local Utils = require("utils.utils")
 ---@field private _separator string
 ---@field private _start_time number
 local Logger = class("Logger", Model)
+
+---@type LoggerSink|nil
+local sink = nil
 
 ---@param name string
 ---@return boolean
@@ -44,6 +49,14 @@ function Logger:_log_implementation(format, level, ...)
     end
     result = result .. string.format("%s>%s" .. format, sep, sep, ...)
     print(result)
+    if sink then
+        sink(result)
+    end
+end
+
+---@param fn LoggerSink|nil Called with every line any logger prints, after the print; `nil` stops it
+function Logger.set_sink(fn)
+    sink = fn
 end
 
 ---@param data LoggerData
