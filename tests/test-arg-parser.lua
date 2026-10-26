@@ -22,7 +22,8 @@ test.case("accepts valid server and client invocations", function()
         app_type = "server",
         address = "localhost",
         port = "8080",
-        headless = false
+        headless = false,
+        follow = false
     })
     test.assert_eq(parse("client", "192.168.1.1", "1024").app_type, "client")
 end)
@@ -73,7 +74,11 @@ test.case("leaves the options unset without any", function()
     test.assert_eq(params.identity, nil)
     test.assert_eq(params.fixture, nil)
     test.assert_eq(params.peers, nil)
+    test.assert_eq(params.chunk, nil)
+    test.assert_eq(params.watch, nil)
+    test.assert_eq(params.targets, nil)
     test.assert_false(params.headless)
+    test.assert_false(params.follow)
 end)
 
 test.case("accepts every client option, in any order", function()
@@ -87,6 +92,7 @@ test.case("accepts every client option, in any order", function()
         server_console = "9091",
         identity = "smoke_1",
         headless = true,
+        follow = false,
         peers = {
             bob = "9100"
         }
@@ -102,7 +108,8 @@ test.case("accepts every server option", function()
         console = "9090",
         identity = "smoke",
         fixture = "scenarios/fixtures/basic",
-        headless = true
+        headless = true,
+        follow = false
     })
 end)
 
@@ -209,4 +216,221 @@ test.case("rejects the peers on the server, a malformed entry, a bad port and a 
         test.assert_eq(parse_args("client", "localhost", "8080", "--peers", peers), nil, peers)
     end
     test.assert_eq(parse_args("client", "localhost", "8080", "--peers", "bob:9100", "--peers", "eve:9101"), nil, "a repeated option")
+end)
+
+test.case("accepts a console with its chunk, the chunk from stdin without one or for -", function()
+    test.assert_deep_eq(parse_args("console", "127.0.0.1", "9090", "return 1 + 1"), {
+        app_type = "console",
+        address = "127.0.0.1",
+        port = "9090",
+        chunk = "return 1 + 1",
+        headless = false,
+        follow = false
+    })
+    test.assert_deep_eq(parse_args("console", "localhost", "9090"), {
+        app_type = "console",
+        address = "localhost",
+        port = "9090",
+        headless = false,
+        follow = false
+    })
+    test.assert_eq(parse_args("console", "localhost", "9090", "-").chunk, nil)
+    test.assert_eq(parse_args("console", "localhost", "9090", "-1").chunk, "-1", "a single dash starts a chunk, not an option")
+end)
+
+test.case("accepts follow and watch on the console anywhere after the port", function()
+    for _, args in ipairs({
+        {
+            "--follow",
+            "log(true)"
+        },
+        {
+            "log(true)",
+            "--follow"
+        }
+    }) do
+        local params = assert(parse_args("console", "localhost", "9090", unpack(args)))
+        test.assert_eq(params.chunk, "log(true)", table.concat(args, " "))
+        test.assert_true(params.follow, table.concat(args, " "))
+    end
+    local params = assert(parse_args("console", "localhost", "9090", "--watch", "app:get_time()"))
+    test.assert_eq(params.watch, "app:get_time()")
+    test.assert_eq(params.chunk, nil)
+    test.assert_false(params.follow, "follow is the flag alone; a watch follows by itself")
+    test.assert_true(parse_args("console", "localhost", "9090", "--follow", "--watch", "x").follow)
+end)
+
+test.case("rejects on the console a watch with a chunk, a second chunk, a repeated or valueless option", function()
+    for _, args in ipairs({
+        {
+            "--watch",
+            "x",
+            "return 1"
+        },
+        {
+            "return 1",
+            "--watch",
+            "x"
+        },
+        {
+            "--watch",
+            "x",
+            "-"
+        },
+        {
+            "return 1",
+            "return 2"
+        },
+        {
+            "--follow",
+            "--follow"
+        },
+        {
+            "--watch",
+            "x",
+            "--watch",
+            "y"
+        },
+        {
+            "--watch"
+        },
+        {
+            "--watch",
+            ""
+        },
+        {
+            "--watch",
+            "--follow"
+        },
+        {
+            "--host",
+            "localhost"
+        },
+        {
+            "-- a comment"
+        }
+    }) do
+        test.assert_eq(parse_args("console", "localhost", "9090", unpack(args)), nil, table.concat(args, " "))
+    end
+    test.assert_eq(parse_args("console", "localhost", "port"), nil, "a bad port")
+    test.assert_eq(parse_args("console", "example.com", "9090"), nil, "a bad address")
+end)
+
+test.case("rejects the client and server options on the console and the console options elsewhere", function()
+    for _, args in ipairs({
+        {
+            "--scenario",
+            "join-game"
+        },
+        {
+            "--console",
+            "9091"
+        },
+        {
+            "--server-console",
+            "9091"
+        },
+        {
+            "--identity",
+            "smoke"
+        },
+        {
+            "--fixture",
+            "scenarios"
+        },
+        {
+            "--headless"
+        },
+        {
+            "--peers",
+            "bob:9100"
+        }
+    }) do
+        test.assert_eq(parse_args("console", "localhost", "9090", unpack(args)), nil, table.concat(args, " "))
+    end
+    for _, app_type in ipairs({
+        "client",
+        "server"
+    }) do
+        test.assert_eq(parse_args(app_type, "localhost", "8080", "--follow"), nil, "--follow on the " .. app_type)
+        test.assert_eq(parse_args(app_type, "localhost", "8080", "--watch", "x"), nil, "--watch on the " .. app_type)
+    end
+end)
+
+test.case("accepts a monitor with its targets in place of the port, its console and headless", function()
+    test.assert_deep_eq(parse_args("monitor", "127.0.0.1", "client:9090,server:9091"), {
+        app_type = "monitor",
+        address = "127.0.0.1",
+        targets = {
+            client = "9090",
+            server = "9091"
+        },
+        headless = false,
+        follow = false
+    })
+    test.assert_deep_eq(parse_args("monitor", "localhost", "server:9091", "--headless", "--console", "9092"), {
+        app_type = "monitor",
+        address = "localhost",
+        targets = {
+            server = "9091"
+        },
+        console = "9092",
+        headless = true,
+        follow = false
+    })
+end)
+
+test.case("rejects malformed monitor targets and the other options on the monitor", function()
+    for _, targets in ipairs({
+        "9090",
+        "client",
+        "client:",
+        ":9090",
+        "client:9090,",
+        "client:1023",
+        "client:9090,client:9091",
+        "zażółć:9090"
+    }) do
+        test.assert_eq(parse_args("monitor", "localhost", targets), nil, targets)
+    end
+    test.assert_eq(parse_args("monitor", "localhost"), nil, "no targets")
+    for _, args in ipairs({
+        {
+            "return 1"
+        },
+        {
+            "--follow"
+        },
+        {
+            "--watch",
+            "x"
+        },
+        {
+            "--scenario",
+            "join-game"
+        },
+        {
+            "--server-console",
+            "9091"
+        },
+        {
+            "--identity",
+            "smoke"
+        },
+        {
+            "--fixture",
+            "scenarios"
+        },
+        {
+            "--peers",
+            "bob:9100"
+        }
+    }) do
+        test.assert_eq(parse_args("monitor", "localhost", "client:9090", unpack(args)), nil, table.concat(args, " "))
+    end
+end)
+
+test.case("takes a monitor's targets nowhere else: a port is a port", function()
+    test.assert_eq(parse_args("client", "localhost", "client:9090"), nil)
+    test.assert_eq(parse_args("console", "localhost", "client:9090"), nil)
 end)
