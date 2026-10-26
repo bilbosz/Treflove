@@ -2,7 +2,8 @@
 
 #==============================================================================
 # Script: scenario.sh
-# Purpose: Run one scenario against a server seeded from a fixture
+# Purpose: Run one scenario against a server seeded from a fixture, with one
+#          client more for every peer the scenario names
 # Usage: ./scenario.sh <name> [--windowed] [--port <udp port>]
 #        [--console <port>] [--server-console <port>] [--fixture <dir>]
 #        [--timeout <seconds>]
@@ -36,6 +37,39 @@ done
 
 cd "$(dirname "$0")" || exit 1
 
+scenario_peers() {
+    luajit - "scenarios/$1.lua" <<'LUA'
+package.path = "./?.lua;lib/lua-lifetime/?.lua;lib/lua-lifetime/?/init.lua;" .. package.path
+require("app.globals")
+local scenario = dofile(arg[1])
+if type(scenario) == "table" then
+    for _, peer in ipairs(scenario.peers or {}) do
+        print(peer)
+    end
+end
+LUA
+}
+
+# The lead connects to a peer's console at its first call, so the console must be open before the lead starts
+wait_for_console() {
+    local console_port="$1" pid="$2"
+    for _ in $(seq 100); do
+        if (exec 3<> "/dev/tcp/127.0.0.1/$console_port") 2>/dev/null; then
+            return 0
+        fi
+        kill -0 "$pid" 2>/dev/null || return 1
+        sleep 0.1
+    done
+    return 1
+}
+
+if ! peers=$(scenario_peers "$name"); then
+    echo "$0: cannot read the peers of scenarios/$name.lua" >&2
+    exit 2
+fi
+peer_names=()
+[ -z "$peers" ] || mapfile -t peer_names <<< "$peers"
+
 log_dir="/tmp/treflove-scenario/$name"
 mkdir -p "$log_dir"
 server_log="$log_dir/server.log"
@@ -44,19 +78,47 @@ client_log="$log_dir/client.log"
 : > "$client_log"
 
 server_pid=""
-stop_server() {
-    if [ -n "$server_pid" ]; then
-        kill -TERM "$server_pid" 2>/dev/null
-        wait "$server_pid" 2>/dev/null
-        server_pid=""
-    fi
+peer_pids=()
+stop_all() {
+    for pid in "${peer_pids[@]}" $server_pid; do
+        kill -TERM "$pid" 2>/dev/null
+        wait "$pid" 2>/dev/null
+    done
+    peer_pids=()
+    server_pid=""
 }
-trap stop_server EXIT
+trap stop_all EXIT
 
 love . server localhost "$port" --identity treflove-scenario --fixture "$fixture" --console "$server_console" > "$server_log" 2>&1 &
 server_pid=$!
 
+peer_consoles=()
+for i in "${!peer_names[@]}"; do
+    peer="${peer_names[$i]}"
+    peer_console=$((console + 10 + i))
+    peer_log="$log_dir/$peer.log"
+    peer_args=(. client localhost "$port" --identity "treflove-scenario-$peer" --console "$peer_console" --server-console "$server_console")
+    if [ "$windowed" -eq 1 ]; then
+        love "${peer_args[@]}" > "$peer_log" 2>&1 &
+    else
+        SDL_VIDEODRIVER=offscreen SDL_AUDIODRIVER=dummy timeout "$timeout_seconds" love "${peer_args[@]}" --headless > "$peer_log" 2>&1 &
+    fi
+    peer_pids+=($!)
+    peer_consoles+=("$peer_console")
+done
+peer_option=()
+for i in "${!peer_names[@]}"; do
+    if ! wait_for_console "${peer_consoles[$i]}" "${peer_pids[$i]}"; then
+        echo "$0: the peer ${peer_names[$i]} opened no console on ${peer_consoles[$i]}, see $log_dir/${peer_names[$i]}.log" >&2
+        exit 1
+    fi
+    peer_option+=("${peer_names[$i]}:${peer_consoles[$i]}")
+done
+
 client_args=(. client localhost "$port" --identity treflove-scenario --scenario "$name" --console "$console" --server-console "$server_console")
+if [ ${#peer_option[@]} -gt 0 ]; then
+    client_args+=(--peers "$(IFS=,; echo "${peer_option[*]}")")
+fi
 if [ "$windowed" -eq 1 ]; then
     # The app stays open after the scenario: no timeout, the log also on the terminal
     love "${client_args[@]}" 2>&1 | tee "$client_log"
@@ -66,7 +128,7 @@ else
     exit_code=$?
 fi
 
-stop_server
+stop_all
 if [ "$windowed" -eq 0 ]; then
     cat "$client_log"
 fi

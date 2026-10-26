@@ -86,15 +86,20 @@ local function make_socket(reply)
     ---@class TestDriverSocket: ConsoleSocket
     ---@field buffer string What the server answers, received in full
     ---@field sent string
+    ---@field port integer|nil Connected to
     ---@field closed boolean
     local fake = {
         buffer = reply,
         sent = "",
+        port = nil,
         closed = false
     }
 
+    ---@param _ string
+    ---@param port integer
     ---@return integer|nil, string|nil
-    function fake:connect()
+    function fake:connect(_, port)
+        self.port = port
         return 1, nil
     end
 
@@ -144,8 +149,9 @@ end
 
 ---@param server_console string|nil
 ---@param tcp ConsoleSocketFactory|nil
+---@param peers table<string, string>|nil
 ---@return TestDriverWorld
-local function setup(server_console, tcp)
+local function setup(server_console, tcp, peers)
     local app_mock = mocks.install_app()
     mocks.ensure_love_math()
     mocks.ensure_love_graphics()
@@ -190,7 +196,8 @@ local function setup(server_console, tcp)
         address = "localhost",
         port = "8080",
         server_console = server_console,
-        headless = true
+        headless = true,
+        peers = peers
     }
     app_mock.main_loop = main_loop
     ---@param exit_code integer|nil
@@ -653,5 +660,88 @@ test.case("quit asks the app to quit with its code and remembers it", function()
         0
     })
     test.assert_eq(world.driver:get_exit_code(), 0)
+    finish(world)
+end)
+
+test.case("peers names the command line's peers, sorted, and none without the option", function()
+    local world = setup(nil, nil, {
+        eve = "9101",
+        bob = "9100",
+        carol = "9102"
+    })
+    test.assert_deep_eq(world.driver:peers(), {
+        "bob",
+        "carol",
+        "eve"
+    })
+    finish(world)
+    world = setup()
+    test.assert_deep_eq(world.driver:peers(), {})
+    finish(world)
+end)
+
+test.case("client sends the chunk quoted in a run to the peer's console and returns at once with the handle", function()
+    local fake = make_socket("")
+    local world = setup(nil, function()
+        return fake
+    end, {
+        bob = "9100"
+    })
+    local chunk = "steps.log_in(driver, \"piotr\", \"secret\")\nreturn 'in'"
+    local run = world.driver:client("bob", chunk)
+    test.assert_eq(get_class_name_of(run), "ScenarioPeerRun")
+    test.assert_eq(fake.port, 9100)
+    local request = string.format("run(%q)", chunk)
+    test.assert_eq(fake.sent, string.format("eval %d\n", #request) .. request)
+    test.assert_eq(assert(loadstring("return " .. request:sub(5, -2)))(), chunk, "the quoted chunk reads back as the chunk")
+    finish(world)
+end)
+
+test.case("client connects once per peer, keeps the connections and the driver's death closes them all", function()
+    ---@type TestDriverSocket[]
+    local sockets = {}
+    local world = setup(nil, function()
+        local fake = make_socket("")
+        table.insert(sockets, fake)
+        return fake
+    end, {
+        bob = "9100",
+        eve = "9101"
+    })
+    world.driver:client("bob", "return 1")
+    world.driver:client("eve", "return 2")
+    world.driver:client("bob", "return 3")
+    test.assert_eq(#sockets, 2)
+    test.assert_eq(sockets[1].port, 9100)
+    test.assert_eq(sockets[2].port, 9101)
+    test.assert_eq(sockets[1].sent, "eval 15\nrun(\"return 1\")" .. "eval 15\nrun(\"return 3\")")
+    test.assert_eq(sockets[2].sent, "eval 15\nrun(\"return 2\")")
+    test.assert_false(sockets[1].closed)
+    finish(world)
+    test.assert_true(sockets[1].closed and sockets[2].closed, "the driver's death closes every peer connection")
+end)
+
+test.case("client raises at the caller's line for a peer the command line did not give", function()
+    local connects = 0
+    local world = setup(nil, function()
+        connects = connects + 1
+        return make_socket("")
+    end, {
+        bob = "9100"
+    })
+    ---@type boolean, any
+    local ok, err = pcall(function()
+        world.driver:client("eve", "return 1")
+    end)
+    test.assert_false(ok)
+    test.assert_true(tostring(err):find("test%-scenario%-driver%.lua:%d+: no peer eve$") ~= nil, tostring(err))
+    test.assert_eq(connects, 0)
+    finish(world)
+    world = setup()
+    ok, err = pcall(function()
+        world.driver:client("bob", "return 1")
+    end)
+    test.assert_false(ok)
+    test.assert_true(tostring(err):find("no peer bob", 1, true) ~= nil, "without the option: " .. tostring(err))
     finish(world)
 end)

@@ -42,7 +42,8 @@ return {
             diameter = 3,
             avatar = "token/bilbo.png",
             owners = {
-                "adam"
+                "adam",
+                "piotr"
             },
             position = {
                 6,
@@ -64,6 +65,11 @@ return {
             name = "Adam",
             auth = "48nI0XjJ11hysenR6bLDNrlo9Vk7gktIUfV1ZZ6wiNs=",
             group = "master"
+        },
+        piotr = {
+            name = "Piotr",
+            auth = "JoVLFuvIwMkpgm37+AAoJqp/Cw9YWNYTTEcdESjLNuo=",
+            group = "player"
         }
     },
     groups = {
@@ -72,6 +78,18 @@ return {
             permissions = {
                 "read",
                 "write"
+            }
+        },
+        player = {
+            title = "Player",
+            permissions = {
+                "read:game",
+                "read:pages",
+                "read:token_properties",
+                "read:players",
+                "read:groups",
+                "read:assets",
+                "read:tokens/@owned"
             }
         }
     }

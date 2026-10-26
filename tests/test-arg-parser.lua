@@ -72,11 +72,12 @@ test.case("leaves the options unset without any", function()
     test.assert_eq(params.server_console, nil)
     test.assert_eq(params.identity, nil)
     test.assert_eq(params.fixture, nil)
+    test.assert_eq(params.peers, nil)
     test.assert_false(params.headless)
 end)
 
 test.case("accepts every client option, in any order", function()
-    local params = parse_args("client", "localhost", "8080", "--headless", "--identity", "smoke_1", "--scenario", "join-game", "--server-console", "9091", "--console", "9090")
+    local params = parse_args("client", "localhost", "8080", "--headless", "--identity", "smoke_1", "--scenario", "join-game", "--server-console", "9091", "--peers", "bob:9100", "--console", "9090")
     test.assert_deep_eq(params, {
         app_type = "client",
         address = "localhost",
@@ -85,7 +86,10 @@ test.case("accepts every client option, in any order", function()
         console = "9090",
         server_console = "9091",
         identity = "smoke_1",
-        headless = true
+        headless = true,
+        peers = {
+            bob = "9100"
+        }
     })
 end)
 
@@ -169,4 +173,40 @@ test.case("accepts a fixture that is a relative path without ..", function()
     }) do
         test.assert_eq(parse_args("server", "localhost", "8080", "--fixture", path), nil, path)
     end
+end)
+
+test.case("accepts the peers as names with their console ports", function()
+    test.assert_deep_eq(parse_args("client", "localhost", "8080", "--peers", "bob:9100").peers, {
+        bob = "9100"
+    })
+    test.assert_deep_eq(parse_args("client", "localhost", "8080", "--peers", "bob:9100,Eve_2-x:65535,carol:1024").peers, {
+        bob = "9100",
+        ["Eve_2-x"] = "65535",
+        carol = "1024"
+    })
+end)
+
+test.case("rejects the peers on the server, a malformed entry, a bad port and a repeated name", function()
+    test.assert_eq(parse_args("server", "localhost", "8080", "--peers", "bob:9100"), nil, "on the server")
+    for _, peers in ipairs({
+        "",
+        "bob",
+        "bob:",
+        ":9100",
+        "bob:9100,",
+        ",bob:9100",
+        "bob:9100,,eve:9101",
+        "bob 9100",
+        "bob:9100:9101",
+        "bob=9100",
+        "b ob:9100",
+        "zażółć:9100",
+        "bob:1023",
+        "bob:65536",
+        "bob:port",
+        "bob:9100,bob:9101"
+    }) do
+        test.assert_eq(parse_args("client", "localhost", "8080", "--peers", peers), nil, peers)
+    end
+    test.assert_eq(parse_args("client", "localhost", "8080", "--peers", "bob:9100", "--peers", "eve:9101"), nil, "a repeated option")
 end)
