@@ -192,7 +192,10 @@ with small avatars, Bilbo owned by piotr.
 The script starts a server on its own port and identity
 (`treflove-scenario`) with the fixture and a console, then the client with
 the scenario, its console and the server's, stops the server at the end
-and exits with the client's code. `run.sh` and the `Client` launch
+and exits with the client's code. It refuses to start when one of its
+console ports is in use, since `run.sh`'s client and server listen on the
+same defaults and the scenario's server calls would reach them: pass
+`--console` and `--server-console` of your own then. `run.sh` and the `Client` launch
 configuration pass `--scenario join-game`; the `Scenario (headless)`
 launch configuration runs one by name under the debugger, with
 breakpoints in the scenario file (its tasks start and stop the scenario

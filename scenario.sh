@@ -70,6 +70,22 @@ fi
 peer_names=()
 [ -z "$peers" ] || mapfile -t peer_names <<< "$peers"
 
+# A console port in use belongs to another instance (run.sh's client or server): the scenario's calls would reach it
+console_in_use() {
+    (exec 3<> "/dev/tcp/127.0.0.1/$1") 2>/dev/null
+}
+refuse_console_in_use() {
+    if console_in_use "$1"; then
+        echo "$0: the console port $1 is in use by another instance; pass --console and --server-console of your own" >&2
+        exit 2
+    fi
+}
+refuse_console_in_use "$console"
+refuse_console_in_use "$server_console"
+for i in "${!peer_names[@]}"; do
+    refuse_console_in_use $((console + 10 + i))
+done
+
 log_dir="/tmp/treflove-scenario/$name"
 mkdir -p "$log_dir"
 server_log="$log_dir/server.log"
