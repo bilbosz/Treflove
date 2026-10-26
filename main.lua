@@ -21,6 +21,8 @@ elseif params.app_type == "client" then
     end, Utils.error_handler("client-init"))
 elseif params.app_type == "server" then
     require("app.server")(params)
+elseif params.app_type == "console" then
+    require("app.console-app")(params):install()
 else
     assert_unreachable()
 end

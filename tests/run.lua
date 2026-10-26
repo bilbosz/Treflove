@@ -37,6 +37,7 @@ local TEST_MODULES = {
     "tests.test-connection",
     "tests.test-connector",
     "tests.test-console",
+    "tests.test-console-app",
     "tests.test-console-client",
     "tests.test-console-session",
     "tests.test-create-asset-folder-rp",
