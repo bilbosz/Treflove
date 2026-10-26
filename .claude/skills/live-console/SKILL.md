@@ -46,7 +46,7 @@ luajit tools/console.lua 9090 'return screenshot("now.png")'      # the path; Re
 luajit tools/console.lua 9090 'pause()'                            # the update loop stops; the window still draws
 luajit tools/console.lua 9090 'frames(1)'                          # one update
 luajit tools/console.lua 9090 'resume()'
-luajit tools/console.lua 9090 'scenario("assets-workspace")'      # on the live client
+luajit tools/console.lua 9090 'scenario("assets-workspace")'      # on the live client, which stays at the end
 luajit tools/console.lua 9090 < /abs/path/probe.lua                # a file as the chunk
 ```
 

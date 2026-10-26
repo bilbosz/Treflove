@@ -104,10 +104,12 @@ end
   server's state or nudges its clock from the client side.
 - `screenshot(name)` saves to the save directory and returns the path.
 - The outcome is logged (`scenario <name>: passed` or `failed: <error>`
-  with the traceback and the control dump); headless, the client then
-  quits with exit code 0 or 1; in a window it stays where it is, so a
-  failing scenario is picked up where it failed, and a passing one is a
-  bookmark: the app at the state the scenario reached.
+  with the traceback and the control dump). The scenario given on the
+  command line, headless, then quits the client with exit code 0 or 1;
+  one started through the console, or any in a window, leaves the
+  program where it is, so a failing scenario is picked up where it
+  failed, and a passing one is a bookmark: the app at the state the
+  scenario reached.
 
 The shared steps live in `scenarios/lib/steps.lua`. The scenarios:
 `join-game` (the login and the game: what the client used to do by
@@ -163,7 +165,7 @@ chunk runs under an environment over `_G` that carries:
 | `pause()`, `resume()`, `frames(n)` | the main loop's pause, resume and step |
 | `screenshot(name)` | the absolute path; the file exists once the frame is drawn |
 | `log(enabled)` | the app's log lines streamed as `log` frames |
-| `scenario(name)` | client only: runs a scenario on the live program |
+| `scenario(name)` | client only: runs a scenario on the live program, which stays afterwards |
 | `quit(exit_code)` | |
 
 The command line client:
@@ -174,6 +176,9 @@ luajit tools/console.lua 9090 --watch 'get_class_name_of(app.screen_manager:get_
 luajit tools/console.lua 9090 --follow 'log(true)'                                            # the log, live
 luajit tools/console.lua 9090 < probe.lua                                                      # a file as the chunk
 ```
+
+The options go before or after the port. Exit codes: 0 for a result, 1
+for an error reply, 2 for a usage or connection failure.
 
 `ConsoleClient` (`utils/console-client.lua`) is the client end both the
 CLI and the scenario driver use.
