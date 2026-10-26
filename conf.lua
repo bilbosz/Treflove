@@ -5,6 +5,11 @@ local debugger = require("app.debugger")
 ---@field console boolean
 ---@field identity string|nil
 ---@field window love.WindowConfig|nil
+---@field modules love.ModulesConfig
+
+---@class love.ModulesConfig
+---@field audio boolean
+---@field joystick boolean
 
 ---@class love.WindowConfig
 ---@field title string
@@ -39,12 +44,16 @@ function love.conf(t)
         else
             t.window = nil
         end
-    elseif params.app_type == "client" then
-        t.window.title = "Treflove"
+    elseif params.app_type == "client" or params.app_type == "monitor" then
+        t.window.title = params.app_type == "monitor" and "Treflove - Monitor" or "Treflove"
         t.window.icon = "icon.png"
         t.window.resizable = true
         t.window.fullscreen = false
         t.window.display = 1
+    elseif params.app_type == "console" then
+        t.window = nil
+        t.modules.audio = false
+        t.modules.joystick = false
     else
         assert_unreachable()
     end
