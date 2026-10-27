@@ -518,6 +518,13 @@ flow_case("connect and log in: the session owns the period, which owns the menu,
         "DeleteTokenRp",
         "TokenCreatedRp",
         "TokenDeletedRp",
+        "UpdateEntryRp",
+        "EntryChangedRp",
+        "CreateEntryRp",
+        "DeleteEntryRp",
+        "EntryCreatedRp",
+        "EntryDeletedRp",
+        "GrantsChangedRp",
         "UploadAssetRp",
         "DownloadAssetRp",
         "DownloadMissingAssetsRp",
@@ -558,6 +565,13 @@ flow_case("connect: the login screen is the session's; signing in through its fi
         "DeleteTokenRp",
         "TokenCreatedRp",
         "TokenDeletedRp",
+        "UpdateEntryRp",
+        "EntryChangedRp",
+        "CreateEntryRp",
+        "DeleteEntryRp",
+        "EntryCreatedRp",
+        "EntryDeletedRp",
+        "GrantsChangedRp",
         "UploadAssetRp",
         "DownloadAssetRp",
         "DownloadMissingAssetsRp",
@@ -598,6 +612,13 @@ flow_case("connect: the login screen is the session's; signing in through its fi
         "DeleteTokenRp",
         "TokenCreatedRp",
         "TokenDeletedRp",
+        "UpdateEntryRp",
+        "EntryChangedRp",
+        "CreateEntryRp",
+        "DeleteEntryRp",
+        "EntryCreatedRp",
+        "EntryDeletedRp",
+        "GrantsChangedRp",
         "UploadAssetRp",
         "DownloadAssetRp",
         "DownloadMissingAssetsRp",
@@ -846,6 +867,49 @@ flow_case("the assets workspace from the game dies with the period on a disconne
     test.assert_eq(client.screen_manager:get_screen(), nil)
 end)
 
+flow_case("the shown page changed to one the player may not read: the workspace over the game dies, then the game screen, and the menu is shown", function(flow)
+    local client, server = flow.client, flow.server
+    local game_screen = assert(client.screen_manager:get_screen())
+    client.session:open_assets_workspace()
+    local workspace = assert(client.screen_manager:get_screen())
+    frame(server)
+    frame(client)
+
+    local log = {}
+    with_release_log(log, function()
+        app = client
+        mocks.deliver(flow.client_connection, "EntryChangedRp", {
+            kind = "game",
+            id = "game",
+            entry = {
+                page = "Nowhere"
+            }
+        })
+    end)
+    test.assert_deep_eq(log, {
+        "AssetsWorkspaceScreen:release(destroy)",
+        "AssetUsageList:release(destroy)",
+        "AssetDetails:release(destroy)",
+        "PreviewArea:release(destroy)",
+        "AssetList:release(destroy)",
+        "GameScreen:release(destroy)"
+    }, "the workspace first, which would show the dead game screen again on its way back")
+    test.assert_false(lifetime.alive(workspace))
+    test.assert_false(lifetime.alive(game_screen))
+    local notifications = client.notification_manager --[[@as TestNotificationManager]]
+    test.assert_eq(notifications.messages[#notifications.messages], "Nothing to show: no page you may see")
+    test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "UserMenuScreen")
+    ---@diagnostic disable-next-line: invisible
+    test.assert_deep_eq(class_names(lifetime.dependents(client.session._period)), {
+        "UserMenuScreen",
+        "BackstackEntry"
+    })
+    test.assert_deep_eq(client.root:get_children(), {
+        client.screen_manager:get_screen():get_control()
+    }, "only the menu is on the root")
+    test.assert_deep_eq(mocks.sent(flow.client_connection)[1].body, {}, "the push acknowledged, which the server, who did not send it, is not given")
+end)
+
 flow_case("logout: the period dies with the menu, the options and the back entries; the login screen is the session's", function(flow)
     local client, server = flow.client, flow.server
     client.backstack_manager:back()
@@ -888,6 +952,13 @@ flow_case("logout: the period dies with the menu, the options and the back entri
         "DeleteTokenRp",
         "TokenCreatedRp",
         "TokenDeletedRp",
+        "UpdateEntryRp",
+        "EntryChangedRp",
+        "CreateEntryRp",
+        "DeleteEntryRp",
+        "EntryCreatedRp",
+        "EntryDeletedRp",
+        "GrantsChangedRp",
         "UploadAssetRp",
         "DownloadAssetRp",
         "DownloadMissingAssetsRp",
@@ -948,6 +1019,13 @@ flow_case("logging in again from the login screen: the screen dies at the login 
         "DeleteTokenRp",
         "TokenCreatedRp",
         "TokenDeletedRp",
+        "UpdateEntryRp",
+        "EntryChangedRp",
+        "CreateEntryRp",
+        "DeleteEntryRp",
+        "EntryCreatedRp",
+        "EntryDeletedRp",
+        "GrantsChangedRp",
         "UploadAssetRp",
         "DownloadAssetRp",
         "DownloadMissingAssetsRp",

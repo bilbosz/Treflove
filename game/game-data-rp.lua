@@ -53,8 +53,9 @@ end
 
 ---@param data GameData
 ---@param page PageData
----@return string[] Asset paths required by the page
-local function _list_required_assets(data, page)
+---@return string[] Asset paths required by the page: its image and the avatars of its tokens
+function GameDataRp.list_required_assets(data, page)
+    ---@type string[]
     local list = {}
     table.insert(list, page.image)
     for _, v in ipairs(page.tokens) do
@@ -124,7 +125,7 @@ function GameDataRp:receive_response(response)
         return
     end
     app.screen_manager:show(WaitingScreen("Synchronizing Assets..."))
-    app.asset_manager:download_missing_assets(_list_required_assets(data, page), function()
+    app.asset_manager:download_missing_assets(GameDataRp.list_required_assets(data, page), function()
         session:enter_game()
     end)
 end

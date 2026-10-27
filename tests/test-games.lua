@@ -2,6 +2,7 @@ local test = require("tests.lib.test")
 local mocks = require("tests.lib.mocks")
 local Game = require("game.game")
 local Games = require("data.games")
+local lifetime = require("lifetime")
 
 ---@param name string
 ---@return string
@@ -230,4 +231,46 @@ test.case("a new game is refused without a letter or a digit, with a name too lo
         })
         test.assert_eq(read_save("s/games/meadow/save.lua").name, "Meadow", "untouched")
     end)
+end)
+
+test.case("refreshing a game's permissions rebuilds every live session's set from the data and gives the sessions whose grants changed", function()
+    local side = mocks.make_server_session(mocks.entries_game_data, {})
+    ---@type boolean, any
+    local ok, err = pcall(function()
+        test.assert_false(side.session:refresh_permissions(), "no game, nothing to refresh")
+        mocks.join_game(side.connection, "adam")
+        local piotr_connection, piotr = mocks.join_another("piotr")
+        local ewa_connection = mocks.join_another("ewa")
+        local game = side.session:get_game()
+        test.assert_deep_eq(game:refresh_permissions(), {}, "the data as it was")
+        local data = game:get_data()
+        data.groups.player.permissions = {
+            "read",
+            "write:tokens"
+        }
+        test.assert_deep_eq(game:refresh_permissions(), {
+            piotr
+        })
+        test.assert_deep_eq(piotr:get_permissions():get_grants(), {
+            "read",
+            "write:tokens",
+            "write:pages/P"
+        })
+        test.assert_deep_eq(game:refresh_permissions(), {}, "rebuilt already")
+        data.players.piotr.permissions = {
+            "write:tokens",
+            "read"
+        }
+        test.assert_deep_eq(game:refresh_permissions(), {
+            piotr
+        }, "the order of the grants counts")
+        lifetime.destroy(ewa_connection)
+        data.groups.watcher.permissions = {}
+        test.assert_deep_eq(game:refresh_permissions(), {}, "a dead session is no longer in the game")
+        lifetime.destroy(piotr_connection)
+    end)
+    mocks.finish_server_session(side)
+    if not ok then
+        error(err, 0)
+    end
 end)
