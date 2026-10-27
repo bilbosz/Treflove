@@ -49,6 +49,7 @@ local TEST_MODULES = {
     "tests.test-defer-manager",
     "tests.test-delete-asset-rp",
     "tests.test-delete-token-rp",
+    "tests.test-entries",
     "tests.test-event",
     "tests.test-fixture",
     "tests.test-fonts",
