@@ -159,9 +159,7 @@ return {
     ---@param driver ScenarioDriver
     run = function(driver)
         local bob = driver:client("bob", [[
-            steps.log_in(driver, "piotr", "secret")
-            driver:click("TextButton", "Join Game")
-            driver:wait_screen("GameScreen")
+            steps.join_game(driver, "piotr", "secret")
         ]])
         steps.join_game(driver)
         bob:wait()
