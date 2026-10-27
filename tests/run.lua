@@ -70,6 +70,7 @@ local TEST_MODULES = {
     "tests.test-monitor-screen",
     "tests.test-monitor-target",
     "tests.test-new-game-screen",
+    "tests.test-new-token-screen",
     "tests.test-ogg",
     "tests.test-page",
     "tests.test-page-surroundings",

@@ -9,6 +9,7 @@ local ListGamesRp = require("game.list-games-rp")
 local Login = require("login.login")
 local LoginScreen = require("login.login-screen")
 local NewGameScreen = require("screens.new-game-screen")
+local NewTokenScreen = require("screens.new-token-screen")
 local PermissionSet = require("game.permission-set")
 local SignUpScreen = require("login.sign-up-screen")
 local TokenChangedRp = require("game.token-changed-rp")
@@ -44,6 +45,7 @@ local token_id = require("game.token.token-id")
 ---@field _sign_up_screen SignUpScreen|nil The sign-up screen, from `show_sign_up` to its way back or the next login (client only)
 ---@field _games_screen GamesScreen|nil The games list, from the listing `show_games` asked for to its way back or a join (client only)
 ---@field _new_game_screen NewGameScreen|nil Over the games list, from `show_new_game` to its way back or a join (client only)
+---@field _new_token_screen NewTokenScreen|nil Over the game, from `show_new_token` to its way back or the token created (client only)
 ---@field _period lifetime.Token|nil The "logged in" span (client only): the menu screen, the games and new-game screens, the game screen and their back entries die with it
 local Session = class("Session")
 
@@ -139,6 +141,7 @@ local function _on_logout(self)
         self._user_menu_screen = nil
         self._games_screen = nil
         self._new_game_screen = nil
+        self._new_token_screen = nil
         self._game_screen = nil
         self._assets_workspace_screen = nil
         self._assets_workspace_return = nil
@@ -156,6 +159,7 @@ function Session:init(connection)
     self._user_menu_screen = nil
     self._games_screen = nil
     self._new_game_screen = nil
+    self._new_token_screen = nil
     self._game_screen = nil
     self._assets_workspace_screen = nil
     self._assets_workspace_return = nil
@@ -622,6 +626,10 @@ end
 
 function Session:leave_game()
     assert(app.is_client and self._game_screen)
+    if self._new_token_screen then
+        lifetime.destroy(self._new_token_screen)
+        self._new_token_screen = nil
+    end
     self:show_menu()
     lifetime.destroy(self._game_screen)
     self._game_screen = nil
@@ -630,6 +638,37 @@ end
 ---@return GameScreen|nil While the user is in the game
 function Session:get_game_screen()
     return self._game_screen
+end
+
+function Session:show_new_token()
+    assert(app.is_client and self._game_screen, "a new token needs the game")
+    local period = assert(self._period, "a new token needs a logged-in user")
+    if self._new_token_screen then
+        lifetime.destroy(self._new_token_screen)
+    end
+    local screen = NewTokenScreen(self):attach_lifetime(period)
+    self._new_token_screen = screen
+    app.screen_manager:show(screen)
+    app.backstack_manager:push(function()
+        self:close_new_token()
+    end):attach_lifetime(screen)
+end
+
+function Session:close_new_token()
+    assert(app.is_client and self._new_token_screen)
+    local screen = self._new_token_screen
+    self._new_token_screen = nil
+    if self._game_screen then
+        app.screen_manager:show(self._game_screen)
+    else
+        self:show_menu()
+    end
+    lifetime.destroy(screen)
+end
+
+---@return NewTokenScreen|nil While it is open
+function Session:get_new_token_screen()
+    return self._new_token_screen
 end
 
 ---@param pick AssetPick|nil A file to choose, for a token's image property
