@@ -22,6 +22,7 @@ Monitor:
     <name>:<port>,..         the console ports at <address> to watch, each under its name
 ]],
     APP_SUCCESS_EXIT_CODE = 0,
+    APP_USAGE_EXIT_CODE = 2,
     NETWORK_COMPRESSION = "lz4",
     NETWORK_PEER_LIMIT = 64,
     NETWORK_SERVICE_TIMEOUT_MS = 5,

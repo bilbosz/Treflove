@@ -534,7 +534,7 @@ function mocks.install_love_filesystem(files)
     love = love or {}
     local previous = love.filesystem
 
-    ---@type table<string, boolean> Every directory: made explicitly, or a file's parent, until removed
+    ---@type table<string, boolean> Every directory made explicitly or the parent of a file given at the start, until removed; a write into a missing one fails as it does under LÖVE
     local directories = {}
 
     ---@param path string
@@ -622,11 +622,11 @@ function mocks.install_love_filesystem(files)
         ---@param content string
         ---@return boolean
         write = function(path, content)
-            files[path] = content
             local parent = string.match(path, "^(.*)/[^/]*$")
-            if parent then
-                add_directory(parent)
+            if parent and not directories[parent] then
+                return false
             end
+            files[path] = content
             return true
         end,
         ---@param path string
