@@ -85,4 +85,28 @@ function steps.server_sessions(driver)
     return assert(tonumber(connections)), assert(users)
 end
 
+---@param driver ScenarioDriver On the login screen
+---@param login string
+---@param name string
+---@param password string
+---@return UserMenuScreen
+function steps.sign_up(driver, login, name, password)
+    driver:wait_screen("LoginScreen")
+    driver:click("TextButton", "Sign Up")
+    driver:wait_screen("SignUpScreen")
+    for i, text in ipairs({
+        login,
+        name,
+        password,
+        password
+    }) do
+        driver:click("TextInput", nil, i)
+        driver:type(text)
+    end
+    driver:click("TextButton", "Create Account")
+    local screen = driver:wait_screen("UserMenuScreen") --[[@as UserMenuScreen]]
+    driver:log("signed up")
+    return screen
+end
+
 return steps

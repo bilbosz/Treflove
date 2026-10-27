@@ -28,6 +28,9 @@ function LoginScreen:init(login)
         MenuTextButton(self, "Sign In", function()
             _submit(self)
         end),
+        MenuTextButton(self, "Sign Up", function()
+            assert(app.session):show_sign_up()
+        end),
         MenuTextButton(self, "Quit", function()
             app:quit()
         end)
