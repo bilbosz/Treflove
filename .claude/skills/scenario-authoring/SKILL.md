@@ -69,7 +69,9 @@ script starts one extra client per peer (see "Several clients").
   tokens on the page: " .. n)`, so the failure log says what was found.
 - **Share the steps.** `scenarios/lib/steps.lua` holds `log_in` (returns
   the menu screen), `join_game` (returns the game screen), `log_out`,
-  `open_assets_workspace`, `server_sessions`; a step used by two
+  `open_assets_workspace`, `server_sessions`, `select_token` and
+  `drag_token` (a token by its label, selected with a rectangle over its
+  bounding square, dragged by an offset in screen units); a step used by two
   scenarios goes there, named for what it reaches. The folder is skipped
   by `./format-code.sh`, which skips every path containing `lib/` and
   rewrites the whole project, so one file is formatted with `lua-format

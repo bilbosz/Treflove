@@ -44,7 +44,14 @@ the game screen, returns it), `log_out(driver)` (Escape
 to the menu, "Log Out", waits for the login screen),
 `open_assets_workspace(driver)` ("Assets", waits for the listing),
 `server_sessions(driver)` (the server's connection count and its
-logged-in users).
+logged-in users), `select_token(driver, label)` (a selection rectangle
+over the token's bounding square with the select button, returns the
+`Token`; a neighbour touching the square is selected too),
+`drag_token(driver, label, dx, dy)` (the selected token dragged with the
+token-drag button by `dx`, `dy` screen units, returns its position in
+page meters; the move reaches the server when the drag ends, and the
+other clients in the game about 25 ms later headless, which
+`move-token` measures).
 
 What the fixture's basic world holds: the accounts `adam` and `piotr`
 (`accounts.lua`) and one game, `Meadow` (`games/meadow/`), with the page
