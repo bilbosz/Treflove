@@ -115,13 +115,21 @@ waits for game state synchronization.
 
 ## The fixture
 
-`scenarios/fixtures/basic/` mirrors the server root: `accounts.lua`
-(the accounts by login: `name` and `auth`) and `games/meadow/` with its
-`save.lua` (the `GameData` shape, see `game/game-data-rp.lua`) and
-`assets/` with tiny real images (LÖVE decodes them). `adam`/`krause` is
-the master of `Meadow`, `piotr`/`secret` a player who reads the tokens he
-owns only. To add an account, compute the `auth` with the script, which
-runs the project's own hashing under LÖVE:
+A fixture under `scenarios/fixtures/` mirrors the server root:
+`accounts.lua` (the accounts by login: `name` and `auth`) and
+`games/<id>/` with its `save.lua` (the `GameData` shape, see
+`game/game-data-rp.lua`) and `assets/`. `basic`, the default, has tiny
+real images (LÖVE decodes them): `adam`/`krause` is the master of
+`Meadow`, `piotr`/`secret` a player who reads the tokens he owns only.
+`old-town` is the world the server used to seed itself from: a real map,
+four tokens with real avatars, `adam`/`krause` its master. A scenario
+that needs a fixture other than `basic` says so in its table form,
+`fixture = "old-town"` beside `run` (and `peers`); `scenario.sh` reads
+the name with `tools/scenario-info.lua`. The server itself never seeds:
+`--fixture` is the scenario tooling and needs `--identity`, so a run on
+the user's default save directory is refused. To add an account, compute
+the `auth` with the script, which runs the project's own hashing under
+LÖVE:
 
 ```bash
 .claude/skills/scenario-authoring/scripts/player-auth.sh gandalf mellon

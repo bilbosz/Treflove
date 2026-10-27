@@ -21,8 +21,9 @@ love . monitor <address> <name>:<port>[,<name>:<port>...] [--headless] [--consol
   --server-console <port>  client only: the server's console port, for the
                            scenario driver's server(...) calls
   --identity <name>        the LÖVE save directory identity
-  --fixture <path>         server only: a directory of the source tree whose
-                           content seeds the server root at load
+  --fixture <path>         server only, with --identity: a directory of the
+                           source tree whose content seeds the server root
+                           at load
   --headless               fixed frame delta, no sleep, no vsync
   --peers <name>:<port>,.. client only: the console ports of the peer clients a
                            scenario drives
@@ -121,14 +122,18 @@ end
   scenario reached.
 
 The shared steps live in `scenarios/lib/steps.lua`. The scenarios:
-`join-game` (the login, the games list and the game: what the client
-used to do by itself with hardcoded credentials, now the dev default of
-`run.sh` and the launch configurations), `assets-workspace` (the
-workspace from the game, its listing against the game's store, back),
-`logout` (out and in again), `sign-up` (an account created from the
-login screen, signed in at once, out and in again) and `new-game` (a
+`join-game` (the login, the games list and the game), `assets-workspace`
+(the workspace from the game, its listing against the game's store,
+back), `logout` (out and in again), `sign-up` (an account created from
+the login screen, signed in at once, out and in again), `new-game` (a
 game created from the games list and entered, its template page and
-token, listed afterwards).
+token, listed afterwards), `fresh-start` (what a user does on a server
+that holds nothing: an account signed up, a game created and entered,
+listed afterwards; it reads nothing of the fixture, so it passes on an
+empty root too) and `old-town` (the Old Town world of the fixture of the
+same name: its page, its four tokens, its store; it ends in the game, so
+`./scenario.sh old-town --windowed` is the developer's way into a game
+with content).
 
 ### Several clients
 
@@ -180,20 +185,30 @@ scenarios will be.
 ### The fixture
 
 `--fixture <path>` names a directory of the source tree mirroring the
-server root: `scenarios/fixtures/basic/accounts.lua` and
-`games/meadow/` with its `save.lua` and `assets/`. At load the server
-empties its root in the save directory and copies the fixture in
-(`data/fixture.lua`), so every run starts from the same state. The basic
-fixture: the accounts `adam` (password `krause`) and `piotr` (password
-`secret`), one game, `Meadow`, with adam in the master group, piotr in a
-player group that reads the tokens he owns only, one page with a small
-image, two tokens with small avatars, Bilbo owned by piotr.
+server root: `accounts.lua` and `games/<id>/` with its `save.lua` and
+`assets/`. At load the server empties its root in the save directory and
+copies the fixture in (`data/fixture.lua`), so every run starts from the
+same state; the option needs `--identity`, so a fixture never lands on
+the default save directory, the user's. Two fixtures live under
+`scenarios/fixtures/`. `basic`, the default: the accounts `adam`
+(password `krause`) and `piotr` (password `secret`), one game, `Meadow`,
+with adam in the master group, piotr in a player group that reads the
+tokens he owns only, one page with a small image, two tokens with small
+avatars, Bilbo owned by piotr. `old-town`: the same `adam`, `piotr` with
+the password `stępczyński`, and the game `Old Town`, a page of 175 meters
+over a real map, the tokens `Bilbosz`, `Gaben`, `Bilbosza` and `Anonim`
+with real avatars, piotr a player who writes the tokens he owns and views
+`Bilbosz`. A scenario names the fixture it needs in its table form,
+`fixture = "old-town"` beside `run`; `scenario.sh` reads it
+(`tools/scenario-info.lua`) and seeds the server from it, `basic` without
+one, and `--fixture <dir>` on its command line overrides.
 
 ### Running one
 
 ```bash
 ./scenario.sh join-game              # headless: exit code 0 or 1, logs under /tmp/treflove-scenario/<name>/
 ./scenario.sh join-game --windowed   # the same in a window, the app stays open
+./scenario.sh old-town --windowed    # the Old Town world, the app left in the game
 ```
 
 The script starts a server on its own port and identity
@@ -204,11 +219,11 @@ console ports is in use, since `run.sh`'s client and server listen on the
 same defaults and the scenario's server calls would reach them: pass
 `--console` and `--server-console` of your own then, and `--identity`
 for a run beside another (its save directories and its logs, under
-`/tmp/treflove-scenario/<identity>/<name>/`, are then its own). `run.sh` and the `Client` launch
-configuration pass `--scenario join-game`; the `Scenario (headless)`
-launch configuration runs one by name under the debugger, with
-breakpoints in the scenario file (its tasks start and stop the scenario
-server).
+`/tmp/treflove-scenario/<identity>/<name>/`, are then its own). `run.sh`
+and the `Client` launch configuration pass no scenario; the
+`Scenario (headless)` launch configuration runs one by name under the
+debugger, with breakpoints in the scenario file (its tasks start and stop
+the scenario server, seeded from the scenario's fixture).
 
 ## The console
 

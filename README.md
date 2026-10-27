@@ -31,10 +31,11 @@ To run client instance run command:
 
     love . client localhost 8080
 
-The server's first start seeds its save directory from `server/seed/`
-(the accounts `adam`/`krause` and `piotr`/`stępczyński`, the game
-`Old Town`) and keeps it afterwards; `--fixture <dir>` resets it from a
-fixture at every start.
+The server starts from scratch: its save directory holds no accounts and
+no games until someone signs up from the login screen and creates a game
+from the games list, and it keeps them across restarts. Nothing in the
+program resets it; `--fixture <dir>`, the scenario tooling, empties a
+root and seeds it, and needs `--identity`, a save directory of its own.
 
 To run single instance of client and server use:
 
@@ -43,6 +44,11 @@ To run single instance of client and server use:
 To run a scenario headless (the client driven through its UI; exit code 0 or 1):
 
     ./scenario.sh join-game
+
+To play in the Old Town world (a scenario fixture: a real map, four tokens),
+in a window the app stays open in:
+
+    ./scenario.sh old-town --windowed
 
 To run Lua inside a running client or server, and to watch their values in a window:
 

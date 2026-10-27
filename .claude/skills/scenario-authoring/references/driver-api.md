@@ -55,3 +55,11 @@ piotr) and `Smaug`; adam in `master` (`read`, `write`); piotr in `player`
 `assets/token/bilbo.png`, `assets/token/smaug.png`. A game a scenario
 creates starts from `server/template/`: the page `Table` with the token
 `Hero`, owned by its creator.
+
+The `old-town` fixture (`fixture = "old-town"` in the scenario's table):
+the same `adam` and `piotr` (password `stępczyński`), the game
+`Old Town` (`games/old-town/`) with the page `Old Town`, 175 meters wide
+over `assets/world/world.jpg`, and the tokens `Bilbosz`, `Gaben`,
+`Bilbosza` ("Bilbosza Wielka") and `Anonim` with their avatars under
+`assets/token/`; adam in `master`, piotr in `player` with
+`write:tokens/@owned` and `view:tokens/Bilbosz`, Gaben his.

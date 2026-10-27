@@ -157,11 +157,14 @@ s/games/<id>/assets/...        that game's asset store
   when absent, since games are open to every account, resolves the
   permissions and answers with the filtered data and the grants, or with
   `success = false` for an unknown id).
-- At its first start, or on a root from before the accounts (no
-  `s/accounts.lua`), the server empties its root and seeds it from the
-  source tree's `server/seed/` (the accounts `adam` and `piotr`, the game
-  `old-town`); afterwards the root is kept across restarts. `--fixture`
-  empties and seeds it from the fixture given, every time.
+- The server starts from scratch: a root with nothing under it has no
+  accounts and no games; `Accounts` writes `s/accounts.lua` at the first
+  sign-up and `Games` makes `s/games/<id>` at the first game. The root is
+  kept across restarts and nothing in the program resets it. `--fixture`,
+  the scenario tooling
+  ([scenarios-and-console.md](scenarios-and-console.md)), empties the
+  root and seeds it from the fixture given, every time, and is refused
+  without `--identity`, so it never lands on the default save directory.
 
 ## Event System
 
@@ -447,9 +450,9 @@ created, a game created, a player joined). A game's state holds its name,
 the pages, tokens and token properties, the players (their group and
 grants; the account holds the name and the auth) and the permission
 groups (`GameData` in `game/game-data-rp.lua`). The source tree's
-`server/seed/` (what a fresh root gets) and `server/template/` (what a
-new game starts from) mirror the root's layout; they are data, not source
-code.
+`server/template/` (what a new game starts from) and the scenario
+fixtures under `scenarios/fixtures/` (what a scenario's server root gets)
+mirror the root's layout; they are data, not source code.
 
 ## Backstack Navigation
 

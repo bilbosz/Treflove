@@ -24,11 +24,19 @@ Run both server and client together:
 ```
 
 Both take options after the port (a scenario to run, a console port, the
-save directory identity, a fixture, a headless run); `run.sh` passes the
-`join-game` scenario and a console port to each side. A scenario headless,
-as a test with an exit code:
+save directory identity, a fixture, a headless run); `run.sh` passes a
+console port to each side and nothing else: the client starts at the login
+screen, as it does for a user, and the server on whatever its save
+directory holds (nothing, the first time). A scenario headless, as a test
+with an exit code:
 ```bash
 ./scenario.sh join-game
+```
+and the developer's way into a game with content, since the server has no
+game of its own: the Old Town world, in a window the app stays open in,
+on a save directory of the scenario's:
+```bash
+./scenario.sh old-town --windowed
 ```
 See [scenarios-and-console.md](scenarios-and-console.md).
 
@@ -47,8 +55,8 @@ F5) run the program under the Local Lua Debugger extension
 continuation of tomblind's, recommended by the workspace; the installed copy
 is built from the fork `bilbosz/local-lua-debugger-vscode`, which adds the
 `continued` event and the `breakInProtectedCalls` option):
-`Client` (with the `join-game` scenario and the console ports `run.sh`
-uses), `Client (login screen)` (no scenario), `Server`, the compound
+`Client` (the login screen, with the console ports `run.sh` uses),
+`Server`, the compound
 `Server + Client` (both at once, one debug session each, stopped together),
 `Scenario (headless)` (a scenario by name, asked for at launch, on the
 offscreen driver against a server its tasks start and stop; breakpoints in
