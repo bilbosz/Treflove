@@ -1,5 +1,7 @@
 local AssetsWorkspaceScreen = require("game.assets.workspace.assets-workspace-screen")
 local CreateGameRp = require("game.create-game-rp")
+local CreateTokenRp = require("game.create-token-rp")
+local DeleteTokenRp = require("game.delete-token-rp")
 local GameDataRp = require("game.game-data-rp")
 local GameScreen = require("game.game-screen")
 local GamesScreen = require("screens.games-screen")
@@ -10,6 +12,8 @@ local NewGameScreen = require("screens.new-game-screen")
 local PermissionSet = require("game.permission-set")
 local SignUpScreen = require("login.sign-up-screen")
 local TokenChangedRp = require("game.token-changed-rp")
+local TokenCreatedRp = require("game.token-created-rp")
+local TokenDeletedRp = require("game.token-deleted-rp")
 local UpdateTokenRp = require("game.update-token-rp")
 local UserMenuScreen = require("screens.user-menu-screen")
 local WaitingScreen = require("screens.waiting-screen")
@@ -27,6 +31,10 @@ local token_id = require("game.token.token-id")
 ---@field _create_game_rp CreateGameRp
 ---@field _update_token_rp UpdateTokenRp
 ---@field _token_changed_rp TokenChangedRp
+---@field _create_token_rp CreateTokenRp
+---@field _delete_token_rp DeleteTokenRp
+---@field _token_created_rp TokenCreatedRp
+---@field _token_deleted_rp TokenDeletedRp
 ---@field _game Game|nil The selected game, from `select_game` to the logout (server only)
 ---@field _user_menu_screen UserMenuScreen|nil
 ---@field _game_screen GameScreen|nil The game screen, while the user is in the game (client only)
@@ -164,6 +172,10 @@ function Session:init(connection)
     self._create_game_rp = CreateGameRp(self):attach_lifetime(self)
     self._update_token_rp = UpdateTokenRp(self):attach_lifetime(self)
     self._token_changed_rp = TokenChangedRp(self):attach_lifetime(self)
+    self._create_token_rp = CreateTokenRp(self):attach_lifetime(self)
+    self._delete_token_rp = DeleteTokenRp(self):attach_lifetime(self)
+    self._token_created_rp = TokenCreatedRp(self):attach_lifetime(self)
+    self._token_deleted_rp = TokenDeletedRp(self):attach_lifetime(self)
     app.asset_manager:register_session(self)
 end
 
@@ -226,6 +238,16 @@ end
 ---@return TokenChangedRp What the server pushes another session's token changes through
 function Session:get_token_changed_rp()
     return self._token_changed_rp
+end
+
+---@return TokenCreatedRp What the server pushes another session's new tokens through
+function Session:get_token_created_rp()
+    return self._token_created_rp
+end
+
+---@return TokenDeletedRp What the server pushes another session's token deletions through
+function Session:get_token_deleted_rp()
+    return self._token_deleted_rp
 end
 
 ---@param id string The token's id as the client holds it now
@@ -325,6 +347,103 @@ function Session:_apply_token_values(data, entry, control, token)
         end)
     end
     return changed
+end
+
+---@param id string The new token's id, one `token_id.check` accepts
+---@param token TokenData As `CreateTokenRequest.token`
+---@param cb (fun(response: CreateTokenResponse))|nil Called with the answer, after it is applied or notified, while the session is alive and logged in
+function Session:create_token(id, token, cb)
+    assert(app.is_client)
+    self._create_token_rp:send_request({
+        id = id,
+        page = assert(app.data).game.page,
+        token = token
+    }, function(response)
+        if cb and lifetime.alive(self) and self:is_logged_in() then
+            cb(response --[[@as CreateTokenResponse]] )
+        end
+    end)
+end
+
+---@param id string A token's id as the client holds it
+function Session:delete_token(id)
+    assert(app.is_client)
+    self._delete_token_rp:send_request({
+        id = id
+    })
+end
+
+---@param id string The new token's id
+---@param page string The page it is placed on, a key of `GameData.pages`
+---@param token TokenData The server's entry; an avatar the store lacks is downloaded before the token is added
+function Session:apply_token_created(id, page, token)
+    assert(app.is_client)
+    local data = app.data
+    if not data or data.tokens[id] then
+        app:log(string.format("A new token %q, which this client holds already, ignored", tostring(id)))
+        return
+    end
+    local store = app.asset_manager:get_store()
+    local avatar = token.avatar
+    if store and type(avatar) == "string" and not store:asset(avatar):get_type() then
+        app.asset_manager:download_missing_assets({
+            avatar
+        }, function()
+            if lifetime.alive(self) then
+                self:_add_token(id, page, token)
+            end
+        end)
+    else
+        self:_add_token(id, page, token)
+    end
+end
+
+---@private
+---@param id string
+---@param page string
+---@param token TokenData
+function Session:_add_token(id, page, token)
+    local data = app.data
+    if not data or data.tokens[id] then
+        app:log(string.format("A new token %q, which this client holds already, ignored", tostring(id)))
+        return
+    end
+    data.tokens[id] = token
+    local page_data = data.pages[page]
+    if not page_data then
+        app:log(string.format("The new token %q is on the page %q, which this client does not hold: in the data only", id, tostring(page)))
+        return
+    end
+    table.insert(page_data.tokens, id)
+    local game_screen = self._game_screen
+    if game_screen and lifetime.alive(game_screen) then
+        local shown = game_screen:get_page()
+        if shown:get_data() == page_data then
+            shown:add_token(id)
+        end
+    end
+end
+
+---@param id string The deleted token's id
+function Session:apply_token_deleted(id)
+    assert(app.is_client)
+    local data = app.data
+    if not data or not data.tokens[id] then
+        app:log(string.format("A deletion of the token %q, which this client does not hold, ignored", tostring(id)))
+        return
+    end
+    local game_screen = self._game_screen
+    if game_screen then
+        local page = game_screen:get_page()
+        local control = page:try_find_token(id)
+        if control then
+            page:remove_token(control)
+        end
+    end
+    token_id.remove(data, id)
+    if self._permissions then
+        self._permissions:remove_key(permissions.Kind.TOKENS, id)
+    end
 end
 
 ---@private

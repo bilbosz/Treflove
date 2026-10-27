@@ -278,6 +278,33 @@ function mocks.join_game(connection, login)
     }) --[[@as GameDataResponse]]
 end
 
+---Another server session over a connection of its own, logged in as `login`
+---and in the game `mocks.GAME_ID`; destroying the connection ends it
+---@param login string
+---@return Connection
+---@return Session
+function mocks.join_another(login)
+    local connection = Connection(mocks.make_channel(), mocks.make_channel())
+    local session = Session(connection):attach_lifetime(connection)
+    mocks.join_game(connection, login)
+    return connection, session
+end
+
+---@param connection Connection Over fake channels
+---@return Request[] What the connection sent since the last call, decoded
+function mocks.sent(connection)
+    ---@type Request[]
+    local requests = {}
+    local out_channel = connection:get_out_channel()
+    while out_channel:getCount() > 0 do
+        local payload = out_channel:pop()
+        if payload then
+            table.insert(requests, mocks.decode_request(payload --[[@as string]] ))
+        end
+    end
+    return requests
+end
+
 ---@class TestNotificationManager: NotificationManager
 ---@field messages string[] Every notified message, in order
 local TestNotificationManager = class("TestNotificationManager")
