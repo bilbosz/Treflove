@@ -1,8 +1,8 @@
 local test = require("tests.lib.test")
 local game_client = require("tests.lib.game-client")
+local mocks = require("tests.lib.mocks")
 local lifetime = require("lifetime")
 local Consts = require("app.consts")
-local Asset = require("data.asset")
 local AssetListRow = require("game.assets.workspace.asset-list-row")
 
 ---@param grants string[]
@@ -274,7 +274,7 @@ test.case("a selected file the client has is previewed at once; one it lacks is 
             path = "notes.txt",
             content = love.data.encode("string", "base64", "hello")
         })
-        test.assert_eq(Asset("notes.txt", false):read(), "hello", "mounted")
+        test.assert_eq(mocks.client_store():asset("notes.txt"):read(), "hello", "mounted")
         test.assert_eq(type_input(screen):get_text(), "IMAGE")
         test.assert_deep_eq(enabled_actions(screen), {
             delete = true
@@ -303,7 +303,7 @@ test.case("a download that answers after another selection, or after the workspa
         test.assert_eq(type_input(screen):get_text(), "IMAGE")
         test.assert_eq(client.connection:get_out_channel():getCount(), 0, "a copy is there: no download")
         screen:go_up()
-        Asset("notes.txt", false):remove()
+        mocks.client_store():asset("notes.txt"):remove()
         screen:select_entry(row(screen, "notes.txt"):get_entry())
         game_client.pop_request(client, "DownloadAssetRp")
         client.app.backstack_manager:back()
@@ -312,7 +312,7 @@ test.case("a download that answers after another selection, or after the workspa
             path = "notes.txt",
             content = love.data.encode("string", "base64", "hello")
         })
-        test.assert_eq(Asset("notes.txt", false):read(), "hello", "the response still mounts the asset")
+        test.assert_eq(mocks.client_store():asset("notes.txt"):read(), "hello", "the response still mounts the asset")
     end)
 end)
 

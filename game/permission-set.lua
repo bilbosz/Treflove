@@ -6,13 +6,16 @@ local permissions = require("game.permissions")
 ---@field private _login string
 ---@field private _grants string[]
 ---@field private _parsed Grant[]
+---@field private _data GameData What the `@owned` selector reads, as it is when asked
 local PermissionSet = class("PermissionSet")
 
 ---@param login string
 ---@param grants string[]
-function PermissionSet:init(login, grants)
+---@param data GameData The game the grants are on: the server's own, the client's `app.data`
+function PermissionSet:init(login, grants, data)
     assert_type(login, "string")
     self._login = login
+    self._data = data
     self._grants = table.copy(grants)
     self._parsed = {}
     for _, text in ipairs(grants) do
@@ -30,25 +33,27 @@ function PermissionSet:get_grants()
     return table.copy(self._grants)
 end
 
+---@param data GameData
 ---@param login string
 ---@param kind permissions.Kind
 ---@param key string
 ---@return boolean
-local function _is_owned(login, kind, key)
-    ---@type table<string, table<string, PermissionSet.Entry|nil>|nil>|nil
-    local collections = app.data
-    local collection = collections and collections[kind]
+local function _is_owned(data, login, kind, key)
+    ---@type table<string, table<string, PermissionSet.Entry|nil>|nil>
+    local collections = data
+    local collection = collections[kind]
     local entry = type(collection) == "table" and collection[key]
     local owners = type(entry) == "table" and entry.owners
     return type(owners) == "table" and table.find_array_idx(owners, login) ~= nil
 end
 
+---@param data GameData
 ---@param login string
 ---@param grant Grant
 ---@param kind permissions.Kind|nil
 ---@param key string|nil
 ---@return boolean
-local function _covers(login, grant, kind, key)
+local function _covers(data, login, grant, kind, key)
     if not grant.kind then
         return true
     end
@@ -62,7 +67,7 @@ local function _covers(login, grant, kind, key)
         return false
     end
     if grant.key == permissions.OWNED then
-        return _is_owned(login, kind, key)
+        return _is_owned(data, login, kind, key)
     end
     return grant.key == key
 end
@@ -74,7 +79,7 @@ end
 function PermissionSet:allows(action, kind, key)
     assert(kind or not key, "a key needs a kind")
     for _, grant in ipairs(self._parsed) do
-        if grant.action == action and _covers(self._login, grant, kind, key) then
+        if grant.action == action and _covers(self._data, self._login, grant, kind, key) then
             return true
         end
     end

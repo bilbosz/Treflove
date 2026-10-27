@@ -185,10 +185,11 @@ end
 
 ---@param data GameData
 ---@param set PermissionSet
----@return GameData A copy for the wire, with only what `set` may read and without the players' `auth`
+---@return GameData A copy for the wire, with the name and only what `set` may read
 function permissions.filter(data, set)
     ---@type GameData
     local result = {
+        name = data.name,
         game = _copy_if(data.game, set:allows(permissions.Action.READ, permissions.Kind.GAME)),
         groups = _filter_collection(data.groups, set, permissions.Kind.GROUPS),
         pages = _filter_collection(data.pages, set, permissions.Kind.PAGES),
@@ -205,9 +206,6 @@ function permissions.filter(data, set)
             end
         end
         page.tokens = tokens
-    end
-    for _, player in pairs(result.players) do
-        player.auth = nil
     end
     return result
 end

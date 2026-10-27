@@ -1,7 +1,10 @@
 local App = require("app.app")
 local Console = require("app.console")
+local Consts = require("app.consts")
+local Accounts = require("data.accounts")
 local Asset = require("data.asset")
 local AssetManager = require("data.asset-manager")
+local Games = require("data.games")
 local fixture = require("data.fixture")
 local Session = require("game.session")
 local ConnectionManager = require("networking.connection-manager")
@@ -9,7 +12,6 @@ local ScreenManager = require("screens.screen-manager")
 local ScreenSaver = require("screens.screen-saver")
 
 ---@class Server: App
----@field private _save_file Asset
 ---@field private _sessions table<Connection, Session>
 local Server = class("Server", App)
 
@@ -18,7 +20,6 @@ function Server:init(params)
     App.init(self, params)
     self.logger:set_name("server-main")
     self.is_server = true
-    self._save_file = Asset("save.lua", true)
 
     if self.root then
         self.screen_manager = ScreenManager()
@@ -34,26 +35,20 @@ end
 
 ---@protected
 function Server:load()
+    local accounts_file = Asset(Consts.SERVER_ROOT .. "/accounts.lua")
     if self.params.fixture then
-        fixture.seed(self.params.fixture, Asset.get_root())
+        fixture.seed(self.params.fixture, Consts.SERVER_ROOT)
+    elseif not accounts_file:get_type() then
+        self:log("No accounts in the server root: seeding it from " .. Consts.SERVER_SEED_DIRECTORY)
+        fixture.seed(Consts.SERVER_SEED_DIRECTORY, Consts.SERVER_ROOT)
     end
-    self:_load_data()
+    self.accounts = Accounts(accounts_file)
+    self.games = Games(Consts.SERVER_ROOT .. "/games")
     self.connection_manager:start(function(connection)
         self._sessions[connection] = Session(connection):attach_lifetime(connection)
     end, function(connection)
         self._sessions[connection] = nil
     end)
-end
-
----@private
-function Server:_load_data()
-    local content = self._save_file:read()
-    self.data = table.from_string(content)
-end
-
-function Server:save_data()
-    local content = table.to_string(self.data)
-    self._save_file:write(content)
 end
 
 ---@protected

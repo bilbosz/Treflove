@@ -106,3 +106,18 @@ test.case("a missing source raises before anything is removed", function()
     test.assert_eq(world.files["s/save.lua"], "old")
     finish(world)
 end)
+
+test.case("a root under directories that do not exist yet is made with them, as a new game's", function()
+    local world = setup({
+        ["template/save.lua"] = "return {}",
+        ["template/assets/world/table.png"] = "TABLE",
+        ["s/accounts.lua"] = "return {}"
+    })
+    fixture.seed("template", "s/games/new")
+    test.assert_deep_eq(files_under(world, "s/games/new"), {
+        ["save.lua"] = "return {}",
+        ["assets/world/table.png"] = "TABLE"
+    })
+    test.assert_eq(world.files["s/accounts.lua"], "return {}", "what is beside the root stays")
+    finish(world)
+end)

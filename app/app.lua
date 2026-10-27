@@ -9,14 +9,16 @@ local debugger = require("app.debugger")
 local lifetime = require("lifetime")
 
 ---@class App: Object
+---@field public accounts Accounts|nil On the server from `load()` on
 ---@field public asset_manager AssetManager
 ---@field public backstack_manager BackstackManager
 ---@field public button_event_manager ButtonEventManager
 ---@field public connection_manager ConnectionManager
 ---@field public console Console|nil With `--console`
----@field public data GameData|nil On the server from `load()` on; on the client while the game data is in, until a disconnect
+---@field public data GameData|nil On the client: the joined game's, while its data is in, until a disconnect; the server's games hold their own
 ---@field public defer_manager DeferManager
 ---@field public file_system_drop_event_manager FileSystemDropEventManager
+---@field public games Games|nil On the server from `load()` on
 ---@field public height number|nil Model height, with a window
 ---@field public is_client boolean
 ---@field public is_server boolean

@@ -1,4 +1,5 @@
 return {
+    name = "Meadow",
     game = {
         page = "Meadow"
     },
@@ -62,13 +63,9 @@ return {
     },
     players = {
         adam = {
-            name = "Adam",
-            auth = "48nI0XjJ11hysenR6bLDNrlo9Vk7gktIUfV1ZZ6wiNs=",
             group = "master"
         },
         piotr = {
-            name = "Piotr",
-            auth = "JoVLFuvIwMkpgm37+AAoJqp/Cw9YWNYTTEcdESjLNuo=",
             group = "player"
         }
     },

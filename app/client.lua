@@ -40,6 +40,7 @@ function Client:load()
         self.screen_manager:show(connecting_screen)
         self.session = nil
         self.data = nil
+        self.asset_manager:set_store(nil)
     end)
     if self.params.scenario or self.params.console then
         local runner = ScenarioRunner()

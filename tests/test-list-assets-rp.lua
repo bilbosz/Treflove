@@ -4,6 +4,7 @@ local mocks = require("tests.lib.mocks")
 ---@return GameData
 local function game_data()
     return {
+        name = "G",
         game = {
             page = "P"
         },
@@ -30,18 +31,12 @@ local function game_data()
         },
         players = {
             adam = {
-                name = "Adam",
-                auth = mocks.server_auth("adam"),
                 group = "master"
             },
             piotr = {
-                name = "Piotrek",
-                auth = mocks.server_auth("piotr"),
                 group = "player"
             },
             ewa = {
-                name = "Ewa",
-                auth = mocks.server_auth("ewa"),
                 group = "blind"
             }
         },
@@ -56,8 +51,8 @@ end
 local function server_case(name, fn)
     test.case(name, function()
         local side = mocks.make_server_session(game_data, {
-            ["server/assets/world/w.png"] = "W",
-            ["server/assets/token/t.png"] = "T"
+            ["s/games/g/assets/world/w.png"] = "W",
+            ["s/games/g/assets/token/t.png"] = "T"
         })
         ---@type boolean, any
         local ok, err = pcall(fn, side)
@@ -80,14 +75,14 @@ server_case("before the login, and without read on the assets, the listing is re
     local response = list(side)
     test.assert_false(response.success)
     test.assert_eq(response.entries, nil)
-    test.assert_eq(mocks.log_in(side.connection, "ewa"), "ewa")
+    test.assert_true(mocks.join_game(side.connection, "ewa").success)
     response = list(side)
     test.assert_false(response.success)
     test.assert_false(response.writable)
 end)
 
 server_case("a reader is sent the whole store, parents first, and that it may not change it", function(side)
-    test.assert_eq(mocks.log_in(side.connection, "piotr"), "piotr")
+    test.assert_true(mocks.join_game(side.connection, "piotr").success)
     local response = list(side)
     test.assert_true(response.success)
     test.assert_false(response.writable)
@@ -114,7 +109,7 @@ server_case("a reader is sent the whole store, parents first, and that it may no
 end)
 
 server_case("a writer is told so", function(side)
-    test.assert_eq(mocks.log_in(side.connection, "adam"), "adam")
+    test.assert_true(mocks.join_game(side.connection, "adam").success)
     local response = list(side)
     test.assert_true(response.success)
     test.assert_true(response.writable)

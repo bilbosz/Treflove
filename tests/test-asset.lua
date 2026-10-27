@@ -4,11 +4,8 @@ local Asset = require("data.asset")
 
 ---@param files table<string, string>
 ---@param fn fun()
-local function with_server_store(files, fn)
-    mocks.install_app({
-        is_client = false,
-        is_server = true
-    })
+local function with_files(files, fn)
+    mocks.install_app()
     local previous = mocks.install_love_filesystem(files)
     ---@type boolean, any
     local ok, err = pcall(fn)
@@ -44,122 +41,35 @@ test.case("a path is split into its name and its parent, joined and tested for a
     test.assert_false(Asset.is_under("token", "token/b.png"))
 end)
 
-test.case("the store is listed parents first, siblings by name, with the files' sizes", function()
-    with_server_store({
-        ["s/assets/world/w.png"] = "WW",
-        ["s/assets/token/t.png"] = "T",
-        ["s/assets/token/a.png"] = "A",
-        ["s/assets/notes.txt"] = "hello"
-    }, function()
-        test.assert_deep_eq(Asset.list(), {
-            {
-                path = "notes.txt",
-                type = "file",
-                size = 5
-            },
-            {
-                path = "token",
-                type = "directory"
-            },
-            {
-                path = "token/a.png",
-                type = "file",
-                size = 1
-            },
-            {
-                path = "token/t.png",
-                type = "file",
-                size = 1
-            },
-            {
-                path = "world",
-                type = "directory"
-            },
-            {
-                path = "world/w.png",
-                type = "file",
-                size = 2
-            }
-        })
-    end)
-end)
-
-test.case("an empty store lists nothing", function()
-    with_server_store({}, function()
-        test.assert_deep_eq(Asset.list(), {})
-    end)
-end)
-
-test.case("a directory is created with its parents and listed while empty", function()
-    with_server_store({}, function()
-        Asset("maps/old", false):create_directory()
-        test.assert_eq(Asset("maps", false):get_type(), "directory")
-        test.assert_eq(Asset("maps/old", false):get_type(), "directory")
-        test.assert_deep_eq(Asset.list(), {
-            {
-                path = "maps",
-                type = "directory"
-            },
-            {
-                path = "maps/old",
-                type = "directory"
-            }
-        })
-    end)
-end)
-
 test.case("a file is moved, and a directory with everything under it", function()
-    with_server_store({
-        ["s/assets/token/t.png"] = "T",
-        ["s/assets/token/sub/a.png"] = "A"
+    with_files({
+        ["r/token/t.png"] = "T",
+        ["r/token/sub/a.png"] = "A"
     }, function()
-        Asset("token/t.png", false):move_to(Asset("token/u.png", false))
-        test.assert_eq(Asset("token/t.png", false):get_type(), nil)
-        test.assert_eq(Asset("token/u.png", false):read(), "T")
+        Asset("r/token/t.png"):move_to(Asset("r/token/u.png"))
+        test.assert_eq(Asset("r/token/t.png"):get_type(), nil)
+        test.assert_eq(Asset("r/token/u.png"):read(), "T")
 
-        Asset("token", false):move_to(Asset("people/all", false))
-        test.assert_eq(Asset("token", false):get_type(), nil)
-        test.assert_eq(Asset("people/all/u.png", false):read(), "T")
-        test.assert_eq(Asset("people/all/sub/a.png", false):read(), "A")
-        test.assert_eq(Asset("people", false):get_type(), "directory", "the destination's parent was made")
+        Asset("r/token"):move_to(Asset("r/people/all"))
+        test.assert_eq(Asset("r/token"):get_type(), nil)
+        test.assert_eq(Asset("r/people/all/u.png"):read(), "T")
+        test.assert_eq(Asset("r/people/all/sub/a.png"):read(), "A")
+        test.assert_eq(Asset("r/people"):get_type(), "directory", "the destination's parent was made")
     end)
 end)
 
 test.case("a move needs a source and a free destination", function()
-    with_server_store({
-        ["s/assets/a.png"] = "A",
-        ["s/assets/b.png"] = "B"
+    with_files({
+        ["r/a.png"] = "A",
+        ["r/b.png"] = "B"
     }, function()
         test.assert_error(function()
-            Asset("c.png", false):move_to(Asset("d.png", false))
+            Asset("r/c.png"):move_to(Asset("r/d.png"))
         end, "nothing to move")
         test.assert_error(function()
-            Asset("a.png", false):move_to(Asset("b.png", false))
+            Asset("r/a.png"):move_to(Asset("r/b.png"))
         end, "the destination exists")
-        test.assert_eq(Asset("a.png", false):read(), "A")
-        test.assert_eq(Asset("b.png", false):read(), "B")
-    end)
-end)
-
-test.case("a file is removed, and a directory with everything under it; removing what is not there does nothing", function()
-    with_server_store({
-        ["s/assets/token/t.png"] = "T",
-        ["s/assets/token/sub/a.png"] = "A",
-        ["s/assets/world/w.png"] = "W"
-    }, function()
-        Asset("world/w.png", false):remove()
-        test.assert_eq(Asset("world/w.png", false):get_type(), nil)
-        Asset("token", false):remove()
-        test.assert_eq(Asset("token", false):get_type(), nil)
-        test.assert_eq(Asset("token/sub/a.png", false):get_type(), nil)
-        Asset("token", false):remove()
-        test.assert_deep_eq(Asset.list(), {
-            {
-                path = "world",
-                type = "directory"
-            }
-        }, "a folder stays when its last file goes")
-        Asset("world", false):remove()
-        test.assert_deep_eq(Asset.list(), {})
+        test.assert_eq(Asset("r/a.png"):read(), "A")
+        test.assert_eq(Asset("r/b.png"):read(), "B")
     end)
 end)

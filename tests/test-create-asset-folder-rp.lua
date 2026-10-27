@@ -1,10 +1,10 @@
 local test = require("tests.lib.test")
 local mocks = require("tests.lib.mocks")
-local Asset = require("data.asset")
 
 ---@return GameData
 local function game_data()
     return {
+        name = "G",
         game = {
             page = "P"
         },
@@ -25,13 +25,9 @@ local function game_data()
         },
         players = {
             adam = {
-                name = "Adam",
-                auth = mocks.server_auth("adam"),
                 group = "master"
             },
             piotr = {
-                name = "Piotrek",
-                auth = mocks.server_auth("piotr"),
                 group = "player"
             }
         },
@@ -46,7 +42,7 @@ end
 local function server_case(name, fn)
     test.case(name, function()
         local side = mocks.make_server_session(game_data, {
-            ["server/assets/world/w.png"] = "W"
+            ["s/games/g/assets/world/w.png"] = "W"
         })
         ---@type boolean, any
         local ok, err = pcall(fn, side)
@@ -69,20 +65,20 @@ end
 test.suite("CreateAssetFolderRp")
 
 server_case("a folder from a session without write on the assets is refused", function(side)
-    test.assert_eq(mocks.log_in(side.connection, "piotr"), "piotr")
+    test.assert_true(mocks.join_game(side.connection, "piotr").success)
     local response = create(side, "maps")
     test.assert_false(response.success)
     test.assert_eq(response.error, "Not allowed to change assets")
-    test.assert_eq(Asset("maps", false):get_type(), nil)
+    test.assert_eq(mocks.server_store():asset("maps"):get_type(), nil)
 end)
 
 server_case("a writer makes a folder, with its parents, and gets it back in the listing", function(side)
-    test.assert_eq(mocks.log_in(side.connection, "adam"), "adam")
+    test.assert_true(mocks.join_game(side.connection, "adam").success)
     local response = create(side, "maps/old")
     test.assert_true(response.success)
     test.assert_eq(response.error, nil)
     test.assert_eq(response.path, "maps/old")
-    test.assert_eq(Asset("maps/old", false):get_type(), "directory")
+    test.assert_eq(mocks.server_store():asset("maps/old"):get_type(), "directory")
     local listing = mocks.request(side.connection, "ListAssetsRp", {}) --[[@as ListAssetsResponse]]
     test.assert_deep_eq(listing.entries[1], {
         path = "maps",
@@ -95,7 +91,7 @@ server_case("a writer makes a folder, with its parents, and gets it back in the 
 end)
 
 server_case("a folder that exists, or an asset's name, or a bad path, is refused with the reason", function(side)
-    test.assert_eq(mocks.log_in(side.connection, "adam"), "adam")
+    test.assert_true(mocks.join_game(side.connection, "adam").success)
     test.assert_eq(create(side, "world").error, "Cannot create \"world\": it exists already")
     test.assert_eq(create(side, "world/w.png").error, "Cannot create \"world/w.png\": it exists already")
     test.assert_eq(create(side, "../outside").error, "Cannot create \"../outside\": the name \"..\"")

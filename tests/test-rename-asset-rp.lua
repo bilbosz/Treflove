@@ -1,10 +1,10 @@
 local test = require("tests.lib.test")
 local mocks = require("tests.lib.mocks")
-local Asset = require("data.asset")
 
 ---@return GameData
 local function game_data()
     return {
+        name = "G",
         game = {
             page = "P"
         },
@@ -25,13 +25,9 @@ local function game_data()
         },
         players = {
             adam = {
-                name = "Adam",
-                auth = mocks.server_auth("adam"),
                 group = "master"
             },
             piotr = {
-                name = "Piotrek",
-                auth = mocks.server_auth("piotr"),
                 group = "player"
             }
         },
@@ -71,9 +67,9 @@ end
 local function server_case(name, fn)
     test.case(name, function()
         local side = mocks.make_server_session(game_data, {
-            ["server/assets/world/w.png"] = "W",
-            ["server/assets/token/t.png"] = "T",
-            ["server/assets/token/x.png"] = "X"
+            ["s/games/g/assets/world/w.png"] = "W",
+            ["s/games/g/assets/token/t.png"] = "T",
+            ["s/games/g/assets/token/x.png"] = "X"
         })
         ---@type boolean, any
         local ok, err = pcall(fn, side)
@@ -98,48 +94,50 @@ end
 test.suite("RenameAssetRp")
 
 server_case("a rename from a session without write on the assets is refused", function(side)
-    test.assert_eq(mocks.log_in(side.connection, "piotr"), "piotr")
+    test.assert_true(mocks.join_game(side.connection, "piotr").success)
     local response = rename(side, "token/x.png", "token/y.png")
     test.assert_false(response.success)
     test.assert_eq(response.error, "Not allowed to change assets")
-    test.assert_eq(Asset("token/x.png", false):read(), "X")
+    test.assert_eq(mocks.server_store():asset("token/x.png"):read(), "X")
 end)
 
 server_case("a writer renames a file, and the game keeps pointing at it", function(side)
-    test.assert_eq(mocks.log_in(side.connection, "adam"), "adam")
+    test.assert_true(mocks.join_game(side.connection, "adam").success)
     local response = rename(side, "token/t.png", "token/u.png")
     test.assert_true(response.success)
     test.assert_eq(response.path, "token/t.png")
     test.assert_eq(response.new_path, "token/u.png")
-    test.assert_eq(Asset("token/t.png", false):get_type(), nil)
-    test.assert_eq(Asset("token/u.png", false):read(), "T")
-    test.assert_eq(side.server.data.tokens.T.avatar, "token/u.png")
-    test.assert_eq(side.server.data.pages.P.image, "world/w.png")
+    test.assert_eq(mocks.server_store():asset("token/t.png"):get_type(), nil)
+    test.assert_eq(mocks.server_store():asset("token/u.png"):read(), "T")
+    test.assert_eq(side.session:get_game():get_data().tokens.T.avatar, "token/u.png")
+    test.assert_eq(side.session:get_game():get_data().pages.P.image, "world/w.png")
+    local saved = table.from_string(assert(love.filesystem.read("s/games/g/save.lua"))) --[[@as GameData]]
+    test.assert_eq(saved.tokens.T.avatar, "token/u.png", "the game is saved with the new path")
 end)
 
 server_case("a renamed folder takes its content along, and the game follows every asset under it", function(side)
-    test.assert_eq(mocks.log_in(side.connection, "adam"), "adam")
+    test.assert_true(mocks.join_game(side.connection, "adam").success)
     test.assert_true(rename(side, "token", "people/old").success)
-    test.assert_eq(Asset("token", false):get_type(), nil)
-    test.assert_eq(Asset("people/old/t.png", false):read(), "T")
-    test.assert_eq(Asset("people/old/x.png", false):read(), "X")
-    test.assert_eq(side.server.data.tokens.T.avatar, "people/old/t.png")
+    test.assert_eq(mocks.server_store():asset("token"):get_type(), nil)
+    test.assert_eq(mocks.server_store():asset("people/old/t.png"):read(), "T")
+    test.assert_eq(mocks.server_store():asset("people/old/x.png"):read(), "X")
+    test.assert_eq(side.session:get_game():get_data().tokens.T.avatar, "people/old/t.png")
 end)
 
 server_case("a rename needs a source, a free destination outside the source, and good paths", function(side)
-    test.assert_eq(mocks.log_in(side.connection, "adam"), "adam")
+    test.assert_true(mocks.join_game(side.connection, "adam").success)
     test.assert_eq(rename(side, "token/none.png", "token/y.png").error, "Cannot rename \"token/none.png\": there is no such asset")
     test.assert_eq(rename(side, "token/x.png", "token/t.png").error, "Cannot rename \"token/x.png\" to \"token/t.png\": it exists already")
     test.assert_eq(rename(side, "token", "token/sub").error, "Cannot rename \"token\" to \"token/sub\": it would end up under itself")
     test.assert_eq(rename(side, "token/x.png", "../x.png").error, "Cannot rename \"token/x.png\" to \"../x.png\": the name \"..\"")
-    test.assert_eq(Asset("token/x.png", false):read(), "X")
-    test.assert_eq(side.server.data.tokens.T.avatar, "token/t.png")
+    test.assert_eq(mocks.server_store():asset("token/x.png"):read(), "X")
+    test.assert_eq(side.session:get_game():get_data().tokens.T.avatar, "token/t.png")
 end)
 
 test.case("the client's copy follows a rename, replacing a stale copy under the new name; a refusal is notified", function()
     local side = mocks.make_client_session({
-        ["c/assets/token/t.png"] = "T",
-        ["c/assets/token/stale.png"] = "OLD"
+        ["c/games/g/assets/token/t.png"] = "T",
+        ["c/games/g/assets/token/stale.png"] = "OLD"
     })
     ---@diagnostic disable-next-line: invisible
     local rp = side.client.asset_manager._rename_asset_rp[side.session]
@@ -148,14 +146,14 @@ test.case("the client's copy follows a rename, replacing a stale copy under the 
         path = "token/t.png",
         new_path = "token/stale.png"
     })
-    test.assert_eq(Asset("token/t.png", false):get_type(), nil)
-    test.assert_eq(Asset("token/stale.png", false):read(), "T")
+    test.assert_eq(mocks.client_store():asset("token/t.png"):get_type(), nil)
+    test.assert_eq(mocks.client_store():asset("token/stale.png"):read(), "T")
     rp:receive_response({
         success = true,
         path = "token/never-downloaded.png",
         new_path = "token/elsewhere.png"
     })
-    test.assert_eq(Asset("token/elsewhere.png", false):get_type(), nil, "nothing to move")
+    test.assert_eq(mocks.client_store():asset("token/elsewhere.png"):get_type(), nil, "nothing to move")
     test.assert_deep_eq(side.notifications.messages, {})
     rp:receive_response({
         success = false,

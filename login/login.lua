@@ -1,3 +1,4 @@
+local CreateAccountRp = require("login.create-account-rp")
 local LoginRp = require("login.login-rp")
 local LogoutRp = require("login.logout-rp")
 local Utils = require("utils.utils")
@@ -6,6 +7,7 @@ local Utils = require("utils.utils")
 ---@field private _connection Connection
 ---@field private _login_rp LoginRp
 ---@field private _logout_rp LogoutRp
+---@field private _create_account_rp CreateAccountRp
 local Login = class("Login")
 
 ---@param user_name string
@@ -23,6 +25,7 @@ function Login:init(session, on_login, on_logout)
     self._connection = session:get_connection()
     self._login_rp = LoginRp(self._connection, on_login):attach_lifetime(self)
     self._logout_rp = LogoutRp(self._connection, on_logout):attach_lifetime(self)
+    self._create_account_rp = CreateAccountRp(self._connection):attach_lifetime(self)
 end
 
 ---@param user string
@@ -32,6 +35,21 @@ function Login:login(user, password)
     self._login_rp:send_request({
         auth = _get_client_auth(user, password)
     })
+end
+
+---@param user string
+---@param name string
+---@param password string
+---@param cb fun(response: CreateAccountResponse) Called once the server answered
+function Login:sign_up(user, name, password, cb)
+    assert(app.is_client)
+    self._create_account_rp:send_request({
+        login = user,
+        name = name,
+        auth = _get_client_auth(user, password)
+    }, function(response)
+        cb(response --[[@as CreateAccountResponse]] )
+    end)
 end
 
 function Login:logout()

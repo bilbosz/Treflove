@@ -9,8 +9,11 @@ local DownloadMissingAssetsRp = require("data.download-missing-assets-rp")
 local ListAssetsRp = require("data.list-assets-rp")
 local RenameAssetRp = require("data.rename-asset-rp")
 local UploadAssetRp = require("data.upload-asset-rp")
+local CreateGameRp = require("game.create-game-rp")
 local GameDataRp = require("game.game-data-rp")
+local ListGamesRp = require("game.list-games-rp")
 local Session = require("game.session")
+local CreateAccountRp = require("login.create-account-rp")
 local LoginRp = require("login.login-rp")
 local LogoutRp = require("login.logout-rp")
 local Connection = require("networking.connection")
@@ -34,7 +37,10 @@ local CLASSES = {
     Connection = Connection,
     LoginRp = LoginRp,
     LogoutRp = LogoutRp,
+    CreateAccountRp = CreateAccountRp,
     GameDataRp = GameDataRp,
+    ListGamesRp = ListGamesRp,
+    CreateGameRp = CreateGameRp,
     UploadAssetRp = UploadAssetRp,
     DownloadAssetRp = DownloadAssetRp,
     DownloadMissingAssetsRp = DownloadMissingAssetsRp,
@@ -72,27 +78,31 @@ end
 
 test.suite("Session")
 
-test.case("a client session owns its login, the game data procedure and the asset procedures, in creation order", function()
+test.case("a client session owns its login, the game procedures and the asset procedures, in creation order", function()
     local app_mock, connection = make_client()
     local session = Session(connection):attach_lifetime(connection)
     test.assert_eq(lifetime.format(lifetime.of(session)), "(" .. tostring(connection) .. ", reachable)")
     local dependents = lifetime.dependents(session)
-    test.assert_eq(#dependents, 10, "login, game data, seven asset procedures and the asset manager's hook")
+    test.assert_eq(#dependents, 12, "login, game data, games list, new game, seven asset procedures and the asset manager's hook")
     test.assert_eq(get_class_name_of(dependents[1]), "Login")
     test.assert_eq(get_class_name_of(dependents[2]), "GameDataRp")
-    test.assert_eq(get_class_name_of(dependents[3]), "UploadAssetRp")
-    test.assert_eq(get_class_name_of(dependents[4]), "DownloadAssetRp")
-    test.assert_eq(get_class_name_of(dependents[5]), "DownloadMissingAssetsRp")
-    test.assert_eq(get_class_name_of(dependents[6]), "ListAssetsRp")
-    test.assert_eq(get_class_name_of(dependents[7]), "CreateAssetFolderRp")
-    test.assert_eq(get_class_name_of(dependents[8]), "RenameAssetRp")
-    test.assert_eq(get_class_name_of(dependents[9]), "DeleteAssetRp")
-    test.assert_eq(getmetatable(dependents[10]), "hook")
+    test.assert_eq(get_class_name_of(dependents[3]), "ListGamesRp")
+    test.assert_eq(get_class_name_of(dependents[4]), "CreateGameRp")
+    test.assert_eq(get_class_name_of(dependents[5]), "UploadAssetRp")
+    test.assert_eq(get_class_name_of(dependents[6]), "DownloadAssetRp")
+    test.assert_eq(get_class_name_of(dependents[7]), "DownloadMissingAssetsRp")
+    test.assert_eq(get_class_name_of(dependents[8]), "ListAssetsRp")
+    test.assert_eq(get_class_name_of(dependents[9]), "CreateAssetFolderRp")
+    test.assert_eq(get_class_name_of(dependents[10]), "RenameAssetRp")
+    test.assert_eq(get_class_name_of(dependents[11]), "DeleteAssetRp")
+    test.assert_eq(getmetatable(dependents[12]), "hook")
     local login_dependents = lifetime.dependents(dependents[1])
+    test.assert_eq(#login_dependents, 3)
     test.assert_eq(get_class_name_of(login_dependents[1]), "LoginRp")
     test.assert_eq(get_class_name_of(login_dependents[2]), "LogoutRp")
+    test.assert_eq(get_class_name_of(login_dependents[3]), "CreateAccountRp")
     ---@diagnostic disable-next-line: invisible
-    test.assert_eq(app_mock.asset_manager._upload_asset_rp[session], dependents[3])
+    test.assert_eq(app_mock.asset_manager._upload_asset_rp[session], dependents[5])
     test.assert_eq(connection:get_out_channel():getCount(), 0, "no login before one is asked for")
     session:login("adam", "krause")
     test.assert_eq(connection:get_out_channel():getCount(), 1, "the login request was sent")
@@ -144,9 +154,7 @@ test.case("show_login needs a client session that is not logged in; a login show
     end)
     lifetime.destroy(connection)
 
-    local previous = mocks.install_love_filesystem({
-        ["server/assets/token/g.png"] = "G"
-    })
+    local previous = mocks.install_love_filesystem({})
     local server_mock = mocks.install_app({
         is_client = false,
         is_server = true
@@ -194,8 +202,14 @@ test.case("destroying the connection tears the whole tree down, the connection f
         "  unregister DownloadAssetRp",
         "UploadAssetRp:release(anchor)",
         "  unregister UploadAssetRp",
+        "CreateGameRp:release(anchor)",
+        "  unregister CreateGameRp",
+        "ListGamesRp:release(anchor)",
+        "  unregister ListGamesRp",
         "GameDataRp:release(anchor)",
         "  unregister GameDataRp",
+        "CreateAccountRp:release(anchor)",
+        "  unregister CreateAccountRp",
         "LogoutRp:release(anchor)",
         "  unregister LogoutRp",
         "LoginRp:release(anchor)",

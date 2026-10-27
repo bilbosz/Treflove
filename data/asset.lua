@@ -1,12 +1,8 @@
-local Consts = require("app.consts")
-
 ---@alias AssetEntryType "file"|"directory"
-
----@class AssetEntry One item of the asset store, as `Asset.list` and `ListAssetsRp` give it
----@field path string Relative to the store's root, `/`-separated
+---@class AssetEntry One item of an asset store, as `AssetStore:list` and `ListAssetsRp` give it
+---@field path string Relative to the store's assets, `/`-separated
 ---@field type AssetEntryType
 ---@field size number|nil Bytes, for a file
-
 ---@class Asset: Object
 ---@field private _path string
 local Asset = class("Asset")
@@ -62,45 +58,6 @@ local function _remove_tree(path)
     assert(love.filesystem.remove(path))
 end
 
----@param root string The directory walked, a real path
----@param prefix string What the entries' paths start with, `""` at the root
----@param entries AssetEntry[] Output, in walk order
-local function _list_tree(root, prefix, entries)
-    local items = love.filesystem.getDirectoryItems(root)
-    table.sort(items)
-    for _, item in ipairs(items) do
-        local real = root .. "/" .. item
-        local info = love.filesystem.getInfo(real)
-        if info and (info.type == "file" or info.type == "directory") then
-            table.insert(entries, {
-                path = prefix .. item,
-                type = info.type,
-                size = info.size
-            })
-            if info.type == "directory" then
-                _list_tree(real, prefix .. item .. "/", entries)
-            end
-        end
-    end
-end
-
----@return string
-function Asset.get_root()
-    return app.is_server and Consts.ASSETS_SERVER_ROOT or Consts.ASSETS_CLIENT_ROOT
-end
-
----@param virtual_path string
----@return string
-function Asset.get_asset_path(virtual_path)
-    return Asset.get_root() .. "/assets/" .. virtual_path
-end
-
----@param virtual_path string
----@return string
-function Asset.get_root_path(virtual_path)
-    return Asset.get_root() .. "/" .. virtual_path
-end
-
 ---@param path string
 ---@return string|nil reason `nil` when the path is fine
 function Asset.check_path(path)
@@ -153,22 +110,10 @@ function Asset.is_under(path, ancestor)
     return path == ancestor or string.sub(path, 1, #ancestor + 1) == ancestor .. "/"
 end
 
----@return AssetEntry[] Parents before their content, siblings by name
-function Asset.list()
-    ---@type AssetEntry[]
-    local entries = {}
-    local root = Asset.get_root() .. "/assets"
-    if love.filesystem.getInfo(root) then
-        _list_tree(root, "", entries)
-    end
-    return entries
-end
-
----@param path string
----@param is_on_root boolean
-function Asset:init(path, is_on_root)
+---@param path string A path of the save directory
+function Asset:init(path)
     assert(string.sub(path, 1, 1) ~= "/")
-    self._path = is_on_root and Asset.get_root_path(path) or Asset.get_asset_path(path)
+    self._path = path
 end
 
 function Asset:create()

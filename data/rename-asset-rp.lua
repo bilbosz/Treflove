@@ -1,4 +1,3 @@
-local Asset = require("data.asset")
 local RemoteProcedure = require("networking.remote-procedure")
 local asset_usage = require("data.asset-usage")
 local permissions = require("game.permissions")
@@ -36,9 +35,11 @@ function RenameAssetRp:send_response(request)
             new_path = new_path
         }
     end
-    local ok, err = app.asset_manager:move(path, new_path)
+    local game = self._session:get_game()
+    local ok, err = game:get_store():move(path, new_path)
     if ok then
-        asset_usage.rename(assert(app.data), path, new_path)
+        asset_usage.rename(game:get_data(), path, new_path)
+        game:save()
     end
     return {
         success = ok,
@@ -55,7 +56,8 @@ function RenameAssetRp:receive_response(response)
         app.notification_manager:notify(response.error or "Cannot rename the asset")
         return
     end
-    local source, destination = Asset(response.path, false), Asset(response.new_path, false)
+    local store = assert(app.asset_manager:get_store())
+    local source, destination = store:asset(response.path), store:asset(response.new_path)
     if destination:get_type() then
         destination:remove()
     end
