@@ -85,6 +85,58 @@ function steps.server_sessions(driver)
     return assert(tonumber(connections)), assert(users)
 end
 
+---@param driver ScenarioDriver In the game
+---@param label string The token's name, as its label shows it
+---@return Token
+local function _find_token(driver, label)
+    return driver:find("Token", label) --[[@as Token]]
+end
+
+---@return table<Token, boolean> The selected tokens of the shown game
+local function _get_select_set()
+    return assert(assert(app.session):get_game_screen()):get_selection():get_select_set()
+end
+
+---@param driver ScenarioDriver In the game
+---@param label string The token's name, as its label shows it
+---@return Token The token, selected with whatever else its bounding square touches
+function steps.select_token(driver, label)
+    local token = _find_token(driver, label)
+    local r = token:get_radius()
+    local from_x, from_y = token:transform_to_global(-r, -r)
+    local to_x, to_y = token:transform_to_global(r, r)
+    driver:move(from_x, from_y)
+    driver:press(from_x, from_y, Consts.PAGE_SELECT_BUTTON)
+    driver:frames(1)
+    driver:move(to_x, to_y)
+    driver:frames(1)
+    driver:release_button(to_x, to_y, Consts.PAGE_SELECT_BUTTON)
+    driver:frames(1)
+    driver:expect(_get_select_set()[token], label .. " is selected")
+    return token
+end
+
+---@param driver ScenarioDriver In the game, the token selected
+---@param label string The token's name, as its label shows it
+---@param dx number Screen units
+---@param dy number Screen units
+---@return number x The token's position after the drag, in page meters
+---@return number y
+function steps.drag_token(driver, label, dx, dy)
+    local token = _find_token(driver, label)
+    driver:expect(_get_select_set()[token], label .. " is selected before the drag")
+    local x, y = token:transform_to_global(0, 0)
+    driver:move(x, y)
+    driver:press(x, y, Consts.PAGE_DRAG_TOKEN_BUTTON)
+    driver:frames(1)
+    driver:move(x + dx, y + dy)
+    driver:frames(1)
+    driver:release_button(x + dx, y + dy, Consts.PAGE_DRAG_TOKEN_BUTTON)
+    driver:frames(1)
+    driver:log(string.format("dragged %s by (%g, %g)", label, dx, dy))
+    return token:get_position()
+end
+
 ---@param driver ScenarioDriver On the login screen
 ---@param login string
 ---@param name string
