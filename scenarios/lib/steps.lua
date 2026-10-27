@@ -170,16 +170,18 @@ end
 ---@param avatar string An image of the game's store
 ---@return Token The new token, shown on the page
 function steps.create_token(driver, id, name, avatar)
-    local session = assert(app.session)
-    local page = assert(session:get_game_screen()):get_page()
-    session:create_token(id, {
-        name = name,
-        diameter = 1,
-        avatar = avatar,
-        position = {
-            page:get_view_center()
-        }
-    })
+    driver:click("TextButton", "New Token")
+    driver:wait_screen("NewTokenScreen")
+    for i, text in ipairs({
+        id,
+        name,
+        avatar
+    }) do
+        driver:click("TextInput", nil, i)
+        driver:type(text)
+    end
+    driver:click("TextButton", "Create")
+    driver:wait_screen("GameScreen")
     local token = driver:wait_for(function()
         return driver:try_find("Token", name)
     end, nil, "the token " .. id) --[[@as Token]]
@@ -190,8 +192,14 @@ end
 ---@param driver ScenarioDriver In the game, with `write` on the token
 ---@param label string The token's name, as its label shows it
 function steps.delete_token(driver, label)
-    local id = _find_token(driver, label):get_id()
-    assert(app.session):delete_token(id)
+    local token = steps.select_token(driver, label)
+    local id = token:get_id()
+    local selected = 0
+    for _ in pairs(_get_select_set()) do
+        selected = selected + 1
+    end
+    driver:expect(selected == 1, string.format("%s is selected alone: %d tokens selected", label, selected))
+    driver:click("TextButton", "Delete")
     driver:wait_for(function()
         return not driver:try_find("Token", label)
     end, nil, "the token " .. id .. " gone")
