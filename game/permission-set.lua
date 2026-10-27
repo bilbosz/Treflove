@@ -49,6 +49,13 @@ function PermissionSet:rename_key(kind, key, new_key)
     self._parsed = _parse_all(self._grants)
 end
 
+---@param kind permissions.Kind
+---@param key string
+function PermissionSet:remove_key(kind, key)
+    self._grants = permissions.remove_key(self._grants, kind, key)
+    self._parsed = _parse_all(self._grants)
+end
+
 ---@param data GameData
 ---@param login string
 ---@param kind permissions.Kind

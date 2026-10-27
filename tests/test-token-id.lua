@@ -183,3 +183,45 @@ test.case("rename raises for an absent id and for a taken new id", function()
     end, "a taken id")
     test.assert_deep_eq(data, game_data(), "nothing changed")
 end)
+
+test.case("remove drops the entry, the id from every page's list and every grant on the token, and keeps the rest", function()
+    local data = game_data()
+    token_id.remove(data, "Bilbosz")
+    test.assert_eq(data.tokens.Bilbosz, nil)
+    test.assert_deep_eq(data.tokens.Gaben, token_data("Gaben"))
+    test.assert_deep_eq(data.pages["Old Town"].tokens, {
+        "Gaben",
+        "Anonim"
+    })
+    test.assert_deep_eq(data.pages["Bilbosz"].tokens, {
+        "Gaben"
+    }, "a page under the same key keeps its entry")
+    test.assert_deep_eq(data.pages["Cave"].tokens, {
+        "Anonim"
+    })
+    test.assert_deep_eq(data.groups.master.permissions, {
+        "read",
+        "write"
+    })
+    test.assert_deep_eq(data.groups.player.permissions, {
+        "read",
+        "write:tokens/@owned",
+        "read:pages/Bilbosz"
+    })
+    test.assert_deep_eq(data.players.piotr.permissions, {
+        "view:tokens/Gaben"
+    })
+    test.assert_eq(data.players.adam.permissions, nil, "a player without grants of its own stays without")
+end)
+
+test.case("remove works on the client's filtered copy, and raises for an absent id", function()
+    local data = game_data()
+    data.groups = {}
+    data.players = {}
+    token_id.remove(data, "Anonim")
+    test.assert_eq(data.tokens.Anonim, nil)
+    test.assert_deep_eq(data.pages["Cave"].tokens, {})
+    test.assert_error(function()
+        token_id.remove(data, "Anonim")
+    end, "an absent id")
+end)

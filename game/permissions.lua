@@ -133,6 +133,22 @@ function permissions.rename_key(grants, kind, key, new_key)
     return result
 end
 
+---@param grants string[]
+---@param kind permissions.Kind
+---@param key string
+---@return string[] A copy of `grants` without the grants on `kind/key` (any action), the rest as they were
+function permissions.remove_key(grants, kind, key)
+    ---@type string[]
+    local result = {}
+    for _, text in ipairs(grants) do
+        local grant = permissions.parse(text)
+        if grant.kind ~= kind or grant.key ~= key then
+            table.insert(result, text)
+        end
+    end
+    return result
+end
+
 ---@param data GameData
 ---@param login string
 ---@return string[] The group's grants followed by the player's own

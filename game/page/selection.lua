@@ -123,6 +123,14 @@ function Selection:unselect()
     self:on_selection_change()
 end
 
+---@param token Token Dropped from the set, left as it is; the selection changes when it was selected
+function Selection:remove(token)
+    if self._select_set[token] then
+        self._select_set[token] = nil
+        self:on_selection_change()
+    end
+end
+
 ---@return table<Token, boolean>
 function Selection:get_select_set()
     return self._select_set

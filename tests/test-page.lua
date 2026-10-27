@@ -589,3 +589,125 @@ test.case("a token's avatar follows its data, fitted to the token", function()
         error(err, 0)
     end
 end)
+
+---@param name string
+---@param grants string[]
+---@param fn fun(client: GameClient, page: Page)
+local function page_case(name, grants, fn)
+    test.case(name, function()
+        local client = game_client.enter(grants)
+        ---@type boolean, any
+        local ok, err = pcall(fn, client, client.game_screen:get_page())
+        game_client.finish(client)
+        if not ok then
+            error(err, 0)
+        end
+    end)
+end
+
+page_case("add_token builds the token of the data on the page, over the others, at its position", {
+    "read"
+}, function(client, page)
+    local data = assert(client.app.data)
+    local entry = data.tokens.Gollum
+    entry.position = {
+        6,
+        7
+    }
+    local token = page:add_token("Gollum")
+    test.assert_eq(token:get_id(), "Gollum")
+    test.assert_eq(token:get_data(), entry, "the data's own entry")
+    test.assert_deep_eq(position(token), {
+        6,
+        7
+    })
+    test.assert_eq(page:get_tokens()[3], token)
+    test.assert_eq(page:try_find_token("Gollum"), token)
+    test.assert_eq(token:get_parent(), page:get_page_coordinates())
+    test.assert_deep_eq(page:get_data().tokens, {
+        "Bilbosza",
+        "Smaug"
+    }, "the page's list is the caller's")
+end)
+
+page_case("remove_token destroys the token and drops it from the page and the selection; the panel shows what is left selected", {
+    "read"
+}, function(client, page)
+    local smaug = game_client.find_token(client, "Smaug")
+    local bilbosza = game_client.find_token(client, "Bilbosza")
+    game_client.select(client, {
+        "Smaug"
+    })
+    local panel = client.game_screen:get_token_panel()
+    ---@diagnostic disable-next-line: invisible
+    test.assert_true(#panel._properties > 0, "Smaug's properties shown")
+    page:remove_token(smaug)
+    test.assert_false(lifetime.alive(smaug))
+    test.assert_deep_eq(page:get_tokens(), {
+        bilbosza
+    })
+    test.assert_eq(page:try_find_token("Smaug"), nil)
+    test.assert_eq(next(page:get_selection():get_select_set()), nil)
+    ---@diagnostic disable-next-line: invisible
+    test.assert_eq(#panel._properties, 0, "the panel rebuilt for an empty selection")
+    test.assert_deep_eq(page:get_data().tokens, {
+        "Bilbosza",
+        "Smaug"
+    }, "the page's list is the caller's")
+end)
+
+page_case("remove_token of a token that is not selected leaves the selection and the panel alone", {
+    "read"
+}, function(client, page)
+    game_client.select(client, {
+        "Bilbosza"
+    })
+    local panel = client.game_screen:get_token_panel()
+    ---@diagnostic disable-next-line: invisible
+    local properties = panel._properties
+    local smaug = game_client.find_token(client, "Smaug")
+    page:remove_token(smaug)
+    test.assert_true(page:get_selection():get_select_set()[game_client.find_token(client, "Bilbosza")])
+    ---@diagnostic disable-next-line: invisible
+    test.assert_eq(panel._properties, properties, "not rebuilt")
+    test.assert_error(function()
+        page:remove_token(smaug)
+    end, "no longer on the page")
+end)
+
+page_case("a token removed during a drag leaves the drag, which ends with the moves of the others", {
+    "read",
+    "write"
+}, function(client, page)
+    local smaug = game_client.find_token(client, "Smaug")
+    game_client.select(client, {
+        "Bilbosza",
+        "Smaug"
+    })
+    local px, py = page:get_position()
+    page:on_pointer_down(px + 100, py + 100, Consts.PAGE_DRAG_TOKEN_BUTTON)
+    page:on_pointer_move(px + 140, py + 100)
+    page:remove_token(smaug)
+    page:on_pointer_move(px + 160, py + 100)
+    page:on_pointer_up(px + 160, py + 100, Consts.PAGE_DRAG_TOKEN_BUTTON)
+    assert_moves(client, sent_moves(client), {
+        "Bilbosza"
+    })
+end)
+
+page_case("get_view_center is the fit area's center in page meters, wherever the view is", {
+    "read"
+}, function(client, page)
+    page:fit_page()
+    local x, y = page:get_view_center()
+    test.assert_near(x, 5, 1e-6)
+    test.assert_near(y, 5, 1e-6)
+    page:center_on(3, 4)
+    x, y = page:get_view_center()
+    test.assert_near(x, 3, 1e-6)
+    test.assert_near(y, 4, 1e-6)
+    page:set_extension(300)
+    x, y = page:get_view_center()
+    test.assert_near(x, 3, 1e-6, "the extension is not the fit area")
+    test.assert_near(y, 4, 1e-6)
+end)
