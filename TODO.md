@@ -81,11 +81,25 @@ editing and dragging.
 
 ## Milestones from code review
 
-### 7. Real login flow and user management
+### 7. Account and game management
 
-- Users are currently added by hand-editing the server's save file, which
-  also carries plaintext passwords in comments; add a way to create and
-  manage accounts
+An account is created from the login screen and kept by the server in
+`s/accounts.lua`; a game is created from the games list and any account
+may join any game ([docs/architecture.md](docs/architecture.md),
+"Accounts and Games"). What is still done by hand in the files:
+
+- Changing a password, a display name, deleting an account
+- A game master UI for a game's players and groups (today a first join
+  lands every account in the group `player`); private games, by invitation
+  or password, once a game should not be open to every account
+- Deleting or renaming a game; a games list that scrolls once it outgrows
+  the window (the menu screen lays its entries out once, top to bottom)
+- Creating tokens and pages from the UI: a new game starts from the
+  template's one page and one token, and the assets workspace uploads the
+  images, but nothing in the UI makes a token or a page yet
+- A root from before the accounts (an `s/save.lua` without an
+  `s/accounts.lua`) is emptied and seeded, as every start emptied it before;
+  a migration into `s/games/<id>/` would keep such a root's state
 
 ### 8. Authentication hardening
 
@@ -93,7 +107,7 @@ The salt generator is seeded with fixed constants, so the "salt" is a static
 pepper shared by all users.
 
 - Per-user random salts stored with the account, and a proper KDF for hashing
-- The login procedure scans all players per login attempt to find a user by
+- The login procedure scans all accounts per login attempt to find a user by
   its client auth; index by auth instead
 
 ### 9. Connection resilience

@@ -32,8 +32,9 @@ An option on the wrong side, an unknown option, a missing value (a value
 starting with `--` counts as missing) or a repeated one show the usage
 message, as a bad address does. The save directory
 (`~/.local/share/love/<identity>/` on Linux) holds the server's state
-under its root `s` (`s/save.lua`, `s/assets/`) and the client's copies
-under `c`; the default identity is the name of the game folder, so a run
+under its root `s` (`s/accounts.lua`, `s/games/<id>/save.lua` and
+`s/games/<id>/assets/`) and the client's copies under `c`
+(`c/games/<id>/assets/`); the default identity is the name of the game folder, so a run
 from another checkout writes elsewhere, and a scenario run names its own
 identity so the user's data stays untouched.
 
@@ -95,7 +96,9 @@ return function(driver)
     driver:type("krause")
     driver:click("TextButton", "Sign In")
     driver:wait_screen("UserMenuScreen")
-    driver:click("TextButton", "Join Game")
+    driver:click("TextButton", "Games")
+    driver:wait_screen("GamesScreen")
+    driver:click("TextButton", "Meadow")
     local game = driver:wait_screen("GameScreen")
     driver:expect(#game:get_page():get_tokens() == 2, "two tokens on the page")
 end
@@ -118,11 +121,14 @@ end
   scenario reached.
 
 The shared steps live in `scenarios/lib/steps.lua`. The scenarios:
-`join-game` (the login and the game: what the client used to do by
-itself with hardcoded credentials, now the dev default of `run.sh` and
-the launch configurations), `assets-workspace` (the workspace from the
-game, its listing against the server's store, back) and `logout` (out and
-in again).
+`join-game` (the login, the games list and the game: what the client
+used to do by itself with hardcoded credentials, now the dev default of
+`run.sh` and the launch configurations), `assets-workspace` (the
+workspace from the game, its listing against the game's store, back),
+`logout` (out and in again), `sign-up` (an account created from the
+login screen, signed in at once, out and in again) and `new-game` (a
+game created from the games list and entered, its template page and
+token, listed afterwards).
 
 ### Several clients
 
@@ -176,13 +182,14 @@ scenarios will be.
 ### The fixture
 
 `--fixture <path>` names a directory of the source tree mirroring the
-server root: `scenarios/fixtures/basic/save.lua` and its `assets/`. At
-load the server empties its root in the save directory and copies the
-fixture in (`data/fixture.lua`), so every run starts from the same state.
-The basic fixture: the player `adam` (password `krause`) in the master
-group, the player `piotr` (password `secret`) in a player group that
-reads the tokens he owns only, one page with a small image, two tokens
-with small avatars, Bilbo owned by piotr.
+server root: `scenarios/fixtures/basic/accounts.lua` and
+`games/meadow/` with its `save.lua` and `assets/`. At load the server
+empties its root in the save directory and copies the fixture in
+(`data/fixture.lua`), so every run starts from the same state. The basic
+fixture: the accounts `adam` (password `krause`) and `piotr` (password
+`secret`), one game, `Meadow`, with adam in the master group, piotr in a
+player group that reads the tokens he owns only, one page with a small
+image, two tokens with small avatars, Bilbo owned by piotr.
 
 ### Running one
 

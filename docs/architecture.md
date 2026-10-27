@@ -9,8 +9,10 @@ instantiates the Client, the Server, the console command or the Monitor:
   keyboard, wheel, button, text, file-drop, resize), the screen manager, the
   connection manager, the asset manager, backstack navigation, notifications
   and session management
-- **Server**: runs headless or with a screen saver, manages one session per
-  connection, persists the game state in human-readable form
+- **Server**: runs headless or with a screen saver, holds the accounts and
+  every game of its root (one process, any number of games), manages one
+  session per connection, persists the accounts and each game in
+  human-readable form
 - **Console** (`love . console`): the console client as a command, no
   window, a `love.run` of its own; **Monitor** (`love . monitor`): a window
   showing the watches and the log of one or more consoles
@@ -94,22 +96,72 @@ identifier (`LoginRp`, `UploadAssetRp`, `DownloadAssetRp`, ...).
 ## Session Management
 
 A `Session` ties a connection to a user:
-- Manages the login and logout lifecycle through a `Login`
-- Coordinates the screen transitions (connecting → login → user menu → game,
-  and the assets workspace over the game)
+- Manages the login and logout lifecycle through a `Login`, and the
+  creation of an account (`sign_up`: `CreateAccountRp`, then the login
+  with the same credentials)
+- Coordinates the screen transitions (connecting → login, or the sign-up
+  over it → user menu → the games list, the new game over it → game, and
+  the assets workspace over the game)
 - Integrates with the asset manager and backstack navigation
-- Holds the user's `PermissionSet` while logged in: the server resolves it
-  from the game data at login, the client receives the grants with the game
+- Holds the user's `PermissionSet` while in a game: the server resolves it
+  from the game's data when the session selects the game
+  (`Session:select_game`), the client receives the grants with the game
   data; see [permissions.md](permissions.md)
-- The server keeps a map from connection to session
+- On the server, holds the game the session is in (`Session:get_game`),
+  at most one at a time; the server keeps a map from connection to session
 - Is anchored to its connection and owns its login, its remote procedures
   and, on the client, the "logged in" token that owns the menu and game
-  screens; the game screen and the assets workspace are built under the
-  token and destroyed on the way back, see [lifetimes.md](lifetimes.md)
+  screens; the games list, the new game screen, the game screen and the
+  assets workspace are built under the token and destroyed on the way
+  back, see [lifetimes.md](lifetimes.md)
 - The client shows the session's login screen on connect
-  (`Session:show_login`); a login lands on the user menu and the game is
-  joined from there, by the user or by a scenario
+  (`Session:show_login`); a login lands on the user menu, the Games entry
+  lists the server's games (`show_games`), a click joins one
+  (`join_game(id)`), New Game creates one and joins it (`create_game`),
+  by the user or by a scenario
   ([scenarios-and-console.md](scenarios-and-console.md))
+
+## Accounts and Games
+
+The server's root (`s/` in its save directory) holds the accounts and the
+games, each game with a store of its own:
+
+```
+s/accounts.lua                 by login: the display name and the auth (the server-side hash)
+s/games/<id>/save.lua          one game's GameData
+s/games/<id>/assets/...        that game's asset store
+```
+
+- `Accounts` (`data/accounts.lua`) reads and writes the accounts file:
+  `find_by_auth` is what the login procedure asks, `create` what the
+  sign-up asks, after the checks the client ran too (`check_login`: up to
+  32 characters of `[%w_.-]`, not starting with `@`; `check_name`,
+  `check_password`: not empty). The password hashing is unchanged: the
+  client hashes the password with its salt, the server hashes the result
+  with its own, and the account holds the second hash.
+- `Games` (`data/games.lua`) is the games directory: `list` the ids (the
+  directories holding a `save.lua`), `get` a `Game` (`game/game.lua`:
+  the id, the `GameData`, its `AssetStore`, `save`, `add_player`), loaded
+  once and kept, `create` a new one from the template
+  (`server/template/`: a table page of 20 by 15 meters with one token,
+  `Hero`, and the groups `master` and `player`) seeded into
+  `s/games/<id>/` with the name given, the creator in `master` and as
+  the owner of `Hero`. The id is the name's slug (`Games.make_id`: lower
+  case, runs of other characters become one `-`); a taken id refuses the
+  creation.
+- The procedures: `CreateAccountRp` (login, name, the client hash),
+  `ListGamesRp` (every game by id, name and whether the session's user is
+  a member, for a logged-in session), `CreateGameRp` (the name; the id
+  back), `GameDataRp` (the id of the game to join: the server selects it
+  for the session, adds the user to its `players` in the group `player`
+  when absent, since games are open to every account, resolves the
+  permissions and answers with the filtered data and the grants, or with
+  `success = false` for an unknown id).
+- At its first start, or on a root from before the accounts (no
+  `s/accounts.lua`), the server empties its root and seeds it from the
+  source tree's `server/seed/` (the accounts `adam` and `piotr`, the game
+  `old-town`); afterwards the root is kept across restarts. `--fixture`
+  empties and seeds it from the fixture given, every time.
 
 ## Event System
 
@@ -284,15 +336,22 @@ copy of the data until game state synchronization (`TODO.md`, milestone
 
 ## Asset Management
 
-`AssetManager` tracks assets per session (on the client, the procedures used
-are its own session's), downloads missing assets from the server on demand,
-uploads new ones and changes the store: a folder (`make_folder`), a move
-(`move`, a file or a folder with everything under it) and a removal
-(`remove`), each validated and refused with a reason for the user. `Asset`
-wraps LÖVE's filesystem: one path, read, written, moved, removed, and the
-path helpers (`check_path`, `get_name`, `get_parent`, `join`, `is_under`)
-and the listing of the whole store (`Asset.list`, parents before their
-content). The procedures are DownloadAssetRp, DownloadMissingAssetsRp,
+Every game has an asset store of its own: `AssetStore`
+(`data/asset-store.lua`) is one store bound to its root, `s/games/<id>`
+on the server (the game's, `Game:get_store`) and `c/games/<id>` on the
+client (the joined game's, set by the game data response and reached
+through `AssetManager:get_store`). It lists the whole store (`list`,
+parents before their content), resolves an asset's real path for LÖVE
+(`get_path`) and changes the store: a mounted file (`mount_file`), a
+folder (`make_folder`), a move (`move`, a file or a folder with
+everything under it) and a removal (`remove`), each validated and refused
+with a reason for the user. `Asset` wraps LÖVE's filesystem: one real
+path of the save directory, read, written, moved, removed, and the path
+helpers (`check_path`, `get_name`, `get_parent`, `join`, `is_under`).
+`AssetManager` tracks the procedures per session (on the client, the
+procedures used are its own session's), downloads missing assets from the
+server on demand and uploads new ones. The procedures are
+DownloadAssetRp, DownloadMissingAssetsRp,
 UploadAssetRp, ListAssetsRp, CreateAssetFolderRp, RenameAssetRp and
 DeleteAssetRp; the listing needs `read` on `assets`, every change `write`
 on `assets`. A rename keeps the game pointing at the renamed assets (the
@@ -380,14 +439,17 @@ button and the workspace's actions. See [permissions.md](permissions.md).
 
 ## Data Persistence
 
-The server persists the game state as a human-readable Lua table:
-`table.to_string()` serializes (a string on one line, its quotes and
-backslashes escaped), `table.from_string()` deserializes; the
-server writes on `save_data()` and reads at startup. The state holds the
-pages, tokens and token properties, the players and the permission groups
-(`GameData` in `game/game-data-rp.lua`). The server's data
-directory holds the persisted state and the game assets (tokens, the world
-map); it is data, not source code.
+The server persists the accounts and every game as human-readable Lua
+tables: `table.to_string()` serializes (a string on one line, its quotes
+and backslashes escaped), `table.from_string()` deserializes; the server
+reads them at startup and writes a file when it changes (an account
+created, a game created, a player joined). A game's state holds its name,
+the pages, tokens and token properties, the players (their group and
+grants; the account holds the name and the auth) and the permission
+groups (`GameData` in `game/game-data-rp.lua`). The source tree's
+`server/seed/` (what a fresh root gets) and `server/template/` (what a
+new game starts from) mirror the root's layout; they are data, not source
+code.
 
 ## Backstack Navigation
 
@@ -395,9 +457,11 @@ map); it is data, not source code.
 browser history). `push(cb)` returns the entry, which the caller anchors to
 what it is for (a screen, the logged-in token); an entry leaves the stack
 when it dies. On the back key the top entry is destroyed and its callback
-invoked. The session pushes the entries of the screens it opens (the game,
-the assets workspace) once, when it opens them, so a screen shown again
-(the game after the workspace) gets no second entry.
+invoked. The session pushes the entries of the screens it opens (the sign-up,
+the games list, the new game, the game, the assets workspace) once, when
+it opens them, so a screen shown again (the game after the workspace)
+gets no second entry; joining a game destroys the games list and the new
+game screen with their entries, so none stays under the game's.
 
 ## Key Design Patterns
 

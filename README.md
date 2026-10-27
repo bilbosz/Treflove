@@ -31,6 +31,11 @@ To run client instance run command:
 
     love . client localhost 8080
 
+The server's first start seeds its save directory from `server/seed/`
+(the accounts `adam`/`krause` and `piotr`/`stępczyński`, the game
+`Old Town`) and keeps it afterwards; `--fixture <dir>` resets it from a
+fixture at every start.
+
 To run single instance of client and server use:
 
     ./run.sh
@@ -61,6 +66,8 @@ Milestones that are consider done at this point:
 * simple interactive gui elements
 * event system
 * user login logic
+* accounts created from the login screen, kept by the server outside every game
+* many games on one server, each with its state and assets, listed and joined from the menu, a new one bootstrapped from a template
 * storing assets and game state on server's user directory
 * storing client settings in user directory
 * human readable data serialization
@@ -68,6 +75,7 @@ Milestones that are consider done at this point:
 * the console as a command and a monitor window over the watches and the log of client and server
 
 Known to-dos:
+* creating tokens and pages from the UI (a new game starts from the template's)
 * game master script handling
 * game objects other than tokens
 * clipping controls that are out of clipping rectangle

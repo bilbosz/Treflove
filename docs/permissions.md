@@ -1,11 +1,15 @@
 # Permissions
 
-Who may do what is data: the persisted game state names the groups, each
-player belongs to one, and a player may carry grants of its own on top of
-the group's. The server resolves a player's grants at login, filters what
-it sends by them, and refuses what they do not cover; the client receives
-the same grants with the game data and gates its UI by them. One module
-and one class do all of it on both sides.
+Who may do what is data: a game's persisted state names the groups, each
+of its players belongs to one, and a player may carry grants of its own on
+top of the group's. The server resolves a player's grants when the session
+joins the game, filters what it sends by them, and refuses what they do
+not cover; the client receives the same grants with the game data and
+gates its UI by them. One module and one class do all of it on both
+sides. The accounts (`s/accounts.lua`: the display name and the auth by
+login) are outside every game; a game's `players` names the accounts
+that joined it, and games are open: an account that joins a game it is
+not in yet is added to `players` in the group `player`.
 
 ## The data
 
@@ -21,10 +25,8 @@ groups = {
     }
 },
 players = {
-    ["adam"] = {name = "Adam", auth = "...", group = "master"},
+    ["adam"] = {group = "master"},
     ["piotr"] = {
-        name = "Piotrek",
-        auth = "...",
         group = "player",
         permissions = {"write:tokens/@owned", "view:tokens/Bilbosz"}
     }
@@ -33,7 +35,8 @@ players = {
 
 - `groups` (`GroupData` by name): a title and a list of grants. The game
   master's group reads and writes everything; the player group reads
-  everything.
+  everything. A new game starts with these two, its creator in `master`;
+  the template's `player` group also writes the tokens its members own.
 - `players[login].group` is a key of `groups`; a group the table does not
   have contributes nothing (the server logs it).
 - `players[login].permissions` (optional) adds grants to the group's. Piotr
@@ -63,33 +66,36 @@ Examples: `read` (everything), `write:assets` (may upload),
 ## Resolving and asking
 
 `permissions.resolve(data, login)` returns the group's grants followed by
-the player's own, as strings. `PermissionSet(login, grants)` parses them
-once; `set:allows(action, kind?, key?)` answers a question at any width:
+the player's own, as strings. `PermissionSet(login, grants, data)` parses
+them once, over the `GameData` it reads ownership from (the game's on the
+server, `app.data` on the client); `set:allows(action, kind?, key?)`
+answers a question at any width:
 
 - `allows(action)`: may the player do this to everything? Only a grant
   without a kind says yes.
 - `allows(action, kind)`: to the whole collection? A grant without a kind,
   or for that kind without a key.
 - `allows(action, kind, key)`: to one entry? Any of the above, the exact
-  key, or `@owned` when `app.data[kind][key].owners` lists the login
-  (ownership is read from `app.data` at the moment of the question, on
+  key, or `@owned` when `data[kind][key].owners` lists the login
+  (ownership is read from the data at the moment of the question, on
   both sides).
 
-The session holds the set while the user is logged in
-(`Session:get_permissions()`): the server builds it in the login callback
-from `app.data`; the client receives the grant strings in the game data
-response and builds its own (`Session:set_grants`). Both clear it at
-logout.
+The session holds the set while the user is in a game
+(`Session:get_permissions()`): the server builds it when the session
+selects the game (`Session:select_game`, from the game's data); the
+client receives the grant strings in the game data response and builds
+its own (`Session:set_grants`). Both clear it at logout; without a game,
+every question is answered no.
 
 ## Where it is enforced
 
 - **The game data** (`GameDataRp`): the server answers with
-  `permissions.filter(app.data, set)`, a copy that keeps an entry of a
-  collection only when the set may `read` it, keeps `game` only with
-  `read` on `game`, prunes a page's token list to the kept tokens, and
-  strips every player's `auth`. A collection the player may not read at
-  all is an empty table. The response carries the grants, so the client
-  asks the same questions the server did.
+  `permissions.filter(data, set)` over the joined game's data, a copy that
+  keeps an entry of a collection only when the set may `read` it, keeps
+  `game` only with `read` on `game`, and prunes a page's token list to the
+  kept tokens. A collection the player may not read at all is an empty
+  table. The response carries the grants, so the client asks the same
+  questions the server did. The auths never leave the accounts file.
 - **The asset store**: the listing (`ListAssetsRp`) answers only a session
   with `read` on `assets`, and tells it whether it may change the store
   (`writable`); an upload (`UploadAssetRp`), a folder

@@ -38,4 +38,4 @@ Detailed guidance is split into topic files, imported below. To address one topi
 
 ## Project Status
 
-The README lists completed milestones and known to-dos. Notably **not yet implemented**: game master script handling, game state synchronization, game objects other than tokens, media other than images, and prefabs.
+The README lists completed milestones and known to-dos. Notably **not yet implemented**: game master script handling, game state synchronization, game objects other than tokens, media other than images, prefabs, and creating tokens or pages from the UI (a new game starts from the template).

@@ -43,16 +43,22 @@ Connection                      (a lost peer → lifetime.destroy;
     ├── Login
     │   ├── LoginRp
     │   └── LogoutRp
-    ├── GameDataRp
+    ├── CreateAccountRp, GameDataRp, ListGamesRp, CreateGameRp
     ├── UploadAssetRp, DownloadAssetRp, DownloadMissingAssetsRp,
     │   ListAssetsRp, CreateAssetFolderRp, RenameAssetRp, DeleteAssetRp
     ├── hook: clears the AssetManager's per-session entries
     ├── LoginScreen                     (client, from the connect or a logout to the next login)
+    ├── SignUpScreen                    (client, from Sign Up to Back or to the login it ends in)
+    │   └── back entry: back to the login screen
     └── token "logged in"               (client)
         ├── UserMenuScreen              (shown again after the game)
         │   ├── OptionsMenuScreen       (made on the first visit, kept)
         │   └── back entry: return from the options (one per visit)
         ├── back entry: log out
+        ├── GamesScreen                 (from Games to Back or to the game joined; rebuilt on every listing)
+        │   └── back entry: back to the menu
+        ├── NewGameScreen               (from New Game to Back or to the game created)
+        │   └── back entry: back to the games list
         ├── GameScreen                  (while in the game)
         │   ├── its control tree        (the panels, the preview area, the inputs)
         │   └── back entry: leave the game
@@ -85,6 +91,19 @@ the `release` calls it caused.
   if the user is in the game) hides itself and dies with its panels. The
   login screen shown next is the session's; the next login destroys it once
   the menu has replaced it.
+- **Sign up**: the session builds the sign-up screen as it builds the
+  login screen, anchored to itself, and pushes its back entry, anchored to
+  the screen; the entry shows the login screen again and destroys the
+  sign-up screen. An account created logs in with the same credentials, and
+  the login destroys the sign-up screen as it destroys the login screen.
+- **The games list**: the session builds a games screen under the period
+  from every listing (the previous one destroyed first) and pushes its back
+  entry, anchored to the screen; the entry shows the menu and destroys the
+  screen. New Game builds the new game screen the same way, its entry
+  showing the games list again, which stays alive beneath. Joining a game,
+  from the list or by creating one, destroys both screens first, so their
+  entries never stay under the game's. A listing or a creation that
+  answers after a logout belongs to a period that is over and is ignored.
 - **The game**: the session builds the game screen under the period once the
   game data and its assets are in, and pushes its back entry, anchored to the
   screen; the entry shows the session's menu screen again (the same one) and
