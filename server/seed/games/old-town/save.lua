@@ -1,4 +1,5 @@
 return {
+    name = "Old Town",
     game = {
         page = "Old Town"
     },
@@ -87,17 +88,9 @@ return {
     },
     players = {
         ["adam"] = {
-            name = "Adam",
-            -- login: adam
-            -- password: krause
-            auth = "48nI0XjJ11hysenR6bLDNrlo9Vk7gktIUfV1ZZ6wiNs=",
             group = "master"
         },
         ["piotr"] = {
-            name = "Piotrek",
-            -- login: piotr
-            -- password: stępczyński
-            auth = "h56e16kPixnS4sl1flNsuzCyaD+6KUhKPFFNKu8mS0o=",
             group = "player",
             permissions = {
                 "write:tokens/@owned",
