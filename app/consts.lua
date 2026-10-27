@@ -235,7 +235,8 @@ Monitor:
         0.85,
         0.9,
         0.25
-    }
+    },
+    ENTRIES_PANEL_LIST_SHARE = 0.3
 }
 
 Consts.PANEL_FIELD_SCALE = Consts.MENU_FIELD_SCALE
