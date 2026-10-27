@@ -102,6 +102,14 @@ every question is answered no.
   (`CreateAssetFolderRp`), a rename (`RenameAssetRp`) and a delete
   (`DeleteAssetRp`) are done only with `write` on `assets`; otherwise the
   response says `success = false` and the client notifies the reason.
+- **A token change** (`UpdateTokenRp`): the server applies a change to a
+  token, saves it and pushes it to the other sessions of the game only
+  with `write` on the token (`write:tokens/<id>`, `write:tokens/@owned`
+  with the ownership read from the data at the moment of the request, or
+  wider); otherwise the response says `success = false` with the reason,
+  the client notifies it and restores the token from the response. The
+  push (`TokenChangedRp`) goes only to the sessions that may `read` the
+  token, so a client never receives a token it was not sent.
 - **The client's UI**: the token panel is read-only (inputs read-only, no
   Apply, its "Show in assets..." button opens the workspace to look,
   without Use) when
@@ -112,9 +120,12 @@ every question is answered no.
   naming it, so `view:tokens/Bilbosz` follows `Bilbosz` renamed to `Bilbo`:
   `permissions.rename_key(grants, kind, key, new_key)` rewrites a list of
   grants, `token_id.rename` applies it to every group's and every player's
-  permissions in the data, and `Token:set_id` to the client session's set
-  (`Session:set_grants`). An `@owned` grant needs nothing: ownership is
-  read from the data under the new key.
+  permissions in the data, and `PermissionSet:rename_key` to a session's
+  set: the client's own in `Token:set_id`, and on the server, when the
+  rename is accepted, the set of every live session of the game
+  (`Game:get_sessions`), so a grant naming the token keeps working for
+  everyone in the game without a new login. An `@owned` grant needs
+  nothing: ownership is read from the data under the new key.
 
 `view` is resolved and sent like the other actions; its consumer, a vision
 system that shows a player what their tokens see, is future work

@@ -79,6 +79,7 @@ Milestones that are consider done at this point:
 * human readable data serialization
 * scenarios driving the client through its UI, headless or in a window, and a console port into the live program
 * the console as a command and a monitor window over the watches and the log of client and server
+* token changes synchronized through the server: checked against the player's grants, saved, pushed to the other clients in the game
 
 Known to-dos:
 * creating tokens and pages from the UI (a new game starts from the template's)
@@ -88,4 +89,4 @@ Known to-dos:
 * handling other media than images in the game (playing sound, a video on a page)
 * ability to change board and background music at will
 * adding prefabs
-* game state synchronization
+* game state synchronization beyond tokens (pages, players, groups, creating and deleting tokens)

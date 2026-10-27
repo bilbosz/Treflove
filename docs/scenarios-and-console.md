@@ -180,9 +180,13 @@ What the server can show across clients today, and the scenarios that
 show it: `two-players` (each player's game filtered by their grants, two
 logged-in sessions on the server), `shared-store` (a folder made by one
 client listed by the other) and `peer-logout` (one peer out, the other
-still in the game). Seeing each other's moves waits for game state
-synchronization (`TODO.md`, milestone 2), whose acceptance test these
-scenarios will be.
+still in the game) and `move-token` (the first slice of game state
+synchronization, `TODO.md` milestone 2: adam drags Bilbo, piotr's client
+shows it at the new position, the server's save holds it, and a change
+piotr's client sends past its own gate, `Session:update_token` through the
+console, is refused by the server with the reason notified). The shared
+steps `steps.select_token` and `steps.drag_token` select a token with a
+rectangle and drag it with the token-drag button, as a player does.
 
 ### The fixture
 

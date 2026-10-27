@@ -93,6 +93,16 @@ data), `receive_response(response)` (the client-side handler) and calls
 `send_request(request, cb)` to start a call. The class name is the wire
 identifier (`LoginRp`, `UploadAssetRp`, `DownloadAssetRp`, ...).
 
+The connection is symmetric: a received message whose source is the
+receiver's own is a response, any other a request dispatched to the handler
+registered for its id, and every procedure is built on both sides. So a
+procedure the server starts works the same way with the roles swapped:
+`TokenChangedRp` is sent by the server with `send_request` to every other
+session in the game, its `send_response` is the client's handler, which
+applies the change and answers an empty acknowledgement, and the server's
+`receive_response` has nothing to do. The request-response pair the client
+starts, `UpdateTokenRp`, and the push are described under [Tokens](#tokens).
+
 ## Session Management
 
 A `Session` ties a connection to a user:
@@ -108,7 +118,14 @@ A `Session` ties a connection to a user:
   (`Session:select_game`), the client receives the grants with the game
   data; see [permissions.md](permissions.md)
 - On the server, holds the game the session is in (`Session:get_game`),
-  at most one at a time; the server keeps a map from connection to session
+  at most one at a time; the server keeps a map from connection to session,
+  and the game keeps the live sessions in it (`Game:get_sessions`, weak
+  keys: the session registers when it selects the game and leaves at the
+  logout, a dead one drops out), which is who a change is pushed to
+- On the client, sends a token change (`Session:update_token(id, changes,
+  new_id)`: the page after a drag, the token panel after Apply or an image
+  chosen in the workspace) and receives the server's pushes through its
+  `TokenChangedRp`
 - Is anchored to its connection and owns its login, its remote procedures
   and, on the client, the "logged in" token that owns the menu and game
   screens; the games list, the new game screen, the game screen and the
@@ -332,10 +349,36 @@ token has, each with a notification carrying the reason; an accepted id
 goes through `Token:set_id`, which renames the key in the data
 (`token_id.rename`: the entry, every page's token list, the grants on the
 token in the groups' and the players' permissions) and in the session's
-permission set (`permissions.rename_key`), so the token stays as writable
-as it was. Like every edit of a token, the change lives in the client's
-copy of the data until game state synchronization (`TODO.md`, milestone
-2).
+permission set (`PermissionSet:rename_key`), so the token stays as writable
+as it was.
+
+A change is applied to the client's copy first and then sent to the server
+(`Session:update_token`): the page sends one `UpdateTokenRp` request per
+token a drag moved when the drag ends, with the token's id and its
+position; the panel sends one per token Apply changed, with the rename
+(old and new id) and the changed properties; the workspace's Use the same
+for an image property. The server (`UpdateTokenRp:send_response`) refuses
+a session not in a game, an unknown id, a session without `write` on the
+token, a change outside `position` and the `string`, `number` and `image`
+properties or with a value of the wrong type (an `array` property, such as
+`owners`, is not changeable over the wire), and a new id `token_id.check`
+refuses, each with a reason; otherwise it renames the key in the data and
+in the `PermissionSet` of every live session of the game, sets the
+changed fields, saves the game and pushes the change (`TokenChangedRp`,
+with the token as the server now holds it) to every other session in the
+game that may `read` the token. The response carries the server's entry
+when the session may read it: on a refusal the client notifies the reason
+and restores the token from it (the id renamed back, the position and the
+properties set), so the client's copy never drifts from the server's. A
+client receiving a push applies what differs (the rename first, an avatar
+the store lacks downloaded before it is set), to its data and to the token
+on the shown page, and rebuilds the token panel when the token is
+selected; a token it does not hold (one it may not read) is logged and
+ignored. A client that left the game to the menu still holds the data and
+receives the pushes, applied to the data only. What the slice leaves for
+the next: pages, players, groups and token properties are not
+synchronized, nothing creates or deletes a token, and a property cannot
+be deleted (the wire carries no `nil`).
 
 ## Asset Management
 
@@ -435,10 +478,11 @@ objects alone, as [lifetimes.md](lifetimes.md) requires.
 
 Groups, grants and their enforcement are data in the game state and one
 module (`permissions`) plus one class (`PermissionSet`) used on both sides:
-the server filters the game data it sends by `read`, lists the assets only
-with `read:assets`, refuses uploads, folders, renames and deletes without
-`write:assets`; the client gates editing and dragging of tokens, the upload
-button and the workspace's actions. See [permissions.md](permissions.md).
+the server filters the game data it sends by `read`, pushes a token change
+only to the sessions that read the token, applies one only with `write` on
+it, lists the assets only with `read:assets`, refuses uploads, folders,
+renames and deletes without `write:assets`; the client gates editing and
+dragging of tokens, the upload button and the workspace's actions. See [permissions.md](permissions.md).
 
 ## Data Persistence
 
@@ -446,7 +490,8 @@ The server persists the accounts and every game as human-readable Lua
 tables: `table.to_string()` serializes (a string on one line, its quotes
 and backslashes escaped), `table.from_string()` deserializes; the server
 reads them at startup and writes a file when it changes (an account
-created, a game created, a player joined). A game's state holds its name,
+created, a game created, a player joined, a token changed, an asset
+renamed). A game's state holds its name,
 the pages, tokens and token properties, the players (their group and
 grants; the account holds the name and the auth) and the permission
 groups (`GameData` in `game/game-data-rp.lua`). The source tree's

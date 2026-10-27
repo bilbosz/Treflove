@@ -14,11 +14,23 @@ game state (tokens, objects, maps, sound) live during play.
 
 ### 2. Game state synchronization
 
-The game data procedure sends the full state once on login; changes made
-afterwards do not propagate.
+The game data procedure sends the full state on every join, so a late
+joiner gets the whole game as the server holds it. Token changes travel:
+`UpdateTokenRp` carries a drag, the panel's Apply and an image chosen in
+the workspace to the server, which checks `write`, saves and pushes
+`TokenChangedRp` to every other session of the game that reads the token
+([docs/architecture.md](docs/architecture.md), "Tokens"). Still missing:
 
-- Push incremental state updates from server to all connected clients
-- Handle late joiners and mid-game asset additions
+- Pages, players, groups and token properties: a change to any of them
+  stays in the client's copy (nothing in the UI edits them yet; the save
+  file does)
+- Creating and deleting tokens, and deleting a property (the wire carries
+  no `nil`; a property of a token can only be set)
+- Mid-game asset additions beyond the avatar a push names (a page image
+  changed by another client is not downloaded)
+- The requester applies a change before the server answers and restores
+  on a refusal; two clients changing one token at once end with the
+  server's last write, and no client is told it lost
 
 ### 3. Game objects other than tokens
 
@@ -61,23 +73,24 @@ processed.
 
 The permission model ([docs/permissions.md](docs/permissions.md)) resolves
 `read`, `write` and `view` grants; today the server enforces `read` (the
-game data it sends) and `write:assets` (uploads), the client gates token
-editing and dragging.
+game data it sends and the token changes it pushes), `write:tokens` (a
+token change, `UpdateTokenRp`) and `write:assets` (uploads), the client
+gates token editing and dragging.
 
 - A vision system is the consumer of `view`: a player sees what the tokens
   they own and the tokens they have `view` on see (fog of war); until then
   the grant is resolved and sent but changes nothing on screen
-- When game state synchronization (milestone 2) brings a write procedure,
-  the server checks `write` on the changed entry before applying it; the
+- A write procedure for the other kinds (pages, players, groups) checks
+  `write` on the changed entry as `UpdateTokenRp` does for a token; the
   client-side gating is a convenience, not the guard
 - Per-player grants are edited by hand in the save file, like the accounts
   (milestone 7); a game master UI for groups and grants belongs with the
   account management
-- A token's id renamed in the token panel renames the grants on it in the
-  client's copy of the data and in its session's set (`Token:set_id`); the
-  server rebuilds a session's set at login from the save, so once the write
-  procedure exists (milestone 2) the rename travels with it and the server
-  renames the sets of its live sessions the same way
+- A token's id renamed in the token panel travels with `UpdateTokenRp`:
+  the server renames the key in the data and in the set of every live
+  session of the game, and the push renames it on the other clients; the
+  `owners` of a token are still edited in the save file only (an `array`
+  property is not changeable over the wire)
 
 ## Milestones from code review
 
@@ -183,10 +196,10 @@ port drives the live program ([docs/scenarios-and-console.md](docs/scenarios-and
   and the fixture, so a bug reproduced by hand becomes a scenario
 - The suite's own click helpers (the lifetimes suite, the game client
   harness) could use the scenario driver's `find` and `click`
-- Multi-client scenarios drive peers from a lead client; a conductor
-  outside every client (a `luajit` script over the console ports) would
-  serve symmetric cases, and milestone 2 gets its acceptance scenarios
-  (one client moves a token, the other sees it) once changes propagate
+- Multi-client scenarios drive peers from a lead client (`move-token` is
+  milestone 2's first acceptance scenario); a conductor outside every
+  client (a `luajit` script over the console ports) would serve symmetric
+  cases
 - A windowed client started from a shell on this machine presents at one
   frame per second (adaptive vsync under XWayland, `love.window.getVSync()`
   reports -1; `vblank_mode=0` gives hundreds), on `master` as well, so a

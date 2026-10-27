@@ -44,6 +44,7 @@ Connection                      (a lost peer → lifetime.destroy;
     │   ├── LoginRp
     │   └── LogoutRp
     ├── CreateAccountRp, GameDataRp, ListGamesRp, CreateGameRp
+    ├── UpdateTokenRp, TokenChangedRp
     ├── UploadAssetRp, DownloadAssetRp, DownloadMissingAssetsRp,
     │   ListAssetsRp, CreateAssetFolderRp, RenameAssetRp, DeleteAssetRp
     ├── hook: clears the AssetManager's per-session entries
