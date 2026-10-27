@@ -237,13 +237,38 @@ local function quick_access_captions(client)
     return captions
 end
 
-test.case("the quick access entries are Tokens, Assets and New Token, left to right", function()
+test.case("the quick access entries are Tokens, Assets, New Token and Game, left to right", function()
     with_client(function(client)
         test.assert_deep_eq(quick_access_captions(client), {
             "Tokens",
             "Assets",
-            "New Token"
+            "New Token",
+            "Game"
         })
+    end)
+end)
+
+test.case("the Game entry shows the game panel in place of the token panel, and a second click hides the side bar", function()
+    with_client(function(client)
+        local screen = client.game_screen
+        local game_panel, token_panel = screen:get_game_panel(), screen:get_token_panel()
+        local game_button = quick_access_button(client, "Game")
+        test.assert_false(game_panel:is_enabled(), "hidden at first")
+        game_client.click(client, game_button)
+        test.assert_eq(screen:get_panel(), game_panel)
+        test.assert_true(game_panel:is_enabled())
+        test.assert_true(game_button:is_active())
+        test.assert_false(token_panel:is_enabled())
+        test.assert_false(tokens_button(client):is_active())
+        local w, h = assert(client.app.width), assert(client.app.height)
+        local x, y, panel_w, panel_h = game_panel:get_position_and_size()
+        test.assert_eq(x, w * (1 - Consts.GAME_SIDE_PANEL_SHARE))
+        test.assert_eq(y, 0)
+        test.assert_eq(panel_w, w * Consts.GAME_SIDE_PANEL_SHARE)
+        test.assert_eq(panel_h, h)
+        game_client.click(client, game_button)
+        test.assert_eq(screen:get_panel(), nil)
+        test.assert_false(game_panel:is_enabled())
     end)
 end)
 
@@ -295,6 +320,15 @@ test.case("show_page replaces the page with one over the page named, at the same
         test.assert_eq(next(screen:get_selection():get_select_set()), nil)
         ---@diagnostic disable-next-line: invisible
         test.assert_eq(screen:get_token_panel()._id_input, nil, "the token panel shows the empty selection")
+        ---@type table<string, boolean>
+        local shown = {}
+        for _, button in ipairs(screen:get_game_panel():get_buttons()) do
+            shown[button:get_text()] = button:is_active()
+        end
+        test.assert_deep_eq(shown, {
+            P = false,
+            Q = true
+        }, "the game panel marks the page shown")
 
         screen:select_panel(screen:get_token_panel())
         test.assert_eq((page:get_size()), fit_w, "the new page follows the side bar")

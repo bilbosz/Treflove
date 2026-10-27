@@ -2,6 +2,7 @@ local Model = require("data.model")
 local FormScreen = require("ui.form-screen")
 local Page = require("game.page.page")
 local TokenPanel = require("game.token.token-panel")
+local GamePanel = require("game.panels.game-panel")
 local QuickAccessPanel = require("game.quick-access-panel")
 local Consts = require("app.consts")
 local permissions = require("game.permissions")
@@ -13,6 +14,7 @@ local lifetime = require("lifetime")
 ---@field get_data fun(self: GameScreen): GameScreenData
 ---@field private _page Page
 ---@field private _token_panel TokenPanel
+---@field private _game_panel GamePanel
 ---@field private _panel SidePanel|nil The shown side panel; `nil` while the side bar is hidden and the page's view extends over its strip
 ---@field private _panels SidePanel[] In the order of their quick access entries
 ---@field private _panel_buttons table<SidePanel, TextButton> The quick access entry that toggles each side panel, active while it is shown
@@ -30,6 +32,7 @@ function GameScreen:init(data)
     self._page = Page(app.data.pages[data.page], self, w - panel_w, h - Consts.QUICK_ACCESS_PANEL_HEIGHT)
 
     self._token_panel = TokenPanel(self, panel_w, h)
+    self._game_panel = GamePanel(self, panel_w, h)
     self._panel = nil
     self._panels = {}
     self._panel_buttons = {}
@@ -43,6 +46,7 @@ function GameScreen:init(data)
         assert(app.session):show_new_token()
     end)
     self:_gate_new_token()
+    self:add_side_panel(self._game_panel, "Game")
     self:_set_panel(self._token_panel)
 end
 
@@ -148,6 +152,11 @@ end
 ---@return TokenPanel
 function GameScreen:get_token_panel()
     return self._token_panel
+end
+
+---@return GamePanel
+function GameScreen:get_game_panel()
+    return self._game_panel
 end
 
 ---@return SidePanel|nil The shown side panel
