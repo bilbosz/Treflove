@@ -3,8 +3,6 @@ local mocks = require("tests.lib.mocks")
 local game_client = require("tests.lib.game-client")
 local lifetime = require("lifetime")
 local Consts = require("app.consts")
-local Session = require("game.session")
-local Connection = require("networking.connection")
 
 local SAVE = "s/games/g/save.lua"
 
@@ -155,31 +153,6 @@ end
 ---@return UpdateTokenResponse
 local function update(connection, request)
     return mocks.request(connection, "UpdateTokenRp", request) --[[@as UpdateTokenResponse]]
-end
-
----@param login string
----@return Connection
----@return Session
-local function join_another(login)
-    local connection = Connection(mocks.make_channel(), mocks.make_channel())
-    local session = Session(connection):attach_lifetime(connection)
-    mocks.join_game(connection, login)
-    return connection, session
-end
-
----@param connection Connection
----@return Request[] What the server sent on the connection since the last call
-local function sent(connection)
-    ---@type Request[]
-    local requests = {}
-    local out_channel = connection:get_out_channel()
-    while out_channel:getCount() > 0 do
-        local payload = out_channel:pop()
-        if payload then
-            table.insert(requests, mocks.decode_request(payload --[[@as string]] ))
-        end
-    end
-    return requests
 end
 
 test.suite("UpdateTokenRp")
@@ -336,7 +309,7 @@ server_case("a change outside the changeable properties, of an array property, o
 end)
 
 server_case("a rename renames the data, the page's list, the grants, the save and the sets of every live session of the game", function(server)
-    local other_connection, other = join_another("piotr")
+    local other_connection, other = mocks.join_another("piotr")
     mocks.join_game(server.side.connection, "adam")
     local response = update(server.side.connection, {
         id = "T",
@@ -413,11 +386,11 @@ server_case("a rename to a taken id or an empty one is refused with the reason, 
 end)
 
 server_case("an accepted change is pushed to every other session of the game that reads the token, the requester gets the response only", function(server)
-    local piotr_connection = join_another("piotr")
-    local ewa_connection = join_another("ewa")
+    local piotr_connection = mocks.join_another("piotr")
+    local ewa_connection = mocks.join_another("ewa")
     mocks.join_game(server.side.connection, "adam")
-    sent(piotr_connection)
-    sent(ewa_connection)
+    mocks.sent(piotr_connection)
+    mocks.sent(ewa_connection)
     update(server.side.connection, {
         id = "T",
         changes = {
@@ -431,7 +404,7 @@ server_case("an accepted change is pushed to every other session of the game tha
         piotr_connection,
         ewa_connection
     }) do
-        local pushes = sent(connection)
+        local pushes = mocks.sent(connection)
         test.assert_eq(#pushes, 1)
         test.assert_eq(pushes[1].source, "s")
         test.assert_eq(pushes[1].id, "TokenChangedRp")
@@ -446,8 +419,8 @@ server_case("an accepted change is pushed to every other session of the game tha
         new_id = "Ursula",
         changes = {}
     })
-    test.assert_deep_eq(sent(piotr_connection), {}, "piotr does not read U")
-    local pushes = sent(ewa_connection)
+    test.assert_deep_eq(mocks.sent(piotr_connection), {}, "piotr does not read U")
+    local pushes = mocks.sent(ewa_connection)
     test.assert_eq(#pushes, 1)
     test.assert_deep_eq(pushes[1].body, {
         id = "U",
@@ -463,17 +436,17 @@ server_case("an accepted change is pushed to every other session of the game tha
     }
     ewa_connection:get_in_channel():push(love.data.compress("string", Consts.NETWORK_COMPRESSION, table.to_string(acknowledgement)))
     app.update_event:trigger(0.016)
-    test.assert_deep_eq(sent(ewa_connection), {}, "an acknowledgement is answered with nothing")
+    test.assert_deep_eq(mocks.sent(ewa_connection), {}, "an acknowledgement is answered with nothing")
     lifetime.destroy(piotr_connection)
     lifetime.destroy(ewa_connection)
 end)
 
 server_case("a session that logged out or died is sent nothing", function(server)
-    local piotr_connection = join_another("piotr")
-    local ewa_connection = join_another("ewa")
+    local piotr_connection = mocks.join_another("piotr")
+    local ewa_connection = mocks.join_another("ewa")
     mocks.join_game(server.side.connection, "adam")
     mocks.request(piotr_connection, "LogoutRp", {})
-    sent(piotr_connection)
+    mocks.sent(piotr_connection)
     local ewa_out = ewa_connection:get_out_channel()
     lifetime.destroy(ewa_connection)
     local ewa_count = ewa_out:getCount()
@@ -484,7 +457,7 @@ server_case("a session that logged out or died is sent nothing", function(server
         }
     })
     test.assert_true(response.success)
-    test.assert_deep_eq(sent(piotr_connection), {})
+    test.assert_deep_eq(mocks.sent(piotr_connection), {})
     test.assert_eq(ewa_out:getCount(), ewa_count)
     lifetime.destroy(piotr_connection)
 end)

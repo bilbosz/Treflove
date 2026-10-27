@@ -19,27 +19,6 @@ local token_id = require("game.token.token-id")
 ---@field private _session Session
 local CreateTokenRp = class("CreateTokenRp", RemoteProcedure)
 
----@type table<TokenPropertyType, type>
-local SETTABLE_TYPES = {
-    string = "string",
-    number = "number",
-    image = "string"
-}
-
----@param value TokenDataValue|nil
----@return number|nil x `nil` unless the value is a position, a table of two numbers
----@return number|nil y
-local function _read_position(value)
-    if type(value) ~= "table" or #value ~= 2 then
-        return nil, nil
-    end
-    local x, y = value[1], value[2]
-    if type(x) ~= "number" or type(y) ~= "number" then
-        return nil, nil
-    end
-    return x, y
-end
-
 ---@type {key: string, accepts: fun(value: TokenDataValue|nil): boolean}[]
 local REQUIRED = {
     {
@@ -63,7 +42,7 @@ local REQUIRED = {
     {
         key = "position",
         accepts = function(value)
-            return _read_position(value) ~= nil
+            return token_id.read_position(value) ~= nil
         end
     }
 }
@@ -74,30 +53,6 @@ local function _find_missing(values)
     for _, required in ipairs(REQUIRED) do
         if not required.accepts(values[required.key]) then
             return required.key
-        end
-    end
-    return nil
-end
-
----@param data GameData
----@param key string
----@param value TokenDataValue
----@return boolean Whether `UpdateTokenRp` would change `key` to `value`: the position, or a `string`, `number` or `image` property of its type
-local function _is_settable(data, key, value)
-    if key == "position" then
-        return _read_position(value) ~= nil
-    end
-    local property = data.token_properties[key]
-    return property ~= nil and SETTABLE_TYPES[property.type] == type(value)
-end
-
----@param data GameData
----@param values table<string, TokenDataValue>
----@return string|nil The first key that cannot be set; `nil` when every one can
-local function _find_unsettable(data, values)
-    for key, value in pairs(values) do
-        if type(key) ~= "string" or not _is_settable(data, key, value) then
-            return tostring(key)
         end
     end
     return nil
@@ -117,7 +72,7 @@ local function _copy_entry(values)
     local entry = {}
     for key, value in pairs(values) do
         if key == "position" then
-            local x, y = _read_position(value)
+            local x, y = token_id.read_position(value)
             entry.position = {
                 assert(x),
                 assert(y)
@@ -175,7 +130,7 @@ function CreateTokenRp:_check(game, request)
     if missing then
         return string.format("A new token needs %q", missing)
     end
-    local unsettable = _find_unsettable(data, values)
+    local unsettable = token_id.find_unchangeable(data, values)
     if unsettable then
         return string.format("Cannot set %q of a new token", unsettable)
     end

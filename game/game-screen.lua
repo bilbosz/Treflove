@@ -4,6 +4,7 @@ local Page = require("game.page.page")
 local TokenPanel = require("game.token.token-panel")
 local QuickAccessPanel = require("game.quick-access-panel")
 local Consts = require("app.consts")
+local permissions = require("game.permissions")
 
 ---@class GameScreen: Model, FormScreen
 ---@field data GameScreenData
@@ -39,6 +40,10 @@ function GameScreen:init(data)
     self._quick_access_panel:add_entry("Assets", function()
         assert(app.session):open_assets_workspace()
     end)
+    local session = app.session
+    self._quick_access_panel:add_entry("New Token", function()
+        assert(app.session):show_new_token()
+    end):set_read_only(not (session and session:is_allowed(permissions.Action.WRITE, permissions.Kind.TOKENS)))
     self:_set_panel(self._token_panel)
 end
 

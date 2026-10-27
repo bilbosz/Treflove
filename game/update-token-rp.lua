@@ -18,51 +18,6 @@ local token_id = require("game.token.token-id")
 ---@field private _session Session
 local UpdateTokenRp = class("UpdateTokenRp", RemoteProcedure)
 
----@type table<TokenPropertyType, type>
-local CHANGEABLE_TYPES = {
-    string = "string",
-    number = "number",
-    image = "string"
-}
-
----@param value TokenDataValue
----@return number|nil x `nil` unless the value is a position, a table of two numbers
----@return number|nil y
-local function _read_position(value)
-    if type(value) ~= "table" or #value ~= 2 then
-        return nil, nil
-    end
-    local x, y = value[1], value[2]
-    if type(x) ~= "number" or type(y) ~= "number" then
-        return nil, nil
-    end
-    return x, y
-end
-
----@param data GameData
----@param key string
----@param value TokenDataValue
----@return boolean
-local function _is_changeable(data, key, value)
-    if key == "position" then
-        return _read_position(value) ~= nil
-    end
-    local property = data.token_properties[key]
-    return property ~= nil and CHANGEABLE_TYPES[property.type] == type(value)
-end
-
----@param data GameData
----@param changes table<string, TokenDataValue>
----@return string|nil The first key that cannot be changed to its value; `nil` when every one can
-local function _find_unchangeable(data, changes)
-    for key, value in pairs(changes) do
-        if type(key) ~= "string" or not _is_changeable(data, key, value) then
-            return tostring(key)
-        end
-    end
-    return nil
-end
-
 ---@param session Session
 function UpdateTokenRp:init(session)
     RemoteProcedure.init(self, session:get_connection())
@@ -126,7 +81,7 @@ function UpdateTokenRp:send_response(request)
         return self:_refuse(request, string.format("Not allowed to change the token %q", id), id)
     end
     local changes = type(request.changes) == "table" and request.changes or {}
-    local unchangeable = _find_unchangeable(data, changes)
+    local unchangeable = token_id.find_unchangeable(data, changes)
     if unchangeable then
         return self:_refuse(request, string.format("Cannot change %q of the token %q", unchangeable, id), id)
     end
@@ -143,7 +98,7 @@ function UpdateTokenRp:send_response(request)
     end
     for key, value in pairs(changes) do
         if key == "position" then
-            local x, y = _read_position(value)
+            local x, y = token_id.read_position(value)
             entry.position = {
                 assert(x),
                 assert(y)

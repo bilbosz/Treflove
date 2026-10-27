@@ -225,3 +225,88 @@ test.case("remove works on the client's filtered copy, and raises for an absent 
         token_id.remove(data, "Anonim")
     end, "an absent id")
 end)
+
+test.case("read_position reads two numbers and nothing else", function()
+    test.assert_deep_eq({
+        token_id.read_position({
+            1,
+            2.5
+        })
+    }, {
+        1,
+        2.5
+    })
+    for _, value in ipairs({
+        "here",
+        3,
+        {
+            1
+        },
+        {
+            1,
+            2,
+            3
+        },
+        {
+            1,
+            "2"
+        }
+    }) do
+        test.assert_eq(token_id.read_position(value), nil)
+    end
+    test.assert_eq(token_id.read_position(nil), nil)
+end)
+
+test.case("find_unchangeable names a key outside the position and the string, number and image properties, or of a wrong type", function()
+    local data = game_data()
+    data.token_properties.diameter = {
+        title = "Diameter",
+        type = "number"
+    }
+    data.token_properties.avatar = {
+        title = "Avatar",
+        type = "image"
+    }
+    data.token_properties.owners = {
+        title = "Owners",
+        type = "array"
+    }
+    test.assert_eq(token_id.find_unchangeable(data, {
+        name = "N",
+        diameter = 2,
+        avatar = "token/a.png",
+        position = {
+            1,
+            2
+        }
+    }), nil)
+    ---@type table<string, TokenDataValue>[]
+    local bad = {
+        {
+            speed = 3
+        },
+        {
+            owners = {
+                "adam"
+            }
+        },
+        {
+            name = 5
+        },
+        {
+            diameter = "big"
+        },
+        {
+            avatar = 1
+        },
+        {
+            position = {
+                1
+            }
+        }
+    }
+    for _, changes in ipairs(bad) do
+        local key = next(changes)
+        test.assert_eq(token_id.find_unchangeable(data, changes), key)
+    end
+end)

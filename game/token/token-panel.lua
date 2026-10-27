@@ -23,6 +23,7 @@ local token_id = require("game.token.token-id")
 ---@field private _selection_set table<Token, boolean>
 ---@field private _cancel_button TextButton|nil
 ---@field private _apply_button TextButton|nil Absent while the player may not write every selected token
+---@field private _delete_button TextButton|nil Absent while nothing is selected or the player may not write every selected token
 ---@field private _scroll_view ScrollView Holds the properties, above the buttons
 ---@field private _id_title Text|nil Set while a token is selected
 ---@field private _id_input TextInput|nil Set while a token is selected; read-only and multivalue while several are
@@ -39,6 +40,7 @@ function TokenPanel:init(game_screen, width, height)
     self._selection_set = game_screen:get_selection():get_select_set()
     self._cancel_button = nil
     self._apply_button = nil
+    self._delete_button = nil
     self._scroll_view = ScrollView(self, width, height, true)
     self._id_title = nil
     self._id_input = nil
@@ -64,6 +66,9 @@ function TokenPanel:_update_view()
     self:_fill_in_properties(not is_writable)
     self:_create_cancel_button()
     if is_writable then
+        if next(self._selection_set) ~= nil then
+            self:_create_delete_button()
+        end
         self:_create_apply_button()
     end
     self:_layout_scroll_view()
@@ -351,6 +356,36 @@ function TokenPanel:_create_apply_button()
 end
 
 ---@private
+function TokenPanel:_create_delete_button()
+    local w, h = self:get_size()
+
+    local button = TextButton(self, self._game_screen, "Delete", function()
+        self:_delete()
+    end)
+    self._delete_button = button
+
+    local s = Consts.PANEL_FIELD_SCALE
+    button:set_scale(s)
+
+    local button_w, button_h = button:get_size()
+    button:set_position((w - button_w * s) * 0.5, h - button_h * s - Consts.PADDING)
+end
+
+---@private
+function TokenPanel:_delete()
+    ---@type string[]
+    local ids = {}
+    for token in pairs(self._selection_set) do
+        table.insert(ids, token:get_id())
+    end
+    table.sort(ids)
+    local session = assert(app.session)
+    for _, id in ipairs(ids) do
+        session:delete_token(id)
+    end
+end
+
+---@private
 function TokenPanel:_release_properties()
     for _, v in ipairs(self._properties) do
         lifetime.destroy(v.title)
@@ -379,6 +414,11 @@ function TokenPanel:_release_properties()
     if self._apply_button then
         lifetime.destroy(self._apply_button)
         self._apply_button = nil
+    end
+
+    if self._delete_button then
+        lifetime.destroy(self._delete_button)
+        self._delete_button = nil
     end
 end
 
@@ -421,7 +461,27 @@ function TokenPanel:_apply_value(changes, key, value)
 end
 
 ---@private
+---@return string|nil The title of the first number property whose field holds no number, which refuses the whole apply
+function TokenPanel:_find_missing_number()
+    for _, property in ipairs(self._properties) do
+        local input = property.input
+        if property.def.type == "number" and input and not input:is_multivalue_default() then
+            ---@cast input NumberInput
+            if input:get_number() == nil then
+                return property.def.title
+            end
+        end
+    end
+    return nil
+end
+
+---@private
 function TokenPanel:_apply()
+    local missing_number = self:_find_missing_number()
+    if missing_number then
+        app.notification_manager:notify(missing_number .. " needs a number")
+        return
+    end
     local renamed_from = self:_apply_id()
     ---@type table<Token, table<string, TokenDataValue>>
     local changes = {}
