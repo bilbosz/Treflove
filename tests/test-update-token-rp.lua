@@ -632,7 +632,7 @@ client_case("a refusal answered after the game was left restores the data alone"
     })
 end)
 
-client_case("an accepted change leaves the client's state as it is", {
+client_case("an accepted change the server holds as the client does changes nothing on the client", {
     "read",
     "write:tokens/@owned"
 }, function(client)
@@ -650,6 +650,91 @@ client_case("an accepted change leaves the client's state as it is", {
         token = expected
     })
     test.assert_deep_eq(notified(client), {})
+    local x = token:get_position()
+    test.assert_near(x, 5, 1e-9)
+end)
+
+client_case("an accepted move the server holds elsewhere, a concurrent change, takes the server's entry on the page and in the data without a notification", {
+    "read",
+    "write:tokens/@owned"
+}, function(client)
+    local token = game_client.find_token(client, "Bilbosza")
+    drag(client, "Bilbosza", 3)
+    game_client.pop_request(client, "UpdateTokenRp")
+    local expected = game_client.game_data().tokens.Bilbosza
+    expected.position = {
+        6,
+        4
+    }
+    expected.name = "Bilbo Baggins"
+    game_client.answer(client, "UpdateTokenRp", {
+        success = true,
+        id = "Bilbosza",
+        token = expected
+    })
+    test.assert_deep_eq(notified(client), {})
+    test.assert_deep_eq({
+        token:get_position()
+    }, {
+        6,
+        4
+    })
+    test.assert_deep_eq(assert(client.app.data).tokens.Bilbosza, expected)
+    test.assert_eq(token:get_data().name, "Bilbo Baggins")
+end)
+
+client_case("an accepted rename takes the server's entry under the new id, where the client already holds the token", {
+    "read",
+    "write:tokens/Bilbosza"
+}, function(client)
+    game_client.select(client, {
+        "Bilbosza"
+    })
+    local token = game_client.find_token(client, "Bilbosza")
+    local panel = client.game_screen:get_token_panel()
+    ---@diagnostic disable-next-line: invisible
+    assert(panel._id_input):set_text("Bilbo")
+    ---@diagnostic disable-next-line: invisible
+    panel:_apply()
+    game_client.pop_request(client, "UpdateTokenRp")
+    local expected = game_client.game_data().tokens.Bilbosza
+    expected.diameter = 2
+    game_client.answer(client, "UpdateTokenRp", {
+        success = true,
+        id = "Bilbosza",
+        new_id = "Bilbo",
+        token = expected
+    })
+    test.assert_deep_eq(notified(client), {})
+    local data = assert(client.app.data)
+    test.assert_eq(token:get_id(), "Bilbo")
+    test.assert_eq(data.tokens.Bilbosza, nil)
+    test.assert_deep_eq(data.tokens.Bilbo, expected)
+    test.assert_eq(token:get_data().diameter, 2)
+    test.assert_deep_eq(client.game_screen:get_page():get_data().tokens, {
+        "Bilbo",
+        "Smaug"
+    })
+    test.assert_deep_eq(client.session:get_permissions():get_grants(), {
+        "read",
+        "write:tokens/Bilbo"
+    })
+end)
+
+client_case("an accepted change answered without the token, which the session may not read, applies nothing", {
+    "read",
+    "write:tokens/@owned"
+}, function(client)
+    local token = game_client.find_token(client, "Bilbosza")
+    drag(client, "Bilbosza", 3)
+    game_client.pop_request(client, "UpdateTokenRp")
+    local before = table.deep_copy(assert(client.app.data).tokens)
+    game_client.answer(client, "UpdateTokenRp", {
+        success = true,
+        id = "Bilbosza"
+    })
+    test.assert_deep_eq(notified(client), {})
+    test.assert_deep_eq(assert(client.app.data).tokens, before)
     local x = token:get_position()
     test.assert_near(x, 5, 1e-9)
 end)

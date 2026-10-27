@@ -166,6 +166,7 @@ end
 function UpdateTokenRp:receive_response(response)
     assert(app.is_client)
     if response.success then
+        self._session:apply_token(response.new_id or response.id, nil, response.token)
         return
     end
     app.notification_manager:notify(response.error or "Cannot change the token")

@@ -4,6 +4,10 @@ local Consts = require("app.consts")
 
 ---@class ResponseBody The base of every remote procedure's response class
 
+---@class UnknownProcedureResponse: ResponseBody The answer to a request for a procedure the receiver has no handler for
+---@field public success false
+---@field public error string Names the procedure
+
 ---@alias ConnectionSource
 ---| "c" # The client
 ---| "s" # The server
@@ -44,6 +48,16 @@ end
 local function _decompress(payload)
     local serialized = love.data.decompress("string", Consts.NETWORK_COMPRESSION, payload) --[[@as string]]
     return table.from_string(serialized) --[[@as ConnectionMessage]]
+end
+
+---@param id string
+---@return UnknownProcedureResponse
+local function _refuse_unknown_procedure(id)
+    app:log(string.format("A request for the unknown procedure %q ignored", id))
+    return {
+        success = false,
+        error = string.format("Unknown procedure %q", id)
+    }
 end
 
 ---@param in_channel love.Channel
@@ -133,7 +147,14 @@ function Connection:_send_response(request)
     assert_type(request.body, "table")
     assert_type(request.id, "string")
 
-    local body = self._requests_handlers[request.id](request.body)
+    local handler = self._requests_handlers[request.id]
+    ---@type ResponseBody
+    local body
+    if handler then
+        body = handler(request.body)
+    else
+        body = _refuse_unknown_procedure(request.id)
+    end
     assert_type(body, "table")
     ---@type Response
     local response = {
