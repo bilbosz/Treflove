@@ -95,6 +95,7 @@ end
 ---@field field ArgParserOptionField
 ---@field parse (fun(str: string): string|nil)|nil The value's parser; `nil` for a flag, which takes no value
 ---@field sides table<AppType, true> The app types that accept the option
+---@field requires ArgParserOptionField|nil An option that must be given with this one
 
 ---@type table<string, ArgParserOption>
 local OPTIONS = {
@@ -134,7 +135,8 @@ local OPTIONS = {
         parse = _parse_relative_path,
         sides = {
             server = true
-        }
+        },
+        requires = "identity"
     },
     ["--headless"] = {
         field = "headless",
@@ -174,7 +176,7 @@ local OPTIONS = {
 ---@field public console string|nil The console port on 127.0.0.1, as string (range: 1024-65535)
 ---@field public server_console string|nil Client only: the server's console port, for the scenario driver
 ---@field public identity string|nil The LÖVE save directory identity
----@field public fixture string|nil Server only: a directory of the source tree that seeds the server root at load
+---@field public fixture string|nil Server only, given only with `identity`: a directory of the source tree whose copy replaces the server root at load
 ---@field public headless boolean Fixed frame delta, no sleep, no vsync
 ---@field public peers table<string, string>|nil Client only: the console port of every peer client a scenario drives, by the peer's name
 ---@field public chunk string|nil Console only: the Lua chunk to evaluate; `nil` to read it from stdin, or for `--watch`
@@ -185,7 +187,7 @@ local OPTIONS = {
 ---@param args string[]
 ---@param first integer The index of the first option
 ---@param app_type AppType
----@return table<ArgParserOptionField, string>|nil values The value of every option given with one, `nil` for an unknown, repeated or misplaced option or a missing or wrong value
+---@return table<ArgParserOptionField, string>|nil values The value of every option given with one, `nil` for an unknown, repeated or misplaced option, a missing or wrong value, or an option without the one it requires
 ---@return table<ArgParserOptionField, boolean> flags `true` for every flag given
 ---@return string[] positional The arguments that are neither an option nor its value, in order
 local function _parse_options(args, first, app_type)
@@ -215,6 +217,12 @@ local function _parse_options(args, first, app_type)
         else
             flags[option.field] = true
             i = i + 1
+        end
+    end
+    for _, option in pairs(OPTIONS) do
+        local given = values[option.field] or flags[option.field]
+        if given and option.requires and not (values[option.requires] or flags[option.requires]) then
+            return nil, flags, positional
         end
     end
     return values, flags, positional
