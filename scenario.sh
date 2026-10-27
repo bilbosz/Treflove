@@ -7,6 +7,8 @@
 # Usage: ./scenario.sh <name> [--windowed] [--port <udp port>]
 #        [--console <port>] [--server-console <port>] [--fixture <dir>]
 #        [--timeout <seconds>] [--identity <name>]
+#        The fixture is the one the scenario file names (scenarios/fixtures/basic
+#        unless it says otherwise); --fixture overrides it
 #==============================================================================
 
 usage() {
@@ -21,7 +23,7 @@ windowed=0
 port=8181
 console=9090
 server_console=9091
-fixture="scenarios/fixtures/basic"
+fixture=""
 timeout_seconds=120
 identity=treflove-scenario
 while [ $# -gt 0 ]; do
@@ -39,19 +41,6 @@ done
 
 cd "$(dirname "$0")" || exit 1
 
-scenario_peers() {
-    luajit - "scenarios/$1.lua" <<'LUA'
-package.path = "./?.lua;lib/lua-lifetime/?.lua;lib/lua-lifetime/?/init.lua;" .. package.path
-require("app.globals")
-local scenario = dofile(arg[1])
-if type(scenario) == "table" then
-    for _, peer in ipairs(scenario.peers or {}) do
-        print(peer)
-    end
-end
-LUA
-}
-
 # The lead connects to a peer's console at its first call, so the console must be open before the lead starts
 wait_for_console() {
     local console_port="$1" pid="$2"
@@ -65,8 +54,14 @@ wait_for_console() {
     return 1
 }
 
-if ! peers=$(scenario_peers "$name"); then
-    echo "$0: cannot read the peers of scenarios/$name.lua" >&2
+if ! peers=$(luajit tools/scenario-info.lua "$name" peers); then
+    exit 2
+fi
+if [ -z "$fixture" ] && ! fixture=$(luajit tools/scenario-info.lua "$name" fixture); then
+    exit 2
+fi
+if [ ! -d "$fixture" ]; then
+    echo "$0: no fixture directory $fixture" >&2
     exit 2
 fi
 peer_names=()

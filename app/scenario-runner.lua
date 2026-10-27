@@ -8,6 +8,7 @@ local lifetime = require("lifetime")
 ---@class ScenarioFile The table shape of a scenario file
 ---@field run Scenario
 ---@field peers string[]|nil The names of the peer clients it drives
+---@field fixture string|nil The directory under `scenarios/fixtures/` its server is seeded from, `basic` when absent; read by `scenario.sh`, not by the client
 
 ---@class ScenarioResult
 ---@field name string
@@ -68,6 +69,9 @@ local function _get_function(path, scenario)
     end
     if file.peers ~= nil and (type(file.peers) ~= "table" or not _is_string_list(file.peers)) then
         error(string.format("%s returns peers that are not a list of strings", path), 0)
+    end
+    if file.fixture ~= nil and type(file.fixture) ~= "string" then
+        error(string.format("%s returns a fixture that is not a string", path), 0)
     end
     return file.run
 end

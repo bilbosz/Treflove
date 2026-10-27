@@ -28,11 +28,12 @@
             "problemMatcher": []
         },
         {
-            // The server of the Scenario (headless) launch configuration: its own port, identity and fixture, a
-            // console for the scenario's server calls; detached, so the task ends while the server lives
+            // The server of the Scenario (headless) launch configuration: its own port, identity and the fixture the
+            // scenario names, a console for the scenario's server calls; detached, so the task ends while the server
+            // lives
             "label": "Start the scenario server",
             "type": "shell",
-            "command": "mkdir -p /tmp/treflove-scenario && setsid love . server localhost 8181 --identity treflove-scenario --fixture scenarios/fixtures/basic --console 9091 > /tmp/treflove-scenario/debug-server.log 2>&1 < /dev/null & disown; sleep 1; true",
+            "command": "mkdir -p /tmp/treflove-scenario && setsid love . server localhost 8181 --identity treflove-scenario --fixture \"$(luajit tools/scenario-info.lua ${input:scenario} fixture)\" --console 9091 > /tmp/treflove-scenario/debug-server.log 2>&1 < /dev/null & disown; sleep 1; true",
             "presentation": {
                 "reveal": "never",
                 "close": true
@@ -49,6 +50,14 @@
                 "close": true
             },
             "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "scenario",
+            "type": "promptString",
+            "description": "The scenario to run (a file under scenarios/)",
+            "default": "join-game"
         }
     ]
 }
