@@ -27,6 +27,10 @@ return {
             steps.open_assets_workspace(driver)
             driver:find("AssetListRow", %q)
         ]], FOLDER .. "/")):wait()
+        local kind = driver:server(string.format([[
+            return app.games:get("meadow"):get_store():asset(%q):get_type()
+        ]], FOLDER))
+        driver:expect(kind == "directory", "the folder is in the game's store on the server: " .. kind)
 
         driver:key(Consts.BACKSTACK_KEY)
         driver:wait_screen("GameScreen")
