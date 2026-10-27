@@ -71,7 +71,8 @@ script starts one extra client per peer (see "Several clients").
   the menu screen), `join_game` (returns the game screen), `log_out`,
   `open_assets_workspace`, `server_sessions`, `select_token` and
   `drag_token` (a token by its label, selected with a rectangle over its
-  bounding square, dragged by an offset in screen units), `enter_game`
+  bounding square, dragged by an offset in screen units), `select_tokens`
+  (several, with one rectangle), `enter_game`
   (a game from the menu), `create_token` (through the New Token screen)
   and `delete_token` (a selected token, from the panel's Delete); a step
   used by two scenarios goes there, named for what it reaches. The folder is skipped
