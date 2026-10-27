@@ -193,7 +193,12 @@ sees it and drags it together with Bilbo in one drag, which adam's
 client and the save show; adam deletes it from the token panel and bob loses it,
 the grants naming it gone from the save; bob's New Token entry is
 read-only, and piotr's creation and deletion sent past his gate are
-refused with their reasons). The shared steps `steps.select_token` and
+refused with their reasons) and `game-panels` (the side panels: adam
+creates the page `Cellar` from the Pages panel, shows it from the Game
+panel and bob's client switches to it, grants piotr `write:tokens` from
+the Permissions panel, which bob's session answers at once, adds the
+token property `hp` and retitles the `player` group, the save holding
+each; a creation bob sends past his gate is refused). The shared steps `steps.select_token` and
 `steps.drag_token` select a token with a rectangle and drag it with the
 token-drag button, as a player does, `steps.select_tokens` several with
 one rectangle; `steps.enter_game` enters a game from the menu, `steps.create_token` creates one through the New Token

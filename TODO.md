@@ -24,10 +24,18 @@ checks `write`, saves and pushes `TokenChangedRp`, `TokenCreatedRp` or
 ([docs/architecture.md](docs/architecture.md), "Tokens"); the client
 converges on the server's entry at every answer. Still missing:
 
-- Pages, players, groups and token properties: a change to any of them
-  stays in the client's copy (nothing in the UI edits them yet; the save
-  file does). The procedures of a token are the shape to follow: an id,
-  an optional new id, the server's entry
+- Pages, groups, players, token properties and the shown page travel
+  as entries (`UpdateEntryRp`, `CreateEntryRp`, `DeleteEntryRp` and
+  their pushes, [docs/architecture.md](docs/architecture.md),
+  "Entries"), edited from the game's side panels. Still by hand: a
+  token's `owners` and a player removed from a game; a page's token list
+  moves with the token procedures only, so a token cannot change its
+  page yet
+- A `read` grant given mid-game (`GrantsChangedRp` carries the grants)
+  does not re-send the entries it now covers: they arrive at the next
+  join
+- A page image changed by another client is downloaded before the shown
+  page is rebuilt; an image of a page that is not shown is not
 - Deleting a property (the wire carries no `nil`; a property of a token
   can only be set, and a `number` field holding no number refuses the
   apply), and giving a token a property it lacks
@@ -38,8 +46,9 @@ converges on the server's entry at every answer. Still missing:
 - A creator with `write` but no `read` on the tokens gets no entry back
   (the response carries it only when the session reads it, as a change's
   does), so the token appears nowhere on their client
-- A grant given in the save while a player is in the game reaches their
-  session only at the next join; a `GrantsChangedRp` would push it
+- A grant given in the save file while a player is in the game reaches
+  their session at the next join; one given from the Permissions panel is
+  pushed (`GrantsChangedRp`)
 
 ### 3. Game objects other than tokens
 
@@ -91,12 +100,13 @@ editing, dragging, creation and deletion.
 - A vision system is the consumer of `view`: a player sees what the tokens
   they own and the tokens they have `view` on see (fog of war); until then
   the grant is resolved and sent but changes nothing on screen
-- A write procedure for the other kinds (pages, players, groups) checks
-  `write` on the changed entry as `UpdateTokenRp` does for a token; the
-  client-side gating is a convenience, not the guard
-- Per-player grants are edited by hand in the save file, like the accounts
-  (milestone 7); a game master UI for groups and grants belongs with the
-  account management
+- The entry procedures check `write` on the changed entry as
+  `UpdateTokenRp` does for a token; the client-side gating is a
+  convenience, not the guard
+- Groups and per-player grants are edited from the game's side panels;
+  the group a joining account lands in (`player`) is named in the code,
+  so a game whose master deleted it (refused while a player is in it)
+  gives a newcomer no grants
 - A token's id renamed in the token panel travels with `UpdateTokenRp`:
   the server renames the key in the data and in the set of every live
   session of the game, and the push renames it on the other clients; the
@@ -113,14 +123,14 @@ may join any game ([docs/architecture.md](docs/architecture.md),
 "Accounts and Games"). What is still done by hand in the files:
 
 - Changing a password, a display name, deleting an account
-- A game master UI for a game's players and groups (today a first join
-  lands every account in the group `player`); private games, by invitation
-  or password, once a game should not be open to every account
+- Removing a player from a game, and private games, by invitation or
+  password, once a game should not be open to every account (a first join
+  lands every account in the group `player`; the Permissions panel moves
+  it to another)
 - Deleting or renaming a game; a games list that scrolls once it outgrows
   the window (the menu screen lays its entries out once, top to bottom)
-- Creating pages from the UI: a new game starts from the template's one
-  page, and the assets workspace uploads the images, but nothing in the
-  UI makes a page yet (a token is made from the game's New Token entry)
+- Moving a token to another page: pages are made, changed and deleted
+  from the Pages panel, but a token stays on the page it was created on
 - A root from before the accounts (an `s/save.lua` without an
   `s/accounts.lua`) is emptied and seeded, as every start emptied it before;
   a migration into `s/games/<id>/` would keep such a root's state

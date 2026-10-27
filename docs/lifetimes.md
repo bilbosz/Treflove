@@ -46,6 +46,8 @@ Connection                      (a lost peer → lifetime.destroy;
     ├── CreateAccountRp, GameDataRp, ListGamesRp, CreateGameRp
     ├── UpdateTokenRp, TokenChangedRp, CreateTokenRp, DeleteTokenRp,
     │   TokenCreatedRp, TokenDeletedRp
+    ├── UpdateEntryRp, EntryChangedRp, CreateEntryRp, DeleteEntryRp,
+    │   EntryCreatedRp, EntryDeletedRp, GrantsChangedRp
     ├── UploadAssetRp, DownloadAssetRp, DownloadMissingAssetsRp,
     │   ListAssetsRp, CreateAssetFolderRp, RenameAssetRp, DeleteAssetRp
     ├── hook: clears the AssetManager's per-session entries
@@ -62,7 +64,8 @@ Connection                      (a lost peer → lifetime.destroy;
         ├── NewGameScreen               (from New Game to Back or to the game created)
         │   └── back entry: back to the games list
         ├── GameScreen                  (while in the game)
-        │   ├── its control tree        (the panels, the page and its tokens, the inputs)
+        │   ├── its control tree        (the side panels and their inputs, the page and its tokens;
+        │   │                            a page shown in place of another is destroyed, not detached)
         │   └── back entry: leave the game
         ├── NewTokenScreen              (from New Token to Back or to the token created)
         │   └── back entry: back to the game
@@ -129,7 +132,9 @@ the `release` calls it caused.
   a use, which then fits the game's view to it, shows the game again (its own
   entry still below) and destroys the workspace with its list, details and
   usage list. A listing the server
-  refuses closes it the same way. A response that arrives after the
+  refuses closes it the same way; leaving the game (the way back, or a
+  shown page the client does not hold) destroys an open workspace before
+  the game screen. A response that arrives after the
   workspace died (a listing, a download for a preview) finds its callback
   asking `lifetime.alive(self)` first.
 - **Back**: the backstack's `push(cb)` returns an entry with a hook that

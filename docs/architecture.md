@@ -147,6 +147,12 @@ A `Session` ties a connection to a user:
   `Session:apply_token_deleted(id)`), and a refusal is notified
 - On the client, shows the new token screen over the game
   (`show_new_token`, `close_new_token`)
+- Sends a change to an entry of the game's data (`Session:update_entry`,
+  `create_entry`, `delete_entry`: a page, a group, a player, a token
+  property or the shown page, see [Entries](#entries)) and applies the
+  server's answer and its pushes (`apply_entry`, `apply_entry_created`,
+  `apply_entry_deleted`); receives its grants again when they change
+  (`apply_grants`)
 - Is anchored to its connection and owns its login, its remote procedures
   and, on the client, the "logged in" token that owns the menu and game
   screens; the games list, the new game screen, the game screen and the
@@ -461,6 +467,87 @@ cannot be deleted (the wire carries no `nil`; an apply while a `number`
 field that is not left multivalue holds no number is refused as a whole,
 before the rename, with the notification `<Title> needs a number`,
 nothing applied or sent and the fields keeping their text).
+
+## Entries
+
+An *entry* is one value of a collection of `GameData` by its key: a page
+(`pages[id]`), a group (`groups[id]`), a player (`players[login]`), a
+token property (`token_properties[key]`) or the `game` entry (the shown
+page), a singleton reached under the id `entries.GAME_ID`. Tokens keep
+their own procedures. One module, `entries` (`game/entry/entries.lua`),
+holds the rules on both sides: the fields of each kind (`entries.FIELDS`:
+a page's `name`, `width`, `pixel_per_meter` and `image`; a group's
+`title` and `permissions`; a player's `group` and `permissions`; a token
+property's `title` and `type`; the game's `page`), which kinds can be
+created, renamed and deleted (pages, groups and token properties; a
+player joins by entering the game, the game entry is one), and the checks
+(`check_id`, `check_rename`, `check_changes`, `check_new`,
+`check_delete`), each answering a reason for the user: a value of the
+wrong type, a grant `permissions.parse` refuses, a group or a page that
+does not exist, a page image that is not a file of the store (the server
+asks with the store), the shown page or a page still listing tokens
+deleted, a group a player is in, a token property a token holds (its
+`type` cannot change then either), and the properties every token has
+(`name`, `diameter`, `avatar`, `position`: `entries.PROTECTED_PROPERTIES`)
+renamed, deleted or retyped. A rename (`entries.rename`) follows the key
+through what names it: `game.page` for a page, the players' `group` for a
+group, the key in every token for a property, and the grants on
+`kind/id` in the groups' and the players' permissions; a removal
+(`entries.remove`) drops the grants too.
+
+The procedures mirror the token ones: `UpdateEntryRp` (the kind, the id,
+an optional new id, the changed fields), `CreateEntryRp` (the kind, the
+id, the entry) and `DeleteEntryRp` (the kind, the id) from the client;
+the server refuses a session not in a game, an unknown kind or id, a
+session without `write` on `kind/id` (`write` on the whole kind for a
+creation) and whatever the checks refuse, each with a reason and, for a
+change, the entry when the session may read it; otherwise it applies the
+request, rebuilds the permission set of every live session of the game
+from the data (`Game:refresh_permissions`, since a group's or a player's
+grants may have changed, or a key the grants name), saves and pushes
+`EntryChangedRp`, `EntryCreatedRp` or `EntryDeletedRp` to every other
+session that may `read` the entry, and `GrantsChangedRp` (the session's
+grants, as the game data response carries them) to every session whose
+grants changed, the requester included. Nothing is applied on the client
+before the server answers: the response's entry and the pushes take one
+path (`Session:apply_entry`, `apply_entry_created`,
+`apply_entry_deleted`), which renames the key in the client's data and
+its permission set, sets the fields, and tells the game screen
+(`GameScreen:on_entries_change(kind, id)`, so the side panels rebuild;
+and first `GameScreen:show_page(id)` when the shown page changed or its
+image, width or scale did, after the assets it needs are downloaded as
+at the join; a player whose client does not hold the newly shown page is
+sent back to the menu with a notification, an open assets workspace
+closed first). `GrantsChangedRp` rebuilds the
+client's set (`Session:apply_grants`) and re-gates the game screen
+(`GameScreen:on_grants_change`: the New Token entry, the token panel,
+every side panel); the data the client holds is not re-filtered (a
+`read` grant given mid-game shows its entries at the next join).
+
+### The side panels
+
+The game screen's side bar holds one panel at a time, each toggled by a
+quick access entry (`GameScreen:add_side_panel(panel, caption)`;
+`SidePanel`, `game/side-panel.lua`, is the base: `on_entries_change`,
+`on_grants_change`, `on_selection_change`): the token panel (`Tokens`),
+then `Game`, `Pages`, `Groups`, `Permissions` and `Token Properties`.
+`GamePanel` (`game/panels/game-panel.lua`) names the shown page and
+offers a button per page the client holds, the shown one in the active
+color; a click sends the change (`update_entry` on the game entry), and
+the page switches when the server answers; the buttons are read-only
+without `write` on `game`. The other four are `EntriesPanel`
+(`game/panels/entries-panel.lua`) over a kind: a list of the ids in a
+scroll view (the selected one active), an Id field, one field per
+`EntryField` (a text input, a number input, a read-only path with
+`Browse...` into the assets workspace for an image, the grants separated
+by spaces), and the buttons `New` and `Delete` above `Cancel` and
+`Apply`. `New` empties the fields for a creation; `Apply` sends only the
+fields that differ (with the rename when the Id field changed) after the
+module's checks, a refusal notified before anything is sent; `Delete`
+sends the deletion; `Cancel` refills the fields from the data. Without
+`write` on the selected entry the fields are read-only and Apply and
+Delete absent; without `write` on the kind there is no New. The players
+panel (`Permissions`) edits each player's group and own grants only.
 
 ## Asset Management
 

@@ -38,4 +38,4 @@ Detailed guidance is split into topic files, imported below. To address one topi
 
 ## Project Status
 
-The README lists completed milestones and known to-dos. Notably **not yet implemented**: game master script handling, game state synchronization beyond tokens (pages, players, groups and token properties stay in the client's copy; a token is changed, created and deleted through the server), game objects other than tokens, media other than images, prefabs, and creating pages from the UI (a new game starts from the template's one page).
+The README lists completed milestones and known to-dos. Notably **not yet implemented**: game master script handling, game objects other than tokens, media other than images, prefabs, moving a token to another page and removing a player from a game (a token is changed, created and deleted through the server, and so are the pages, groups, players' grants, token properties and the shown page, from the game's side panels).

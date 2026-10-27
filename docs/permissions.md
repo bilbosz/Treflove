@@ -122,6 +122,22 @@ every question is answered no.
   before it went; the deletion removes the grants naming the token from
   the groups', the players' and every live session's set
   (`permissions.remove_key`, `PermissionSet:remove_key`).
+- **An entry changed, created or deleted** (`UpdateEntryRp`,
+  `CreateEntryRp`, `DeleteEntryRp`: a page, a group, a player, a token
+  property, the shown page; [architecture.md](architecture.md),
+  "Entries"): a change or a deletion needs `write` on `kind/<id>` (the
+  game entry under `game/game`, so `write:game` covers it), a creation
+  `write` on the whole kind. The pushes go to the sessions that may
+  `read` the entry. After every accepted request the server rebuilds the
+  set of every live session of the game from the data
+  (`Game:refresh_permissions`): a group's grants changed, a player moved
+  to another group or given grants of their own, a key the grants name
+  renamed or removed; and pushes `GrantsChangedRp` with the new grants to
+  every session whose list changed, so a grant given from the
+  Permissions panel works at once, without a new login
+  (`Session:apply_grants`, then `GameScreen:on_grants_change`). The data
+  the client holds is not sent again: an entry a new `read` grant covers
+  arrives at the next join.
 - **The client's UI**: the token panel is read-only (inputs read-only, no
   Apply, its "Show in assets..." button opens the workspace to look,
   without Use) when
@@ -140,6 +156,10 @@ every question is answered no.
   (`Game:get_sessions`), so a grant naming the token keeps working for
   everyone in the game without a new login. An `@owned` grant needs
   nothing: ownership is read from the data under the new key.
+
+The groups and the players' grants are edited from the game's `Groups`
+and `Permissions` side panels; a grant typed there is checked by
+`permissions.parse` on both sides before it is saved.
 
 `view` is resolved and sent like the other actions; its consumer, a vision
 system that shows a player what their tokens see, is future work
