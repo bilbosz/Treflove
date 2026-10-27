@@ -22,7 +22,9 @@ local SCENARIOS = {
     shaped = "return {peers = {'bob', 'eve'}, run = function(driver) driver:frames(1) driver:log('shaped') end}",
     alone = "return {run = function(driver) driver:log('alone') end}",
     runless = "return {peers = {'bob'}}",
-    badpeers = "return {peers = {'bob', 3}, run = function() end}"
+    badpeers = "return {peers = {'bob', 3}, run = function() end}",
+    fixtured = "return {fixture = 'old-town', run = function(driver) driver:log('fixtured') end}",
+    badfixture = "return {fixture = {'old-town'}, run = function() end}"
 }
 
 ---@param headless boolean
@@ -221,12 +223,15 @@ test.case("a missing, broken or functionless scenario file fails its run", funct
     finish(world)
 end)
 
-test.case("a scenario file may return a table with its run function and, optionally, its peers", function()
+test.case("a scenario file may return a table with its run function and, optionally, its peers and its fixture", function()
     local world = setup(true)
     world.runner:start("shaped", true)
     updates(world, 2)
     test.assert_true(assert(world.runner:get_result()).ok)
     world.runner:start("alone", true)
+    updates(world, 1)
+    test.assert_true(assert(world.runner:get_result()).ok)
+    world.runner:start("fixtured", true)
     updates(world, 1)
     test.assert_true(assert(world.runner:get_result()).ok)
     test.assert_deep_eq(log_lines(world), {
@@ -235,12 +240,15 @@ test.case("a scenario file may return a table with its run function and, optiona
         "scenario shaped: passed",
         "scenario alone: started",
         "scenario: alone",
-        "scenario alone: passed"
+        "scenario alone: passed",
+        "scenario fixtured: started",
+        "scenario: fixtured",
+        "scenario fixtured: passed"
     })
     finish(world)
 end)
 
-test.case("a table without a run function, or with peers that are not a list of strings, fails its run", function()
+test.case("a table without a run function, with peers that are not a list of strings or a fixture that is not a string, fails its run", function()
     local world = setup(true)
     world.runner:start("runless", true)
     updates(world, 1)
@@ -248,7 +256,11 @@ test.case("a table without a run function, or with peers that are not a list of 
     world.runner:start("badpeers", true)
     updates(world, 1)
     test.assert_eq(assert(world.runner:get_result()).error, "scenarios/badpeers.lua returns peers that are not a list of strings")
+    world.runner:start("badfixture", true)
+    updates(world, 1)
+    test.assert_eq(assert(world.runner:get_result()).error, "scenarios/badfixture.lua returns a fixture that is not a string")
     test.assert_deep_eq(world.exit_codes, {
+        1,
         1,
         1
     })
