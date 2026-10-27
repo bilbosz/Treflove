@@ -85,6 +85,66 @@ test.case("an incoming request is answered by the registered handler", function(
     })
 end)
 
+test.case("a request for an unknown procedure is logged and answered with a refusal naming it, and the peer stays connected", function()
+    local client_connection, server_connection = make_connection_pair()
+    ---@type ResponseBody|nil
+    local received
+    ---@param body ResponseBody
+    local function receive(body)
+        received = body
+    end
+    client_connection:send_request("MissingRp", {
+        value = 1
+    }, receive)
+    server_connection:on_update()
+    local out_channel = server_connection:get_out_channel()
+    test.assert_eq(out_channel:getCount(), 1, "the refusal alone, no disconnect request")
+    test.assert_deep_eq(app.logs[#app.logs], {
+        "A request for the unknown procedure \"MissingRp\" ignored"
+    })
+    client_connection:on_update()
+    test.assert_deep_eq(received, {
+        success = false,
+        error = "Unknown procedure \"MissingRp\""
+    })
+    test.assert_eq(app.update_event:get_handler(server_connection), Connection.on_update)
+end)
+
+test.case("the sender's queue stays in step after a request for an unknown procedure", function()
+    local client_connection, server_connection = make_connection_pair()
+    ---@param body {value: number}
+    ---@return {doubled: number}
+    local function double(body)
+        return {
+            doubled = body.value * 2
+        }
+    end
+    server_connection:register_request_handler("SomeRp", double)
+
+    ---@type ResponseBody[]
+    local received = {}
+    ---@param body ResponseBody
+    local function receive(body)
+        table.insert(received, body)
+    end
+    client_connection:send_request("MissingRp", {}, receive)
+    client_connection:send_request("SomeRp", {
+        value = 21
+    }, receive)
+    server_connection:on_update()
+    client_connection:on_update()
+
+    test.assert_deep_eq(received, {
+        {
+            success = false,
+            error = "Unknown procedure \"MissingRp\""
+        },
+        {
+            doubled = 42
+        }
+    })
+end)
+
 test.case("register_request_handler rejects duplicate ids", function()
     local client_connection = make_connection_pair()
     local handler = function()
