@@ -92,6 +92,21 @@ Monitor:
         0.6,
         0.5
     },
+    BUTTON_ACTIVE_COLOR = {
+        0.55,
+        0.75,
+        1
+    },
+    BUTTON_ACTIVE_HOVER_COLOR = {
+        0.7,
+        0.85,
+        1
+    },
+    BUTTON_ACTIVE_SELECT_COLOR = {
+        0.85,
+        0.93,
+        1
+    },
     TEXT_INPUT_FOREGROUND_COLOR = {
         0.2,
         0.2,
@@ -192,6 +207,7 @@ Monitor:
     TOKEN_PANEL_PROPERTY_SCALE = 0.5,
     PADDING = 20,
     QUICK_ACCESS_PANEL_HEIGHT = 75.425,
+    GAME_SIDE_PANEL_SHARE = 0.2,
     ASSET_LIST_ROW_NORMAL_COLOR = {
         0,
         0,

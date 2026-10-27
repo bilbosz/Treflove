@@ -197,7 +197,7 @@ end
 ---@param page Page
 ---@return number, number The view's units per page meter at the zoom-out and the zoom-in limit, for a square page
 local function zoom_limits(page)
-    local view_w, view_h = page:get_size()
+    local view_w, view_h = page:get_fit_size()
     local min_units = math.min(view_w - 2 * Consts.PADDING, view_h - 2 * Consts.PADDING) / page:get_data().width
     return min_units, math.max(Consts.PAGE_MAX_UNITS_PER_METER, min_units)
 end
@@ -209,7 +209,7 @@ end
 ---@param h number
 local function assert_fitted(client, x, y, w, h)
     local page = client.game_screen:get_page()
-    local view_w, view_h = page:get_size()
+    local view_w, view_h = page:get_fit_size()
     local cx, cy = page:transform_to_global(view_w * 0.5, view_h * 0.5)
     local coordinates = page:get_page_coordinates()
     local gx, gy = coordinates:transform_to_global(x + w * 0.5, y + h * 0.5)
@@ -429,6 +429,76 @@ test.case("a change of size keeps the view within the limits, and a fitted page 
         assert_fitted(client, 0, 0, 10, 10)
         page:set_size(1800, 1600)
         assert_fitted(client, 0, 0, 10, 10)
+    end)
+    game_client.finish(client)
+    if not ok then
+        error(err, 0)
+    end
+end)
+
+test.case("the view extended over the side bar's strip keeps the map, the fit and the limits of the fit area", function()
+    local client = game_client.enter({
+        "read"
+    })
+    ---@type boolean, any
+    local ok, err = pcall(function()
+        local page = client.game_screen:get_page()
+        page:set_size(600, 1000)
+        assert_fitted(client, 0, 0, 10, 10)
+        local before = {
+            map_rect(page)
+        }
+        local fitted = units_per_meter(page)
+
+        page:set_extension(600)
+        test.assert_deep_eq({
+            map_rect(page)
+        }, before, "the map neither scaled nor moved")
+        test.assert_deep_eq({
+            page:get_size()
+        }, {
+            1200,
+            1000
+        }, "the view is the fit area and the strip")
+        test.assert_deep_eq({
+            page:get_fit_size()
+        }, {
+            600,
+            1000
+        })
+        assert_fitted(client, 0, 0, 10, 10)
+
+        point_at(client, 300, 500)
+        wheel(client, -2)
+        test.assert_near(units_per_meter(page), fitted, 1e-3, "the zoom-out limit is the fit area's")
+        wheel(client, 1)
+        test.assert_true(units_per_meter(page) > fitted, "zooming in works")
+        page:fit_page()
+        local after = {
+            map_rect(page)
+        }
+        for i = 1, 4 do
+            test.assert_near(after[i], before[i], 1e-3, "a fit lands where it did without the strip")
+        end
+
+        local px, py = page:get_position()
+        local manager = client.app.pointer_event_manager
+        manager:dispatch_pointer_down(px + 100, py + 100, Consts.PAGE_DRAG_VIEW_BUTTON)
+        manager:dispatch_pointer_move(px + 5000, py + 100, nil)
+        manager:dispatch_pointer_up(px + 5000, py + 100, Consts.PAGE_DRAG_VIEW_BUTTON)
+        local x0 = map_rect(page)
+        test.assert_near(x0, 600 - Consts.PAGE_MIN_VISIBLE, 1e-3, "the pan limit is the fit area's edge, not the strip's")
+
+        page:set_extension(0)
+        test.assert_eq((page:get_size()), 600)
+        test.assert_near((map_rect(page)), x0, 1e-3, "the strip taken away moves nothing")
+
+        page:fit_page()
+        page:set_extension(600)
+        page:set_size(1200, 1100)
+        assert_fitted(client, 0, 0, 10, 10)
+        test.assert_eq((page:get_size()), 1800, "a resize keeps the extension")
+        test.assert_true(units_per_meter(page) > fitted, "and fits the page to the new area")
     end)
     game_client.finish(client)
     if not ok then

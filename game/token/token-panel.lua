@@ -195,9 +195,9 @@ function TokenPanel:_create_id_field(read_only)
     end
     local title = self:_create_field_title("Id")
     self._id_title = title
-    title:set_position(Consts.PADDING, 0)
+    title:set_position(Consts.PADDING, Consts.PADDING)
     local _, title_h = title:get_size()
-    local y = title_h * title:get_scale()
+    local y = Consts.PADDING + title_h * title:get_scale()
 
     local panel_w = self:get_size()
     local input = TextInput(self._scroll_view:get_content(), self._game_screen, panel_w - 2 * Consts.PADDING, Consts.PANEL_TEXT_INPUT_HEIGHT, false, nil, function()

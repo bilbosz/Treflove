@@ -51,6 +51,7 @@ local TEST_MODULES = {
     "tests.test-fixture",
     "tests.test-fonts",
     "tests.test-game-data-rp",
+    "tests.test-game-screen",
     "tests.test-games-screen",
     "tests.test-games",
     "tests.test-image",

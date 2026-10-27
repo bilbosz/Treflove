@@ -18,6 +18,7 @@ end
 
 ---@param label string Button caption
 ---@param action InputHandler Run when the button is pressed
+---@return TextButton
 function QuickAccessPanel:add_entry(label, action)
     local children = self:get_children()
     local x = 0
@@ -31,6 +32,7 @@ function QuickAccessPanel:add_entry(label, action)
 
     button:set_position(x, Consts.PADDING)
     button:set_scale(Consts.PANEL_FIELD_SCALE)
+    return button
 end
 
 return QuickAccessPanel

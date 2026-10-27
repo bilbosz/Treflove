@@ -260,11 +260,11 @@ test.case("one writable token shows its id editable, above the properties in the
         test.assert_eq(input:get_parent(), content)
         local title_x, title_y = title:get_position()
         test.assert_eq(title_x, Consts.PADDING)
-        test.assert_eq(title_y, 0)
+        test.assert_eq(title_y, Consts.PADDING, "a padding from the top of the panel")
         local _, title_h = title:get_size()
         local input_x, input_y, input_w, input_h = input:get_position_and_size()
         test.assert_eq(input_x, Consts.PADDING)
-        test.assert_eq(input_y, title_h * Consts.PANEL_FIELD_SCALE)
+        test.assert_eq(input_y, Consts.PADDING + title_h * Consts.PANEL_FIELD_SCALE)
         local first = properties(client)[1]
         local _, _, property_w, property_h = assert(first.input):get_position_and_size()
         test.assert_eq(input_w, property_w)

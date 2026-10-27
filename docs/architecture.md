@@ -308,6 +308,12 @@ limit (a 1 m token) ends at the limit with the rectangle centered; a drag
 that hits the limit leaves the map at it until the pointer comes back; a
 page at the zoom-out limit is fitted again when the view's size changes, so
 a fully zoomed-out map stays whole through a window resize.
+All of this is measured against the page's fit area (`get_fit_size`),
+the view's size with the side bar shown, which `set_size` sets: a hidden
+side bar only extends the view over its strip (`set_extension`), where
+the map is seen as it is, so the fits, the zoom limits and the pan limit
+are the same with the side bar and without, and toggling it neither
+scales nor moves the map.
 
 Beyond the map's edges the view shows `PageSurroundings`
 (`game/page/page-surroundings.lua`), the page's first child: one draw of the
@@ -352,6 +358,13 @@ goes through `Token:set_id`, which renames the key in the data
 token in the groups' and the players' permissions) and in the session's
 permission set (`PermissionSet:rename_key`), so the token stays as writable
 as it was.
+The panel is the game's side bar, beside the page (`GAME_SIDE_PANEL_SHARE`
+of the width): the quick access panel's Tokens entry toggles it
+(`GameScreen:toggle_panel`), shown in the active colors (`BUTTON_ACTIVE_*`,
+blueish) while the panel is up. Hidden, the page's view and the quick
+access panel extend over its strip in the same frame, the map neither
+scaled nor moved (`Page:set_extension`), and the panel's inputs, disabled
+with it, are skipped by Tab.
 
 A change is applied to the client's copy first and then sent to the server
 (`Session:update_token`): the page sends one `UpdateTokenRp` request per

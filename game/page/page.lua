@@ -28,6 +28,7 @@ local Consts = require("app.consts")
 ---@field private _selection Selection
 ---@field private _tokens Token[]
 ---@field private _select_set_start_pos table<Token, [number, number]>|nil While dragging: the start positions of the selected tokens the player may write, the ones the drag moves
+---@field private _extension number How far the view extends beyond the fit area to the right: the strip of a hidden side bar, where the map is seen but neither fitted to nor kept within
 local Page = class("Page", Model, ClippingRectangle)
 
 ---@private
@@ -67,6 +68,7 @@ function Page:init(data, game_screen, width, height)
     self._page_width = data.width
     self._pointer_down_pos = {}
     self._game_screen = game_screen
+    self._extension = 0
 
     self:_create_background(data.image)
     self:_create_page_coordinates()
@@ -87,10 +89,10 @@ function Page:init(data, game_screen, width, height)
 end
 
 ---@private
----@return number, number The least and the greatest scale of the map, in units per texel: the page fitted to the view, and a page meter spanning `Consts.PAGE_MAX_UNITS_PER_METER`
+---@return number, number The least and the greatest scale of the map, in units per texel: the page fitted to the fit area, and a page meter spanning `Consts.PAGE_MAX_UNITS_PER_METER`
 function Page:_get_scale_limits()
     local bg_w, bg_h = self._background:get_size()
-    local view_w, view_h = self:get_size()
+    local view_w, view_h = self:get_fit_size()
     local min_scale = math.min((view_w - 2 * Consts.PADDING) / bg_w, (view_h - 2 * Consts.PADDING) / bg_h)
     local max_scale = math.max(Consts.PAGE_MAX_UNITS_PER_METER * self._page_width / bg_w, min_scale)
     return min_scale, max_scale
@@ -121,7 +123,7 @@ end
 ---@private
 function Page:_constrain_view()
     local bg = self._background
-    local view_w, view_h = self:get_size()
+    local view_w, view_h = self:get_fit_size()
     local scale = bg:get_scale()
     local clamped = self:_clamp_scale(scale)
     if clamped ~= scale then
@@ -148,18 +150,38 @@ function Page:_is_zoomed_out()
     return self._background:get_scale() <= min_scale * (1 + 1e-9)
 end
 
----@param width number
+---@param width number The fit area: what the page is fitted to and kept within; the view is it plus the extension
 ---@param height number
 function Page:set_size(width, height)
-    local old_w, old_h = self:get_size()
+    local old_w, old_h = self:get_fit_size()
     local fitted = self:_is_zoomed_out()
-    ClippingRectangle.set_size(self, width, height)
-    self._surroundings:set_size(width, height)
+    self:_set_view_size(width + self._extension, height)
     if fitted and (width ~= old_w or height ~= old_h) then
         self:fit_page()
     else
         self:_constrain_view()
     end
+end
+
+---@param width number How far the view extends beyond the fit area to the right, the strip of a hidden side bar: the map is seen there as it is, neither scaled nor moved by the change
+function Page:set_extension(width)
+    local fit_w, fit_h = self:get_fit_size()
+    self._extension = width
+    self:_set_view_size(fit_w + width, fit_h)
+end
+
+---@return number, number The fit area: the view less its extension
+function Page:get_fit_size()
+    local w, h = self:get_size()
+    return w - self._extension, h
+end
+
+---@private
+---@param width number
+---@param height number
+function Page:_set_view_size(width, height)
+    ClippingRectangle.set_size(self, width, height)
+    self._surroundings:set_size(width, height)
 end
 
 ---@return Control
@@ -307,7 +329,7 @@ function Page:center_on(x, y)
     local bg = self._background
     local gx, gy = self._page_coordinates:transform_to_global(x, y)
     bg:set_origin(bg:transform_to_local(gx, gy))
-    local w, h = self:get_size()
+    local w, h = self:get_fit_size()
     bg:set_position(w * 0.5, h * 0.5)
     self:_constrain_view()
 end
@@ -319,7 +341,7 @@ end
 function Page:fit(x, y, w, h)
     local bg = self._background
     local bg_w = bg:get_size()
-    local view_w, view_h = self:get_size()
+    local view_w, view_h = self:get_fit_size()
     local meters_to_view = math.min((view_w - 2 * Consts.PADDING) / w, (view_h - 2 * Consts.PADDING) / h)
     bg:set_scale(meters_to_view * self._page_width / bg_w)
     self:center_on(x + w * 0.5, y + h * 0.5)
