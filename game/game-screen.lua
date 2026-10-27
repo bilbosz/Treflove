@@ -3,6 +3,10 @@ local FormScreen = require("ui.form-screen")
 local Page = require("game.page.page")
 local TokenPanel = require("game.token.token-panel")
 local GamePanel = require("game.panels.game-panel")
+local PagesPanel = require("game.panels.pages-panel")
+local GroupsPanel = require("game.panels.groups-panel")
+local PermissionsPanel = require("game.panels.permissions-panel")
+local TokenPropertiesPanel = require("game.panels.token-properties-panel")
 local QuickAccessPanel = require("game.quick-access-panel")
 local Consts = require("app.consts")
 local permissions = require("game.permissions")
@@ -33,6 +37,10 @@ function GameScreen:init(data)
 
     self._token_panel = TokenPanel(self, panel_w, h)
     self._game_panel = GamePanel(self, panel_w, h)
+    local pages_panel = PagesPanel(self, panel_w, h)
+    local groups_panel = GroupsPanel(self, panel_w, h)
+    local permissions_panel = PermissionsPanel(self, panel_w, h)
+    local token_properties_panel = TokenPropertiesPanel(self, panel_w, h)
     self._panel = nil
     self._panels = {}
     self._panel_buttons = {}
@@ -47,6 +55,10 @@ function GameScreen:init(data)
     end)
     self:_gate_new_token()
     self:add_side_panel(self._game_panel, "Game")
+    self:add_side_panel(pages_panel, "Pages")
+    self:add_side_panel(groups_panel, "Groups")
+    self:add_side_panel(permissions_panel, "Permissions")
+    self:add_side_panel(token_properties_panel, "Token Properties")
     self:_set_panel(self._token_panel)
 end
 

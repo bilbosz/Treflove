@@ -237,13 +237,45 @@ local function quick_access_captions(client)
     return captions
 end
 
-test.case("the quick access entries are Tokens, Assets, New Token and Game, left to right", function()
+test.case("the quick access entries are Tokens, Assets, New Token, Game, Pages, Groups, Permissions and Token Properties, left to right", function()
     with_client(function(client)
         test.assert_deep_eq(quick_access_captions(client), {
             "Tokens",
             "Assets",
             "New Token",
-            "Game"
+            "Game",
+            "Pages",
+            "Groups",
+            "Permissions",
+            "Token Properties"
+        })
+    end)
+end)
+
+test.case("each entries panel's entry shows its panel alone, of the kind it names", function()
+    with_client(function(client)
+        local screen = client.game_screen
+        ---@type table<string, string>
+        local shown = {}
+        for _, caption in ipairs({
+            "Pages",
+            "Groups",
+            "Permissions",
+            "Token Properties"
+        }) do
+            local button = quick_access_button(client, caption)
+            game_client.click(client, button)
+            local panel = assert(screen:get_panel(), caption .. " shows a panel") --[[@as EntriesPanel]]
+            test.assert_true(panel:is_enabled())
+            test.assert_true(button:is_active())
+            test.assert_false(screen:get_token_panel():is_enabled())
+            shown[caption] = get_class_name_of(panel) .. " " .. panel:get_kind()
+        end
+        test.assert_deep_eq(shown, {
+            Pages = "PagesPanel pages",
+            Groups = "GroupsPanel groups",
+            Permissions = "PermissionsPanel players",
+            ["Token Properties"] = "TokenPropertiesPanel token_properties"
         })
     end)
 end)

@@ -25,7 +25,7 @@ function GamePanel:init(game_screen, width, height)
     self._title = title
     title:set_scale(s)
     title:set_position(Consts.PADDING, Consts.PADDING)
-    local label = Text(self, "", Consts.BUTTON_READ_ONLY_COLOR)
+    local label = Text(self, "", Consts.FOREGROUND_COLOR)
     self._page_label = label
     label:set_scale(s)
     self._scroll_view = ScrollView(self, width, height, true)
