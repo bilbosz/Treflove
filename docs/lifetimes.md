@@ -119,8 +119,9 @@ the `release` calls it caused.
 - **The new token screen**: the session builds it under the period from
   the game's New Token entry and pushes its back entry, anchored to the
   screen; the entry, or a creation the server accepted, shows the game
-  again and destroys the screen. The assets workspace its Browse... button
-  opens returns to it as to the game. An answer that arrives after the
+  again and destroys the screen; leaving the game destroys an open one, a
+  logout takes it with the period. The assets workspace its Browse...
+  button opens returns to it as to the game. An answer that arrives after the
   screen died asks `lifetime.alive` first.
 - **The assets workspace**: the session builds it under the period when the
   game's Assets entry opens it, remembers the screen it was opened from and
