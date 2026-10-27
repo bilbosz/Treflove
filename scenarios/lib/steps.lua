@@ -45,6 +45,13 @@ end
 ---@return GameScreen
 function steps.join_game(driver, login, password, game)
     steps.log_in(driver, login, password)
+    return steps.enter_game(driver, game)
+end
+
+---@param driver ScenarioDriver On the user menu
+---@param game string|nil The game's name, defaults to `steps.GAME`
+---@return GameScreen
+function steps.enter_game(driver, game)
     driver:click("TextButton", "Games")
     driver:wait_screen("GamesScreen")
     driver:click("TextButton", game or steps.GAME)
@@ -98,13 +105,21 @@ local function _get_select_set()
 end
 
 ---@param driver ScenarioDriver In the game
----@param label string The token's name, as its label shows it
----@return Token The token, selected with whatever else its bounding square touches
-function steps.select_token(driver, label)
-    local token = _find_token(driver, label)
-    local r = token:get_radius()
-    local from_x, from_y = token:transform_to_global(-r, -r)
-    local to_x, to_y = token:transform_to_global(r, r)
+---@param labels string[] The tokens' names, as their labels show them
+---@return Token[] The tokens, in the order of `labels`, selected with one rectangle spanning their bounding squares, with whatever else it touches
+function steps.select_tokens(driver, labels)
+    ---@type Token[]
+    local tokens = {}
+    local from_x, from_y, to_x, to_y = math.huge, math.huge, -math.huge, -math.huge
+    for _, label in ipairs(labels) do
+        local token = _find_token(driver, label)
+        table.insert(tokens, token)
+        local r = token:get_radius()
+        local x1, y1 = token:transform_to_global(-r, -r)
+        local x2, y2 = token:transform_to_global(r, r)
+        from_x, from_y = math.min(from_x, x1, x2), math.min(from_y, y1, y2)
+        to_x, to_y = math.max(to_x, x1, x2), math.max(to_y, y1, y2)
+    end
     driver:move(from_x, from_y)
     driver:press(from_x, from_y, Consts.PAGE_SELECT_BUTTON)
     driver:frames(1)
@@ -112,8 +127,20 @@ function steps.select_token(driver, label)
     driver:frames(1)
     driver:release_button(to_x, to_y, Consts.PAGE_SELECT_BUTTON)
     driver:frames(1)
-    driver:expect(_get_select_set()[token], label .. " is selected")
-    return token
+    local select_set = _get_select_set()
+    for i, token in ipairs(tokens) do
+        driver:expect(select_set[token], labels[i] .. " is selected")
+    end
+    return tokens
+end
+
+---@param driver ScenarioDriver In the game
+---@param label string The token's name, as its label shows it
+---@return Token The token, selected with whatever else its bounding square touches
+function steps.select_token(driver, label)
+    return steps.select_tokens(driver, {
+        label
+    })[1]
 end
 
 ---@param driver ScenarioDriver In the game, the token selected
@@ -135,6 +162,40 @@ function steps.drag_token(driver, label, dx, dy)
     driver:frames(1)
     driver:log(string.format("dragged %s by (%g, %g)", label, dx, dy))
     return token:get_position()
+end
+
+---@param driver ScenarioDriver In the game, with `write` on the tokens
+---@param id string The new token's id
+---@param name string
+---@param avatar string An image of the game's store
+---@return Token The new token, shown on the page
+function steps.create_token(driver, id, name, avatar)
+    local session = assert(app.session)
+    local page = assert(session:get_game_screen()):get_page()
+    session:create_token(id, {
+        name = name,
+        diameter = 1,
+        avatar = avatar,
+        position = {
+            page:get_view_center()
+        }
+    })
+    local token = driver:wait_for(function()
+        return driver:try_find("Token", name)
+    end, nil, "the token " .. id) --[[@as Token]]
+    driver:log("created the token " .. id)
+    return token
+end
+
+---@param driver ScenarioDriver In the game, with `write` on the token
+---@param label string The token's name, as its label shows it
+function steps.delete_token(driver, label)
+    local id = _find_token(driver, label):get_id()
+    assert(app.session):delete_token(id)
+    driver:wait_for(function()
+        return not driver:try_find("Token", label)
+    end, nil, "the token " .. id .. " gone")
+    driver:log("deleted the token " .. id)
 end
 
 ---@param driver ScenarioDriver On the login screen
