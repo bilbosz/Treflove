@@ -10,7 +10,7 @@ Options:
     --console <port>         client, server and monitor: the console port on 127.0.0.1
     --server-console <port>  client only: the server's console port, for the scenario's server calls
     --identity <name>        client and server: the LÖVE save directory identity
-    --fixture <path>         server only: a directory of the source tree that seeds the server root at load
+    --fixture <path>         server only, with --identity: a directory of the source tree whose copy replaces the server root at load (it empties the root)
     --headless               client, server and monitor: fixed frame delta, no sleep, no vsync
     --peers <name>:<port>,.. client only: the console ports of the peer clients a scenario drives
 Console:
@@ -34,7 +34,6 @@ Monitor:
     HASH_ALGORITHM = "sha256",
     SERVER_ROOT = "s",
     CLIENT_ROOT = "c",
-    SERVER_SEED_DIRECTORY = "server/seed",
     GAME_TEMPLATE_DIRECTORY = "server/template",
     ACCOUNT_LOGIN_MAX_LENGTH = 32,
     ACCOUNT_NAME_MAX_LENGTH = 64,

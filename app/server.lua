@@ -35,14 +35,10 @@ end
 
 ---@protected
 function Server:load()
-    local accounts_file = Asset(Consts.SERVER_ROOT .. "/accounts.lua")
     if self.params.fixture then
         fixture.seed(self.params.fixture, Consts.SERVER_ROOT)
-    elseif not accounts_file:get_type() then
-        self:log("No accounts in the server root: seeding it from " .. Consts.SERVER_SEED_DIRECTORY)
-        fixture.seed(Consts.SERVER_SEED_DIRECTORY, Consts.SERVER_ROOT)
     end
-    self.accounts = Accounts(accounts_file)
+    self.accounts = Accounts(Asset(Consts.SERVER_ROOT .. "/accounts.lua"))
     self.games = Games(Consts.SERVER_ROOT .. "/games")
     self.connection_manager:start(function(connection)
         self._sessions[connection] = Session(connection):attach_lifetime(connection)

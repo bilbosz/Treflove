@@ -94,6 +94,21 @@ test.case("an account is created with its name trimmed and its server hash, and 
     test.assert_true(files["s/accounts.lua"] ~= nil, "the file was written")
 end)
 
+test.case("a fresh root has no accounts; the first account creates the root and the accounts file", function()
+    local files = {}
+    with_accounts(files, function(accounts)
+        test.assert_eq(love.filesystem.getInfo("s"), nil, "nothing under the root")
+        test.assert_eq(accounts:get("frodo"), nil)
+        test.assert_true((accounts:create("frodo", "Frodo", mocks.client_auth("frodo"))))
+        test.assert_eq(assert(love.filesystem.getInfo("s")).type, "directory")
+        test.assert_eq(assert(love.filesystem.getInfo("s/accounts.lua")).type, "file")
+        test.assert_deep_eq(love.filesystem.getDirectoryItems("s"), {
+            "accounts.lua"
+        })
+        test.assert_eq(Accounts(Asset("s/accounts.lua")):find_by_auth(mocks.client_auth("frodo")), "frodo", "found by a server started again")
+    end)
+end)
+
 test.case("an account is refused for a taken login, a bad login or name, or no auth; nothing is saved then", function()
     local files = {
         ["s/accounts.lua"] = "return {}"

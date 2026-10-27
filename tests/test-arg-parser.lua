@@ -119,6 +119,14 @@ test.case("rejects an option on the wrong side", function()
     test.assert_eq(parse_args("client", "localhost", "8080", "--fixture", "scenarios"), nil, "--fixture on the client")
 end)
 
+test.case("rejects a fixture without an identity, since it empties the root of the save directory", function()
+    test.assert_eq(parse_args("server", "localhost", "8080", "--fixture", "scenarios/fixtures/basic"), nil)
+    test.assert_eq(parse_args("server", "localhost", "8080", "--fixture", "scenarios/fixtures/basic", "--console", "9091", "--headless"), nil, "other options are no identity")
+    test.assert_eq(parse_args("server", "localhost", "8080", "--identity", "smoke", "--fixture", "scenarios/fixtures/basic").fixture, "scenarios/fixtures/basic", "the identity first")
+    test.assert_eq(parse_args("server", "localhost", "8080", "--fixture", "scenarios/fixtures/basic", "--identity", "smoke").identity, "smoke", "the identity after")
+    test.assert_eq(parse_args("server", "localhost", "8080", "--identity", "smoke").fixture, nil, "an identity needs no fixture")
+end)
+
 test.case("rejects an unknown option and a stray value", function()
     test.assert_eq(parse_args("client", "localhost", "8080", "--verbose"), nil)
     test.assert_eq(parse_args("client", "localhost", "8080", "-headless"), nil)
@@ -167,7 +175,7 @@ test.case("accepts a fixture that is a relative path without ..", function()
         "scenarios/fixtures/basic",
         "a.b/c_d/e-f"
     }) do
-        test.assert_eq(parse_args("server", "localhost", "8080", "--fixture", path).fixture, path, path)
+        test.assert_eq(parse_args("server", "localhost", "8080", "--fixture", path, "--identity", "smoke").fixture, path, path)
     end
     for _, path in ipairs({
         "/scenarios/fixtures",
@@ -178,7 +186,7 @@ test.case("accepts a fixture that is a relative path without ..", function()
         "scenarios\\fixtures",
         "sce narios"
     }) do
-        test.assert_eq(parse_args("server", "localhost", "8080", "--fixture", path), nil, path)
+        test.assert_eq(parse_args("server", "localhost", "8080", "--fixture", path, "--identity", "smoke"), nil, path)
     end
 end)
 

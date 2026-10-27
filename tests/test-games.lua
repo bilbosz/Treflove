@@ -179,6 +179,29 @@ test.case("a new game is the template under its id, named, its creator the maste
     end)
 end)
 
+test.case("a fresh root has no games; the first game makes the games directory and its own", function()
+    local files = {
+        ["server/template/save.lua"] = template(),
+        ["server/template/assets/token/default.png"] = "D"
+    }
+    with_games(files, function(games)
+        test.assert_eq(love.filesystem.getInfo("s"), nil, "nothing under the root")
+        test.assert_deep_eq(games:list(), {})
+        test.assert_eq(games:get("bag-end"), nil)
+        local game = assert(games:create("Bag End", "frodo"))
+        test.assert_eq(game:get_id(), "bag-end")
+        test.assert_eq(assert(love.filesystem.getInfo("s/games")).type, "directory")
+        test.assert_eq(read_save("s/games/bag-end/save.lua").name, "Bag End")
+        test.assert_eq(love.filesystem.read("s/games/bag-end/assets/token/default.png"), "D")
+        test.assert_deep_eq(games:list(), {
+            "bag-end"
+        })
+        test.assert_deep_eq(Games("s/games"):list(), {
+            "bag-end"
+        }, "listed by a server started again")
+    end)
+end)
+
 test.case("a new game is refused without a letter or a digit, with a name too long, or where a game is", function()
     with_games({
         ["server/template/save.lua"] = template(),
