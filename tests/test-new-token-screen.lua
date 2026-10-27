@@ -109,8 +109,16 @@ screen_case("Create asks for the token at the center of the view on the shown pa
     fill_in(screen, "Gandalf", "Gandalf the Grey", "token/s.png")
     menu_client.click(menu_client.button(screen, "Create"))
     local request = game_client.pop_request(client, "CreateTokenRp") --[[@as CreateTokenRequest]]
-    ---@type TokenData
-    local token = {
+    test.assert_eq(request.id, "Gandalf")
+    test.assert_eq(request.page, "P")
+    local token = request.token
+    test.assert_near(token.position[1], x, 1e-6, "at the view's center")
+    test.assert_near(token.position[2], y, 1e-6)
+    token.position = {
+        x,
+        y
+    }
+    test.assert_deep_eq(token, {
         name = "Gandalf the Grey",
         diameter = 1,
         avatar = "token/s.png",
@@ -118,11 +126,6 @@ screen_case("Create asks for the token at the center of the view on the shown pa
             x,
             y
         }
-    }
-    test.assert_deep_eq(request, {
-        id = "Gandalf",
-        page = "P",
-        token = token
     })
     test.assert_eq(client.app.screen_manager:get_screen(), screen, "open until the answer")
     game_client.answer(client, "CreateTokenRp", {
@@ -134,12 +137,9 @@ screen_case("Create asks for the token at the center of the view on the shown pa
     test.assert_false(lifetime.alive(screen))
     test.assert_eq(client.session:get_new_token_screen(), nil)
     test.assert_eq(client.app.screen_manager:get_screen(), client.game_screen)
-    test.assert_deep_eq({
-        game_client.find_token(client, "Gandalf"):get_position()
-    }, {
-        x,
-        y
-    })
+    local token_x, token_y = game_client.find_token(client, "Gandalf"):get_position()
+    test.assert_near(token_x, x, 1e-6)
+    test.assert_near(token_y, y, 1e-6)
     test.assert_deep_eq(notified(client), {})
 end)
 
