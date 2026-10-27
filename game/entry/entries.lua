@@ -150,7 +150,7 @@ local PLURALS = {
 }
 
 ---@type table<EntryKind, boolean>
-local CHANGEABLE_KEYS = {
+local CHANGEABLE_KINDS = {
     pages = true,
     groups = true,
     token_properties = true
@@ -199,19 +199,19 @@ end
 ---@param kind EntryKind
 ---@return boolean
 function entries.can_create(kind)
-    return CHANGEABLE_KEYS[kind] == true
+    return CHANGEABLE_KINDS[kind] == true
 end
 
 ---@param kind EntryKind
 ---@return boolean
 function entries.can_delete(kind)
-    return CHANGEABLE_KEYS[kind] == true
+    return CHANGEABLE_KINDS[kind] == true
 end
 
 ---@param kind EntryKind
 ---@return boolean
 function entries.can_rename(kind)
-    return CHANGEABLE_KEYS[kind] == true
+    return CHANGEABLE_KINDS[kind] == true
 end
 
 ---@param data GameData
