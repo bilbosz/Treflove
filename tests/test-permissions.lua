@@ -354,6 +354,29 @@ test.case("@owned matches the entries whose owners list the login, in the set's 
     test.assert_true(set:allows(Action.WRITE, Kind.TOKENS, "Bilbosz"), "evaluated when asked")
 end)
 
+test.case("rename_key renames the grants on a key in place, and the set answers under the new key", function()
+    local data = game_data()
+    local set = PermissionSet("piotr", {
+        "read",
+        "write:tokens/Bilbosz",
+        "view:tokens/Bilbosz",
+        "write:tokens/@owned",
+        "write:pages/Bilbosz"
+    }, data)
+    set:rename_key(Kind.TOKENS, "Bilbosz", "Bilbo")
+    test.assert_deep_eq(set:get_grants(), {
+        "read",
+        "write:tokens/Bilbo",
+        "view:tokens/Bilbo",
+        "write:tokens/@owned",
+        "write:pages/Bilbosz"
+    })
+    test.assert_true(set:allows(Action.WRITE, Kind.TOKENS, "Bilbo"))
+    test.assert_true(set:allows(Action.VIEW, Kind.TOKENS, "Bilbo"))
+    test.assert_false(set:allows(Action.WRITE, Kind.TOKENS, "Bilbosz"))
+    test.assert_true(set:allows(Action.WRITE, Kind.PAGES, "Bilbosz"), "another kind's key stays")
+end)
+
 test.suite("permissions.filter")
 
 test.case("reading everything keeps every entry and the name, a copy", function()

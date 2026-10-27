@@ -129,8 +129,7 @@ function Token:set_id(id)
     local old = self._id
     token_id.rename(assert(app.data), old, id)
     self._id = id
-    local session = assert(app.session)
-    session:set_grants(permissions.rename_key(session:get_permissions():get_grants(), permissions.Kind.TOKENS, old, id))
+    assert(app.session):get_permissions():rename_key(permissions.Kind.TOKENS, old, id)
 end
 
 ---@return boolean Whether the logged-in player may change the token

@@ -1,11 +1,13 @@
 local Asset = require("data.asset")
 local AssetStore = require("data.asset-store")
+local lifetime = require("lifetime")
 
 ---@class Game: Object
 ---@field private _id string
 ---@field private _file Asset
 ---@field private _data GameData
 ---@field private _store AssetStore
+---@field private _sessions table<Session, boolean> The sessions in the game, weak keys: a dead session drops out
 local Game = class("Game")
 
 ---@param id string The game's directory name
@@ -16,6 +18,9 @@ function Game:init(id, root)
     self._file = Asset(root .. "/save.lua")
     self._data = assert(table.from_string(self._file:read()), "the save of the game " .. id .. " does not load") --[[@as GameData]]
     self._store = AssetStore(root)
+    self._sessions = setmetatable({}, {
+        __mode = "k"
+    })
 end
 
 ---@return string
@@ -52,6 +57,28 @@ function Game:add_player(login, group)
         group = group
     }
     self:save()
+end
+
+---@param session Session
+function Game:add_session(session)
+    self._sessions[session] = true
+end
+
+---@param session Session
+function Game:remove_session(session)
+    self._sessions[session] = nil
+end
+
+---@return Session[] The live sessions in the game (`lifetime.alive`), in no particular order
+function Game:get_sessions()
+    ---@type Session[]
+    local sessions = {}
+    for session in pairs(self._sessions) do
+        if lifetime.alive(session) then
+            table.insert(sessions, session)
+        end
+    end
+    return sessions
 end
 
 return Game
