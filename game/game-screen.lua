@@ -5,16 +5,19 @@ local TokenPanel = require("game.token.token-panel")
 local QuickAccessPanel = require("game.quick-access-panel")
 local Consts = require("app.consts")
 local permissions = require("game.permissions")
+local entries = require("game.entry.entries")
+local lifetime = require("lifetime")
 
 ---@class GameScreen: Model, FormScreen
 ---@field data GameScreenData
 ---@field get_data fun(self: GameScreen): GameScreenData
 ---@field private _page Page
 ---@field private _token_panel TokenPanel
----@field private _panel Panel|nil The shown side panel; `nil` while the side bar is hidden and the page's view extends over its strip
----@field private _panels Panel[]
----@field private _panel_buttons table<Panel, TextButton> The quick access entry that toggles each side panel, active while it is shown
+---@field private _panel SidePanel|nil The shown side panel; `nil` while the side bar is hidden and the page's view extends over its strip
+---@field private _panels SidePanel[] In the order of their quick access entries
+---@field private _panel_buttons table<SidePanel, TextButton> The quick access entry that toggles each side panel, active while it is shown
 ---@field private _quick_access_panel QuickAccessPanel
+---@field private _new_token_button TextButton Read-only without `write` on the tokens kind
 local GameScreen = class("GameScreen", Model, FormScreen)
 
 ---@param data GameScreenData
@@ -28,23 +31,39 @@ function GameScreen:init(data)
 
     self._token_panel = TokenPanel(self, panel_w, h)
     self._panel = nil
-    self._panels = {
-        self._token_panel
-    }
+    self._panels = {}
+    self._panel_buttons = {}
 
     self._quick_access_panel = QuickAccessPanel(self, w - panel_w, Consts.QUICK_ACCESS_PANEL_HEIGHT)
-    self._panel_buttons = {}
-    self._panel_buttons[self._token_panel] = self._quick_access_panel:add_entry("Tokens", function()
-        self:toggle_panel(self._token_panel)
-    end)
+    self:add_side_panel(self._token_panel, "Tokens")
     self._quick_access_panel:add_entry("Assets", function()
         assert(app.session):open_assets_workspace()
     end)
-    local session = app.session
-    self._quick_access_panel:add_entry("New Token", function()
+    self._new_token_button = self._quick_access_panel:add_entry("New Token", function()
         assert(app.session):show_new_token()
-    end):set_read_only(not (session and session:is_allowed(permissions.Action.WRITE, permissions.Kind.TOKENS)))
+    end)
+    self:_gate_new_token()
     self:_set_panel(self._token_panel)
+end
+
+---@param panel SidePanel Built over this screen; hidden until its entry, or `select_panel`, shows it
+---@param caption string Its quick access entry's
+---@return TextButton The quick access entry that toggles it
+function GameScreen:add_side_panel(panel, caption)
+    assert(not table.find_array_idx(self._panels, panel))
+    table.insert(self._panels, panel)
+    panel:set_enabled(false)
+    local button = self._quick_access_panel:add_entry(caption, function()
+        self:toggle_panel(panel)
+    end)
+    self._panel_buttons[panel] = button
+    return button
+end
+
+---@private
+function GameScreen:_gate_new_token()
+    local session = app.session
+    self._new_token_button:set_read_only(not (session and session:is_allowed(permissions.Action.WRITE, permissions.Kind.TOKENS)))
 end
 
 function GameScreen:show()
@@ -53,7 +72,42 @@ function GameScreen:show()
 end
 
 function GameScreen:on_selection_change()
-    self._token_panel:on_selection_change()
+    for _, panel in ipairs(self._panels) do
+        panel:on_selection_change()
+    end
+end
+
+---@param kind EntryKind
+---@param id string The entry's id after the change: the new one of a rename, the deleted one of a deletion
+function GameScreen:on_entries_change(kind, id)
+    for _, panel in ipairs(self._panels) do
+        panel:on_entries_change(kind, id)
+    end
+end
+
+function GameScreen:on_grants_change()
+    self:_gate_new_token()
+    for _, panel in ipairs(self._panels) do
+        panel:on_grants_change()
+    end
+end
+
+---@param id string A key of `app.data.pages` whose assets are in the store, the one `app.data.game.page` names now
+function GameScreen:show_page(id)
+    local old = self._page
+    local x, y = old:get_position()
+    local fit_w, fit_h = old:get_fit_size()
+    local extension = old:get_extension()
+    local index = assert(table.find_array_idx(self:get_control():get_children(), old))
+    lifetime.destroy(old)
+    local page = Page(assert(app.data.pages[id], "the page is held"), self, fit_w, fit_h)
+    self._page = page
+    page:reattach(index)
+    page:set_position(x, y)
+    page:set_extension(extension)
+    self:on_selection_change()
+    self:on_entries_change("game", entries.GAME_ID)
+    self:on_entries_change("pages", id)
 end
 
 ---@param w number
@@ -96,12 +150,12 @@ function GameScreen:get_token_panel()
     return self._token_panel
 end
 
----@return Panel|nil The shown side panel
+---@return SidePanel|nil The shown side panel
 function GameScreen:get_panel()
     return self._panel
 end
 
----@param panel Panel Hidden when it is the shown one, shown otherwise: a click on its quick access entry
+---@param panel SidePanel Hidden when it is the shown one, shown otherwise: a click on its quick access entry
 function GameScreen:toggle_panel(panel)
     if self._panel == panel then
         self:disable_panel()
@@ -110,7 +164,7 @@ function GameScreen:toggle_panel(panel)
     end
 end
 
----@param panel Panel
+---@param panel SidePanel
 function GameScreen:select_panel(panel)
     assert(table.find_array_idx(self._panels, panel))
     self:_set_panel(panel)
@@ -123,7 +177,7 @@ function GameScreen:disable_panel()
 end
 
 ---@private
----@param panel Panel|nil
+---@param panel SidePanel|nil
 function GameScreen:_set_panel(panel)
     local previous = self._panel
     if previous then

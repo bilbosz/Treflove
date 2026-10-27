@@ -1,4 +1,4 @@
-local Panel = require("ui.panel")
+local SidePanel = require("game.side-panel")
 local Consts = require("app.consts")
 local Text = require("controls.text")
 local TextInput = require("ui.text-input")
@@ -16,8 +16,7 @@ local token_id = require("game.token.token-id")
 ---@field input TextInput|NumberInput|nil Set once the property is filled in, a `NumberInput` for a `number` property, read-only for an `image` property
 ---@field button TextButton|nil For an `image` property: opens the assets workspace at the asset, to browse for another or, read-only, to show it
 
----@class TokenPanel: Panel
----@field private _game_screen GameScreen
+---@class TokenPanel: SidePanel
 ---@field private _properties TokenPanelProperty[]
 ---@field private _keys string[]|nil Sorted editable keys of the selected tokens
 ---@field private _selection_set table<Token, boolean>
@@ -27,14 +26,13 @@ local token_id = require("game.token.token-id")
 ---@field private _scroll_view ScrollView Holds the properties, above the buttons
 ---@field private _id_title Text|nil Set while a token is selected
 ---@field private _id_input TextInput|nil Set while a token is selected; read-only and multivalue while several are
-local TokenPanel = class("TokenPanel", Panel)
+local TokenPanel = class("TokenPanel", SidePanel)
 
 ---@param game_screen GameScreen
 ---@param width number
 ---@param height number
 function TokenPanel:init(game_screen, width, height)
-    Panel.init(self, game_screen:get_control(), width, height)
-    self._game_screen = game_screen
+    SidePanel.init(self, game_screen, width, height)
     self._properties = {}
     self._keys = nil
     self._selection_set = game_screen:get_selection():get_select_set()
@@ -49,12 +47,24 @@ end
 ---@param w number
 ---@param h number
 function TokenPanel:on_resize(w, h)
-    Panel.on_resize(self, w, h)
+    SidePanel.on_resize(self, w, h)
     self:_update_view()
 end
 
 function TokenPanel:on_selection_change()
     self._selection_set = self._game_screen:get_selection():get_select_set()
+    self:_update_view()
+end
+
+---@param kind EntryKind
+---@param id string
+function TokenPanel:on_entries_change(kind, id)
+    if kind == "token_properties" then
+        self:_update_view()
+    end
+end
+
+function TokenPanel:on_grants_change()
     self:_update_view()
 end
 
@@ -117,7 +127,8 @@ function TokenPanel:_update_property_keys()
     ---@type string[]
     local keys = {}
     for k in pairs(unique_keys) do
-        local t = app.data.token_properties[k].type
+        local def = app.data.token_properties[k]
+        local t = def and def.type
         if t == "string" or t == "number" or t == "image" then
             table.insert(keys, k)
         end

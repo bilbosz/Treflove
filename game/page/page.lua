@@ -171,6 +171,11 @@ function Page:set_extension(width)
     self:_set_view_size(fit_w + width, fit_h)
 end
 
+---@return number
+function Page:get_extension()
+    return self._extension
+end
+
 ---@return number, number The fit area: the view less its extension
 function Page:get_fit_size()
     local w, h = self:get_size()

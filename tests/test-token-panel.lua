@@ -2,6 +2,7 @@ local test = require("tests.lib.test")
 local game_client = require("tests.lib.game-client")
 local Consts = require("app.consts")
 local permissions = require("game.permissions")
+local lifetime = require("lifetime")
 
 ---@param client GameClient
 ---@return TokenPanelProperty[]
@@ -645,5 +646,55 @@ test.case("a multivalue number field left alone does not refuse the apply", func
         test.assert_deep_eq(notifications.messages, {})
         test.assert_eq(game_client.find_token(client, "Smaug"):get_data().name, "Twins")
         test.assert_eq(game_client.find_token(client, "Smaug"):get_data().diameter, 3)
+    end)
+end)
+
+test.case("a token property the session hears of is shown for a selected token that has it; a change of another kind rebuilds nothing", function()
+    with_client({
+        "read",
+        "write"
+    }, function(client)
+        game_client.select(client, {
+            "Bilbosza"
+        })
+        local name_input = assert(property_by_key(client, "name").input)
+        client.game_screen:on_entries_change("pages", "P")
+        test.assert_eq(property_by_key(client, "name").input, name_input, "the pages are not the token panel's")
+
+        local data = assert(client.app.data)
+        data.token_properties.hp = {
+            title = "HP",
+            type = "number"
+        }
+        game_client.find_token(client, "Bilbosza"):set_data("hp", 7)
+        client.game_screen:on_entries_change("token_properties", "hp")
+        local hp = property_by_key(client, "hp")
+        test.assert_eq(assert(hp.title):get_text(), "HP")
+        local input = assert(hp.input) --[[@as NumberInput]]
+        test.assert_eq(input:get_number(), 7)
+        test.assert_false(input:is_read_only())
+        test.assert_false(lifetime.alive(name_input), "the old fields destroyed")
+    end)
+end)
+
+test.case("on_grants_change gates the selection by the grants the session holds now", function()
+    with_client({
+        "read",
+        "write:tokens/@owned"
+    }, function(client)
+        game_client.select(client, {
+            "Smaug"
+        })
+        assert_inputs_read_only(client, true, "read-only")
+        test.assert_eq(apply_button(client), nil)
+        client.session:set_grants({
+            "read",
+            "write:tokens/Smaug"
+        })
+        client.game_screen:on_grants_change()
+        assert_inputs_read_only(client, false, "editable")
+        test.assert_true(apply_button(client) ~= nil)
+        test.assert_true(delete_button(client) ~= nil)
+        test.assert_false(assert(id_input(client)):is_read_only())
     end)
 end)

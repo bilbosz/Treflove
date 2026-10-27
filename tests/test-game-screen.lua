@@ -1,6 +1,8 @@
 local test = require("tests.lib.test")
 local game_client = require("tests.lib.game-client")
 local Consts = require("app.consts")
+local lifetime = require("lifetime")
+local SidePanel = require("game.side-panel")
 
 ---@param client GameClient
 ---@return TextButton
@@ -211,5 +213,179 @@ test.case("the New Token entry is read-only, dimmed and not clickable, for a pla
         game_client.click(client, new_token)
         test.assert_eq(client.app.screen_manager:get_screen(), client.game_screen)
         test.assert_eq(client.session:get_new_token_screen(), nil)
+    end)
+end)
+
+---@param client GameClient
+---@return string[] The captions of the quick access entries, left to right
+local function quick_access_captions(client)
+    ---@diagnostic disable-next-line: invisible
+    local buttons = client.game_screen._quick_access_panel._buttons
+    ---@type TextButton[]
+    local ordered = {}
+    for _, button in pairs(buttons) do
+        table.insert(ordered, button)
+    end
+    table.sort(ordered, function(a, b)
+        return a:get_position() < b:get_position()
+    end)
+    ---@type string[]
+    local captions = {}
+    for _, button in ipairs(ordered) do
+        table.insert(captions, button:get_text())
+    end
+    return captions
+end
+
+test.case("the quick access entries are Tokens, Assets and New Token, left to right", function()
+    with_client(function(client)
+        test.assert_deep_eq(quick_access_captions(client), {
+            "Tokens",
+            "Assets",
+            "New Token"
+        })
+    end)
+end)
+
+test.case("show_page replaces the page with one over the page named, at the same place, size and extension and under the panels, with nothing selected", function()
+    with_client(function(client)
+        local screen = client.game_screen
+        local data = assert(client.app.data)
+        game_client.select(client, {
+            "Bilbosza"
+        })
+        screen:disable_panel()
+        local old = screen:get_page()
+        local x, y = old:get_position()
+        local view_w, view_h = old:get_size()
+        local fit_w, fit_h = old:get_fit_size()
+        local extension = old:get_extension()
+        test.assert_true(extension > 0, "the strip of the hidden side bar")
+        local control = screen:get_control()
+        local index = table.find_array_idx(control:get_children(), old)
+
+        data.game.page = "Q"
+        screen:show_page("Q")
+
+        local page = screen:get_page()
+        test.assert_false(lifetime.alive(old), "the old page destroyed")
+        test.assert_eq(page:get_data(), data.pages.Q)
+        test.assert_eq(page:get_game_screen(), screen)
+        test.assert_deep_eq({
+            page:get_position()
+        }, {
+            x,
+            y
+        })
+        test.assert_deep_eq({
+            page:get_size()
+        }, {
+            view_w,
+            view_h
+        })
+        test.assert_deep_eq({
+            page:get_fit_size()
+        }, {
+            fit_w,
+            fit_h
+        })
+        test.assert_eq(page:get_extension(), extension)
+        test.assert_eq(table.find_array_idx(control:get_children(), page), index, "drawn where the old one was")
+        test.assert_deep_eq(page:get_tokens(), {})
+        test.assert_eq(next(screen:get_selection():get_select_set()), nil)
+        ---@diagnostic disable-next-line: invisible
+        test.assert_eq(screen:get_token_panel()._id_input, nil, "the token panel shows the empty selection")
+
+        screen:select_panel(screen:get_token_panel())
+        test.assert_eq((page:get_size()), fit_w, "the new page follows the side bar")
+        data.game.page = "P"
+        screen:show_page("P")
+        test.assert_eq(#screen:get_page():get_tokens(), 2, "the tokens of the page shown again")
+    end)
+end)
+
+test.case("on_grants_change gates the New Token entry by the grants the session holds now", function()
+    with_grants({
+        "read",
+        "write:tokens/@owned"
+    }, function(client)
+        local new_token = quick_access_button(client, "New Token")
+        test.assert_true(new_token:is_read_only())
+        client.session:set_grants({
+            "read",
+            "write:tokens"
+        })
+        client.game_screen:on_grants_change()
+        test.assert_false(new_token:is_read_only())
+        client.session:set_grants({
+            "read"
+        })
+        client.game_screen:on_grants_change()
+        test.assert_true(new_token:is_read_only())
+    end)
+end)
+
+---@class TestSidePanel: SidePanel
+---@field calls string[]
+local TestSidePanel = class("TestSidePanel", SidePanel)
+
+---@param game_screen GameScreen
+---@param width number
+---@param height number
+function TestSidePanel:init(game_screen, width, height)
+    SidePanel.init(self, game_screen, width, height)
+    self.calls = {}
+end
+
+---@param kind EntryKind
+---@param id string
+function TestSidePanel:on_entries_change(kind, id)
+    table.insert(self.calls, "entries " .. kind .. " " .. id)
+end
+
+function TestSidePanel:on_grants_change()
+    table.insert(self.calls, "grants")
+end
+
+function TestSidePanel:on_selection_change()
+    table.insert(self.calls, "selection")
+end
+
+test.case("a side panel added gets a quick access entry at the end that toggles it, and hears of the entries, the grants and the selection", function()
+    with_client(function(client)
+        local screen = client.game_screen
+        local w, h = assert(client.app.width), assert(client.app.height)
+        local panel = TestSidePanel(screen, w * Consts.GAME_SIDE_PANEL_SHARE, h)
+        test.assert_eq(panel:get_game_screen(), screen)
+        local button = screen:add_side_panel(panel, "Test")
+        test.assert_eq(button, quick_access_button(client, "Test"))
+        local captions = quick_access_captions(client)
+        test.assert_eq(captions[#captions], "Test")
+        test.assert_false(panel:is_enabled(), "hidden until its entry is clicked")
+        screen:on_resize(w, h)
+        game_client.click(client, button)
+        test.assert_eq(screen:get_panel(), panel)
+        test.assert_true(button:is_active())
+        test.assert_false(screen:get_token_panel():is_enabled())
+
+        panel.calls = {}
+        screen:on_entries_change("pages", "P")
+        screen:on_grants_change()
+        game_client.select(client, {})
+        test.assert_deep_eq(panel.calls, {
+            "entries pages P",
+            "grants",
+            "selection"
+        })
+
+        panel.calls = {}
+        assert(client.app.data).game.page = "Q"
+        screen:show_page("Q")
+        test.assert_deep_eq(panel.calls, {
+            "selection",
+            "entries game game",
+            "entries pages Q"
+        }, "a page shown is a change of the game entry and of that page")
+        test.assert_eq(screen:get_panel(), panel, "the side bar keeps the panel shown")
     end)
 end)
