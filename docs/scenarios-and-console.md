@@ -197,7 +197,8 @@ refused with their reasons). The shared steps `steps.select_token` and
 `steps.drag_token` select a token with a rectangle and drag it with the
 token-drag button, as a player does, `steps.select_tokens` several with
 one rectangle; `steps.enter_game` enters a game from the menu, `steps.create_token` creates one through the New Token
-screen and `steps.delete_token` deletes a selected one from the panel.
+screen and `steps.delete_token` deletes one, selected alone, from the
+panel.
 
 ### The fixture
 

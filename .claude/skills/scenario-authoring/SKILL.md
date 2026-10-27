@@ -91,6 +91,11 @@ script starts one extra client per peer (see "Several clients").
   screen alone does not show what the server holds.
 - The pointer release is `release_button`, since `release` is every
   object's destructor on this branch.
+- A token's selection rectangle is its bounding square, and any neighbour
+  whose circle touches it is selected too; Delete then removes the whole
+  selection. Place or drag tokens apart before a step that acts on one,
+  as `create-token` drags away from Smaug, and let the step check the
+  selection's size, as `steps.delete_token` does.
 
 ## Several clients
 
