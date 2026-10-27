@@ -79,6 +79,104 @@ test.case("the game master drags the whole selection", function()
     end
 end)
 
+---@param client GameClient
+---@return table<string, number[]> The positions of the `UpdateTokenRp` requests the client sent, by token id
+local function sent_moves(client)
+    ---@type table<string, number[]>
+    local moves = {}
+    while client.connection:get_out_channel():getCount() > 0 do
+        local request = game_client.pop_request(client, "UpdateTokenRp") --[[@as UpdateTokenRequest]]
+        test.assert_eq(moves[request.id], nil, "one request per token")
+        ---@type string[]
+        local keys = {}
+        for key in pairs(request.changes) do
+            table.insert(keys, key)
+        end
+        test.assert_deep_eq(keys, {
+            "position"
+        }, "the position alone")
+        moves[request.id] = request.changes.position --[[@as number[] ]]
+    end
+    return moves
+end
+
+---@param client GameClient
+---@param moves table<string, number[]> As `sent_moves` gives them
+---@param ids string[] The tokens expected moved
+local function assert_moves(client, moves, ids)
+    ---@type string[]
+    local moved = {}
+    for id in pairs(moves) do
+        table.insert(moved, id)
+    end
+    table.sort(moved)
+    test.assert_deep_eq(moved, ids)
+    for _, id in ipairs(ids) do
+        local x, y = game_client.find_token(client, id):get_position()
+        test.assert_near(moves[id][1], x, 1e-9, id)
+        test.assert_near(moves[id][2], y, 1e-9, id)
+    end
+end
+
+test.case("a drag sends one update per token it moved, with the id and the position; an unwritable token sends none", function()
+    local client = game_client.enter({
+        "read",
+        "write:tokens/@owned"
+    })
+    ---@type boolean, any
+    local ok, err = pcall(function()
+        local page = client.game_screen:get_page()
+        game_client.select(client, {
+            "Bilbosza",
+            "Smaug"
+        })
+        local px, py = page:get_position()
+        page:on_pointer_down(px + 100, py + 100, Consts.PAGE_DRAG_TOKEN_BUTTON)
+        page:on_pointer_move(px + 160, py + 130)
+        test.assert_deep_eq(sent_moves(client), {}, "nothing before the release")
+        page:on_pointer_up(px + 160, py + 130, Consts.PAGE_DRAG_TOKEN_BUTTON)
+        assert_moves(client, sent_moves(client), {
+            "Bilbosza"
+        })
+    end)
+    game_client.finish(client)
+    if not ok then
+        error(err, 0)
+    end
+end)
+
+test.case("a master's drag sends an update for every selected token; a drag that ends where it began sends none", function()
+    local client = game_client.enter({
+        "read",
+        "write"
+    })
+    ---@type boolean, any
+    local ok, err = pcall(function()
+        local page = client.game_screen:get_page()
+        game_client.select(client, {
+            "Bilbosza",
+            "Smaug"
+        })
+        local px, py = page:get_position()
+        page:on_pointer_down(px + 100, py + 100, Consts.PAGE_DRAG_TOKEN_BUTTON)
+        page:on_pointer_move(px + 160, py + 100)
+        page:on_pointer_up(px + 160, py + 100, Consts.PAGE_DRAG_TOKEN_BUTTON)
+        assert_moves(client, sent_moves(client), {
+            "Bilbosza",
+            "Smaug"
+        })
+        page:on_pointer_down(px + 100, py + 100, Consts.PAGE_DRAG_TOKEN_BUTTON)
+        page:on_pointer_move(px + 200, py + 140)
+        page:on_pointer_move(px + 100, py + 100)
+        page:on_pointer_up(px + 100, py + 100, Consts.PAGE_DRAG_TOKEN_BUTTON)
+        test.assert_deep_eq(sent_moves(client), {}, "back where it began")
+    end)
+    game_client.finish(client)
+    if not ok then
+        error(err, 0)
+    end
+end)
+
 ---@param page Page
 ---@return number, number, number, number The page's rectangle in the view's coordinates, for a square page as the test data's
 local function map_rect(page)

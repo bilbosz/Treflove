@@ -9,10 +9,13 @@ local LoginScreen = require("login.login-screen")
 local NewGameScreen = require("screens.new-game-screen")
 local PermissionSet = require("game.permission-set")
 local SignUpScreen = require("login.sign-up-screen")
+local TokenChangedRp = require("game.token-changed-rp")
+local UpdateTokenRp = require("game.update-token-rp")
 local UserMenuScreen = require("screens.user-menu-screen")
 local WaitingScreen = require("screens.waiting-screen")
 local lifetime = require("lifetime")
 local permissions = require("game.permissions")
+local token_id = require("game.token.token-id")
 
 ---@class Session: Object
 ---@field _user string|nil Logged-in user name
@@ -22,6 +25,8 @@ local permissions = require("game.permissions")
 ---@field _game_data_rp GameDataRp
 ---@field _list_games_rp ListGamesRp
 ---@field _create_game_rp CreateGameRp
+---@field _update_token_rp UpdateTokenRp
+---@field _token_changed_rp TokenChangedRp
 ---@field _game Game|nil The selected game, from `select_game` to the logout (server only)
 ---@field _user_menu_screen UserMenuScreen|nil
 ---@field _game_screen GameScreen|nil The game screen, while the user is in the game (client only)
@@ -33,6 +38,58 @@ local permissions = require("game.permissions")
 ---@field _new_game_screen NewGameScreen|nil Over the games list, from `show_new_game` to its way back or a join (client only)
 ---@field _period lifetime.Token|nil The "logged in" span (client only): the menu screen, the games and new-game screens, the game screen and their back entries die with it
 local Session = class("Session")
+
+---@param a TokenDataValue|nil
+---@param b TokenDataValue|nil
+---@return boolean
+local function _values_equal(a, b)
+    if type(a) ~= "table" or type(b) ~= "table" then
+        return a == b
+    end
+    if #a ~= #b then
+        return false
+    end
+    for i = 1, #a do
+        if a[i] ~= b[i] then
+            return false
+        end
+    end
+    return true
+end
+
+---@param data GameData
+---@param key string
+---@return boolean Whether the key holds an asset path: an `image` property, or `avatar`, which every token draws, when the properties are not readable
+local function _is_image(data, key)
+    local property = data.token_properties[key]
+    if property then
+        return property.type == "image"
+    end
+    return key == "avatar"
+end
+
+---@param entry TokenData The client's
+---@param token Token|nil Its control, when the shown page has it
+---@param key string
+---@param value TokenDataValue
+local function _set_token_value(entry, token, key, value)
+    if key == "position" then
+        local x, y = value[1], value[2]
+        assert(type(x) == "number" and type(y) == "number", "a position is two numbers")
+        if token then
+            token:set_position(x, y)
+        else
+            entry.position = {
+                x,
+                y
+            }
+        end
+    elseif token then
+        token:set_data(key, value)
+    else
+        entry[key] = value
+    end
+end
 
 ---@param self Session
 ---@param user string
@@ -64,6 +121,9 @@ local function _on_logout(self)
     assert(self._user)
     self._user = nil
     self._permissions = nil
+    if self._game then
+        self._game:remove_session(self)
+    end
     self._game = nil
     if app.is_client then
         lifetime.destroy(self._period)
@@ -102,6 +162,8 @@ function Session:init(connection)
     self._game_data_rp = GameDataRp(self):attach_lifetime(self)
     self._list_games_rp = ListGamesRp(self):attach_lifetime(self)
     self._create_game_rp = CreateGameRp(self):attach_lifetime(self)
+    self._update_token_rp = UpdateTokenRp(self):attach_lifetime(self)
+    self._token_changed_rp = TokenChangedRp(self):attach_lifetime(self)
     app.asset_manager:register_session(self)
 end
 
@@ -142,7 +204,11 @@ function Session:select_game(id)
     end
     game:add_player(user, "player")
     local data = game:get_data()
+    if self._game then
+        self._game:remove_session(self)
+    end
     self._game = game
+    game:add_session(self)
     self._permissions = PermissionSet(user, permissions.resolve(data, user), data)
     return true
 end
@@ -155,6 +221,119 @@ end
 ---@return boolean Whether a game is selected (server only)
 function Session:is_in_game()
     return self._game ~= nil
+end
+
+---@return TokenChangedRp What the server pushes another session's token changes through
+function Session:get_token_changed_rp()
+    return self._token_changed_rp
+end
+
+---@param id string The token's id as the client holds it now
+---@param changes table<string, TokenDataValue> As `UpdateTokenRequest.changes`
+---@param new_id string|nil The id the token was renamed to locally (the client renames first, the server confirms or the refusal restores)
+function Session:update_token(id, changes, new_id)
+    assert(app.is_client)
+    self._update_token_rp:send_request({
+        id = id,
+        new_id = new_id,
+        changes = changes
+    })
+end
+
+---@param id string The token's id as the client holds it
+---@param new_id string|nil The id to rename it to first; one the client's data refuses (`token_id.check`) is logged and the token keeps its id
+---@param token TokenData|nil The server's entry: every key whose value differs from the client's is applied, the others left alone
+function Session:apply_token(id, new_id, token)
+    assert(app.is_client)
+    local data = app.data
+    if not data or not data.tokens[id] then
+        return
+    end
+    local game_screen = self._game_screen
+    local control = game_screen and game_screen:get_page():try_find_token(id)
+    local changed = false
+    if new_id then
+        changed = self:_rename_token(data, id, new_id, control)
+        id = changed and new_id or id
+    end
+    if token then
+        changed = self:_apply_token_values(data, data.tokens[id], control, token) or changed
+    end
+    if changed then
+        self:_refresh_token_panel(control)
+    end
+end
+
+---@private
+---@param data GameData The client's
+---@param id string
+---@param new_id string
+---@param control Token|nil The token on the shown page
+---@return boolean Whether it was renamed
+function Session:_rename_token(data, id, new_id, control)
+    local reason = token_id.check(data, new_id)
+    if reason then
+        app:log(string.format("The token %q is not renamed to %q: %s", id, new_id, reason))
+        return false
+    end
+    if control then
+        control:set_id(new_id)
+    else
+        token_id.rename(data, id, new_id)
+        if self._permissions then
+            self._permissions:rename_key(permissions.Kind.TOKENS, id, new_id)
+        end
+    end
+    return true
+end
+
+---@private
+---@param data GameData The client's
+---@param entry TokenData The client's entry
+---@param control Token|nil The token on the shown page
+---@param token TokenData The server's entry
+---@return boolean Whether a value changed now; an image the store lacks changes once it is downloaded
+function Session:_apply_token_values(data, entry, control, token)
+    local store = app.asset_manager:get_store()
+    ---@type table<string, string>
+    local downloads = {}
+    local changed = false
+    ---@type table<string, TokenDataValue>
+    local values = token
+    for key, value in pairs(values) do
+        if not _values_equal(entry[key], value) then
+            if _is_image(data, key) and store and type(value) == "string" and not store:asset(value):get_type() then
+                downloads[key] = value
+            else
+                _set_token_value(entry, control, key, value)
+                changed = true
+            end
+        end
+    end
+    if next(downloads) then
+        ---@type string[]
+        local paths = {}
+        for _, path in pairs(downloads) do
+            table.insert(paths, path)
+        end
+        app.asset_manager:download_missing_assets(paths, function()
+            local alive = control and lifetime.alive(control) and control or nil
+            for key, path in pairs(downloads) do
+                _set_token_value(entry, alive, key, path)
+            end
+            self:_refresh_token_panel(alive)
+        end)
+    end
+    return changed
+end
+
+---@private
+---@param control Token|nil A changed token on the shown page
+function Session:_refresh_token_panel(control)
+    local game_screen = self._game_screen
+    if control and game_screen and game_screen:get_selection():get_select_set()[control] then
+        game_screen:on_selection_change()
+    end
 end
 
 ---@return Connection

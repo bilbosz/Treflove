@@ -9,6 +9,17 @@ local permissions = require("game.permissions")
 ---@field private _data GameData What the `@owned` selector reads, as it is when asked
 local PermissionSet = class("PermissionSet")
 
+---@param grants string[]
+---@return Grant[]
+local function _parse_all(grants)
+    ---@type Grant[]
+    local parsed = {}
+    for _, text in ipairs(grants) do
+        table.insert(parsed, permissions.parse(text))
+    end
+    return parsed
+end
+
 ---@param login string
 ---@param grants string[]
 ---@param data GameData The game the grants are on: the server's own, the client's `app.data`
@@ -17,10 +28,7 @@ function PermissionSet:init(login, grants, data)
     self._login = login
     self._data = data
     self._grants = table.copy(grants)
-    self._parsed = {}
-    for _, text in ipairs(grants) do
-        table.insert(self._parsed, permissions.parse(text))
-    end
+    self._parsed = _parse_all(grants)
 end
 
 ---@return string
@@ -31,6 +39,14 @@ end
 ---@return string[]
 function PermissionSet:get_grants()
     return table.copy(self._grants)
+end
+
+---@param kind permissions.Kind
+---@param key string
+---@param new_key string
+function PermissionSet:rename_key(kind, key, new_key)
+    self._grants = permissions.rename_key(self._grants, kind, key, new_key)
+    self._parsed = _parse_all(self._grants)
 end
 
 ---@param data GameData

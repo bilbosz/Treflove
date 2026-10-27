@@ -426,3 +426,100 @@ test.case("the other properties apply when the id is refused", function()
         test.assert_eq(token:get_data().name, "Bilbo the Great")
     end)
 end)
+
+---@param client GameClient
+---@return UpdateTokenRequest[] The requests the client sent since the last call, by token id order
+local function sent_updates(client)
+    ---@type UpdateTokenRequest[]
+    local requests = {}
+    while client.connection:get_out_channel():getCount() > 0 do
+        table.insert(requests, game_client.pop_request(client, "UpdateTokenRp") --[[@as UpdateTokenRequest]] )
+    end
+    table.sort(requests, function(a, b)
+        return a.id < b.id
+    end)
+    return requests
+end
+
+test.case("an apply sends the rename and the changed properties of the token, and nothing when nothing changed", function()
+    with_client({
+        "read",
+        "write:tokens/@owned"
+    }, function(client)
+        game_client.select(client, {
+            "Bilbosza"
+        })
+        assert(property_by_key(client, "name").input):set_text("Bilbo the Great")
+        local diameter = assert(property_by_key(client, "diameter").input) --[[@as NumberInput]]
+        diameter:set_number(2)
+        test.assert_deep_eq(apply_id(client, "Bilbo"), {})
+        test.assert_deep_eq(sent_updates(client), {
+            {
+                id = "Bilbosza",
+                new_id = "Bilbo",
+                changes = {
+                    name = "Bilbo the Great",
+                    diameter = 2
+                }
+            }
+        })
+        game_client.click(client, assert(apply_button(client)))
+        test.assert_deep_eq(sent_updates(client), {}, "applied again, nothing changed")
+        test.assert_deep_eq(apply_id(client, "Baggins"), {})
+        test.assert_deep_eq(sent_updates(client), {
+            {
+                id = "Bilbo",
+                new_id = "Baggins",
+                changes = {}
+            }
+        }, "a rename alone")
+    end)
+end)
+
+test.case("an apply over several tokens sends one update per token the change reached", function()
+    with_client({
+        "read",
+        "write"
+    }, function(client)
+        game_client.select(client, {
+            "Bilbosza",
+            "Smaug"
+        })
+        local name = assert(property_by_key(client, "name").input)
+        name:set_text("Smaug")
+        name:on_edit("Smaug")
+        game_client.click(client, assert(apply_button(client)))
+        test.assert_deep_eq(sent_updates(client), {
+            {
+                id = "Bilbosza",
+                changes = {
+                    name = "Smaug"
+                }
+            }
+        }, "Smaug had the name already")
+    end)
+end)
+
+test.case("an image chosen in the assets workspace sends an update per token whose property changed", function()
+    with_client({
+        "read",
+        "write"
+    }, function(client)
+        game_client.select(client, {
+            "Bilbosza",
+            "Smaug"
+        })
+        local panel = client.game_screen:get_token_panel()
+        ---@diagnostic disable-next-line: invisible
+        panel:_set_image("avatar", "token/s.png")
+        test.assert_deep_eq(sent_updates(client), {
+            {
+                id = "Bilbosza",
+                changes = {
+                    avatar = "token/s.png"
+                }
+            }
+        })
+        test.assert_eq(game_client.find_token(client, "Bilbosza"):get_data().avatar, "token/s.png")
+    end)
+end)

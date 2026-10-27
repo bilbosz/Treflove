@@ -354,6 +354,29 @@ test.case("@owned matches the entries whose owners list the login, in the set's 
     test.assert_true(set:allows(Action.WRITE, Kind.TOKENS, "Bilbosz"), "evaluated when asked")
 end)
 
+test.case("rename_key renames the grants on a key in place, and the set answers under the new key", function()
+    local data = game_data()
+    local set = PermissionSet("piotr", {
+        "read",
+        "write:tokens/Bilbosz",
+        "view:tokens/Bilbosz",
+        "write:tokens/@owned",
+        "write:pages/Bilbosz"
+    }, data)
+    set:rename_key(Kind.TOKENS, "Bilbosz", "Bilbo")
+    test.assert_deep_eq(set:get_grants(), {
+        "read",
+        "write:tokens/Bilbo",
+        "view:tokens/Bilbo",
+        "write:tokens/@owned",
+        "write:pages/Bilbosz"
+    })
+    test.assert_true(set:allows(Action.WRITE, Kind.TOKENS, "Bilbo"))
+    test.assert_true(set:allows(Action.VIEW, Kind.TOKENS, "Bilbo"))
+    test.assert_false(set:allows(Action.WRITE, Kind.TOKENS, "Bilbosz"))
+    test.assert_true(set:allows(Action.WRITE, Kind.PAGES, "Bilbosz"), "another kind's key stays")
+end)
+
 test.suite("permissions.filter")
 
 test.case("reading everything keeps every entry and the name, a copy", function()
@@ -492,6 +515,28 @@ test.case("the server's session resolves its set when the game is selected and c
     end, "not after the logout")
     test.assert_false(session:is_in_game(), "nor the game")
     mocks.finish_server_session(side)
+end)
+
+test.case("the server's session is one of its game's sessions from the selection to the logout or its death", function()
+    local side = mocks.make_server_session(game_data, {})
+    local session = side.session
+    log_in(session, "piotr")
+    test.assert_true((session:select_game(mocks.GAME_ID)))
+    local game = session:get_game()
+    test.assert_deep_eq(game:get_sessions(), {
+        session
+    })
+    test.assert_true((session:select_game(mocks.GAME_ID)), "selected again")
+    test.assert_deep_eq(game:get_sessions(), {
+        session
+    }, "once")
+    log_out(session)
+    test.assert_deep_eq(game:get_sessions(), {}, "the logout left it")
+    log_in(session, "piotr")
+    test.assert_true((session:select_game(mocks.GAME_ID)))
+    lifetime.destroy(side.connection)
+    test.assert_deep_eq(game:get_sessions(), {}, "a dead session is not listed")
+    mocks.restore_love_filesystem(side.previous_filesystem)
 end)
 
 test.case("the client's session takes its grants after the login and drops them at logout", function()
