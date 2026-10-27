@@ -193,17 +193,26 @@ sees it and drags it together with Bilbo in one drag, which adam's
 client and the save show; adam deletes it from the token panel and bob loses it,
 the grants naming it gone from the save; bob's New Token entry is
 read-only, and piotr's creation and deletion sent past his gate are
-refused with their reasons) and `game-panels` (the side panels: adam
-creates the page `Cellar` from the Pages panel, shows it from the Game
-panel and bob's client switches to it, grants piotr `write:tokens` from
-the Permissions panel, which bob's session answers at once, adds the
-token property `hp` and retitles the `player` group, the save holding
-each; a creation bob sends past his gate is refused). The shared steps `steps.select_token` and
+refused with their reasons) and `game-panels` (the side panels over
+the wire: adam creates the page `Cellar` from the Pages panel, its
+image picked in the workspace, shows it from the Game panel and bob's
+client switches to it, sets piotr's grants to `write:tokens` from the
+Permissions panel, which bob's session holds within the wait and his
+New Token entry becomes writable, creates the token property `hp` and
+retitles the group `player`, the save holding each, and shows Meadow
+again on both clients; a page creation bob sends past his gate is
+refused with its reason and nothing saved). The shared steps `steps.select_token` and
 `steps.drag_token` select a token with a rectangle and drag it with the
 token-drag button, as a player does, `steps.select_tokens` several with
 one rectangle; `steps.enter_game` enters a game from the menu, `steps.create_token` creates one through the New Token
 screen and `steps.delete_token` deletes one, selected alone, from the
-panel.
+panel. For the side panels: `steps.open_panel` shows one by its quick
+access entry (an entry already active is not clicked again, which would
+hide its panel) and returns it, `steps.select_entry` selects an entry
+in an entries panel's list, `steps.set_text` replaces a field's text as
+a player types it (the field clicked, emptied with Backspace, the text
+typed) and `steps.pick_image` picks an image in the workspace a
+Browse... button opened, with Use.
 
 ### The fixture
 

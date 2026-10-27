@@ -36,6 +36,9 @@ converges on the server's entry at every answer. Still missing:
   join
 - A page image changed by another client is downloaded before the shown
   page is rebuilt; an image of a page that is not shown is not
+- A group's or a player's grants are edited in one single-line field,
+  separated by spaces, so a long list shows its end only; a list of
+  fields, one grant each, would read better
 - Deleting a property (the wire carries no `nil`; a property of a token
   can only be set, and a `number` field holding no number refuses the
   apply), and giving a token a property it lacks

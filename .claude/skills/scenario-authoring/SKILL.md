@@ -74,7 +74,11 @@ script starts one extra client per peer (see "Several clients").
   bounding square, dragged by an offset in screen units), `select_tokens`
   (several, with one rectangle), `enter_game`
   (a game from the menu), `create_token` (through the New Token screen)
-  and `delete_token` (a selected token, from the panel's Delete); a step
+  and `delete_token` (a selected token, from the panel's Delete),
+  `open_panel` (a side panel by its quick access entry), `select_entry`
+  (an entry in an entries panel's list), `set_text` (a field's text
+  replaced as a player types it) and `pick_image` (an image through the
+  workspace a Browse... button opened); a step
   used by two scenarios goes there, named for what it reaches. The folder is skipped
   by `./format-code.sh`, which skips every path containing `lib/` and
   rewrites the whole project, so one file is formatted with `lua-format
@@ -218,3 +222,10 @@ runs it under the debugger with breakpoints in the scenario file
 - Escape on the user menu logs out (it is the logged-in period's back
   entry): one Escape too many in a menu scenario lands on the login
   screen.
+- `scenarios/lib/steps.lua` and every scenario file are loaded under
+  plain LuaJIT by `tools/scenario-info.lua` before the run, so they must
+  not require `utf8` or another module only LÖVE provides at load time;
+  `./scenario.sh` exits 2 on such a require.
+- An image field of a panel is read-only: a scenario fills it through
+  Browse... and the workspace's Use (`steps.pick_image`), as a player
+  does.

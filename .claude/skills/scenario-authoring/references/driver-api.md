@@ -62,7 +62,16 @@ it; `join_game` is `log_in` followed by it),
 "Create", waits for the game screen showing the token, returns the
 `Token`), `delete_token(driver, label)` (the token selected alone, the
 panel's "Delete", waits for it to be gone; the step fails when anything
-else is selected with it, since Delete removes the whole selection).
+else is selected with it, since Delete removes the whole selection),
+`open_panel(driver, caption)` (a side panel by its quick access entry,
+`Tokens`, `Game`, `Pages`, `Groups`, `Permissions` or
+`Token Properties`, shown and returned; an active entry is not clicked
+again, since that would hide its panel), `select_entry(driver, panel,
+id)` (the entries panel's list button, waits for the selection),
+`set_text(driver, input, text)` (the field clicked, emptied with
+Backspace, the text typed and checked), `pick_image(driver, path)` (in
+a workspace opened by a Browse... button: the folder opened, the file
+selected, Use, back to the game screen; a file one folder deep).
 
 What the fixture's basic world holds: the accounts `adam` and `piotr`
 (`accounts.lua`) and one game, `Meadow` (`games/meadow/`), with the page
