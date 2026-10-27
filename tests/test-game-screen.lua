@@ -168,3 +168,48 @@ test.case("Tab skips the hidden panel's inputs", function()
         test.assert_false(id_input:is_focused())
     end)
 end)
+
+---@param client GameClient
+---@param caption string
+---@return TextButton
+local function quick_access_button(client, caption)
+    ---@diagnostic disable-next-line: invisible
+    return assert(client.game_screen._quick_access_panel._buttons[caption])
+end
+
+---@param grants string[]
+---@param fn fun(client: GameClient)
+local function with_grants(grants, fn)
+    local client = game_client.enter(grants)
+    ---@type boolean, any
+    local ok, err = pcall(fn, client)
+    game_client.finish(client)
+    if not ok then
+        error(err, 0)
+    end
+end
+
+test.case("the New Token entry follows Assets, and a click shows the new token screen", function()
+    with_client(function(client)
+        local assets, new_token = quick_access_button(client, "Assets"), quick_access_button(client, "New Token")
+        test.assert_true(new_token:get_position() > assets:get_position())
+        test.assert_false(new_token:is_read_only(), "the master writes the tokens")
+        game_client.click(client, new_token)
+        test.assert_eq(get_class_name_of(client.app.screen_manager:get_screen()), "NewTokenScreen")
+        test.assert_eq(client.app.screen_manager:get_screen(), client.session:get_new_token_screen())
+    end)
+end)
+
+test.case("the New Token entry is read-only, dimmed and not clickable, for a player who writes only the tokens they own", function()
+    with_grants({
+        "read",
+        "write:tokens/@owned"
+    }, function(client)
+        local new_token = quick_access_button(client, "New Token")
+        test.assert_true(new_token:is_read_only())
+        test.assert_deep_eq(new_token:get_color(), Consts.BUTTON_READ_ONLY_COLOR)
+        game_client.click(client, new_token)
+        test.assert_eq(client.app.screen_manager:get_screen(), client.game_screen)
+        test.assert_eq(client.session:get_new_token_screen(), nil)
+    end)
+end)

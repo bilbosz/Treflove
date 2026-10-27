@@ -35,6 +35,9 @@ converges on the server's entry at every answer. Still missing:
   changed by another client is not downloaded)
 - A deletion asks no confirmation; a token deleted by another client
   while its panel is open loses the edits typed into it
+- A creator with `write` but no `read` on the tokens gets no entry back
+  (the response carries it only when the session reads it, as a change's
+  does), so the token appears nowhere on their client
 - A grant given in the save while a player is in the game reaches their
   session only at the next join; a `GrantsChangedRp` would push it
 

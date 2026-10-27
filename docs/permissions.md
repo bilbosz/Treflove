@@ -125,8 +125,8 @@ every question is answered no.
 - **The client's UI**: the token panel is read-only (inputs read-only, no
   Apply, its "Show in assets..." button opens the workspace to look,
   without Use) when
-  any selected token is not writable, and shows Delete for a writable
-  selection only; the game's New Token entry is read-only without `write`
+  any selected token is not writable, and shows Delete for a non-empty
+  writable selection only; the game's New Token entry is read-only without `write`
   on the tokens kind; dragging moves only the
   writable tokens of the selection; the assets workspace gates its name
   field and its actions by what the listing said (`writable`).

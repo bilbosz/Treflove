@@ -187,15 +187,16 @@ piotr's client sends past its own gate, `Session:update_token` through the
 console, is refused by the server with the reason notified) and
 `create-token` (the second slice: adam creates a token from the game's
 New Token entry, which bob, who may not read it, does not see; granted
-`read` and `write` on it in the save, bob enters the game again, sees it
-and drags it together with Bilbo in one drag, which adam's client and
-the save show; adam deletes it from the token panel and bob loses it,
+`read` and `write` on it, and `write` on the tokens he owns, in the
+game's data through the server's console, bob enters the game again,
+sees it and drags it together with Bilbo in one drag, which adam's
+client and the save show; adam deletes it from the token panel and bob loses it,
 the grants naming it gone from the save; bob's New Token entry is
 read-only, and piotr's creation and deletion sent past his gate are
 refused with their reasons). The shared steps `steps.select_token` and
 `steps.drag_token` select a token with a rectangle and drag it with the
-token-drag button, as a player does; `steps.enter_game` enters a game
-from the menu, `steps.create_token` creates one through the New Token
+token-drag button, as a player does, `steps.select_tokens` several with
+one rectangle; `steps.enter_game` enters a game from the menu, `steps.create_token` creates one through the New Token
 screen and `steps.delete_token` deletes a selected one from the panel.
 
 ### The fixture

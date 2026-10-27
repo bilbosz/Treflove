@@ -49,4 +49,9 @@ function MenuTextInput:get_text()
     return self._input:get_text()
 end
 
+---@param text string
+function MenuTextInput:set_text(text)
+    self._input:set_text(text)
+end
+
 return MenuTextInput

@@ -421,15 +421,18 @@ read-only without `write` on the tokens kind: `NewTokenScreen`
 (`screens/new-token-screen.lua`), a menu screen over the game with the
 fields Id, Name and Avatar (a path in the game's store, typed or chosen
 with Browse..., which opens the assets workspace with an `AssetPick` and
-fills the field on the way back) and the buttons Create and Back. Create
-checks the id (`token_id.check`), the name and the avatar, each refusal a
-notification, and sends `CreateTokenRp` (`Session:create_token`) with the
-shown page and an entry of a 1 m diameter at the view's center
-(`Page:get_view_center`). The server (`CreateTokenRp:send_response`)
+fills the field on the way back) and the buttons Browse..., Create and
+Back; Enter in any field creates too. Create checks the id
+(`token_id.check`), the name and the avatar, each refusal a notification
+that keeps the screen, and sends `CreateTokenRp` (`Session:create_token`)
+with the shown page and an entry of a 1 m diameter at the view's center
+(`Page:get_view_center`); the screen closes once the server created the
+token, and leaving the game or logging out closes it too. The server (`CreateTokenRp:send_response`)
 refuses a session not in a game or without `write` on the whole kind, an
 id `token_id.check` refuses, an unknown page, an entry lacking `name`,
-`diameter`, `avatar` or `position`, a key `UpdateTokenRp` would refuse to
-change (`owners` among them: a created token belongs to the game, so
+`diameter`, `avatar` or `position`, a key a change may not set
+(`token_id.find_unchangeable`, the one rule of both procedures; `owners`
+among the refused: a created token belongs to the game, so
 nobody's `@owned` grant covers it and who may move it is a matter of
 grants alone) or an avatar the game's store has no file for; otherwise it
 copies the accepted fields into the data, appends the id to the page's
@@ -439,8 +442,8 @@ creator's answer and the push take one path, `Session:apply_token_created`:
 an avatar the store lacks is downloaded first, the entry goes into the
 data and the page's list, and the shown page builds the control
 (`Page:add_token`). A token is deleted with the token panel's Delete
-button, shown for a writable selection, one `DeleteTokenRp` per selected
-token: the server refuses a session not in a game, an unknown id or a
+button, shown between Cancel and Apply for a writable selection of at
+least one token, one `DeleteTokenRp` per selected token: the server refuses a session not in a game, an unknown id or a
 session without `write` on the token; otherwise it decides who may read
 the token before removing it, removes it (`token_id.remove`: the entry,
 every page's list, the grants naming it in the groups' and the players'
@@ -454,9 +457,10 @@ deletion are applied when the server answers, so a refusal has nothing to
 restore; a change stays applied first, so a drag never snaps back while
 the answer is on its way. What is left for the next slice: pages,
 players, groups and token properties are not synchronized, and a property
-cannot be deleted (the wire carries no `nil`; a `number` field holding no
-number refuses the apply with a notification instead of deleting the
-property).
+cannot be deleted (the wire carries no `nil`; an apply while a `number`
+field that is not left multivalue holds no number is refused as a whole,
+before the rename, with the notification `<Title> needs a number`,
+nothing applied or sent and the fields keeping their text).
 
 ## Asset Management
 

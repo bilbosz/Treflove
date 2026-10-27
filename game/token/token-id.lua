@@ -3,6 +3,51 @@ local permissions = require("game.permissions")
 ---@class token_id
 local token_id = {}
 
+---@type table<TokenPropertyType, type>
+local CHANGEABLE_TYPES = {
+    string = "string",
+    number = "number",
+    image = "string"
+}
+
+---@param value TokenDataValue|nil
+---@return number|nil x `nil` unless the value is a position, a table of two numbers
+---@return number|nil y
+function token_id.read_position(value)
+    if type(value) ~= "table" or #value ~= 2 then
+        return nil, nil
+    end
+    local x, y = value[1], value[2]
+    if type(x) ~= "number" or type(y) ~= "number" then
+        return nil, nil
+    end
+    return x, y
+end
+
+---@param data GameData
+---@param key string
+---@param value TokenDataValue
+---@return boolean
+local function _is_changeable(data, key, value)
+    if key == "position" then
+        return token_id.read_position(value) ~= nil
+    end
+    local property = data.token_properties[key]
+    return property ~= nil and CHANGEABLE_TYPES[property.type] == type(value)
+end
+
+---@param data GameData
+---@param changes table<string, TokenDataValue>
+---@return string|nil The first key a player cannot set to its value over the wire, one other than the position and the `string`, `number` and `image` properties or a value of the wrong type; `nil` when every one can
+function token_id.find_unchangeable(data, changes)
+    for key, value in pairs(changes) do
+        if type(key) ~= "string" or not _is_changeable(data, key, value) then
+            return tostring(key)
+        end
+    end
+    return nil
+end
+
 ---@param data GameData
 ---@param id string
 ---@return string|nil Why `id` cannot be a token's id, for the user; `nil` when it can

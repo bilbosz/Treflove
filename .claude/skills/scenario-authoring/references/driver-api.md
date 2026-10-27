@@ -30,9 +30,11 @@ by the loop's poll in between, through the same callbacks as real input.
 | `headless` | true under `--headless` | |
 
 The reply of `server` and of a peer's chunk is the console's `ok` body:
-the return values, a table through `table.to_string`, anything else
-through `tostring`, joined by tabs; no value gives an empty string. A
-number comes back as its string.
+the return values, a table through `table.to_string` with its leading
+`return ` stripped (so a scenario decodes one with
+`table.from_string("return " .. body)`, as `create-token` reads the save),
+anything else through `tostring`, joined by tabs; no value gives an empty
+string. A number comes back as its string.
 
 The shared steps (`scenarios/lib/steps.lua`): `log_in(driver, login?,
 password?)` (waits for the login screen, fills both fields, "Sign In",
@@ -51,8 +53,11 @@ over the token's bounding square with the select button, returns the
 token-drag button by `dx`, `dy` screen units, returns its position in
 page meters; the move reaches the server when the drag ends, and the
 other clients in the game about 25 ms later headless, which
-`move-token` measures), `enter_game(driver, game?)` (from the menu:
-"Games", the game's button, waits for the game screen, returns it),
+`move-token` measures), `select_tokens(driver, labels)` (one rectangle
+over the union of the tokens' bounding squares, returns the `Token[]`;
+`select_token` is the one-label case), `enter_game(driver, game?)` (from
+the menu: "Games", the game's button, waits for the game screen, returns
+it; `join_game` is `log_in` followed by it),
 `create_token(driver, id, name, avatar)` ("New Token", the three fields,
 "Create", waits for the game screen showing the token, returns the
 `Token`), `delete_token(driver, label)` (the token selected, the panel's
