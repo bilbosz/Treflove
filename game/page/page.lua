@@ -6,6 +6,7 @@ local ClippingRectangle = require("controls.clipping-rectangle")
 local Selection = require("game.page.selection")
 local Token = require("game.token.token")
 local Consts = require("app.consts")
+local lifetime = require("lifetime")
 
 ---@class PageData
 ---@field name string
@@ -76,7 +77,7 @@ function Page:init(data, game_screen, width, height)
 
     self._tokens = {}
     for _, id in ipairs(data.tokens) do
-        table.insert(self._tokens, Token(id, app.data.tokens[id], self._page_coordinates))
+        self:add_token(id)
     end
 
     local pointer_event_manager = app.pointer_event_manager
@@ -192,6 +193,31 @@ end
 ---@return Token[]
 function Page:get_tokens()
     return self._tokens
+end
+
+---@param id string A key of `app.data.tokens`
+---@return Token The token built on the page, over the others
+function Page:add_token(id)
+    local token = Token(id, app.data.tokens[id], self._page_coordinates)
+    table.insert(self._tokens, token)
+    return token
+end
+
+---@param token Token One of the page's: it leaves the page, the drag in progress and the selection, and is destroyed
+function Page:remove_token(token)
+    local index = assert(table.find_array_idx(self._tokens, token), "the token is on the page")
+    table.remove(self._tokens, index)
+    if self._select_set_start_pos then
+        self._select_set_start_pos[token] = nil
+    end
+    self._selection:remove(token)
+    lifetime.destroy(token)
+end
+
+---@return number, number The center of the fit area, in page meters
+function Page:get_view_center()
+    local w, h = self:get_fit_size()
+    return self._page_coordinates:transform_to_local(self:transform_to_global(w * 0.5, h * 0.5))
 end
 
 ---@param x number
