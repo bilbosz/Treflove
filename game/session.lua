@@ -1,10 +1,16 @@
 local AssetsWorkspaceScreen = require("game.assets.workspace.assets-workspace-screen")
 local CreateGameRp = require("game.create-game-rp")
+local CreateEntryRp = require("game.entry.create-entry-rp")
 local CreateTokenRp = require("game.create-token-rp")
+local DeleteEntryRp = require("game.entry.delete-entry-rp")
 local DeleteTokenRp = require("game.delete-token-rp")
+local EntryChangedRp = require("game.entry.entry-changed-rp")
+local EntryCreatedRp = require("game.entry.entry-created-rp")
+local EntryDeletedRp = require("game.entry.entry-deleted-rp")
 local GameDataRp = require("game.game-data-rp")
 local GameScreen = require("game.game-screen")
 local GamesScreen = require("screens.games-screen")
+local GrantsChangedRp = require("game.entry.grants-changed-rp")
 local ListGamesRp = require("game.list-games-rp")
 local Login = require("login.login")
 local LoginScreen = require("login.login-screen")
@@ -15,9 +21,11 @@ local SignUpScreen = require("login.sign-up-screen")
 local TokenChangedRp = require("game.token-changed-rp")
 local TokenCreatedRp = require("game.token-created-rp")
 local TokenDeletedRp = require("game.token-deleted-rp")
+local UpdateEntryRp = require("game.entry.update-entry-rp")
 local UpdateTokenRp = require("game.update-token-rp")
 local UserMenuScreen = require("screens.user-menu-screen")
 local WaitingScreen = require("screens.waiting-screen")
+local entries = require("game.entry.entries")
 local lifetime = require("lifetime")
 local permissions = require("game.permissions")
 local token_id = require("game.token.token-id")
@@ -36,6 +44,13 @@ local token_id = require("game.token.token-id")
 ---@field _delete_token_rp DeleteTokenRp
 ---@field _token_created_rp TokenCreatedRp
 ---@field _token_deleted_rp TokenDeletedRp
+---@field _update_entry_rp UpdateEntryRp
+---@field _entry_changed_rp EntryChangedRp
+---@field _create_entry_rp CreateEntryRp
+---@field _delete_entry_rp DeleteEntryRp
+---@field _entry_created_rp EntryCreatedRp
+---@field _entry_deleted_rp EntryDeletedRp
+---@field _grants_changed_rp GrantsChangedRp
 ---@field _game Game|nil The selected game, from `select_game` to the logout (server only)
 ---@field _user_menu_screen UserMenuScreen|nil
 ---@field _game_screen GameScreen|nil The game screen, while the user is in the game (client only)
@@ -49,8 +64,8 @@ local token_id = require("game.token.token-id")
 ---@field _period lifetime.Token|nil The "logged in" span (client only): the menu screen, the games and new-game screens, the game screen and their back entries die with it
 local Session = class("Session")
 
----@param a TokenDataValue|nil
----@param b TokenDataValue|nil
+---@param a TokenDataValue|EntryValue|nil
+---@param b TokenDataValue|EntryValue|nil
 ---@return boolean
 local function _values_equal(a, b)
     if type(a) ~= "table" or type(b) ~= "table" then
@@ -99,6 +114,16 @@ local function _set_token_value(entry, token, key, value)
     else
         entry[key] = value
     end
+end
+
+---@param kind EntryKind
+---@param id string
+---@return string For a log line, an unknown kind too
+local function _describe_entry(kind, id)
+    if entries.is_kind(kind) then
+        return entries.describe(kind, id)
+    end
+    return string.format("the entry %q of the unknown kind %q", tostring(id), tostring(kind))
 end
 
 ---@param self Session
@@ -180,6 +205,13 @@ function Session:init(connection)
     self._delete_token_rp = DeleteTokenRp(self):attach_lifetime(self)
     self._token_created_rp = TokenCreatedRp(self):attach_lifetime(self)
     self._token_deleted_rp = TokenDeletedRp(self):attach_lifetime(self)
+    self._update_entry_rp = UpdateEntryRp(self):attach_lifetime(self)
+    self._entry_changed_rp = EntryChangedRp(self):attach_lifetime(self)
+    self._create_entry_rp = CreateEntryRp(self):attach_lifetime(self)
+    self._delete_entry_rp = DeleteEntryRp(self):attach_lifetime(self)
+    self._entry_created_rp = EntryCreatedRp(self):attach_lifetime(self)
+    self._entry_deleted_rp = EntryDeletedRp(self):attach_lifetime(self)
+    self._grants_changed_rp = GrantsChangedRp(self):attach_lifetime(self)
     app.asset_manager:register_session(self)
 end
 
@@ -229,6 +261,21 @@ function Session:select_game(id)
     return true
 end
 
+---@return boolean Whether the grants changed: the set rebuilt from the selected game's data (server only); `false` without a game
+function Session:refresh_permissions()
+    assert(app.is_server)
+    local game = self._game
+    if not game then
+        return false
+    end
+    local user = assert(self._user, "a game needs a logged-in user")
+    local data = game:get_data()
+    local grants = permissions.resolve(data, user)
+    local previous = self._permissions and self._permissions:get_grants() or {}
+    self._permissions = PermissionSet(user, grants, data)
+    return not _values_equal(previous, grants)
+end
+
 ---@return Game The selected one (server only)
 function Session:get_game()
     return assert(self._game, "no game selected")
@@ -252,6 +299,26 @@ end
 ---@return TokenDeletedRp What the server pushes another session's token deletions through
 function Session:get_token_deleted_rp()
     return self._token_deleted_rp
+end
+
+---@return EntryChangedRp What the server pushes another session's entry changes through
+function Session:get_entry_changed_rp()
+    return self._entry_changed_rp
+end
+
+---@return EntryCreatedRp What the server pushes another session's new entries through
+function Session:get_entry_created_rp()
+    return self._entry_created_rp
+end
+
+---@return EntryDeletedRp What the server pushes another session's entry deletions through
+function Session:get_entry_deleted_rp()
+    return self._entry_deleted_rp
+end
+
+---@return GrantsChangedRp What the server pushes the session's own grants through when a change made them differ
+function Session:get_grants_changed_rp()
+    return self._grants_changed_rp
 end
 
 ---@param id string The token's id as the client holds it now
@@ -450,6 +517,211 @@ function Session:apply_token_deleted(id)
     end
 end
 
+---@param kind EntryKind
+---@param id string The entry's id as the client holds it, `entries.GAME_ID` for `game`
+---@param changes EntryValues As `UpdateEntryRequest.changes`
+---@param new_id string|nil The id to rename it to; nothing is applied before the server answers
+function Session:update_entry(kind, id, changes, new_id)
+    assert(app.is_client)
+    self._update_entry_rp:send_request({
+        kind = kind,
+        id = id,
+        new_id = new_id,
+        changes = changes
+    })
+end
+
+---@param kind EntryKind
+---@param id string The new entry's id
+---@param entry EntryData|EntryValues As `CreateEntryRequest.entry`
+---@param cb (fun(response: CreateEntryResponse))|nil Called with the answer, after it is applied or notified, while the session is alive and logged in
+function Session:create_entry(kind, id, entry, cb)
+    assert(app.is_client)
+    self._create_entry_rp:send_request({
+        kind = kind,
+        id = id,
+        entry = entry
+    }, function(response)
+        if cb and lifetime.alive(self) and self:is_logged_in() then
+            cb(response --[[@as CreateEntryResponse]] )
+        end
+    end)
+end
+
+---@param kind EntryKind
+---@param id string The entry's id as the client holds it
+function Session:delete_entry(kind, id)
+    assert(app.is_client)
+    self._delete_entry_rp:send_request({
+        kind = kind,
+        id = id
+    })
+end
+
+---@param kind EntryKind
+---@param id string The entry's id as the client holds it
+---@param new_id string|nil The id the server renamed it to; one the client's data refuses (`entries.check_rename`) is logged and the entry keeps its id
+---@param entry EntryData|nil The server's entry: every field set on the client's, a page's token list left as the client holds it
+function Session:apply_entry(kind, id, new_id, entry)
+    assert(app.is_client)
+    local data = app.data
+    if not data or not entries.is_kind(kind) or not entries.get(data, kind, id) then
+        app:log(string.format("A change of %s, which this client does not hold, ignored", _describe_entry(kind, id)))
+        return
+    end
+    if new_id then
+        local reason = entries.check_rename(data, kind, id, new_id)
+        if reason then
+            app:log(string.format("The %s %q is not renamed to %q: %s", entries.get_noun(kind), id, new_id, reason))
+        else
+            entries.rename(data, kind, id, new_id)
+            if self._permissions then
+                self._permissions:rename_key(entries.get_permission_kind(kind), id, new_id)
+            end
+            id = new_id
+        end
+    end
+    ---@type string|nil
+    local page_to_show
+    if entry then
+        page_to_show = self:_find_page_to_show(data, kind, id, entry)
+        ---@type EntryValues
+        local values = entry
+        ---@type EntryValues
+        local changes = {}
+        for key, value in pairs(values) do
+            if kind ~= "pages" or key ~= "tokens" then
+                changes[key] = value
+            end
+        end
+        entries.apply(data, kind, id, changes)
+    end
+    self:_update_game_screen(kind, id, page_to_show)
+end
+
+---@private
+---@param data GameData The client's, before the server's entry is applied
+---@param kind EntryKind
+---@param id string The entry's id after a rename
+---@param entry EntryData The server's
+---@return string|nil The page the game screen shows again: the new shown page, or the shown page when its image, width or scale changes
+function Session:_find_page_to_show(data, kind, id, entry)
+    ---@type EntryValues
+    local values = entry
+    if kind == "game" then
+        local page = values.page
+        if type(page) == "string" and page ~= data.game.page then
+            return page
+        end
+    elseif kind == "pages" and data.game.page == id then
+        local held = data.pages[id]
+        if values.image ~= held.image or values.width ~= held.width or values.pixel_per_meter ~= held.pixel_per_meter then
+            return id
+        end
+    end
+    return nil
+end
+
+---@private
+---@param kind EntryKind
+---@param id string The entry's id after the change
+---@param page string|nil The page to show again, a key of the client's `pages` or one it does not hold
+function Session:_update_game_screen(kind, id, page)
+    local game_screen = self._game_screen
+    if not game_screen or not lifetime.alive(game_screen) then
+        return
+    end
+    if page then
+        self:_show_page(page)
+    end
+    game_screen = self._game_screen
+    if game_screen and lifetime.alive(game_screen) then
+        game_screen:on_entries_change(kind, id)
+    end
+end
+
+---@private
+---@param id string The page the game screen shows, once its assets are in
+function Session:_show_page(id)
+    local data = assert(app.data)
+    local page = data.pages[id]
+    if not page then
+        app.notification_manager:notify("Nothing to show: no page you may see")
+        self:leave_game()
+        return
+    end
+    self:_download_missing_assets(GameDataRp.list_required_assets(data, page), function()
+        local game_screen = self._game_screen
+        local current = app.data
+        if lifetime.alive(self) and game_screen and lifetime.alive(game_screen) and current and current.game.page == id then
+            game_screen:show_page(id)
+        end
+    end)
+end
+
+---@private
+---@param paths string[]
+---@param cb fun() Called at once when the store has every one, once they are downloaded otherwise
+function Session:_download_missing_assets(paths, cb)
+    local store = app.asset_manager:get_store()
+    ---@type string[]
+    local missing = {}
+    for _, path in ipairs(paths) do
+        if store and not store:asset(path):get_type() then
+            table.insert(missing, path)
+        end
+    end
+    if #missing == 0 then
+        cb()
+    else
+        app.asset_manager:download_missing_assets(missing, cb)
+    end
+end
+
+---@param kind EntryKind
+---@param id string The new entry's id
+---@param entry EntryData The server's entry
+function Session:apply_entry_created(kind, id, entry)
+    assert(app.is_client)
+    local data = app.data
+    if not data or not entries.is_kind(kind) or not entries.can_create(kind) or entries.get(data, kind, id) then
+        app:log(string.format("A creation of %s, which this client holds already or cannot hold, ignored", _describe_entry(kind, id)))
+        return
+    end
+    entries.create(data, kind, id, entry)
+    self:_update_game_screen(kind, id, nil)
+end
+
+---@param kind EntryKind
+---@param id string The deleted entry's id
+function Session:apply_entry_deleted(kind, id)
+    assert(app.is_client)
+    local data = app.data
+    if not data or not entries.is_kind(kind) or not entries.can_delete(kind) or not entries.get(data, kind, id) then
+        app:log(string.format("A deletion of %s, which this client does not hold, ignored", _describe_entry(kind, id)))
+        return
+    end
+    entries.remove(data, kind, id)
+    if self._permissions then
+        self._permissions:remove_key(entries.get_permission_kind(kind), id)
+    end
+    self:_update_game_screen(kind, id, nil)
+end
+
+---@param grants string[] The session's grants as the server now holds them
+function Session:apply_grants(grants)
+    assert(app.is_client)
+    if not self._user or not app.data then
+        app:log("Grants for a session without a game, ignored")
+        return
+    end
+    self:set_grants(grants)
+    local game_screen = self._game_screen
+    if game_screen and lifetime.alive(game_screen) then
+        game_screen:on_grants_change()
+    end
+end
+
 ---@private
 ---@param control Token|nil A changed token on the shown page
 function Session:_refresh_token_panel(control)
@@ -626,6 +898,11 @@ end
 
 function Session:leave_game()
     assert(app.is_client and self._game_screen)
+    if self._assets_workspace_screen then
+        lifetime.destroy(self._assets_workspace_screen)
+        self._assets_workspace_screen = nil
+        self._assets_workspace_return = nil
+    end
     if self._new_token_screen then
         lifetime.destroy(self._new_token_screen)
         self._new_token_screen = nil

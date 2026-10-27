@@ -10,6 +10,9 @@ local FileSystemDropEventManager = require("events.file-drop-event")
 local KeyboardManager = require("events.keyboard")
 local PointerEventManager = require("events.pointer-event")
 local Session = require("game.session")
+local Control = require("controls.control")
+local ScreenManager = require("screens.screen-manager")
+local BackstackManager = require("utils.backstack-manager")
 local Connection = require("networking.connection")
 local ButtonEventManager = require("ui.button-event")
 local TextEventManager = require("ui.text-event")
@@ -189,13 +192,12 @@ function mocks.make_channel()
     return channel
 end
 
----Delivers a request to `connection` as its peer would, runs a frame of the
----global `app` and returns the body of the response the connection sent
+---Delivers a request to `connection` as its peer would and runs a frame of
+---the global `app`, leaving what the connection sends on its out channel
 ---@param connection Connection Over fake channels
 ---@param id string The remote procedure's class name
 ---@param body RequestBody
----@return ResponseBody
-function mocks.request(connection, id, body)
+function mocks.deliver(connection, id, body)
     ---@type Request
     local request = {
         source = app.is_server and "c" or "s",
@@ -204,10 +206,36 @@ function mocks.request(connection, id, body)
     }
     connection:get_in_channel():push(love.data.compress("string", Consts.NETWORK_COMPRESSION, table.to_string(request)))
     app.update_event:trigger(0.016)
+end
+
+---Delivers a request to `connection` as its peer would, runs a frame of the
+---global `app` and returns the body of the response the connection sent
+---@param connection Connection Over fake channels
+---@param id string The remote procedure's class name
+---@param body RequestBody
+---@return ResponseBody
+function mocks.request(connection, id, body)
+    mocks.deliver(connection, id, body)
     local payload = assert(connection:get_out_channel():pop(), "the connection sent no response") --[[@as string]]
     local response = table.from_string(love.data.decompress("string", Consts.NETWORK_COMPRESSION, payload) --[[@as string]] ) --[[@as Response]]
     assert(response.id == id)
     return response.body
+end
+
+---Delivers to `connection` the peer's response to a request it sent, as its
+---peer would, and runs a frame of the global `app`
+---@param connection Connection Over fake channels
+---@param id string The remote procedure's class name
+---@param body ResponseBody
+function mocks.answer(connection, id, body)
+    ---@type Response
+    local response = {
+        source = app.is_client and "c" or "s",
+        id = id,
+        body = body
+    }
+    connection:get_in_channel():push(love.data.compress("string", Consts.NETWORK_COMPRESSION, table.to_string(response)))
+    app.update_event:trigger(0.016)
 end
 
 ---@param payload string What a connection pushed on its out channel
@@ -401,6 +429,165 @@ function mocks.make_client_session(files)
         notifications = notifications,
         previous_filesystem = previous
     }
+end
+
+---The game the entry procedures' suites play: adam the master, piotr a
+---player who reads the game, the page P, the groups and the players and
+---writes P, ewa a watcher who reads everything and Q by a grant of her own,
+---olga in a group the game does not have
+---@return GameData
+function mocks.entries_game_data()
+    return {
+        name = "G",
+        game = {
+            page = "P"
+        },
+        groups = {
+            master = {
+                title = "Game master",
+                permissions = {
+                    "read",
+                    "write"
+                }
+            },
+            player = {
+                title = "Player",
+                permissions = {
+                    "read:game",
+                    "read:pages/P",
+                    "read:groups",
+                    "read:players"
+                }
+            },
+            watcher = {
+                title = "Watcher",
+                permissions = {
+                    "read"
+                }
+            }
+        },
+        players = {
+            adam = {
+                group = "master"
+            },
+            piotr = {
+                group = "player",
+                permissions = {
+                    "write:pages/P"
+                }
+            },
+            ewa = {
+                group = "watcher",
+                permissions = {
+                    "view:pages/Q"
+                }
+            },
+            olga = {
+                group = "guests"
+            }
+        },
+        pages = {
+            P = {
+                name = "Plains",
+                width = 10,
+                pixel_per_meter = 50,
+                image = "world/w.png",
+                tokens = {
+                    "T"
+                }
+            },
+            Q = {
+                name = "Quarry",
+                width = 5,
+                pixel_per_meter = 20,
+                image = "world/w.png",
+                tokens = {}
+            }
+        },
+        token_properties = {
+            name = {
+                title = "Name",
+                type = "string"
+            },
+            diameter = {
+                title = "Diameter",
+                type = "number"
+            },
+            avatar = {
+                title = "Avatar",
+                type = "image"
+            },
+            position = {
+                title = "Position",
+                type = "array"
+            },
+            hp = {
+                title = "HP",
+                type = "number"
+            }
+        },
+        tokens = {
+            T = {
+                name = "T",
+                diameter = 1,
+                avatar = "token/t.png",
+                position = {
+                    1,
+                    2
+                },
+                hp = 3
+            }
+        }
+    }
+end
+
+---Logs the client's session in as `login`, which shows the menu, and gives
+---it the game data and the grants a join would, with no game screen
+---@param side TestClientSide
+---@param login string
+---@param data GameData
+---@param grants string[]
+function mocks.join_client_game(side, login, data, grants)
+    local client = side.client
+    mocks.ensure_love_graphics()
+    client.root = Control()
+    client.width, client.height = 2000, 1500
+    client.screen_manager = ScreenManager()
+    client.backstack_manager = BackstackManager()
+    ---@diagnostic disable-next-line: invisible
+    side.session._login._login_rp.on_login(login)
+    client.data = data
+    side.session:set_grants(grants)
+end
+
+---@class TestGameScreen: GameScreen
+---@field calls string[] Every call the session made, in order: `show_page <id>`, `on_entries_change <kind> <id>`, `on_grants_change`
+local TestGameScreen = class("TestGameScreen")
+
+function TestGameScreen:init()
+    self.calls = {}
+end
+
+---@param id string
+function TestGameScreen:show_page(id)
+    table.insert(self.calls, "show_page " .. id)
+end
+
+---@param kind EntryKind
+---@param id string
+function TestGameScreen:on_entries_change(kind, id)
+    table.insert(self.calls, "on_entries_change " .. kind .. " " .. id)
+end
+
+function TestGameScreen:on_grants_change()
+    table.insert(self.calls, "on_grants_change")
+end
+
+---A stand-in for the game screen that records what the session tells it;
+---the session's `_game_screen` takes it
+---@return TestGameScreen
+function mocks.make_game_screen()
+    return TestGameScreen()
 end
 
 ---@param side TestClientSide

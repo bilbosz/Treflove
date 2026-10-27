@@ -19,6 +19,13 @@ local DeleteTokenRp = require("game.delete-token-rp")
 local TokenCreatedRp = require("game.token-created-rp")
 local TokenDeletedRp = require("game.token-deleted-rp")
 local UpdateTokenRp = require("game.update-token-rp")
+local CreateEntryRp = require("game.entry.create-entry-rp")
+local DeleteEntryRp = require("game.entry.delete-entry-rp")
+local EntryChangedRp = require("game.entry.entry-changed-rp")
+local EntryCreatedRp = require("game.entry.entry-created-rp")
+local EntryDeletedRp = require("game.entry.entry-deleted-rp")
+local GrantsChangedRp = require("game.entry.grants-changed-rp")
+local UpdateEntryRp = require("game.entry.update-entry-rp")
 local CreateAccountRp = require("login.create-account-rp")
 local LoginRp = require("login.login-rp")
 local LogoutRp = require("login.logout-rp")
@@ -53,6 +60,13 @@ local CLASSES = {
     DeleteTokenRp = DeleteTokenRp,
     TokenCreatedRp = TokenCreatedRp,
     TokenDeletedRp = TokenDeletedRp,
+    UpdateEntryRp = UpdateEntryRp,
+    EntryChangedRp = EntryChangedRp,
+    CreateEntryRp = CreateEntryRp,
+    DeleteEntryRp = DeleteEntryRp,
+    EntryCreatedRp = EntryCreatedRp,
+    EntryDeletedRp = EntryDeletedRp,
+    GrantsChangedRp = GrantsChangedRp,
     UploadAssetRp = UploadAssetRp,
     DownloadAssetRp = DownloadAssetRp,
     DownloadMissingAssetsRp = DownloadMissingAssetsRp,
@@ -95,8 +109,8 @@ test.case("a client session owns its login, the game procedures and the asset pr
     local session = Session(connection):attach_lifetime(connection)
     test.assert_eq(lifetime.format(lifetime.of(session)), "(" .. tostring(connection) .. ", reachable)")
     local dependents = lifetime.dependents(session)
-    test.assert_eq(#dependents, 18,
-                   "login, game data, games list, new game, the token update and push, the token creation and deletion and their pushes, seven asset procedures and the asset manager's hook")
+    test.assert_eq(#dependents, 25,
+                   "login, game data, games list, new game, the token update and push, the token creation and deletion and their pushes, the entry procedures and the grants push, seven asset procedures and the asset manager's hook")
     test.assert_eq(get_class_name_of(dependents[1]), "Login")
     test.assert_eq(get_class_name_of(dependents[2]), "GameDataRp")
     test.assert_eq(get_class_name_of(dependents[3]), "ListGamesRp")
@@ -107,21 +121,28 @@ test.case("a client session owns its login, the game procedures and the asset pr
     test.assert_eq(get_class_name_of(dependents[8]), "DeleteTokenRp")
     test.assert_eq(get_class_name_of(dependents[9]), "TokenCreatedRp")
     test.assert_eq(get_class_name_of(dependents[10]), "TokenDeletedRp")
-    test.assert_eq(get_class_name_of(dependents[11]), "UploadAssetRp")
-    test.assert_eq(get_class_name_of(dependents[12]), "DownloadAssetRp")
-    test.assert_eq(get_class_name_of(dependents[13]), "DownloadMissingAssetsRp")
-    test.assert_eq(get_class_name_of(dependents[14]), "ListAssetsRp")
-    test.assert_eq(get_class_name_of(dependents[15]), "CreateAssetFolderRp")
-    test.assert_eq(get_class_name_of(dependents[16]), "RenameAssetRp")
-    test.assert_eq(get_class_name_of(dependents[17]), "DeleteAssetRp")
-    test.assert_eq(getmetatable(dependents[18]), "hook")
+    test.assert_eq(get_class_name_of(dependents[11]), "UpdateEntryRp")
+    test.assert_eq(get_class_name_of(dependents[12]), "EntryChangedRp")
+    test.assert_eq(get_class_name_of(dependents[13]), "CreateEntryRp")
+    test.assert_eq(get_class_name_of(dependents[14]), "DeleteEntryRp")
+    test.assert_eq(get_class_name_of(dependents[15]), "EntryCreatedRp")
+    test.assert_eq(get_class_name_of(dependents[16]), "EntryDeletedRp")
+    test.assert_eq(get_class_name_of(dependents[17]), "GrantsChangedRp")
+    test.assert_eq(get_class_name_of(dependents[18]), "UploadAssetRp")
+    test.assert_eq(get_class_name_of(dependents[19]), "DownloadAssetRp")
+    test.assert_eq(get_class_name_of(dependents[20]), "DownloadMissingAssetsRp")
+    test.assert_eq(get_class_name_of(dependents[21]), "ListAssetsRp")
+    test.assert_eq(get_class_name_of(dependents[22]), "CreateAssetFolderRp")
+    test.assert_eq(get_class_name_of(dependents[23]), "RenameAssetRp")
+    test.assert_eq(get_class_name_of(dependents[24]), "DeleteAssetRp")
+    test.assert_eq(getmetatable(dependents[25]), "hook")
     local login_dependents = lifetime.dependents(dependents[1])
     test.assert_eq(#login_dependents, 3)
     test.assert_eq(get_class_name_of(login_dependents[1]), "LoginRp")
     test.assert_eq(get_class_name_of(login_dependents[2]), "LogoutRp")
     test.assert_eq(get_class_name_of(login_dependents[3]), "CreateAccountRp")
     ---@diagnostic disable-next-line: invisible
-    test.assert_eq(app_mock.asset_manager._upload_asset_rp[session], dependents[11])
+    test.assert_eq(app_mock.asset_manager._upload_asset_rp[session], dependents[18])
     test.assert_eq(connection:get_out_channel():getCount(), 0, "no login before one is asked for")
     session:login("adam", "krause")
     test.assert_eq(connection:get_out_channel():getCount(), 1, "the login request was sent")
@@ -221,6 +242,20 @@ test.case("destroying the connection tears the whole tree down, the connection f
         "  unregister DownloadAssetRp",
         "UploadAssetRp:release(anchor)",
         "  unregister UploadAssetRp",
+        "GrantsChangedRp:release(anchor)",
+        "  unregister GrantsChangedRp",
+        "EntryDeletedRp:release(anchor)",
+        "  unregister EntryDeletedRp",
+        "EntryCreatedRp:release(anchor)",
+        "  unregister EntryCreatedRp",
+        "DeleteEntryRp:release(anchor)",
+        "  unregister DeleteEntryRp",
+        "CreateEntryRp:release(anchor)",
+        "  unregister CreateEntryRp",
+        "EntryChangedRp:release(anchor)",
+        "  unregister EntryChangedRp",
+        "UpdateEntryRp:release(anchor)",
+        "  unregister UpdateEntryRp",
         "TokenDeletedRp:release(anchor)",
         "  unregister TokenDeletedRp",
         "TokenCreatedRp:release(anchor)",

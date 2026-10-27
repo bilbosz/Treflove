@@ -81,4 +81,16 @@ function Game:get_sessions()
     return sessions
 end
 
+---@return Session[] The live sessions whose grants changed, each set rebuilt from the data (`Session:refresh_permissions`)
+function Game:refresh_permissions()
+    ---@type Session[]
+    local changed = {}
+    for _, session in ipairs(self:get_sessions()) do
+        if session:refresh_permissions() then
+            table.insert(changed, session)
+        end
+    end
+    return changed
+end
+
 return Game
