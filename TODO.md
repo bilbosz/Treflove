@@ -129,6 +129,11 @@ pepper shared by all users.
   connecting screen), with session state recovery
 - Timeouts and user-visible errors for failed RPCs instead of silent stalls
 - Graceful server-side session teardown on abrupt disconnects
+- A request whose id has no handler on the receiving side kills the
+  receiver: `Connection:_send_response` calls a `nil` handler for an
+  unknown id, and `TokenChangedRp`, registered on both sides, asserts
+  `app.is_client` when a client sends it to the server; answering a
+  refusal, or disconnecting the peer, is the fix
 
 ### 10. Save robustness
 

@@ -124,8 +124,9 @@ A `Session` ties a connection to a user:
   logout, a dead one drops out), which is who a change is pushed to
 - On the client, sends a token change (`Session:update_token(id, changes,
   new_id)`: the page after a drag, the token panel after Apply or an image
-  chosen in the workspace) and receives the server's pushes through its
-  `TokenChangedRp`
+  chosen in the workspace) and applies the server's entry to its copy and
+  to the shown page (`Session:apply_token(id, new_id, token)`: the one path
+  a push and a refusal's restore take)
 - Is anchored to its connection and owns its login, its remote procedures
   and, on the client, the "logged in" token that owns the menu and game
   screens; the games list, the new game screen, the game screen and the
@@ -370,10 +371,11 @@ game that may `read` the token. The response carries the server's entry
 when the session may read it: on a refusal the client notifies the reason
 and restores the token from it (the id renamed back, the position and the
 properties set), so the client's copy never drifts from the server's. A
-client receiving a push applies what differs (the rename first, an avatar
-the store lacks downloaded before it is set), to its data and to the token
-on the shown page, and rebuilds the token panel when the token is
-selected; a token it does not hold (one it may not read) is logged and
+client receiving a push applies what differs (the rename first; an image
+property, or `avatar` for a player who may not read the properties, whose
+file the store lacks is downloaded before it is set), to its data and to
+the token on the shown page (`Page:try_find_token`), and rebuilds the
+token panel when the token is selected; a token it does not hold (one it may not read) is logged and
 ignored. A client that left the game to the menu still holds the data and
 receives the pushes, applied to the data only. What the slice leaves for
 the next: pages, players, groups and token properties are not
