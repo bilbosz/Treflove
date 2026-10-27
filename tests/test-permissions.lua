@@ -269,6 +269,29 @@ test.case("rename_key renames every action on the key and keeps the rest, in a c
     test.assert_true(renamed ~= grants)
 end)
 
+test.case("remove_key drops every action on the key and keeps the rest, in a copy", function()
+    local grants = {
+        "read",
+        "write:tokens",
+        "write:tokens/Bilbosz",
+        "view:tokens/Bilbosz",
+        "write:tokens/@owned",
+        "read:pages/Bilbosz",
+        "view:tokens/Gaben"
+    }
+    local removed = permissions.remove_key(grants, Kind.TOKENS, "Bilbosz")
+    test.assert_deep_eq(removed, {
+        "read",
+        "write:tokens",
+        "write:tokens/@owned",
+        "read:pages/Bilbosz",
+        "view:tokens/Gaben"
+    })
+    test.assert_eq(#grants, 7, "the input is unchanged")
+    test.assert_true(removed ~= grants)
+    test.assert_deep_eq(permissions.remove_key({}, Kind.TOKENS, "Bilbosz"), {})
+end)
+
 test.suite("PermissionSet")
 
 test.case("echoes its login and its grants, as given", function()
@@ -374,6 +397,26 @@ test.case("rename_key renames the grants on a key in place, and the set answers 
     test.assert_true(set:allows(Action.WRITE, Kind.TOKENS, "Bilbo"))
     test.assert_true(set:allows(Action.VIEW, Kind.TOKENS, "Bilbo"))
     test.assert_false(set:allows(Action.WRITE, Kind.TOKENS, "Bilbosz"))
+    test.assert_true(set:allows(Action.WRITE, Kind.PAGES, "Bilbosz"), "another kind's key stays")
+end)
+
+test.case("remove_key drops the grants on a key in place, and the set no longer answers for it", function()
+    local data = game_data()
+    local set = PermissionSet("piotr", {
+        "read",
+        "write:tokens/Bilbosz",
+        "view:tokens/Bilbosz",
+        "write:tokens/@owned",
+        "write:pages/Bilbosz"
+    }, data)
+    set:remove_key(Kind.TOKENS, "Bilbosz")
+    test.assert_deep_eq(set:get_grants(), {
+        "read",
+        "write:tokens/@owned",
+        "write:pages/Bilbosz"
+    })
+    test.assert_false(set:allows(Action.WRITE, Kind.TOKENS, "Bilbosz"))
+    test.assert_false(set:allows(Action.VIEW, Kind.TOKENS, "Bilbosz"))
     test.assert_true(set:allows(Action.WRITE, Kind.PAGES, "Bilbosz"), "another kind's key stays")
 end)
 

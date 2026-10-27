@@ -47,4 +47,27 @@ function token_id.rename(data, id, new_id)
     end
 end
 
+---@param data GameData
+---@param id string A key of `data.tokens`
+function token_id.remove(data, id)
+    assert(data.tokens[id], string.format("No token with the id %q", id))
+    data.tokens[id] = nil
+    for _, page in pairs(data.pages) do
+        for i = #page.tokens, 1, -1 do
+            if page.tokens[i] == id then
+                table.remove(page.tokens, i)
+            end
+        end
+    end
+    local kind = permissions.Kind.TOKENS
+    for _, group in pairs(data.groups) do
+        group.permissions = permissions.remove_key(group.permissions, kind, id)
+    end
+    for _, player in pairs(data.players) do
+        if player.permissions then
+            player.permissions = permissions.remove_key(player.permissions, kind, id)
+        end
+    end
+end
+
 return token_id
