@@ -60,8 +60,9 @@ the menu: "Games", the game's button, waits for the game screen, returns
 it; `join_game` is `log_in` followed by it),
 `create_token(driver, id, name, avatar)` ("New Token", the three fields,
 "Create", waits for the game screen showing the token, returns the
-`Token`), `delete_token(driver, label)` (the token selected, the panel's
-"Delete", waits for it to be gone).
+`Token`), `delete_token(driver, label)` (the token selected alone, the
+panel's "Delete", waits for it to be gone; the step fails when anything
+else is selected with it, since Delete removes the whole selection).
 
 What the fixture's basic world holds: the accounts `adam` and `piotr`
 (`accounts.lua`) and one game, `Meadow` (`games/meadow/`), with the page
