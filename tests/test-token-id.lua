@@ -18,6 +18,7 @@ end
 ---@return GameData
 local function game_data()
     return {
+        name = "G",
         game = {
             page = "Old Town"
         },
@@ -84,13 +85,9 @@ local function game_data()
         },
         players = {
             adam = {
-                name = "Adam",
-                auth = "adam's hash",
                 group = "master"
             },
             piotr = {
-                name = "Piotrek",
-                auth = "piotr's hash",
                 group = "player",
                 permissions = {
                     "view:tokens/Bilbosz",

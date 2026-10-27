@@ -1,6 +1,3 @@
-local images = require("graphics.images")
-
-local Asset = require("data.asset")
 local CreateAssetFolderRp = require("data.create-asset-folder-rp")
 local DeleteAssetRp = require("data.delete-asset-rp")
 local DownloadAssetRp = require("data.download-asset-rp")
@@ -11,6 +8,7 @@ local UploadAssetRp = require("data.upload-asset-rp")
 local lifetime = require("lifetime")
 
 ---@class AssetManager: Object
+---@field private _store AssetStore|nil The client's: the copies of the joined game's assets, from the game data on
 ---@field private _download_asset_rp table<Session, DownloadAssetRp>
 ---@field private _download_missing_assets_rp table<Session, DownloadMissingAssetsRp>
 ---@field private _upload_asset_rp table<Session, UploadAssetRp>
@@ -20,10 +18,11 @@ local lifetime = require("lifetime")
 ---@field private _delete_asset_rp table<Session, DeleteAssetRp>
 local AssetManager = class("AssetManager")
 
+---@param store AssetStore
 ---@param list string[]
-local function _filter_for_missing_assets(list)
+local function _filter_for_missing_assets(store, list)
     for i, v in ripairs(list) do
-        if Asset(v, false):get_type() then
+        if store:asset(v):get_type() then
             table.remove(list, i)
         end
     end
@@ -39,48 +38,8 @@ local function _get_client_rp(rp_list)
     return rp
 end
 
----@param path string
-local function _remove_server_mount(path)
-    local info = love.filesystem.getInfo(path)
-    if not info then
-        return
-    end
-    if info.type == "file" then
-        love.filesystem.remove(path)
-    elseif info.type == "directory" then
-        local items = love.filesystem.getDirectoryItems(path)
-        for _, v in ipairs(items) do
-            _remove_server_mount(path .. "/" .. v)
-        end
-        love.filesystem.remove(path)
-    else
-        assert_unreachable()
-    end
-end
-
----@param src_path string
----@param dst_path string
-local function _mount_server_assets(src_path, dst_path)
-    local src_info = love.filesystem.getInfo(src_path)
-    if src_info.type == "file" then
-        local data = love.filesystem.read(src_path)
-        love.filesystem.write(dst_path, data)
-    elseif src_info.type == "directory" then
-        love.filesystem.createDirectory(dst_path)
-        local items = love.filesystem.getDirectoryItems(src_path)
-        for _, v in ipairs(items) do
-            _mount_server_assets(src_path .. "/" .. v, dst_path .. "/" .. v)
-        end
-    else
-        assert_unreachable()
-    end
-end
-
 function AssetManager:init()
-    if app.is_server then
-        _remove_server_mount("s")
-        _mount_server_assets("server", "s")
-    end
+    self._store = nil
     self._upload_asset_rp = {}
     self._download_asset_rp = {}
     self._download_missing_assets_rp = {}
@@ -90,91 +49,15 @@ function AssetManager:init()
     self._delete_asset_rp = {}
 end
 
----@param mount_point string
----@param content string Base64
----@return boolean ok
----@return string|nil err Why not, for the user: a bad path, or a folder's
-function AssetManager:mount_file(mount_point, content)
-    local reason = Asset.check_path(mount_point)
-    if reason then
-        return false, string.format("Cannot upload %q: %s", mount_point, reason)
-    end
-    local file = Asset(mount_point, false)
-    local existing = file:get_type()
-    if existing == "directory" then
-        return false, string.format("Cannot upload %q: it is a folder", mount_point)
-    end
-    if not existing then
-        file:create()
-    end
-    file:write(love.data.decode("string", "base64", content) --[[@as string]] )
-    images.forget(Asset.get_asset_path(mount_point))
-    return true
+---@param store AssetStore|nil The joined game's copies, `nil` when there is no game
+function AssetManager:set_store(store)
+    assert(app.is_client)
+    self._store = store
 end
 
----@param path string
----@return string|nil
-function AssetManager:get_content(path)
-    local file = Asset(path, false)
-    if file:get_type() ~= "file" then
-        return nil
-    end
-    return love.data.encode("string", "base64", file:read(), file:get_size()) --[[@as string]]
-end
-
----@param path string
----@return boolean ok
----@return string|nil err Why not, for the user
-function AssetManager:make_folder(path)
-    local reason = Asset.check_path(path)
-    if reason then
-        return false, string.format("Cannot create %q: %s", path, reason)
-    end
-    if Asset(path, false):get_type() then
-        return false, string.format("Cannot create %q: it exists already", path)
-    end
-    Asset(path, false):create_directory()
-    return true
-end
-
----@param path string
----@param new_path string
----@return boolean ok
----@return string|nil err Why not, for the user
-function AssetManager:move(path, new_path)
-    local reason = Asset.check_path(path) or Asset.check_path(new_path)
-    if reason then
-        return false, string.format("Cannot rename %q to %q: %s", path, new_path, reason)
-    end
-    local source = Asset(path, false)
-    if not source:get_type() then
-        return false, string.format("Cannot rename %q: there is no such asset", path)
-    end
-    if Asset.is_under(new_path, path) then
-        return false, string.format("Cannot rename %q to %q: it would end up under itself", path, new_path)
-    end
-    local destination = Asset(new_path, false)
-    if destination:get_type() then
-        return false, string.format("Cannot rename %q to %q: it exists already", path, new_path)
-    end
-    source:move_to(destination)
-    return true
-end
-
----@param path string
----@return boolean ok
----@return string|nil err Why not, for the user
-function AssetManager:remove(path)
-    local reason = Asset.check_path(path)
-    if reason then
-        return false, string.format("Cannot delete %q: %s", path, reason)
-    end
-    local asset = Asset(path, false)
-    if not asset:get_type() then
-        return false, string.format("Cannot delete %q: there is no such asset", path)
-    end
-    asset:remove()
-    return true
+---@return AssetStore|nil store The client's, from the game data on; `nil` before, and on the server, where every session's game has its own
+function AssetManager:get_store()
+    return self._store
 end
 
 ---@param path string
@@ -235,7 +118,7 @@ end
 ---@param list string[]
 ---@param cb fun()
 function AssetManager:download_missing_assets(list, cb)
-    _filter_for_missing_assets(list)
+    _filter_for_missing_assets(assert(self._store, "assets need a joined game"), list)
 
     local rp = _get_client_rp(self._download_missing_assets_rp)
     rp:send_request({
@@ -245,10 +128,9 @@ end
 
 ---@param session Session
 function AssetManager:register_session(session)
-    local connection = session:get_connection()
     self._upload_asset_rp[session] = UploadAssetRp(session):attach_lifetime(session)
-    self._download_asset_rp[session] = DownloadAssetRp(connection):attach_lifetime(session)
-    self._download_missing_assets_rp[session] = DownloadMissingAssetsRp(connection):attach_lifetime(session)
+    self._download_asset_rp[session] = DownloadAssetRp(session):attach_lifetime(session)
+    self._download_missing_assets_rp[session] = DownloadMissingAssetsRp(session):attach_lifetime(session)
     self._list_assets_rp[session] = ListAssetsRp(session):attach_lifetime(session)
     self._create_asset_folder_rp[session] = CreateAssetFolderRp(session):attach_lifetime(session)
     self._rename_asset_rp[session] = RenameAssetRp(session):attach_lifetime(session)

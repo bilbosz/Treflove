@@ -1,7 +1,6 @@
 local images = require("graphics.images")
 
 local DrawableControl = require("controls.drawable-control")
-local Asset = require("data.asset")
 
 ---@class Image: DrawableControl
 ---@field private _love_image love.Image
@@ -9,12 +8,14 @@ local Asset = require("data.asset")
 local Image = class("Image", DrawableControl)
 
 ---@param parent Control|nil
----@param path_or_love_image string|love.Image
+---@param path_or_love_image string|love.Image A path of the joined game's asset store, or else of the source tree
 function Image:init(parent, path_or_love_image)
     ---@type love.Image
     local love_image
     if type(path_or_love_image) == "string" then
-        love_image = images.get(Asset(path_or_love_image, false):get_path() or path_or_love_image)
+        local store = app.asset_manager:get_store()
+        local stored = store and store:asset(path_or_love_image):get_path()
+        love_image = images.get(stored or path_or_love_image)
     else
         love_image = path_or_love_image
     end

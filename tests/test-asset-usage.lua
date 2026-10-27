@@ -4,6 +4,7 @@ local asset_usage = require("data.asset-usage")
 ---@return GameData
 local function game_data()
     return {
+        name = "G",
         game = {
             page = "P"
         },

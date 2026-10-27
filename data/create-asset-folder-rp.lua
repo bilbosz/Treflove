@@ -30,7 +30,7 @@ function CreateAssetFolderRp:send_response(request)
             path = request.path
         }
     end
-    local ok, err = app.asset_manager:make_folder(request.path)
+    local ok, err = self._session:get_game():get_store():make_folder(request.path)
     return {
         success = ok,
         error = err,

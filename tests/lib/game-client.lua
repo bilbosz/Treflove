@@ -38,9 +38,9 @@ end
 ---@return GameData
 function game_client.game_data()
     return {
+        name = "G",
         players = {
             piotr = {
-                name = "Piotrek",
                 group = "player"
             }
         },
@@ -180,11 +180,11 @@ function game_client.enter(grants)
     mocks.ensure_love_graphics()
     mocks.ensure_love_thread()
     local previous = mocks.install_love_filesystem({
-        ["c/assets/world/w.png"] = "W",
-        ["c/assets/token/b.png"] = "B",
-        ["c/assets/token/s.png"] = "S",
-        ["c/assets/token/g.png"] = "G",
-        ["c/assets/world/q.png"] = "Q"
+        ["c/games/g/assets/world/w.png"] = "W",
+        ["c/games/g/assets/token/b.png"] = "B",
+        ["c/games/g/assets/token/s.png"] = "S",
+        ["c/games/g/assets/token/g.png"] = "G",
+        ["c/games/g/assets/world/q.png"] = "Q"
     })
     local client = mocks.install_app()
     client.root = Control()
@@ -215,9 +215,11 @@ function game_client.enter(grants)
     _answer_login(client, "piotr")
     assert(session:is_logged_in(), "the login answer logged the session in")
     assert(get_class_name_of(client.screen_manager:get_screen()) == "UserMenuScreen", "a login lands on the menu")
-    session:join_game()
+    session:join_game(mocks.GAME_ID)
     _pop_request(connection, "GameDataRp")
     _answer(client, connection, "GameDataRp", {
+        success = true,
+        game = mocks.GAME_ID,
         data = game_client.game_data(),
         permissions = grants
     })

@@ -8,11 +8,13 @@ local RemoteProcedure = require("networking.remote-procedure")
 ---@field public contents table<string, string> Base64 contents by asset path, the paths the server has
 
 ---@class DownloadMissingAssetsRp: RemoteProcedure
+---@field private _session Session
 local DownloadMissingAssetsRp = class("DownloadMissingAssetsRp", RemoteProcedure)
 
----@param connection Connection
-function DownloadMissingAssetsRp:init(connection)
-    RemoteProcedure.init(self, connection)
+---@param session Session
+function DownloadMissingAssetsRp:init(session)
+    RemoteProcedure.init(self, session:get_connection())
+    self._session = session
 end
 
 ---@param request DownloadMissingAssetsRequest
@@ -21,8 +23,12 @@ function DownloadMissingAssetsRp:send_response(request)
     assert(app.is_server)
     ---@type table<string, string>
     local contents = {}
-    for _, v in ipairs(request.list) do
-        contents[v] = app.asset_manager:get_content(v)
+    local session = self._session
+    if session:is_in_game() then
+        local store = session:get_game():get_store()
+        for _, v in ipairs(request.list) do
+            contents[v] = store:get_content(v)
+        end
     end
     return {
         success = true,
@@ -35,8 +41,9 @@ function DownloadMissingAssetsRp:receive_response(response)
     assert(app.is_client)
     assert(response.success)
     assert(response.contents)
+    local store = assert(app.asset_manager:get_store())
     for k, v in pairs(response.contents) do
-        app.asset_manager:mount_file(k, v)
+        store:mount_file(k, v)
     end
 end
 

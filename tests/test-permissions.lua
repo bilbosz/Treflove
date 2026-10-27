@@ -16,6 +16,7 @@ local Kind = permissions.Kind
 ---@return GameData
 local function game_data()
     return {
+        name = "Old Town",
         game = {
             page = "Old Town"
         },
@@ -90,13 +91,9 @@ local function game_data()
         },
         players = {
             adam = {
-                name = "Adam",
-                auth = "adam's hash",
                 group = "master"
             },
             piotr = {
-                name = "Piotrek",
-                auth = "piotr's hash",
                 group = "player",
                 permissions = {
                     "write:tokens/@owned",
@@ -279,7 +276,7 @@ test.case("echoes its login and its grants, as given", function()
         "read",
         "write:tokens/@owned"
     }
-    local set = PermissionSet("piotr", grants)
+    local set = PermissionSet("piotr", grants, game_data())
     test.assert_eq(set:get_login(), "piotr")
     test.assert_deep_eq(set:get_grants(), grants)
     table.insert(set:get_grants(), "write")
@@ -292,14 +289,14 @@ test.case("echoes its login and its grants, as given", function()
         PermissionSet("piotr", {
             "read",
             "read:"
-        })
+        }, game_data())
     end, "every grant is parsed")
 end)
 
 test.case("a grant without a kind allows everything of its action", function()
     local set = PermissionSet("adam", {
         "read"
-    })
+    }, game_data())
     test.assert_true(set:allows(Action.READ))
     test.assert_true(set:allows(Action.READ, Kind.TOKENS))
     test.assert_true(set:allows(Action.READ, Kind.TOKENS, "Bilbosz"))
@@ -312,7 +309,7 @@ end)
 test.case("a grant of a kind allows the kind and its entries, nothing else", function()
     local set = PermissionSet("adam", {
         "write:tokens"
-    })
+    }, game_data())
     test.assert_false(set:allows(Action.WRITE), "not everything")
     test.assert_true(set:allows(Action.WRITE, Kind.TOKENS))
     test.assert_true(set:allows(Action.WRITE, Kind.TOKENS, "Bilbosz"))
@@ -325,7 +322,7 @@ end)
 test.case("a grant of a key allows that entry only", function()
     local set = PermissionSet("piotr", {
         "view:tokens/Bilbosz"
-    })
+    }, game_data())
     test.assert_true(set:allows(Action.VIEW, Kind.TOKENS, "Bilbosz"))
     test.assert_false(set:allows(Action.VIEW, Kind.TOKENS, "Gaben"))
     test.assert_false(set:allows(Action.VIEW, Kind.TOKENS), "not the whole kind")
@@ -337,15 +334,14 @@ test.case("a grant of a key allows that entry only", function()
     end, "a key without a kind")
 end)
 
-test.case("@owned matches the entries whose owners list the login, in app.data as it is when asked", function()
-    local app_mock = mocks.install_app()
+test.case("@owned matches the entries whose owners list the login, in the set's data as it is when asked", function()
+    mocks.install_app()
+    local data = game_data()
     local set = PermissionSet("piotr", {
         "write:tokens/@owned",
         "write:pages/@owned",
         "write:assets/@owned"
-    })
-    test.assert_false(set:allows(Action.WRITE, Kind.TOKENS, "Gaben"), "no data, nothing owned")
-    app_mock.data = game_data()
+    }, data)
     test.assert_true(set:allows(Action.WRITE, Kind.TOKENS, "Gaben"))
     test.assert_false(set:allows(Action.WRITE, Kind.TOKENS, "Bilbosz"), "another player's")
     test.assert_false(set:allows(Action.WRITE, Kind.TOKENS, "Anonim"), "no owners")
@@ -354,22 +350,19 @@ test.case("@owned matches the entries whose owners list the login, in app.data a
     test.assert_false(set:allows(Action.WRITE, Kind.ASSETS, "token/g.png"), "the kind is not in the data")
     test.assert_false(set:allows(Action.WRITE, Kind.TOKENS), "not the whole kind")
     test.assert_false(set:allows(Action.READ, Kind.TOKENS, "Gaben"))
-    table.insert(assert(app_mock.data.tokens.Bilbosz.owners), "piotr")
+    table.insert(assert(data.tokens.Bilbosz.owners), "piotr")
     test.assert_true(set:allows(Action.WRITE, Kind.TOKENS, "Bilbosz"), "evaluated when asked")
 end)
 
 test.suite("permissions.filter")
 
-test.case("reading everything keeps every entry, a copy, without the players' auth", function()
+test.case("reading everything keeps every entry and the name, a copy", function()
     mocks.install_app()
     local data = game_data()
     local result = permissions.filter(data, PermissionSet("adam", {
         "read"
-    }))
-    local expected = game_data()
-    expected.players.adam.auth = nil
-    expected.players.piotr.auth = nil
-    test.assert_deep_eq(result, expected)
+    }, data))
+    test.assert_deep_eq(result, game_data())
     test.assert_deep_eq(data, game_data(), "the original is untouched")
     result.tokens.Bilbosz.position[1] = 99
     table.insert(result.pages["Old Town"].tokens, "Extra")
@@ -386,7 +379,7 @@ test.case("an entry is kept only when readable, and a kept page lists only kept 
         "read:tokens/Bilbosz",
         "read:tokens/@owned",
         "read:players/piotr"
-    }))
+    }, data))
     test.assert_deep_eq(result.tokens, {
         Bilbosz = game_data().tokens.Bilbosz,
         Gaben = game_data().tokens.Gaben
@@ -397,7 +390,6 @@ test.case("an entry is kept only when readable, and a kept page lists only kept 
     })
     test.assert_deep_eq(result.players, {
         piotr = {
-            name = "Piotrek",
             group = "player",
             permissions = {
                 "write:tokens/@owned",
@@ -416,8 +408,9 @@ test.case("reading the game keeps it whole; nothing read gives empty tables, not
     local data = game_data()
     local game_only = permissions.filter(data, PermissionSet("piotr", {
         "read:game"
-    }))
+    }, data))
     test.assert_deep_eq(game_only, {
+        name = "Old Town",
         game = {
             page = "Old Town"
         },
@@ -430,7 +423,8 @@ test.case("reading the game keeps it whole; nothing read gives empty tables, not
     test.assert_deep_eq(permissions.filter(data, PermissionSet("piotr", {
         "write",
         "view"
-    })), {
+    }, data)), {
+        name = "Old Town",
         game = {},
         groups = {},
         pages = {},
@@ -472,16 +466,9 @@ local function log_out(session)
     session._login._logout_rp.on_logout()
 end
 
-test.case("the server's session resolves its set at login and clears it at logout", function()
-    local previous = mocks.install_love_filesystem({
-        ["server/assets/token/g.png"] = "G"
-    })
-    local app_mock, connection = make_app({
-        is_client = false,
-        is_server = true
-    })
-    app_mock.asset_manager = AssetManager()
-    local session = Session(connection):attach_lifetime(connection)
+test.case("the server's session resolves its set when the game is selected and clears it at logout", function()
+    local side = mocks.make_server_session(game_data, {})
+    local session = side.session
     test.assert_error(function()
         session:get_permissions()
     end, "not before the login")
@@ -491,16 +478,20 @@ test.case("the server's session resolves its set at login and clears it at logou
         })
     end, "the server resolves its own")
     log_in(session, "piotr")
+    test.assert_error(function()
+        session:get_permissions()
+    end, "not before a game is selected")
+    test.assert_true((session:select_game(mocks.GAME_ID)))
     local set = session:get_permissions()
     test.assert_eq(set:get_login(), "piotr")
-    test.assert_deep_eq(set:get_grants(), permissions.resolve(assert(app_mock.data), "piotr"))
+    test.assert_deep_eq(set:get_grants(), permissions.resolve(session:get_game():get_data(), "piotr"))
     test.assert_true(set:allows(Action.WRITE, Kind.TOKENS, "Gaben"))
     log_out(session)
     test.assert_error(function()
         session:get_permissions()
     end, "not after the logout")
-    lifetime.destroy(connection)
-    mocks.restore_love_filesystem(previous)
+    test.assert_false(session:is_in_game(), "nor the game")
+    mocks.finish_server_session(side)
 end)
 
 test.case("the client's session takes its grants after the login and drops them at logout", function()

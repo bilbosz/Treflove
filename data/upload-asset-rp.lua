@@ -28,7 +28,7 @@ function UploadAssetRp:send_response(request)
             success = false
         }
     end
-    local ok, err = app.asset_manager:mount_file(request.path, request.content)
+    local ok, err = self._session:get_game():get_store():mount_file(request.path, request.content)
     return {
         success = ok,
         error = err

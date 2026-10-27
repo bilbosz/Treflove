@@ -1,4 +1,3 @@
-local Asset = require("data.asset")
 local RemoteProcedure = require("networking.remote-procedure")
 local permissions = require("game.permissions")
 
@@ -32,7 +31,7 @@ function ListAssetsRp:send_response(request)
     end
     return {
         success = true,
-        entries = Asset.list(),
+        entries = session:get_game():get_store():list(),
         writable = session:is_allowed(permissions.Action.WRITE, permissions.Kind.ASSETS)
     }
 end

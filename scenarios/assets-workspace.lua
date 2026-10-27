@@ -7,9 +7,8 @@ return function(driver)
     steps.open_assets_workspace(driver)
     driver:find("AssetListRow", "world/")
     local store = driver:server([[
-        local Asset = require("data.asset")
         local paths = {}
-        for _, entry in ipairs(Asset.list()) do
+        for _, entry in ipairs(app.games:get("meadow"):get_store():list()) do
             table.insert(paths, entry.path)
         end
         return table.concat(paths, " ")

@@ -1,6 +1,10 @@
 local lifetime = require("lifetime")
 local Consts = require("app.consts")
+local Accounts = require("data.accounts")
+local Asset = require("data.asset")
 local AssetManager = require("data.asset-manager")
+local AssetStore = require("data.asset-store")
+local Games = require("data.games")
 local Event = require("events.event")
 local FileSystemDropEventManager = require("events.file-drop-event")
 local KeyboardManager = require("events.keyboard")
@@ -12,6 +16,8 @@ local TextEventManager = require("ui.text-event")
 local Utils = require("utils.utils")
 
 local mocks = {}
+
+mocks.GAME_ID = "g"
 
 ---@class TestPointerEventManager: PointerEventManager
 ---@field position [number, number]
@@ -129,6 +135,7 @@ function mocks.make_app(overrides)
     app_mock.file_system_drop_event_manager = FileSystemDropEventManager()
     app_mock.button_event_manager = ButtonEventManager()
     app_mock.text_event_manager = TextEventManager(mocks.make_keyboard())
+    app_mock.asset_manager = AssetManager()
 
     if overrides then
         table.merge(app_mock, overrides)
@@ -203,6 +210,12 @@ function mocks.request(connection, id, body)
     return response.body
 end
 
+---@param payload string What a connection pushed on its out channel
+---@return Request
+function mocks.decode_request(payload)
+    return table.from_string(love.data.decompress("string", Consts.NETWORK_COMPRESSION, payload) --[[@as string]] ) --[[@as Request]]
+end
+
 ---@param login string
 ---@return string What the client of `login` sends as its auth in these tests
 function mocks.client_auth(login)
@@ -211,9 +224,36 @@ end
 
 ---Under the server app, whose salt it uses
 ---@param login string
----@return string The `PlayerData.auth` that `mocks.client_auth(login)` matches
+---@return string The `AccountData.auth` that `mocks.client_auth(login)` matches
 function mocks.server_auth(login)
     return Utils.hash(login .. string.char(0) .. Utils.generate_salt(32) .. string.char(0) .. mocks.client_auth(login))
+end
+
+---Under the server app, whose salt it uses
+---@param logins string[]
+---@return string The content of an accounts file where each login, named after itself, has the auth `mocks.client_auth(login)` matches
+function mocks.accounts_file(logins)
+    ---@type table<string, AccountData>
+    local accounts = {}
+    for _, login in ipairs(logins) do
+        accounts[login] = {
+            name = login,
+            auth = mocks.server_auth(login)
+        }
+    end
+    return table.to_string(accounts)
+end
+
+---@param id string|nil Defaults to `mocks.GAME_ID`
+---@return AssetStore The server's store of the game
+function mocks.server_store(id)
+    return AssetStore(Consts.SERVER_ROOT .. "/games/" .. (id or mocks.GAME_ID))
+end
+
+---@param id string|nil Defaults to `mocks.GAME_ID`
+---@return AssetStore The client's copies of the game's assets
+function mocks.client_store(id)
+    return AssetStore(Consts.CLIENT_ROOT .. "/games/" .. (id or mocks.GAME_ID))
 end
 
 ---Logs a server's session in over its connection, as the client of `login` would
@@ -225,6 +265,17 @@ function mocks.log_in(connection, login)
         auth = mocks.client_auth(login)
     }) --[[@as LoginResponse]]
     return response.user
+end
+
+---Logs a server's session in and joins a game, as the client of `login` would
+---@param connection Connection
+---@param login string
+---@return GameDataResponse The game `mocks.GAME_ID`'s
+function mocks.join_game(connection, login)
+    assert(mocks.log_in(connection, login) == login, "the server knows " .. login)
+    return mocks.request(connection, "GameDataRp", {
+        game = mocks.GAME_ID
+    }) --[[@as GameDataResponse]]
 end
 
 ---@class TestNotificationManager: NotificationManager
@@ -251,10 +302,11 @@ end
 ---@field session Session Not logged in; `mocks.log_in` logs it in
 ---@field previous_filesystem love.filesystem|nil
 
----A server app with its asset manager over an in-memory file system and one
----session on a fake connection; `finish_server_session` tears it down
----@param make_data fun(): GameData Called under the server app, whose salt the auths need
----@param files table<string, string> The file system, with something under `server/` for the asset manager to mount
+---A server app with its accounts, its games and its asset manager over an
+---in-memory file system and one session on a fake connection;
+---`finish_server_session` tears it down
+---@param make_data fun(): GameData The game `mocks.GAME_ID`, written to its `save.lua`; every player in it gets an account unless `files` has an accounts file
+---@param files table<string, string> The file system, the game's assets under `s/games/<mocks.GAME_ID>/assets/`
 ---@return TestServerSide
 function mocks.make_server_session(make_data, files)
     local server = mocks.install_app({
@@ -263,8 +315,20 @@ function mocks.make_server_session(make_data, files)
     })
     mocks.ensure_love_data()
     mocks.ensure_love_math()
+    local data = make_data()
+    local root = Consts.SERVER_ROOT
+    files[root .. "/games/" .. mocks.GAME_ID .. "/save.lua"] = table.to_string(data)
+    if not files[root .. "/accounts.lua"] then
+        ---@type string[]
+        local logins = {}
+        for login in pairs(data.players) do
+            table.insert(logins, login)
+        end
+        files[root .. "/accounts.lua"] = mocks.accounts_file(logins)
+    end
     local previous = mocks.install_love_filesystem(files)
-    server.data = make_data()
+    server.accounts = Accounts(Asset(root .. "/accounts.lua"))
+    server.games = Games(root .. "/games")
     server.asset_manager = AssetManager()
     local connection = Connection(mocks.make_channel(), mocks.make_channel())
     local session = Session(connection):attach_lifetime(connection)
@@ -289,7 +353,7 @@ end
 ---@field notifications TestNotificationManager
 ---@field previous_filesystem love.filesystem|nil
 
----@param files table<string, string> The file system, the client's copies under `c/assets/`
+---@param files table<string, string> The file system, the client's copies under `c/games/<mocks.GAME_ID>/assets/`, the store of the joined game
 ---@return TestClientSide
 function mocks.make_client_session(files)
     local client = mocks.install_app()
@@ -299,6 +363,7 @@ function mocks.make_client_session(files)
     local notifications = mocks.make_notification_manager()
     client.notification_manager = notifications
     client.asset_manager = AssetManager()
+    client.asset_manager:set_store(mocks.client_store())
     local connection = Connection(mocks.make_channel(), mocks.make_channel())
     local session = Session(connection):attach_lifetime(connection)
     client.session = session

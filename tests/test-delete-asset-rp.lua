@@ -1,10 +1,10 @@
 local test = require("tests.lib.test")
 local mocks = require("tests.lib.mocks")
-local Asset = require("data.asset")
 
 ---@return GameData
 local function game_data()
     return {
+        name = "G",
         game = {
             page = "P"
         },
@@ -25,13 +25,9 @@ local function game_data()
         },
         players = {
             adam = {
-                name = "Adam",
-                auth = mocks.server_auth("adam"),
                 group = "master"
             },
             piotr = {
-                name = "Piotrek",
-                auth = mocks.server_auth("piotr"),
                 group = "player"
             }
         },
@@ -71,11 +67,11 @@ end
 local function server_case(name, fn)
     test.case(name, function()
         local side = mocks.make_server_session(game_data, {
-            ["server/assets/world/w.png"] = "W",
-            ["server/assets/token/t.png"] = "T",
-            ["server/assets/token/x.png"] = "X",
-            ["server/assets/drafts/a.png"] = "A",
-            ["server/assets/drafts/b.png"] = "B"
+            ["s/games/g/assets/world/w.png"] = "W",
+            ["s/games/g/assets/token/t.png"] = "T",
+            ["s/games/g/assets/token/x.png"] = "X",
+            ["s/games/g/assets/drafts/a.png"] = "A",
+            ["s/games/g/assets/drafts/b.png"] = "B"
         })
         ---@type boolean, any
         local ok, err = pcall(fn, side)
@@ -98,42 +94,42 @@ end
 test.suite("DeleteAssetRp")
 
 server_case("a delete from a session without write on the assets is refused", function(side)
-    test.assert_eq(mocks.log_in(side.connection, "piotr"), "piotr")
+    test.assert_true(mocks.join_game(side.connection, "piotr").success)
     local response = delete(side, "token/x.png")
     test.assert_false(response.success)
     test.assert_eq(response.error, "Not allowed to change assets")
-    test.assert_eq(Asset("token/x.png", false):read(), "X")
+    test.assert_eq(mocks.server_store():asset("token/x.png"):read(), "X")
 end)
 
 server_case("a writer deletes an unused file, and a folder with everything under it", function(side)
-    test.assert_eq(mocks.log_in(side.connection, "adam"), "adam")
+    test.assert_true(mocks.join_game(side.connection, "adam").success)
     local response = delete(side, "token/x.png")
     test.assert_true(response.success)
     test.assert_eq(response.path, "token/x.png")
-    test.assert_eq(Asset("token/x.png", false):get_type(), nil)
+    test.assert_eq(mocks.server_store():asset("token/x.png"):get_type(), nil)
     test.assert_true(delete(side, "drafts").success)
-    test.assert_eq(Asset("drafts", false):get_type(), nil)
-    test.assert_eq(Asset("drafts/a.png", false):get_type(), nil)
+    test.assert_eq(mocks.server_store():asset("drafts"):get_type(), nil)
+    test.assert_eq(mocks.server_store():asset("drafts/a.png"):get_type(), nil)
 end)
 
 server_case("an asset the game uses stays, and so does a folder with one under it", function(side)
-    test.assert_eq(mocks.log_in(side.connection, "adam"), "adam")
+    test.assert_true(mocks.join_game(side.connection, "adam").success)
     test.assert_eq(delete(side, "world/w.png").error, "Cannot delete \"world/w.png\": used by page \"P\"")
     test.assert_eq(delete(side, "token").error, "Cannot delete \"token\": used by token \"T\" (avatar)")
-    test.assert_eq(Asset("world/w.png", false):read(), "W")
-    test.assert_eq(Asset("token/t.png", false):read(), "T")
+    test.assert_eq(mocks.server_store():asset("world/w.png"):read(), "W")
+    test.assert_eq(mocks.server_store():asset("token/t.png"):read(), "T")
 end)
 
 server_case("deleting what is not there, or a bad path, is refused with the reason", function(side)
-    test.assert_eq(mocks.log_in(side.connection, "adam"), "adam")
+    test.assert_true(mocks.join_game(side.connection, "adam").success)
     test.assert_eq(delete(side, "token/none.png").error, "Cannot delete \"token/none.png\": there is no such asset")
     test.assert_eq(delete(side, "../save.lua").error, "Cannot delete \"../save.lua\": the name \"..\"")
 end)
 
 test.case("the client's copy goes with a deleted asset; a refusal is notified", function()
     local side = mocks.make_client_session({
-        ["c/assets/token/x.png"] = "X",
-        ["c/assets/drafts/a.png"] = "A"
+        ["c/games/g/assets/token/x.png"] = "X",
+        ["c/games/g/assets/drafts/a.png"] = "A"
     })
     ---@diagnostic disable-next-line: invisible
     local rp = side.client.asset_manager._delete_asset_rp[side.session]
@@ -141,12 +137,12 @@ test.case("the client's copy goes with a deleted asset; a refusal is notified", 
         success = true,
         path = "token/x.png"
     })
-    test.assert_eq(Asset("token/x.png", false):get_type(), nil)
+    test.assert_eq(mocks.client_store():asset("token/x.png"):get_type(), nil)
     rp:receive_response({
         success = true,
         path = "drafts"
     })
-    test.assert_eq(Asset("drafts/a.png", false):get_type(), nil)
+    test.assert_eq(mocks.client_store():asset("drafts/a.png"):get_type(), nil)
     rp:receive_response({
         success = true,
         path = "never/downloaded.png"

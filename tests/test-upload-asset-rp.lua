@@ -1,7 +1,6 @@
 local test = require("tests.lib.test")
 local mocks = require("tests.lib.mocks")
 local lifetime = require("lifetime")
-local Asset = require("data.asset")
 local AssetManager = require("data.asset-manager")
 local Session = require("game.session")
 local Connection = require("networking.connection")
@@ -9,6 +8,7 @@ local Connection = require("networking.connection")
 ---@return GameData
 local function game_data()
     return {
+        name = "G",
         game = {
             page = "P"
         },
@@ -30,13 +30,9 @@ local function game_data()
         },
         players = {
             adam = {
-                name = "Adam",
-                auth = mocks.server_auth("adam"),
                 group = "master"
             },
             piotr = {
-                name = "Piotrek",
-                auth = mocks.server_auth("piotr"),
                 group = "player"
             }
         },
@@ -51,7 +47,7 @@ end
 local function server_case(name, fn)
     test.case(name, function()
         local side = mocks.make_server_session(game_data, {
-            ["server/assets/world/w.png"] = "W"
+            ["s/games/g/assets/world/w.png"] = "W"
         })
         ---@type boolean, any
         local ok, err = pcall(fn, side)
@@ -74,33 +70,33 @@ end
 test.suite("UploadAssetRp")
 
 server_case("an upload from a session without write on the assets is refused and writes nothing", function(side)
-    test.assert_eq(mocks.log_in(side.connection, "piotr"), "piotr")
+    test.assert_true(mocks.join_game(side.connection, "piotr").success)
     test.assert_false(upload(side).success)
-    test.assert_eq(Asset("token/new.png", false):get_type(), nil)
+    test.assert_eq(mocks.server_store():asset("token/new.png"):get_type(), nil)
 end)
 
 server_case("an upload before the login is refused", function(side)
     test.assert_false(upload(side).success)
-    test.assert_eq(Asset("token/new.png", false):get_type(), nil)
+    test.assert_eq(mocks.server_store():asset("token/new.png"):get_type(), nil)
 end)
 
 server_case("an upload from a session with write on the assets is mounted", function(side)
-    test.assert_eq(mocks.log_in(side.connection, "adam"), "adam")
+    test.assert_true(mocks.join_game(side.connection, "adam").success)
     test.assert_true(upload(side).success)
-    local asset = Asset("token/new.png", false)
+    local asset = mocks.server_store():asset("token/new.png")
     test.assert_eq(asset:get_type(), "file")
     test.assert_eq(asset:read(), "N")
 end)
 
 server_case("an upload onto a folder, or under a bad path, is refused with the reason", function(side)
-    test.assert_eq(mocks.log_in(side.connection, "adam"), "adam")
+    test.assert_true(mocks.join_game(side.connection, "adam").success)
     local response = mocks.request(side.connection, "UploadAssetRp", {
         path = "world",
         content = love.data.encode("string", "base64", "N")
     }) --[[@as UploadAssetResponse]]
     test.assert_false(response.success)
     test.assert_eq(response.error, "Cannot upload \"world\": it is a folder")
-    test.assert_eq(Asset("world/w.png", false):read(), "W")
+    test.assert_eq(mocks.server_store():asset("world/w.png"):read(), "W")
     response = mocks.request(side.connection, "UploadAssetRp", {
         path = "../escape.png",
         content = love.data.encode("string", "base64", "N")

@@ -1,4 +1,3 @@
-local Asset = require("data.asset")
 local RemoteProcedure = require("networking.remote-procedure")
 local asset_usage = require("data.asset-usage")
 local permissions = require("game.permissions")
@@ -33,7 +32,8 @@ function DeleteAssetRp:send_response(request)
             path = path
         }
     end
-    local used_by = asset_usage.find(assert(app.data), path)
+    local game = self._session:get_game()
+    local used_by = asset_usage.find(game:get_data(), path)
     if #used_by > 0 then
         ---@type string[]
         local names = {}
@@ -46,7 +46,7 @@ function DeleteAssetRp:send_response(request)
             path = path
         }
     end
-    local ok, err = app.asset_manager:remove(path)
+    local ok, err = game:get_store():remove(path)
     return {
         success = ok,
         error = err,
@@ -61,7 +61,7 @@ function DeleteAssetRp:receive_response(response)
         app.notification_manager:notify(response.error or "Cannot delete the asset")
         return
     end
-    local copy = Asset(response.path, false)
+    local copy = assert(app.asset_manager:get_store()):asset(response.path)
     if copy:get_type() then
         copy:remove()
     end

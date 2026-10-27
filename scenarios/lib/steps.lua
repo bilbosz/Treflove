@@ -5,6 +5,7 @@ local steps = {}
 
 steps.LOGIN = "adam"
 steps.PASSWORD = "krause"
+steps.GAME = "Meadow"
 
 local SERVER_SESSIONS = [[
     local connections = 0
@@ -40,10 +41,13 @@ end
 ---@param driver ScenarioDriver
 ---@param login string|nil Defaults to `steps.LOGIN`
 ---@param password string|nil Defaults to `steps.PASSWORD`
+---@param game string|nil The game's name, defaults to `steps.GAME`
 ---@return GameScreen
-function steps.join_game(driver, login, password)
+function steps.join_game(driver, login, password, game)
     steps.log_in(driver, login, password)
-    driver:click("TextButton", "Join Game")
+    driver:click("TextButton", "Games")
+    driver:wait_screen("GamesScreen")
+    driver:click("TextButton", game or steps.GAME)
     local screen = driver:wait_screen("GameScreen") --[[@as GameScreen]]
     driver:log("in the game")
     return screen

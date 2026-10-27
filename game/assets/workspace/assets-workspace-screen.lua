@@ -39,6 +39,11 @@ local media = require("utils.media")
 ---@field private _pick_shown boolean Whether the pick's file was looked for in a listing
 local AssetsWorkspaceScreen = class("AssetsWorkspaceScreen", FormScreen)
 
+---@return AssetStore The joined game's copies
+local function _get_store()
+    return assert(app.asset_manager:get_store(), "the workspace needs a joined game")
+end
+
 ---@param self AssetsWorkspaceScreen
 ---@param caption string
 ---@param action fun()
@@ -270,7 +275,7 @@ end
 ---@private
 ---@param path string A file of the store, present locally
 function AssetsWorkspaceScreen:_show_local_content(path)
-    local asset_path = Asset.get_asset_path(path)
+    local asset_path = _get_store():get_path(path)
     local data = love.filesystem.newFileData(asset_path)
     ---@type media.Type|nil, LoveMedium
     local media_type, medium = nil, nil
@@ -291,13 +296,13 @@ function AssetsWorkspaceScreen:select_entry(entry)
     if entry.type == "directory" then
         self._details:clear_preview()
         self._details:set_type_text("Folder")
-    elseif Asset(entry.path, false):get_type() == "file" then
+    elseif _get_store():asset(entry.path):get_type() == "file" then
         self:_show_local_content(entry.path)
     else
         self._details:clear_preview()
         self._details:set_type_text("")
         app.asset_manager:download_asset(entry.path, function()
-            if lifetime.alive(self) and self._selected == entry and Asset(entry.path, false):get_type() == "file" then
+            if lifetime.alive(self) and self._selected == entry and _get_store():asset(entry.path):get_type() == "file" then
                 self:_show_local_content(entry.path)
                 self:_update_actions()
             end
