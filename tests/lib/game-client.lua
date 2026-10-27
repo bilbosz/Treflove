@@ -131,6 +131,37 @@ function game_client.game_data()
     }
 end
 
+---@return GameData `game_client.game_data()` with a game master's group, an empty group, a player's own grants and a token property no token holds
+function game_client.entries_game_data()
+    local data = game_client.game_data()
+    data.groups.master = {
+        title = "Game master",
+        permissions = {
+            "read",
+            "write"
+        }
+    }
+    data.groups.guest = {
+        title = "Guest",
+        permissions = {}
+    }
+    data.groups.player.permissions = {
+        "read",
+        "write:tokens/@owned"
+    }
+    data.players.adam = {
+        group = "master"
+    }
+    data.players.piotr.permissions = {
+        "view:tokens/Smaug"
+    }
+    data.token_properties.hp = {
+        title = "HP",
+        type = "number"
+    }
+    return data
+end
+
 ---@param connection Connection
 ---@param id string The remote procedure's class name
 ---@return RequestBody
@@ -171,10 +202,11 @@ local function _answer_login(client, user)
 end
 
 ---Logs `piotr` in, joins the game and enters it with `grants` as the permissions
----the server would have sent with `game_client.game_data()`
+---the server would have sent with the game's data
 ---@param grants string[]
+---@param data GameData|nil Defaults to `game_client.game_data()`
 ---@return GameClient
-function game_client.enter(grants)
+function game_client.enter(grants, data)
     mocks.ensure_love_data()
     mocks.ensure_love_math()
     mocks.ensure_love_graphics()
@@ -220,7 +252,7 @@ function game_client.enter(grants)
     _answer(client, connection, "GameDataRp", {
         success = true,
         game = mocks.GAME_ID,
-        data = game_client.game_data(),
+        data = data or game_client.game_data(),
         permissions = grants
     })
     _pop_request(connection, "DownloadMissingAssetsRp")
@@ -359,6 +391,75 @@ function game_client.find_token(client, id)
         end
     end
     error("no token " .. id)
+end
+
+---@class GameClientEntrySend What the session was asked to send
+---@field method "update_entry"|"create_entry"|"delete_entry"
+---@field kind EntryKind
+---@field id string
+---@field changes table<string, EntryValue>|nil
+---@field new_id string|nil
+---@field entry EntryData|nil
+
+---@param client GameClient
+---@return GameClientEntrySend[] Filled as the session's `update_entry`, `create_entry` and `delete_entry` are called, which then send nothing
+function game_client.record_entry_sends(client)
+    ---@type GameClientEntrySend[]
+    local sent = {}
+    local session = client.session
+    ---@param kind EntryKind
+    ---@param id string
+    ---@param changes table<string, EntryValue>
+    ---@param new_id string|nil
+    session.update_entry = function(_, kind, id, changes, new_id)
+        table.insert(sent, {
+            method = "update_entry",
+            kind = kind,
+            id = id,
+            changes = changes,
+            new_id = new_id
+        })
+    end
+    ---@param kind EntryKind
+    ---@param id string
+    ---@param entry EntryData
+    session.create_entry = function(_, kind, id, entry)
+        table.insert(sent, {
+            method = "create_entry",
+            kind = kind,
+            id = id,
+            entry = entry
+        })
+    end
+    ---@param kind EntryKind
+    ---@param id string
+    session.delete_entry = function(_, kind, id)
+        table.insert(sent, {
+            method = "delete_entry",
+            kind = kind,
+            id = id
+        })
+    end
+    return sent
+end
+
+---@param client GameClient
+---@return number x Where a side panel sits in the game screen
+---@return number width
+---@return number height
+function game_client.side_panel_place(client)
+    local w, h = assert(client.app.width), assert(client.app.height)
+    local panel_w = w * Consts.GAME_SIDE_PANEL_SHARE
+    return w - panel_w, panel_w, h
+end
+
+---@param client GameClient
+---@return string[] The notifications since the last call
+function game_client.take_notifications(client)
+    local notifications = client.app.notification_manager --[[@as TestGameNotificationManager]]
+    local messages = notifications.messages
+    notifications.messages = {}
+    return messages
 end
 
 return game_client
