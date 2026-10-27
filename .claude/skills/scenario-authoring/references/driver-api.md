@@ -36,16 +36,22 @@ number comes back as its string.
 
 The shared steps (`scenarios/lib/steps.lua`): `log_in(driver, login?,
 password?)` (waits for the login screen, fills both fields, "Sign In",
-waits for the menu, returns it), `join_game(driver, login?, password?)`
-(then "Join Game", waits for the game screen, returns it), `log_out(driver)` (Escape
+waits for the menu, returns it), `sign_up(driver, login, name, password)`
+("Sign Up" from the login screen, the four fields, "Create Account", waits
+for the menu), `join_game(driver, login?, password?, game?)` (then
+"Games", the game's button in the list, "Meadow" by default, waits for
+the game screen, returns it), `log_out(driver)` (Escape
 to the menu, "Log Out", waits for the login screen),
 `open_assets_workspace(driver)` ("Assets", waits for the listing),
 `server_sessions(driver)` (the server's connection count and its
 logged-in users).
 
-What the fixture's basic world holds: the page `Meadow` with the tokens
-`Bilbo` ("Bilbo Baggins", owned by adam and piotr) and `Smaug`; adam in
-`master` (`read`, `write`); piotr in `player` (reads the game, pages,
-token properties, players, groups, assets, and `tokens/@owned`); the
-store `assets/world/world.png`, `assets/token/bilbo.png`,
-`assets/token/smaug.png`.
+What the fixture's basic world holds: the accounts `adam` and `piotr`
+(`accounts.lua`) and one game, `Meadow` (`games/meadow/`), with the page
+`Meadow` with the tokens `Bilbo` ("Bilbo Baggins", owned by adam and
+piotr) and `Smaug`; adam in `master` (`read`, `write`); piotr in `player`
+(reads the game, pages, token properties, players, groups, assets, and
+`tokens/@owned`); the game's store `assets/world/world.png`,
+`assets/token/bilbo.png`, `assets/token/smaug.png`. A game a scenario
+creates starts from `server/template/`: the page `Table` with the token
+`Hero`, owned by its creator.

@@ -23,7 +23,7 @@ local steps = require("scenarios.lib.steps")
 
 ---@param driver ScenarioDriver
 return function(driver)
-    local game = steps.join_game(driver)                 -- the login and "Join Game", as adam
+    local game = steps.join_game(driver)                 -- the login, "Games" and the game "Meadow", as adam
     driver:click("TextButton", "Assets")                 -- a control by class and caption
     driver:wait_screen("AssetsWorkspaceScreen")
     driver:expect(driver:try_find("AssetListRow", "token/"), "the store's token folder is listed")
@@ -115,22 +115,27 @@ waits for game state synchronization.
 
 ## The fixture
 
-`scenarios/fixtures/basic/` mirrors the server root: `save.lua` (the
-`GameData` shape, see `game/game-data-rp.lua`) and `assets/` with tiny
-real images (LÖVE decodes them). `adam`/`krause` is the master, `piotr`/
-`secret` a player who reads the tokens he owns only. To add a player,
-compute the `auth` with the script, which runs the project's own hashing
-under LÖVE:
+`scenarios/fixtures/basic/` mirrors the server root: `accounts.lua`
+(the accounts by login: `name` and `auth`) and `games/meadow/` with its
+`save.lua` (the `GameData` shape, see `game/game-data-rp.lua`) and
+`assets/` with tiny real images (LÖVE decodes them). `adam`/`krause` is
+the master of `Meadow`, `piotr`/`secret` a player who reads the tokens he
+owns only. To add an account, compute the `auth` with the script, which
+runs the project's own hashing under LÖVE:
 
 ```bash
 .claude/skills/scenario-authoring/scripts/player-auth.sh gandalf mellon
 ```
 
-and add the player to `players` as `{name = ..., auth = ..., group =
-...}`, with `permissions = {...}` for grants of its own (`PlayerData` in
-`game/game-data-rp.lua`, the grants in `docs/permissions.md`); a new
-token goes into `tokens` and into its page's `tokens` list; a new image
-into `assets/`. A fixture change is written into the fixture paragraphs
+and add it to `accounts.lua` as `{name = ..., auth = ...}`; to put it in
+the game, add it to the game's `players` as `{group = ...}`, with
+`permissions = {...}` for grants of its own (`PlayerData` in
+`game/game-data-rp.lua`, the grants in `docs/permissions.md`); an
+account that is not in `players` joins the game as a `player` at its
+first click on it. A new token goes into `tokens` and into its page's
+`tokens` list; a new image into the game's `assets/`; a second game is
+another directory under `games/`. An account made by a scenario
+(`steps.sign_up`) is in the server's root for that run only. A fixture change is written into the fixture paragraphs
 of `docs/scenarios-and-console.md` and of `references/driver-api.md`. Every run reseeds the server root from the fixture, so a
 scenario never depends on a previous run; the client's cache (`c/` under
 the run's identity) stays, which is harmless.
@@ -180,8 +185,9 @@ runs it under the debugger with breakpoints in the scenario file
   frame per second (adaptive vsync under XWayland), so a windowed
   scenario takes a second per step; headless is unaffected.
 - `wait_screen` is on the class name of the screen manager's current
-  screen: the waiting screen shows between "Join Game" and the game, so
-  wait for `GameScreen`, not for the waiting screen to go.
+  screen: the waiting screen shows between the click on a game in the
+  games list and the game, so wait for `GameScreen`, not for the waiting
+  screen to go.
 - A peer's chunk is a string: quote it with `[[ ]]`, and build it with
   `string.format("%q")` when it carries a value.
 - The scenario given on the command line quits a headless client at its

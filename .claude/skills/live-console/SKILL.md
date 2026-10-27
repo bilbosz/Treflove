@@ -14,7 +14,7 @@ design: `docs/scenarios-and-console.md`, "The console".
 ```bash
 luajit tools/console.lua 9090 'return get_class_name_of(app.screen_manager:get_screen())'
 luajit tools/console.lua 9090 'return app.session:get_user(), app:get_time()'      # several values, tab-separated
-luajit tools/console.lua 9091 'return table.to_string(app.data.game)'               # a table, serialized
+luajit tools/console.lua 9091 'return table.to_string(app.games:get("meadow"):get_data().game)'   # a table, serialized (the server: a game by id)
 luajit tools/console.lua 9090 'return require("utils.utils").dump_controls(app.root)'   # the screen as a tree
 luajit tools/console.lua 9090 'app.session:logout()'                                 # a change; no return value
 luajit tools/console.lua 9090 < /abs/path/probe.lua                                  # a longer chunk from a file

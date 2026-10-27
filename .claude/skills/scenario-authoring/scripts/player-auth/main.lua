@@ -1,5 +1,5 @@
 -- Prints the auth of a fixture player: the server-side hash of the client-side hash, each under its side's seed,
--- with the project's own hashing (utils/utils.lua), so the fixture's save.lua accepts the login
+-- with the project's own hashing (utils/utils.lua), so the fixture's accounts.lua accepts the login
 local login, password = arg[2], arg[3]
 if not login or not password then
     io.stderr:write("usage: love <this directory> <login> <password>\n")
