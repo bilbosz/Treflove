@@ -1,4 +1,5 @@
 local test = require("tests.lib.test")
+local mocks = require("tests.lib.mocks")
 local game_client = require("tests.lib.game-client")
 local Consts = require("app.consts")
 
@@ -229,4 +230,42 @@ client_case("a change pushed after the game was left goes to the data", {
         9,
         9
     })
+end)
+
+test.suite("TokenChangedRp, the server")
+
+test.case("a push a client sends to the server is logged, acknowledged with nothing and changes nothing", function()
+    local save = "s/games/" .. mocks.GAME_ID .. "/save.lua"
+    ---@type table<string, string>
+    local files = {
+        ["s/games/" .. mocks.GAME_ID .. "/assets/world/w.png"] = "W"
+    }
+    local side = mocks.make_server_session(game_client.game_data, files)
+    ---@type boolean, any
+    local ok, err = pcall(function()
+        mocks.join_game(side.connection, "piotr")
+        local before = files[save]
+        local response = mocks.request(side.connection, "TokenChangedRp", {
+            id = "Smaug",
+            new_id = "Smeagol",
+            token = changed("Smaug", {
+                position = {
+                    7,
+                    8
+                }
+            })
+        })
+        test.assert_deep_eq(response, {})
+        test.assert_deep_eq(side.server.logs[#side.server.logs], {
+            "TokenChangedRp is the server's to send: a request from the client ignored"
+        })
+        test.assert_eq(side.connection:get_out_channel():getCount(), 0, "the acknowledgement only, popped by the request")
+        local game = assert(assert(side.server.games):get(mocks.GAME_ID))
+        test.assert_deep_eq(game:get_data().tokens, game_client.game_data().tokens)
+        test.assert_eq(files[save], before)
+    end)
+    mocks.finish_server_session(side)
+    if not ok then
+        error(err, 0)
+    end
 end)

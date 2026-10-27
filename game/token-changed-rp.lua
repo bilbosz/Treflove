@@ -20,7 +20,10 @@ end
 ---@param request TokenChangedRequest
 ---@return TokenChangedResponse
 function TokenChangedRp:send_response(request)
-    assert(app.is_client)
+    if app.is_server then
+        app:log("TokenChangedRp is the server's to send: a request from the client ignored")
+        return {}
+    end
     local data = app.data
     if not data or not data.tokens[request.id] then
         app:log(string.format("A change of the token %q, which this client does not hold, ignored", tostring(request.id)))
