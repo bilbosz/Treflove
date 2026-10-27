@@ -523,3 +523,127 @@ test.case("an image chosen in the assets workspace sends an update per token who
         test.assert_eq(game_client.find_token(client, "Bilbosza"):get_data().avatar, "token/s.png")
     end)
 end)
+
+---@param client GameClient
+---@return TextButton|nil
+local function delete_button(client)
+    ---@diagnostic disable-next-line: invisible
+    return client.game_screen:get_token_panel()._delete_button
+end
+
+test.case("a writable selection has a Delete button between Cancel and Apply, on their line; a read-only or an empty one has none", function()
+    with_client({
+        "read",
+        "write:tokens/@owned"
+    }, function(client)
+        game_client.select(client, {
+            "Bilbosza"
+        })
+        local delete = assert(delete_button(client))
+        local cancel_x, cancel_y = assert(cancel_button(client)):get_position()
+        local apply_x, apply_y = assert(apply_button(client)):get_position()
+        local delete_x, delete_y = delete:get_position()
+        test.assert_eq(delete_y, cancel_y)
+        test.assert_eq(delete_y, apply_y)
+        local cancel_w = assert(cancel_button(client)):get_size()
+        local delete_w = delete:get_size()
+        local s = Consts.PANEL_FIELD_SCALE
+        test.assert_true(cancel_x + cancel_w * s < delete_x, "apart from Cancel")
+        test.assert_true(delete_x + delete_w * s < apply_x, "apart from Apply")
+        game_client.select(client, {
+            "Bilbosza",
+            "Smaug"
+        })
+        test.assert_eq(delete_button(client), nil, "Smaug is not writable")
+        game_client.select(client, {})
+        test.assert_eq(delete_button(client), nil, "nothing selected, nothing to delete")
+    end)
+end)
+
+test.case("Delete sends one deletion per selected token; the answers remove them and the panel shows the empty selection", function()
+    with_client({
+        "read",
+        "write"
+    }, function(client)
+        game_client.select(client, {
+            "Bilbosza",
+            "Smaug"
+        })
+        game_client.click(client, assert(delete_button(client)))
+        ---@type string[]
+        local ids = {}
+        while client.connection:get_out_channel():getCount() > 0 do
+            local request = game_client.pop_request(client, "DeleteTokenRp") --[[@as DeleteTokenRequest]]
+            table.insert(ids, request.id)
+        end
+        test.assert_deep_eq(ids, {
+            "Bilbosza",
+            "Smaug"
+        })
+        test.assert_true(id_input(client) ~= nil, "nothing removed before the answers")
+        for _, id in ipairs(ids) do
+            game_client.answer(client, "DeleteTokenRp", {
+                success = true,
+                id = id
+            })
+        end
+        test.assert_deep_eq(client.game_screen:get_page():get_tokens(), {})
+        test.assert_eq(id_input(client), nil, "no id field: nothing selected")
+        test.assert_deep_eq(properties(client), {})
+    end)
+end)
+
+test.case("an empty number field refuses the whole apply with a notification: nothing applied, nothing sent, the fields keep their text", function()
+    with_client({
+        "read",
+        "write"
+    }, function(client)
+        game_client.select(client, {
+            "Bilbosza"
+        })
+        local token = game_client.find_token(client, "Bilbosza")
+        local diameter = assert(property_by_key(client, "diameter").input) --[[@as NumberInput]]
+        diameter:set_text("")
+        assert(property_by_key(client, "name").input):set_text("Bilbo the Great")
+        test.assert_deep_eq(apply_id(client, "Bilbo"), {
+            "Diameter needs a number"
+        })
+        test.assert_eq(token:get_id(), "Bilbosza", "not renamed")
+        test.assert_eq(token:get_data().diameter, 1)
+        test.assert_eq(token:get_data().name, "Bilbosza Wielka")
+        test.assert_eq(client.connection:get_out_channel():getCount(), 0)
+        test.assert_eq(diameter:get_text(), "")
+        test.assert_eq(assert(id_input(client)):get_text(), "Bilbo")
+        test.assert_eq(assert(property_by_key(client, "name").input):get_text(), "Bilbo the Great")
+
+        diameter:set_text("2")
+        test.assert_deep_eq(apply_id(client, "Bilbo"), {})
+        test.assert_eq(token:get_id(), "Bilbo")
+        test.assert_eq(token:get_data().diameter, 2)
+        test.assert_eq(token:get_data().name, "Bilbo the Great")
+    end)
+end)
+
+test.case("a multivalue number field left alone does not refuse the apply", function()
+    with_client({
+        "read",
+        "write"
+    }, function(client)
+        game_client.find_token(client, "Smaug"):set_data("diameter", 3)
+        game_client.select(client, {
+            "Bilbosza",
+            "Smaug"
+        })
+        local diameter = assert(property_by_key(client, "diameter").input)
+        test.assert_true(diameter:is_multivalue_default())
+        local name = assert(property_by_key(client, "name").input)
+        name:set_text("Twins")
+        name:on_edit("Twins")
+        local notifications = client.app.notification_manager --[[@as TestGameNotificationManager]]
+        notifications.messages = {}
+        game_client.click(client, assert(apply_button(client)))
+        test.assert_deep_eq(notifications.messages, {})
+        test.assert_eq(game_client.find_token(client, "Smaug"):get_data().name, "Twins")
+        test.assert_eq(game_client.find_token(client, "Smaug"):get_data().diameter, 3)
+    end)
+end)
