@@ -22,16 +22,17 @@ love . monitor <address> <name>:<port>[,<name>:<port>...] [--headless] [--consol
                            scenario driver's server(...) calls
   --identity <name>        the LÖVE save directory identity
   --fixture <path>         server only, with --identity: a directory of the
-                           source tree whose content seeds the server root
-                           at load
+                           source tree whose copy replaces the server root
+                           at load (it empties the root)
   --headless               fixed frame delta, no sleep, no vsync
   --peers <name>:<port>,.. client only: the console ports of the peer clients a
                            scenario drives
 ```
 
 An option on the wrong side, an unknown option, a missing value (a value
-starting with `--` counts as missing) or a repeated one show the usage
-message, as a bad address does. The save directory
+starting with `--` counts as missing), a repeated one or `--fixture`
+without `--identity` show the usage message, as a bad address does, and
+the program exits with code 2. The save directory
 (`~/.local/share/love/<identity>/` on Linux) holds the server's state
 under its root `s` (`s/accounts.lua`, `s/games/<id>/save.lua` and
 `s/games/<id>/assets/`) and the client's copies under `c`
@@ -112,7 +113,8 @@ end
 - `server(chunk)` evaluates Lua on the server through its console
   (`--server-console`) and returns the reply: a scenario checks the
   server's state or nudges its clock from the client side.
-- `screenshot(name)` saves to the save directory and returns the path.
+- `screenshot(name)` saves to the save directory and returns the path;
+  the name carries the extension LÖVE encodes by (`old-town.png`).
 - The outcome is logged (`scenario <name>: passed` or `failed: <error>`
   with the traceback and the control dump). The scenario given on the
   command line, headless, then quits the client with exit code 0 or 1;

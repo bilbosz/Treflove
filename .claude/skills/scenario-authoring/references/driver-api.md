@@ -25,7 +25,7 @@ by the loop's poll in between, through the same callbacks as real input.
 | `client(name, chunk)` | sends the chunk to the peer's console as a `run`; returns a `ScenarioPeerRun` | the chunk sees `driver` and `steps`; connects on the first call |
 | `ScenarioPeerRun:is_done()` | polls the peer's connection, answers | |
 | `ScenarioPeerRun:wait(timeout?)` | yields until done; returns the `ok` body; raises `peer <name>: <error>` | |
-| `screenshot(name)` | `love.graphics.captureScreenshot`, yields one frame, returns the absolute path | under the client's save directory |
+| `screenshot(name)` | `love.graphics.captureScreenshot`, yields one frame, returns the absolute path; the name carries the extension (`x.png`) | under the client's save directory |
 | `quit(exit_code?)` | the app quits at the next update | the command line scenario quits by itself at its end, headless |
 | `headless` | true under `--headless` | |
 

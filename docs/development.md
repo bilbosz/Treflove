@@ -58,9 +58,10 @@ is built from the fork `bilbosz/local-lua-debugger-vscode`, which adds the
 `Client` (the login screen, with the console ports `run.sh` uses),
 `Server`, the compound
 `Server + Client` (both at once, one debug session each, stopped together),
-`Scenario (headless)` (a scenario by name, asked for at launch, on the
-offscreen driver against a server its tasks start and stop; breakpoints in
-the scenario file work), `Monitor` (the window over the client's and the
+`Scenario (headless)` (a scenario by name, asked for at launch, once for
+the client and once for the task that starts its server seeded from the
+scenario's fixture, since a task cannot read the launch's inputs; on the
+offscreen driver; breakpoints in the scenario file work), `Monitor` (the window over the client's and the
 server's consoles) and the test suite, `Tests (LuaJIT)` and
 `Tests (LÖVE)`. Breakpoints, stepping and the inspection of locals work in
 every module of the main Lua state. Each configuration sets
