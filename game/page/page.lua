@@ -230,7 +230,27 @@ function Page:on_pointer_up(x, y, button)
         end
         selection:hide()
     end
+    if self._pointer_down_pos[Consts.PAGE_DRAG_TOKEN_BUTTON] and button == Consts.PAGE_DRAG_TOKEN_BUTTON then
+        self:_send_moves()
+    end
     self._pointer_down_pos[button] = nil
+end
+
+---@private
+function Page:_send_moves()
+    local session = assert(app.session)
+    for token, start_pos in pairs(assert(self._select_set_start_pos)) do
+        local x, y = token:get_position()
+        if x ~= start_pos[1] or y ~= start_pos[2] then
+            session:update_token(token:get_id(), {
+                position = {
+                    x,
+                    y
+                }
+            })
+        end
+    end
+    self._select_set_start_pos = nil
 end
 
 ---@param x number
@@ -314,12 +334,22 @@ end
 ---@param id string A token placed on the page
 ---@return Token
 function Page:find_token(id)
+    local token = self:try_find_token(id)
+    if not token then
+        error(string.format("no token %q on the page", id))
+    end
+    return token
+end
+
+---@param id string
+---@return Token|nil The token placed on the page under `id`, `nil` when there is none
+function Page:try_find_token(id)
     for _, token in ipairs(self._tokens) do
         if token:get_id() == id then
             return token
         end
     end
-    error(string.format("no token %q on the page", id))
+    return nil
 end
 
 ---@param id string A token placed on the page

@@ -13,6 +13,8 @@ local CreateGameRp = require("game.create-game-rp")
 local GameDataRp = require("game.game-data-rp")
 local ListGamesRp = require("game.list-games-rp")
 local Session = require("game.session")
+local TokenChangedRp = require("game.token-changed-rp")
+local UpdateTokenRp = require("game.update-token-rp")
 local CreateAccountRp = require("login.create-account-rp")
 local LoginRp = require("login.login-rp")
 local LogoutRp = require("login.logout-rp")
@@ -41,6 +43,8 @@ local CLASSES = {
     GameDataRp = GameDataRp,
     ListGamesRp = ListGamesRp,
     CreateGameRp = CreateGameRp,
+    UpdateTokenRp = UpdateTokenRp,
+    TokenChangedRp = TokenChangedRp,
     UploadAssetRp = UploadAssetRp,
     DownloadAssetRp = DownloadAssetRp,
     DownloadMissingAssetsRp = DownloadMissingAssetsRp,
@@ -83,26 +87,28 @@ test.case("a client session owns its login, the game procedures and the asset pr
     local session = Session(connection):attach_lifetime(connection)
     test.assert_eq(lifetime.format(lifetime.of(session)), "(" .. tostring(connection) .. ", reachable)")
     local dependents = lifetime.dependents(session)
-    test.assert_eq(#dependents, 12, "login, game data, games list, new game, seven asset procedures and the asset manager's hook")
+    test.assert_eq(#dependents, 14, "login, game data, games list, new game, the token update and push, seven asset procedures and the asset manager's hook")
     test.assert_eq(get_class_name_of(dependents[1]), "Login")
     test.assert_eq(get_class_name_of(dependents[2]), "GameDataRp")
     test.assert_eq(get_class_name_of(dependents[3]), "ListGamesRp")
     test.assert_eq(get_class_name_of(dependents[4]), "CreateGameRp")
-    test.assert_eq(get_class_name_of(dependents[5]), "UploadAssetRp")
-    test.assert_eq(get_class_name_of(dependents[6]), "DownloadAssetRp")
-    test.assert_eq(get_class_name_of(dependents[7]), "DownloadMissingAssetsRp")
-    test.assert_eq(get_class_name_of(dependents[8]), "ListAssetsRp")
-    test.assert_eq(get_class_name_of(dependents[9]), "CreateAssetFolderRp")
-    test.assert_eq(get_class_name_of(dependents[10]), "RenameAssetRp")
-    test.assert_eq(get_class_name_of(dependents[11]), "DeleteAssetRp")
-    test.assert_eq(getmetatable(dependents[12]), "hook")
+    test.assert_eq(get_class_name_of(dependents[5]), "UpdateTokenRp")
+    test.assert_eq(get_class_name_of(dependents[6]), "TokenChangedRp")
+    test.assert_eq(get_class_name_of(dependents[7]), "UploadAssetRp")
+    test.assert_eq(get_class_name_of(dependents[8]), "DownloadAssetRp")
+    test.assert_eq(get_class_name_of(dependents[9]), "DownloadMissingAssetsRp")
+    test.assert_eq(get_class_name_of(dependents[10]), "ListAssetsRp")
+    test.assert_eq(get_class_name_of(dependents[11]), "CreateAssetFolderRp")
+    test.assert_eq(get_class_name_of(dependents[12]), "RenameAssetRp")
+    test.assert_eq(get_class_name_of(dependents[13]), "DeleteAssetRp")
+    test.assert_eq(getmetatable(dependents[14]), "hook")
     local login_dependents = lifetime.dependents(dependents[1])
     test.assert_eq(#login_dependents, 3)
     test.assert_eq(get_class_name_of(login_dependents[1]), "LoginRp")
     test.assert_eq(get_class_name_of(login_dependents[2]), "LogoutRp")
     test.assert_eq(get_class_name_of(login_dependents[3]), "CreateAccountRp")
     ---@diagnostic disable-next-line: invisible
-    test.assert_eq(app_mock.asset_manager._upload_asset_rp[session], dependents[5])
+    test.assert_eq(app_mock.asset_manager._upload_asset_rp[session], dependents[7])
     test.assert_eq(connection:get_out_channel():getCount(), 0, "no login before one is asked for")
     session:login("adam", "krause")
     test.assert_eq(connection:get_out_channel():getCount(), 1, "the login request was sent")
@@ -202,6 +208,10 @@ test.case("destroying the connection tears the whole tree down, the connection f
         "  unregister DownloadAssetRp",
         "UploadAssetRp:release(anchor)",
         "  unregister UploadAssetRp",
+        "TokenChangedRp:release(anchor)",
+        "  unregister TokenChangedRp",
+        "UpdateTokenRp:release(anchor)",
+        "  unregister UpdateTokenRp",
         "CreateGameRp:release(anchor)",
         "  unregister CreateGameRp",
         "ListGamesRp:release(anchor)",

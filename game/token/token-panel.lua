@@ -286,9 +286,13 @@ end
 ---@param key string An `image` property
 ---@param path string
 function TokenPanel:_set_image(key, path)
+    local session = assert(app.session)
     for token in pairs(self._selection_set) do
         if token:get_data()[key] ~= path then
             token:set_data(key, path)
+            session:update_token(token:get_id(), {
+                [key] = path
+            })
         end
     end
     self:_update_view()
@@ -379,50 +383,68 @@ function TokenPanel:_release_properties()
 end
 
 ---@private
+---@return string|nil The id the single selected token had, when the field renamed it
 function TokenPanel:_apply_id()
     local token, input = self:_get_single_token(), self._id_input
     if not token or not input or input:is_read_only() then
-        return
+        return nil
     end
     local id = input:get_text()
-    if id == token:get_id() then
-        return
+    local old = token:get_id()
+    if id == old then
+        return nil
     end
     local reason = token_id.check(assert(app.data), id)
     if reason then
         app.notification_manager:notify(reason)
-        return
+        return nil
     end
     token:set_id(id)
+    return old
+end
+
+---@private
+---@param changes table<Token, table<string, TokenDataValue>> The changes made, by token; a `nil` the wire cannot carry is applied but not recorded
+---@param key string
+---@param value TokenDataValue|nil
+function TokenPanel:_apply_value(changes, key, value)
+    for token in pairs(self._selection_set) do
+        if token:get_data()[key] ~= value then
+            token:set_data(key, value)
+            if value ~= nil then
+                local token_changes = changes[token] or {}
+                token_changes[key] = value
+                changes[token] = token_changes
+            end
+        end
+    end
 end
 
 ---@private
 function TokenPanel:_apply()
-    self:_apply_id()
+    local renamed_from = self:_apply_id()
+    ---@type table<Token, table<string, TokenDataValue>>
+    local changes = {}
     for _, property in ipairs(self._properties) do
         if not property.input:is_multivalue_default() then
             local t = property.def.type
             if t == "string" then
-                local key, value = property.key, property.input:get_text()
-                for token in pairs(self._selection_set) do
-                    local old = token:get_data()[key]
-                    if old ~= value then
-                        token:set_data(key, value)
-                    end
-                end
+                self:_apply_value(changes, property.key, property.input:get_text())
             elseif t == "number" then
                 local input = property.input
                 ---@cast input NumberInput
-                local key, value = property.key, input:get_number()
-                for token in pairs(self._selection_set) do
-                    local old = token:get_data()[key]
-                    if old ~= value then
-                        token:set_data(key, value)
-                    end
-                end
+                self:_apply_value(changes, property.key, input:get_number())
             elseif t ~= "image" then
                 assert_unreachable()
             end
+        end
+    end
+    local session = assert(app.session)
+    for token in pairs(self._selection_set) do
+        if renamed_from and token == self:_get_single_token() then
+            session:update_token(renamed_from, changes[token] or {}, token:get_id())
+        elseif changes[token] then
+            session:update_token(token:get_id(), changes[token])
         end
     end
 end

@@ -517,6 +517,28 @@ test.case("the server's session resolves its set when the game is selected and c
     mocks.finish_server_session(side)
 end)
 
+test.case("the server's session is one of its game's sessions from the selection to the logout or its death", function()
+    local side = mocks.make_server_session(game_data, {})
+    local session = side.session
+    log_in(session, "piotr")
+    test.assert_true((session:select_game(mocks.GAME_ID)))
+    local game = session:get_game()
+    test.assert_deep_eq(game:get_sessions(), {
+        session
+    })
+    test.assert_true((session:select_game(mocks.GAME_ID)), "selected again")
+    test.assert_deep_eq(game:get_sessions(), {
+        session
+    }, "once")
+    log_out(session)
+    test.assert_deep_eq(game:get_sessions(), {}, "the logout left it")
+    log_in(session, "piotr")
+    test.assert_true((session:select_game(mocks.GAME_ID)))
+    lifetime.destroy(side.connection)
+    test.assert_deep_eq(game:get_sessions(), {}, "a dead session is not listed")
+    mocks.restore_love_filesystem(side.previous_filesystem)
+end)
+
 test.case("the client's session takes its grants after the login and drops them at logout", function()
     local app_mock, connection = make_app()
     app_mock.asset_manager = AssetManager()
