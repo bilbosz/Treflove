@@ -71,8 +71,10 @@ script starts one extra client per peer (see "Several clients").
   the menu screen), `join_game` (returns the game screen), `log_out`,
   `open_assets_workspace`, `server_sessions`, `select_token` and
   `drag_token` (a token by its label, selected with a rectangle over its
-  bounding square, dragged by an offset in screen units); a step used by two
-  scenarios goes there, named for what it reaches. The folder is skipped
+  bounding square, dragged by an offset in screen units), `enter_game`
+  (a game from the menu), `create_token` (through the New Token screen)
+  and `delete_token` (a selected token, from the panel's Delete); a step
+  used by two scenarios goes there, named for what it reaches. The folder is skipped
   by `./format-code.sh`, which skips every path containing `lib/` and
   rewrites the whole project, so one file is formatted with `lua-format
   -i <file>` and checked with `lua-format --check <file>`,
@@ -112,8 +114,13 @@ returns a value is a run that ends at once, so one primitive serves
 steps and questions. Each peer has its own identity and log
 (`/tmp/treflove-scenario/<name>/<peer>.log`). What two clients can show
 today: each player's game filtered by their grants, the shared asset
-store, one logging out while the other stays. Seeing each other's moves
-waits for game state synchronization.
+store, one logging out while the other stays, and each other's token
+changes, creations and deletions, pushed by the server to the clients
+that read the token (`move-token`, `create-token`). A grant given in the
+save while a player is in the game reaches them only when they enter the
+game again (the session's set is resolved at the join), which is what
+`create-token` does with `steps.enter_game` after `driver:server` edited
+the data and saved it.
 
 ## The fixture
 

@@ -51,7 +51,12 @@ over the token's bounding square with the select button, returns the
 token-drag button by `dx`, `dy` screen units, returns its position in
 page meters; the move reaches the server when the drag ends, and the
 other clients in the game about 25 ms later headless, which
-`move-token` measures).
+`move-token` measures), `enter_game(driver, game?)` (from the menu:
+"Games", the game's button, waits for the game screen, returns it),
+`create_token(driver, id, name, avatar)` ("New Token", the three fields,
+"Create", waits for the game screen showing the token, returns the
+`Token`), `delete_token(driver, label)` (the token selected, the panel's
+"Delete", waits for it to be gone).
 
 What the fixture's basic world holds: the accounts `adam` and `piotr`
 (`accounts.lua`) and one game, `Meadow` (`games/meadow/`), with the page

@@ -110,10 +110,24 @@ every question is answered no.
   the client notifies it and restores the token from the response. The
   push (`TokenChangedRp`) goes only to the sessions that may `read` the
   token, so a client never receives a token it was not sent.
+- **A token created or deleted** (`CreateTokenRp`, `DeleteTokenRp`): a
+  creation needs `write` on the whole kind (`write:tokens` or `write`), a
+  deletion `write` on the token (`write:tokens/<id>`, `@owned` with the
+  ownership read at the moment of the request, or wider). A created token
+  has no `owners`, so nobody's `@owned` grant covers it: a group with
+  `write:tokens`, or a `write:tokens/<id>` added to a player's permissions
+  in the save, is who may move it. The push of a creation
+  (`TokenCreatedRp`) goes to the sessions that may `read` the new token,
+  the push of a deletion (`TokenDeletedRp`) to those that could read it
+  before it went; the deletion removes the grants naming the token from
+  the groups', the players' and every live session's set
+  (`permissions.remove_key`, `PermissionSet:remove_key`).
 - **The client's UI**: the token panel is read-only (inputs read-only, no
   Apply, its "Show in assets..." button opens the workspace to look,
   without Use) when
-  any selected token is not writable; dragging moves only the
+  any selected token is not writable, and shows Delete for a writable
+  selection only; the game's New Token entry is read-only without `write`
+  on the tokens kind; dragging moves only the
   writable tokens of the selection; the assets workspace gates its name
   field and its actions by what the listing said (`writable`).
 - **A token's id**: renaming it in the token panel renames the grants

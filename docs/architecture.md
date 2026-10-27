@@ -103,6 +103,17 @@ applies the change and answers an empty acknowledgement, and the server's
 `receive_response` has nothing to do. The request-response pair the client
 starts, `UpdateTokenRp`, and the push are described under [Tokens](#tokens).
 
+A request whose id has no handler on the receiving side (a procedure one
+build has and the other has not) does not kill the receiver: the
+connection logs it and answers a refusal body (`UnknownProcedureResponse`:
+`success = false`, the error naming the procedure), so the sender's queue
+of response handlers stays in step and its `receive_response` sees a
+refusal; the peer stays connected. A push the server starts
+(`TokenChangedRp`, `TokenCreatedRp`, `TokenDeletedRp`) is built on both
+sides like every procedure, so a client can send it to the server: its
+`send_response` there logs the request and answers an empty
+acknowledgement instead of asserting.
+
 ## Session Management
 
 A `Session` ties a connection to a user:
@@ -110,8 +121,9 @@ A `Session` ties a connection to a user:
   creation of an account (`sign_up`: `CreateAccountRp`, then the login
   with the same credentials)
 - Coordinates the screen transitions (connecting → login, or the sign-up
-  over it → user menu → the games list, the new game over it → game, and
-  the assets workspace over the game)
+  over it → user menu → the games list, the new game over it → game, the
+  new token screen over it, and the assets workspace over the game or the
+  new token screen)
 - Integrates with the asset manager and backstack navigation
 - Holds the user's `PermissionSet` while in a game: the server resolves it
   from the game's data when the session selects the game
@@ -126,7 +138,15 @@ A `Session` ties a connection to a user:
   new_id)`: the page after a drag, the token panel after Apply or an image
   chosen in the workspace) and applies the server's entry to its copy and
   to the shown page (`Session:apply_token(id, new_id, token)`: the one path
-  a push and a refusal's restore take)
+  a push, a refusal's restore and a success's convergence take)
+- On the client, creates a token (`Session:create_token(id, token, cb)`:
+  `CreateTokenRp` with the shown page) and deletes one
+  (`Session:delete_token(id)`: `DeleteTokenRp`); both are applied when the
+  server answers, through the path its push takes too
+  (`Session:apply_token_created(id, page, token)`,
+  `Session:apply_token_deleted(id)`), and a refusal is notified
+- On the client, shows the new token screen over the game
+  (`show_new_token`, `close_new_token`)
 - Is anchored to its connection and owns its login, its remote procedures
   and, on the client, the "logged in" token that owns the menu and game
   screens; the games list, the new game screen, the game screen and the
@@ -284,8 +304,8 @@ the placement through `DrawableControl`.
 
 `ScreenManager` shows one screen at a time (`show(screen)`); screens are
 full-screen UI containers: ConnectingScreen, LoginScreen, UserMenuScreen,
-OptionsMenuScreen, GameScreen, AssetsWorkspaceScreen, WaitingScreen, and
-ScreenSaver for a server with a window.
+OptionsMenuScreen, GameScreen, NewTokenScreen, AssetsWorkspaceScreen,
+WaitingScreen, and ScreenSaver for a server with a window.
 
 ## The Page
 
@@ -383,17 +403,60 @@ with the token as the server now holds it) to every other session in the
 game that may `read` the token. The response carries the server's entry
 when the session may read it: on a refusal the client notifies the reason
 and restores the token from it (the id renamed back, the position and the
-properties set), so the client's copy never drifts from the server's. A
+properties set), and on a success it applies the entry too, so the
+client's copy converges on the server's at every answer: two clients
+changing one token at once both end on the server's last write (a token
+the user is dragging again when the answer lands sits at the server's
+position for a frame). A
 client receiving a push applies what differs (the rename first; an image
 property, or `avatar` for a player who may not read the properties, whose
 file the store lacks is downloaded before it is set), to its data and to
 the token on the shown page (`Page:try_find_token`), and rebuilds the
 token panel when the token is selected; a token it does not hold (one it may not read) is logged and
 ignored. A client that left the game to the menu still holds the data and
-receives the pushes, applied to the data only. What the slice leaves for
-the next: pages, players, groups and token properties are not
-synchronized, nothing creates or deletes a token, and a property cannot
-be deleted (the wire carries no `nil`).
+receives the pushes, applied to the data only.
+
+A token is created from the quick access panel's New Token entry,
+read-only without `write` on the tokens kind: `NewTokenScreen`
+(`screens/new-token-screen.lua`), a menu screen over the game with the
+fields Id, Name and Avatar (a path in the game's store, typed or chosen
+with Browse..., which opens the assets workspace with an `AssetPick` and
+fills the field on the way back) and the buttons Create and Back. Create
+checks the id (`token_id.check`), the name and the avatar, each refusal a
+notification, and sends `CreateTokenRp` (`Session:create_token`) with the
+shown page and an entry of a 1 m diameter at the view's center
+(`Page:get_view_center`). The server (`CreateTokenRp:send_response`)
+refuses a session not in a game or without `write` on the whole kind, an
+id `token_id.check` refuses, an unknown page, an entry lacking `name`,
+`diameter`, `avatar` or `position`, a key `UpdateTokenRp` would refuse to
+change (`owners` among them: a created token belongs to the game, so
+nobody's `@owned` grant covers it and who may move it is a matter of
+grants alone) or an avatar the game's store has no file for; otherwise it
+copies the accepted fields into the data, appends the id to the page's
+token list, saves and pushes `TokenCreatedRp` (the id, the page, the
+entry) to every other session of the game that may read the token. The
+creator's answer and the push take one path, `Session:apply_token_created`:
+an avatar the store lacks is downloaded first, the entry goes into the
+data and the page's list, and the shown page builds the control
+(`Page:add_token`). A token is deleted with the token panel's Delete
+button, shown for a writable selection, one `DeleteTokenRp` per selected
+token: the server refuses a session not in a game, an unknown id or a
+session without `write` on the token; otherwise it decides who may read
+the token before removing it, removes it (`token_id.remove`: the entry,
+every page's list, the grants naming it in the groups' and the players'
+permissions) and the grants on it from every live session's set
+(`PermissionSet:remove_key`), saves and pushes `TokenDeletedRp` to those
+sessions. The client's path, `Session:apply_token_deleted`, drops the
+control from the shown page (`Page:remove_token`: out of the drag in
+progress and the selection, then destroyed, the token panel rebuilt), the
+entry from the data and the grants from its own set. A creation and a
+deletion are applied when the server answers, so a refusal has nothing to
+restore; a change stays applied first, so a drag never snaps back while
+the answer is on its way. What is left for the next slice: pages,
+players, groups and token properties are not synchronized, and a property
+cannot be deleted (the wire carries no `nil`; a `number` field holding no
+number refuses the apply with a notification instead of deleting the
+property).
 
 ## Asset Management
 
@@ -495,7 +558,8 @@ Groups, grants and their enforcement are data in the game state and one
 module (`permissions`) plus one class (`PermissionSet`) used on both sides:
 the server filters the game data it sends by `read`, pushes a token change
 only to the sessions that read the token, applies one only with `write` on
-it, lists the assets only with `read:assets`, refuses uploads, folders,
+it, creates a token only with `write` on the whole kind and deletes one
+only with `write` on it, lists the assets only with `read:assets`, refuses uploads, folders,
 renames and deletes without `write:assets`; the client gates editing and
 dragging of tokens, the upload button and the workspace's actions. See [permissions.md](permissions.md).
 
@@ -505,8 +569,8 @@ The server persists the accounts and every game as human-readable Lua
 tables: `table.to_string()` serializes (a string on one line, its quotes
 and backslashes escaped), `table.from_string()` deserializes; the server
 reads them at startup and writes a file when it changes (an account
-created, a game created, a player joined, a token changed, an asset
-renamed). A game's state holds its name,
+created, a game created, a player joined, a token changed, created or
+deleted, an asset renamed). A game's state holds its name,
 the pages, tokens and token properties, the players (their group and
 grants; the account holds the name and the auth) and the permission
 groups (`GameData` in `game/game-data-rp.lua`). The source tree's
@@ -521,7 +585,8 @@ browser history). `push(cb)` returns the entry, which the caller anchors to
 what it is for (a screen, the logged-in token); an entry leaves the stack
 when it dies. On the back key the top entry is destroyed and its callback
 invoked. The session pushes the entries of the screens it opens (the sign-up,
-the games list, the new game, the game, the assets workspace) once, when
+the games list, the new game, the game, the new token screen, the assets
+workspace) once, when
 it opens them, so a screen shown again (the game after the workspace)
 gets no second entry; joining a game destroys the games list and the new
 game screen with their entries, so none stays under the game's.

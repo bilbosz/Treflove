@@ -15,22 +15,28 @@ game state (tokens, objects, maps, sound) live during play.
 ### 2. Game state synchronization
 
 The game data procedure sends the full state on every join, so a late
-joiner gets the whole game as the server holds it. Token changes travel:
+joiner gets the whole game as the server holds it. Tokens travel:
 `UpdateTokenRp` carries a drag, the panel's Apply and an image chosen in
-the workspace to the server, which checks `write`, saves and pushes
-`TokenChangedRp` to every other session of the game that reads the token
-([docs/architecture.md](docs/architecture.md), "Tokens"). Still missing:
+the workspace, `CreateTokenRp` a token made from the game's New Token
+entry and `DeleteTokenRp` one deleted from the panel, to the server, which
+checks `write`, saves and pushes `TokenChangedRp`, `TokenCreatedRp` or
+`TokenDeletedRp` to every other session of the game that reads the token
+([docs/architecture.md](docs/architecture.md), "Tokens"); the client
+converges on the server's entry at every answer. Still missing:
 
 - Pages, players, groups and token properties: a change to any of them
   stays in the client's copy (nothing in the UI edits them yet; the save
-  file does)
-- Creating and deleting tokens, and deleting a property (the wire carries
-  no `nil`; a property of a token can only be set)
+  file does). The procedures of a token are the shape to follow: an id,
+  an optional new id, the server's entry
+- Deleting a property (the wire carries no `nil`; a property of a token
+  can only be set, and a `number` field holding no number refuses the
+  apply), and giving a token a property it lacks
 - Mid-game asset additions beyond the avatar a push names (a page image
   changed by another client is not downloaded)
-- The requester applies a change before the server answers and restores
-  on a refusal; two clients changing one token at once end with the
-  server's last write, and no client is told it lost
+- A deletion asks no confirmation; a token deleted by another client
+  while its panel is open loses the edits typed into it
+- A grant given in the save while a player is in the game reaches their
+  session only at the next join; a `GrantsChangedRp` would push it
 
 ### 3. Game objects other than tokens
 
@@ -73,9 +79,11 @@ processed.
 
 The permission model ([docs/permissions.md](docs/permissions.md)) resolves
 `read`, `write` and `view` grants; today the server enforces `read` (the
-game data it sends and the token changes it pushes), `write:tokens` (a
-token change, `UpdateTokenRp`) and `write:assets` (uploads), the client
-gates token editing and dragging.
+game data it sends and the token changes, creations and deletions it
+pushes), `write:tokens` (a token change or deletion on the token,
+`UpdateTokenRp`, `DeleteTokenRp`; a creation on the whole kind,
+`CreateTokenRp`) and `write:assets` (uploads), the client gates token
+editing, dragging, creation and deletion.
 
 - A vision system is the consumer of `view`: a player sees what the tokens
   they own and the tokens they have `view` on see (fog of war); until then
@@ -107,9 +115,9 @@ may join any game ([docs/architecture.md](docs/architecture.md),
   or password, once a game should not be open to every account
 - Deleting or renaming a game; a games list that scrolls once it outgrows
   the window (the menu screen lays its entries out once, top to bottom)
-- Creating tokens and pages from the UI: a new game starts from the
-  template's one page and one token, and the assets workspace uploads the
-  images, but nothing in the UI makes a token or a page yet
+- Creating pages from the UI: a new game starts from the template's one
+  page, and the assets workspace uploads the images, but nothing in the
+  UI makes a page yet (a token is made from the game's New Token entry)
 - A root from before the accounts (an `s/save.lua` without an
   `s/accounts.lua`) is emptied and seeded, as every start emptied it before;
   a migration into `s/games/<id>/` would keep such a root's state
@@ -129,11 +137,9 @@ pepper shared by all users.
   connecting screen), with session state recovery
 - Timeouts and user-visible errors for failed RPCs instead of silent stalls
 - Graceful server-side session teardown on abrupt disconnects
-- A request whose id has no handler on the receiving side kills the
-  receiver: `Connection:_send_response` calls a `nil` handler for an
-  unknown id, and `TokenChangedRp`, registered on both sides, asserts
-  `app.is_client` when a client sends it to the server; answering a
-  refusal, or disconnecting the peer, is the fix
+- A request handler that raises (a malformed body past the checks) still
+  kills the receiver; a `pcall` around the handler that answers a refusal
+  would keep the loop alive
 
 ### 10. Save robustness
 
@@ -151,21 +157,15 @@ object lifetimes. Missing areas:
 - Serialization round-trips of real game data (pages, tokens, players)
 - RPC classes beyond Connection (login, asset transfer, game data)
 
-### 12. Two bugs the strict typing pass found, left as they are
+### 12. A bug the strict typing pass found, left as it is
 
-Typing the code made two runtime faults visible; both are behavior
-decisions, so the annotations say what happens today and the code is
-unchanged.
+Typing the code made a runtime fault visible; it is a behavior decision,
+so the annotations say what happens today and the code is unchanged.
 
 - `networking/detail/connection-dispatcher.lua`: when server-in pushes
   `false` (it could not bind), the dispatcher logs `"... with port " ..
   in_port` and raises on the boolean, which kills the dispatcher until the
   connector restarts it; `tostring(in_port)` is the one-line fix
-- `game/token/token-panel.lua`: a `number` property whose field holds
-  invalid or empty text applies `nil` (`NumberInput:get_number()` returns
-  nil), which deletes the property from the token and, for `diameter`,
-  crashes in the arithmetic of `Token:set_data`; ignoring the field or
-  refusing the apply is the UX call to make
 
 ### 13. Texture atlases, once measured
 

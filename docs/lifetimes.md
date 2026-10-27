@@ -44,7 +44,8 @@ Connection                      (a lost peer → lifetime.destroy;
     │   ├── LoginRp
     │   └── LogoutRp
     ├── CreateAccountRp, GameDataRp, ListGamesRp, CreateGameRp
-    ├── UpdateTokenRp, TokenChangedRp
+    ├── UpdateTokenRp, TokenChangedRp, CreateTokenRp, DeleteTokenRp,
+    │   TokenCreatedRp, TokenDeletedRp
     ├── UploadAssetRp, DownloadAssetRp, DownloadMissingAssetsRp,
     │   ListAssetsRp, CreateAssetFolderRp, RenameAssetRp, DeleteAssetRp
     ├── hook: clears the AssetManager's per-session entries
@@ -61,8 +62,10 @@ Connection                      (a lost peer → lifetime.destroy;
         ├── NewGameScreen               (from New Game to Back or to the game created)
         │   └── back entry: back to the games list
         ├── GameScreen                  (while in the game)
-        │   ├── its control tree        (the panels, the preview area, the inputs)
+        │   ├── its control tree        (the panels, the page and its tokens, the inputs)
         │   └── back entry: leave the game
+        ├── NewTokenScreen              (from New Token to Back or to the token created)
+        │   └── back entry: back to the game
         └── AssetsWorkspaceScreen       (while open, over the game)
             ├── its control tree        (the list and its rows, the details with the preview
             │                            and its player or text field, the usage list)
@@ -109,7 +112,16 @@ the `release` calls it caused.
   game data and its assets are in, and pushes its back entry, anchored to the
   screen; the entry shows the session's menu screen again (the same one) and
   destroys the game screen with its panels. Game data that arrives after a
-  logout belongs to a period that is over and is ignored.
+  logout belongs to a period that is over and is ignored. A token the
+  page builds for a creation lives in its control tree; one deleted is
+  destroyed by the page (`Page:remove_token`), out of the selection first,
+  not detached.
+- **The new token screen**: the session builds it under the period from
+  the game's New Token entry and pushes its back entry, anchored to the
+  screen; the entry, or a creation the server accepted, shows the game
+  again and destroys the screen. The assets workspace its Browse... button
+  opens returns to it as to the game. An answer that arrives after the
+  screen died asks `lifetime.alive` first.
 - **The assets workspace**: the session builds it under the period when the
   game's Assets entry opens it, remembers the screen it was opened from and
   pushes its back entry, anchored to the workspace; the entry, or a click on

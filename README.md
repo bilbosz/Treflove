@@ -80,13 +80,14 @@ Milestones that are consider done at this point:
 * scenarios driving the client through its UI, headless or in a window, and a console port into the live program
 * the console as a command and a monitor window over the watches and the log of client and server
 * token changes synchronized through the server: checked against the player's grants, saved, pushed to the other clients in the game
+* tokens created from the game's New Token entry and deleted from the token panel, through the server like a change
 
 Known to-dos:
-* creating tokens and pages from the UI (a new game starts from the template's)
+* creating pages from the UI (a new game starts from the template's one page)
 * game master script handling
 * game objects other than tokens
 * clipping controls that are out of clipping rectangle
 * handling other media than images in the game (playing sound, a video on a page)
 * ability to change board and background music at will
 * adding prefabs
-* game state synchronization beyond tokens (pages, players, groups, creating and deleting tokens)
+* game state synchronization beyond tokens (pages, players, groups, token properties)
