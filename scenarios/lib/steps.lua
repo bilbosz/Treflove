@@ -206,6 +206,77 @@ function steps.delete_token(driver, label)
     driver:log("deleted the token " .. id)
 end
 
+---@param driver ScenarioDriver In the game
+---@param caption string The quick access entry of a side panel: "Tokens", "Game", "Pages", "Groups", "Permissions" or "Token Properties"
+---@return SidePanel The panel, shown; an entry whose panel is shown already is not clicked again, which would hide it
+function steps.open_panel(driver, caption)
+    local screen = assert(assert(app.session):get_game_screen())
+    local button = driver:find("TextButton", caption) --[[@as TextButton]]
+    if not button:is_active() then
+        driver:click(button)
+    end
+    local panel = driver:wait_for(function()
+        local shown = screen:get_panel()
+        return button:is_active() and shown and shown:is_enabled() and shown
+    end, nil, "the panel " .. caption) --[[@as SidePanel]]
+    driver:log("opened the panel " .. caption)
+    return panel
+end
+
+---@param driver ScenarioDriver In the game, the panel shown
+---@param panel EntriesPanel
+---@param id string An entry the panel lists
+function steps.select_entry(driver, panel, id)
+    ---@type TextButton|nil
+    local found
+    for _, button in ipairs(panel:get_list_buttons()) do
+        if button:get_text() == id then
+            found = button
+        end
+    end
+    driver:expect(found, string.format("%s lists %q", get_class_name_of(panel), id))
+    driver:click(assert(found))
+    driver:wait_for(function()
+        return panel:get_selected() == id
+    end, nil, "the entry " .. id .. " selected")
+end
+
+---@param driver ScenarioDriver
+---@param input TextInput|NumberInput A field shown, not read-only
+---@param text string Replaces what the field holds, character by character as a player types
+function steps.set_text(driver, input, text)
+    driver:click(input)
+    driver:expect(input:is_focused(), "the field took the focus")
+    for _ = 1, select(2, string.gsub(input:get_text(), "[^\128-\191]", "")) do
+        driver:key("backspace")
+    end
+    driver:type(text)
+    driver:expect(input:get_text() == text, string.format("the field holds %q: %q", text, input:get_text()))
+end
+
+---@param driver ScenarioDriver In the assets workspace, opened with a pick of an image (a panel's Browse...)
+---@param path string An image of the game's store, in a folder of the store's root
+function steps.pick_image(driver, path)
+    driver:wait_for(function()
+        return driver:try_find("AssetListRow", "token/")
+    end, nil, "the listing")
+    local folder, name = string.match(path, "^([^/]+)/([^/]+)$")
+    driver:expect(folder and name, "a file in a folder of the root: " .. path)
+    driver:click("AssetListRow", folder .. "/")
+    driver:click("AssetListRow", folder .. "/")
+    local row = driver:wait_for(function()
+        return driver:try_find("AssetListRow", name)
+    end, nil, "the row " .. name) --[[@as Control]]
+    driver:click(row)
+    local use = driver:wait_for(function()
+        local button = driver:try_find("TextButton", "Use") --[[@as TextButton|nil]]
+        return button and not button:is_read_only() and button
+    end, nil, "Use enabled for " .. path) --[[@as TextButton]]
+    driver:click(use)
+    driver:wait_screen("GameScreen")
+    driver:log("picked the image " .. path)
+end
+
 ---@param driver ScenarioDriver On the login screen
 ---@param login string
 ---@param name string
