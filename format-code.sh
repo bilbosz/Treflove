@@ -1,1 +1,1 @@
-find -type f -iname '*.lua' | rg -vP -e 'annotations/|lib/' |  xargs -n1 lua-format -i
+find -type f -iname '*.lua' | rg -vP -e 'annotations/|lib/|\.claude/' |  xargs -n1 lua-format -i
