@@ -523,6 +523,46 @@ test.case("key queues the press and the release of the key, then yields one fram
     finish(world)
 end)
 
+test.case("key_down queues the press of the key and key_up its release, each yielding one frame; the key is down between", function()
+    local world = setup()
+    local keyboard_manager = world.app.keyboard_manager
+    ---@type boolean[]
+    local ctrl = {}
+    local co = start(world, function(driver)
+        driver:key_down("lctrl")
+        table.insert(ctrl, keyboard_manager:is_ctrl_down())
+        driver:key("a")
+        table.insert(ctrl, keyboard_manager:is_ctrl_down())
+        driver:key_up("lctrl")
+        table.insert(ctrl, keyboard_manager:is_ctrl_down())
+    end)
+    test.assert_eq(frame(world, co), "suspended")
+    test.assert_deep_eq(world.queue, {
+        {
+            "keypressed",
+            "lctrl",
+            "lctrl",
+            false
+        }
+    })
+    test.assert_eq(frame(world, co), "suspended")
+    test.assert_eq(frame(world, co), "suspended")
+    test.assert_deep_eq(world.queue, {
+        {
+            "keyreleased",
+            "lctrl",
+            "lctrl"
+        }
+    })
+    test.assert_eq(frame(world, co), "dead")
+    test.assert_deep_eq(ctrl, {
+        true,
+        true,
+        false
+    })
+    finish(world)
+end)
+
 test.case("move, press and release_button only queue their events", function()
     local world = setup()
     local driver = world.driver
