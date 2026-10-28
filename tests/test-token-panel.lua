@@ -837,7 +837,7 @@ test.case("on_grants_change gates New by the grants the session holds now", func
     end)
 end)
 
-test.case("an image property of one selected token shows the image under its title and above its path, fitted into the preview square", function()
+test.case("the avatar of one selected token shows under its title and above its path, in a circle of the preview size as on the page", function()
     with_client({
         "read",
         "write"
@@ -850,8 +850,23 @@ test.case("an image property of one selected token shows the image under its tit
         ---@diagnostic disable-next-line: invisible
         test.assert_eq(preview:get_parent(), client.game_screen:get_token_panel()._scroll_view:get_content())
         local size = Consts.TOKEN_PANEL_IMAGE_PREVIEW_SIZE
-        local w, h = preview:get_size()
-        test.assert_near(math.max(w, h) * preview:get_scale(), size, 1e-9, "fitted into the square")
+        test.assert_eq(get_class_name_of(preview), "Avatar")
+        test.assert_deep_eq({
+            preview:get_size()
+        }, {
+            size,
+            size
+        })
+        local image = preview --[[@as Avatar]] :get_image()
+        test.assert_eq(image:get_parent(), preview)
+        local w, h = image:get_size()
+        test.assert_near(image:get_scale(), math.max(size / w, size / h), 1e-9, "covering the circle")
+        test.assert_deep_eq({
+            image:get_position()
+        }, {
+            size * 0.5,
+            size * 0.5
+        })
         local _, title_y = assert(avatar.title):get_position()
         local _, title_h = assert(avatar.title):get_size()
         local preview_x, preview_y = preview:get_position()
@@ -867,40 +882,72 @@ test.case("an image property of one selected token shows the image under its tit
     end)
 end)
 
-test.case("a wide image keeps its aspect in the preview, the square's whole height taken", function()
+---@param client GameClient
+---@param fn fun() Run while `love.graphics.newImage` answers an image of 128 by 32 texels for any file
+local function with_wide_image(client, fn)
+    local graphics = assert(love.graphics)
+    local new_image = graphics.newImage
+    assert(love.filesystem.write("c/games/g/assets/token/wide.png", "W"))
+    graphics.newImage = function()
+        return {
+            getDimensions = function()
+                return 128, 32
+            end,
+            setFilter = function()
+            end,
+            setMipmapFilter = function()
+            end
+        } --[[@as love.Image]]
+    end
+    ---@type boolean, any
+    local ok, err = pcall(fn)
+    graphics.newImage = new_image
+    assert(ok, err)
+end
+
+test.case("a wide avatar covers its circle by the shorter side, as on the page", function()
     with_client({
         "read",
         "write"
     }, function(client)
-        local graphics = assert(love.graphics)
-        local new_image = graphics.newImage
-        assert(love.filesystem.write("c/games/g/assets/token/wide.png", "W"))
-        graphics.newImage = function()
-            return {
-                getDimensions = function()
-                    return 128, 32
-                end,
-                setFilter = function()
-                end,
-                setMipmapFilter = function()
-                end
-            } --[[@as love.Image]]
-        end
-        ---@type boolean, any
-        local ok, err = pcall(function()
+        with_wide_image(client, function()
             game_client.find_token(client, "Bilbosza"):set_data("avatar", "token/wide.png")
             game_client.select(client, {
                 "Bilbosza"
             })
         end)
-        graphics.newImage = new_image
-        assert(ok, err)
         local avatar = property_by_key(client, "avatar")
-        local preview = assert(avatar.preview)
+        local preview = assert(avatar.preview) --[[@as Avatar]]
+        local size = Consts.TOKEN_PANEL_IMAGE_PREVIEW_SIZE
+        test.assert_near(preview:get_image():get_scale(), size / 32, 1e-9, "by the shorter side")
+        local _, preview_y = preview:get_position()
+        local _, input_y = assert(avatar.input):get_position()
+        test.assert_near(input_y, preview_y + size + Consts.PADDING * 0.5, 1e-9, "the circle's height")
+    end)
+end)
+
+test.case("another image property shows its image fitted into the square, keeping its aspect, the square's whole height taken", function()
+    with_client({
+        "read",
+        "write"
+    }, function(client)
+        app.data.token_properties.portrait = {
+            title = "Portrait",
+            type = "image"
+        }
+        with_wide_image(client, function()
+            game_client.find_token(client, "Bilbosza"):set_data("portrait", "token/wide.png")
+            game_client.select(client, {
+                "Bilbosza"
+            })
+        end)
+        local portrait = property_by_key(client, "portrait")
+        local preview = assert(portrait.preview)
+        test.assert_eq(get_class_name_of(preview), "Image")
         local size = Consts.TOKEN_PANEL_IMAGE_PREVIEW_SIZE
         test.assert_near(preview:get_scale(), size / 128, 1e-9, "by the longer side")
         local _, preview_y = preview:get_position()
-        local _, input_y = assert(avatar.input):get_position()
+        local _, input_y = assert(portrait.input):get_position()
         test.assert_near(input_y, preview_y + size + Consts.PADDING * 0.5, 1e-9, "the square's height, not the image's")
     end)
 end)
@@ -941,9 +988,9 @@ test.case("a rebuild destroys the preview, and an image chosen in the workspace 
         ---@diagnostic disable-next-line: invisible
         panel:_set_image("avatar", "token/s.png")
         test.assert_false(lifetime.alive(preview), "the old preview destroyed")
-        local shown = assert(property_by_key(client, "avatar").preview)
+        local shown = assert(property_by_key(client, "avatar").preview) --[[@as Avatar]]
         test.assert_true(lifetime.alive(shown))
-        test.assert_eq(shown:get_love_image(), require("graphics.images").get("c/games/g/assets/token/s.png"))
+        test.assert_eq(shown:get_image():get_love_image(), require("graphics.images").get("c/games/g/assets/token/s.png"))
         game_client.select(client, {})
         test.assert_false(lifetime.alive(shown), "destroyed with the selection's properties")
     end)

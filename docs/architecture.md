@@ -431,7 +431,8 @@ A GPU without `glsl3` gets no surroundings: the clear color, as before.
 ## Tokens
 
 A token (`game/token/token.lua`) is a `Model` over its `TokenData` and a
-control on the page: the avatar in a circular clip, the label, the
+control on the page: the avatar (`Avatar`, `game/token/avatar.lua`: the
+image covering a circular clip of the token's diameter), the label, the
 selection ring. Its **id** is its key in `GameData.tokens`, what the
 pages' token lists and the grants (`write:tokens/<id>`) name; it is not a
 field of the data and not the display name (`name`). The token panel
@@ -439,9 +440,9 @@ field of the data and not the display name (`name`). The token panel
 one field per property of `token_properties` the selected tokens have (a
 `string`, a `number`, an `image` with its button to the assets workspace
 and, when the selected tokens agree on a file the store holds, the image
-itself above the path, fitted into a square of
-`TOKEN_PANEL_IMAGE_PREVIEW_SIZE`: the avatar is the one every token
-shows), in a scroll view above the one row of buttons: Cancel at the
+itself above the path: the avatar in its circle as on the page, the
+same `Avatar` control, another image fitted into a square, both of
+`TOKEN_PANEL_IMAGE_PREVIEW_SIZE`), in a scroll view above the one row of buttons: Cancel at the
 left edge with New beside it, Apply at the right edge, Delete centered
 between New and Apply, each where it always sits. New is
 there with or without a selection, read-only without `write` on the

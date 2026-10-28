@@ -2,6 +2,7 @@ local SidePanel = require("game.side-panel")
 local Consts = require("app.consts")
 local Text = require("controls.text")
 local Image = require("controls.image")
+local Avatar = require("game.token.avatar")
 local TextInput = require("ui.text-input")
 local NumberInput = require("ui.number-input")
 local TextButton = require("ui.text-button")
@@ -15,7 +16,7 @@ local token_id = require("game.token.token-id")
 ---@field key string Token data key
 ---@field def TokenProperty Property definition from `token_properties`
 ---@field title Text|nil Set once the property is filled in
----@field preview Image|nil For an `image` property whose selected tokens agree on a file the store holds: the image, fitted into a square of `TOKEN_PANEL_IMAGE_PREVIEW_SIZE` between the title and the input
+---@field preview Image|Avatar|nil For an `image` property whose selected tokens agree on a file the store holds, between the title and the input: the avatar in its circle as on the page, another image fitted into a square, of `TOKEN_PANEL_IMAGE_PREVIEW_SIZE` either
 ---@field input TextInput|NumberInput|nil Set once the property is filled in, a `NumberInput` for a `number` property, read-only for an `image` property
 ---@field button TextButton|nil For an `image` property: opens the assets workspace at the asset, to browse for another or, read-only, to show it
 
@@ -254,16 +255,20 @@ end
 
 ---@private
 ---@param key string An `image` property
----@return Image|nil Absent unless the selected tokens agree on a file of the joined game's store
+---@return Image|Avatar|nil Absent unless the selected tokens agree on a file of the joined game's store
 function TokenPanel:_create_image_preview(key)
     local is_single_value, path = self:_get_value_by_key(key)
     local store = app.asset_manager:get_store()
     if not is_single_value or type(path) ~= "string" or not store or store:asset(path):get_type() ~= "file" then
         return nil
     end
-    local image = Image(self._scroll_view:get_content(), path)
-    local w, h = image:get_size()
+    local content = self._scroll_view:get_content()
     local size = Consts.TOKEN_PANEL_IMAGE_PREVIEW_SIZE
+    if key == "avatar" then
+        return Avatar(content, path, size)
+    end
+    local image = Image(content, path)
+    local w, h = image:get_size()
     image:set_scale(math.min(size / w, size / h))
     return image
 end
