@@ -63,7 +63,8 @@ screen, returns it), `open_delete_game(driver)` (from the menu: "Games",
 "Delete", waits for the games to delete, returns the screen),
 `delete_game(driver, name)` (then the game's button and "Yes" to the
 question; the caller waits for the notification),
-`create_token(driver, id, name, avatar)` ("New Token", the three fields,
+`create_token(driver, id, name, avatar)` (the token panel shown, "New",
+the three fields,
 "Create", waits for the game screen showing the token, returns the
 `Token`), `delete_token(driver, label)` (the token selected alone, the
 panel's "Delete", waits for it to be gone; the step fails when anything

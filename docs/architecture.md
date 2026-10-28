@@ -398,8 +398,14 @@ pages' token lists and the grants (`write:tokens/<id>`) name; it is not a
 field of the data and not the display name (`name`). The token panel
 (`TokenPanel`) edits the selection: an Id field above the properties, then
 one field per property of `token_properties` the selected tokens have (a
-`string`, a `number`, an `image` with its button to the assets workspace),
-in a scroll view above Cancel and Apply. The Id field is editable with
+`string`, a `number`, an `image` with its button to the assets workspace
+and, when the selected tokens agree on a file the store holds, the image
+itself above the path, fitted into a square of
+`TOKEN_PANEL_IMAGE_PREVIEW_SIZE`: the avatar is the one every token
+shows), in a scroll view above the one row of buttons: Cancel at the
+left, Apply at the right, New and Delete spread between them. New is
+there with or without a selection, read-only without `write` on the
+tokens kind, and opens the new token screen. The Id field is editable with
 exactly one writable token selected; with several it is read-only and
 multivalue (the yellowish disabled field), since an id is one token's.
 Apply, or Enter in a field, applies the id first, then the properties:
@@ -449,7 +455,7 @@ token panel when the token is selected; a token it does not hold (one it may not
 ignored. A client that left the game to the menu still holds the data and
 receives the pushes, applied to the data only.
 
-A token is created from the quick access panel's New Token entry,
+A token is created from the token panel's New button,
 read-only without `write` on the tokens kind: `NewTokenScreen`
 (`screens/new-token-screen.lua`), a menu screen over the game with the
 fields Id, Name and Avatar (a path in the game's store, typed or chosen
@@ -547,8 +553,8 @@ at the join; a player whose client does not hold the newly shown page is
 sent back to the menu with a notification, an open assets workspace
 closed first). `GrantsChangedRp` rebuilds the
 client's set (`Session:apply_grants`) and re-gates the game screen
-(`GameScreen:on_grants_change`: the New Token entry, the token panel,
-every side panel); the data the client holds is not re-filtered (a
+(`GameScreen:on_grants_change`: every side panel, the token panel's
+New button among what they gate); the data the client holds is not re-filtered (a
 `read` grant given mid-game shows its entries at the next join).
 
 ### The side panels

@@ -80,7 +80,7 @@ Milestones that are consider done at this point:
 * scenarios driving the client through its UI, headless or in a window, and a console port into the live program
 * the console as a command and a monitor window over the watches and the log of client and server
 * token changes synchronized through the server: checked against the player's grants, saved, pushed to the other clients in the game
-* tokens created from the game's New Token entry and deleted from the token panel, through the server like a change
+* tokens created from the token panel's New button and deleted from its Delete, through the server like a change; an image property's image, the avatar first, shown in the panel
 * the game's pages, groups, players' grants, token properties and the shown page edited from the game's side panels, through the server like a token, the shown page switching on every client
 
 Known to-dos:

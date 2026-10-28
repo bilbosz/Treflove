@@ -17,8 +17,8 @@ game state (tokens, objects, maps, sound) live during play.
 The game data procedure sends the full state on every join, so a late
 joiner gets the whole game as the server holds it. Tokens travel:
 `UpdateTokenRp` carries a drag, the panel's Apply and an image chosen in
-the workspace, `CreateTokenRp` a token made from the game's New Token
-entry and `DeleteTokenRp` one deleted from the panel, to the server, which
+the workspace, `CreateTokenRp` a token made from the token panel's New
+button and `DeleteTokenRp` one deleted from the panel, to the server, which
 checks `write`, saves and pushes `TokenChangedRp`, `TokenCreatedRp` or
 `TokenDeletedRp` to every other session of the game that reads the token
 ([docs/architecture.md](docs/architecture.md), "Tokens"); the client

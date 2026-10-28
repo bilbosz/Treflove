@@ -187,20 +187,20 @@ synchronization, `TODO.md` milestone 2: adam drags Bilbo, piotr's client
 shows it at the new position, the server's save holds it, and a change
 piotr's client sends past its own gate, `Session:update_token` through the
 console, is refused by the server with the reason notified) and
-`create-token` (the second slice: adam creates a token from the game's
-New Token entry, which bob, who may not read it, does not see; granted
+`create-token` (the second slice: adam creates a token from the token
+panel's New button, which bob, who may not read it, does not see; granted
 `read` and `write` on it, and `write` on the tokens he owns, in the
 game's data through the server's console, bob enters the game again,
 sees it and drags it together with Bilbo in one drag, which adam's
 client and the save show; adam deletes it from the token panel and bob loses it,
-the grants naming it gone from the save; bob's New Token entry is
+the grants naming it gone from the save; bob's New button is
 read-only, and piotr's creation and deletion sent past his gate are
 refused with their reasons) and `game-panels` (the side panels over
 the wire: adam creates the page `Cellar` from the Pages panel, its
 image picked in the workspace, shows it from the Game panel and bob's
 client switches to it, sets piotr's grants to `write:tokens` from the
 Permissions panel, which bob's session holds within the wait and his
-New Token entry becomes writable, creates the token property `hp` and
+New button becomes writable, creates the token property `hp` and
 retitles the group `player`, the save holding each, and shows Meadow
 again on both clients; a page creation bob sends past his gate is
 refused with its reason and nothing saved) and `delete-game` (bob, as
@@ -215,8 +215,8 @@ token-drag button, as a player does, `steps.select_tokens` several with
 one rectangle; `steps.open_games_menu` opens the Games menu from the
 menu, `steps.enter_game` enters a game from the menu through it,
 `steps.open_delete_game` opens the games to delete, `steps.delete_game`
-picks a game among them by its name and answers Yes, `steps.create_token` creates one through the New Token
-screen and `steps.delete_token` deletes one, selected alone, from the
+picks a game among them by its name and answers Yes, `steps.create_token` creates one from the token panel's New,
+through the New Token screen, and `steps.delete_token` deletes one, selected alone, from the
 panel. For the side panels: `steps.open_panel` shows one by its quick
 access entry (an entry already active is not clicked again, which would
 hide its panel) and returns it, `steps.select_entry` selects an entry

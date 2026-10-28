@@ -151,7 +151,7 @@ every question is answered no.
   Apply, its "Show in assets..." button opens the workspace to look,
   without Use) when
   any selected token is not writable, and shows Delete for a non-empty
-  writable selection only; the game's New Token entry is read-only without `write`
+  writable selection only; its New button is read-only without `write`
   on the tokens kind; dragging moves only the
   writable tokens of the selection; the assets workspace gates its name
   field and its actions by what the listing said (`writable`).

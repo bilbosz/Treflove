@@ -73,7 +73,7 @@ script starts one extra client per peer (see "Several clients").
   `drag_token` (a token by its label, selected with a rectangle over its
   bounding square, dragged by an offset in screen units), `select_tokens`
   (several, with one rectangle), `enter_game`
-  (a game from the menu), `create_token` (through the New Token screen)
+  (a game from the menu), `create_token` (the panel's New, then the New Token screen)
   and `delete_token` (a selected token, from the panel's Delete),
   `open_panel` (a side panel by its quick access entry), `select_entry`
   (an entry in an entries panel's list), `set_text` (a field's text
