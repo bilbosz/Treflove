@@ -82,6 +82,34 @@ function mocks.make_keyboard()
     return keyboard
 end
 
+---@return FakeSystem
+function mocks.make_system()
+    ---@class FakeSystem: love.system
+    ---@field clipboard string What `getClipboardText` answers and `setClipboardText` sets
+    ---@field os string What `getOS` answers, "Linux" at first
+    local system = {
+        clipboard = "",
+        os = "Linux"
+    }
+
+    ---@return string
+    function system.getClipboardText()
+        return system.clipboard
+    end
+
+    ---@param text string
+    function system.setClipboardText(text)
+        system.clipboard = text
+    end
+
+    ---@return string
+    function system.getOS()
+        return system.os
+    end
+
+    return system
+end
+
 ---@param overrides {is_client: boolean, is_server: boolean}|nil Fields merged over the defaults
 ---@return AppMock
 function mocks.make_app(overrides)
@@ -89,7 +117,9 @@ function mocks.make_app(overrides)
     ---@field logs any[][] Arguments of every `app:log` call, in order
     ---@field update_event Event Real event instance, triggerable by tests
     ---@field wheel_event Event Real event instance, triggerable by tests
-    ---@field keyboard_manager KeyboardManager Real manager
+    ---@field keyboard FakeKeyboard The backend of `keyboard_manager` and `text_event_manager`
+    ---@field system FakeSystem The backend of `keyboard_manager` and `text_event_manager`
+    ---@field keyboard_manager KeyboardManager Real manager over `keyboard` and `system`
     ---@field resize_manager ResizeManagerMock Only the `resized` event (no window behind it)
     ---@field pointer_event_manager TestPointerEventManager Real manager, position set by `set_pointer_position`
     ---@field file_system_drop_event_manager FileSystemDropEventManager Real manager
@@ -132,12 +162,14 @@ function mocks.make_app(overrides)
 
     app_mock.update_event = Event()
     app_mock.wheel_event = Event()
-    app_mock.keyboard_manager = KeyboardManager()
+    app_mock.keyboard = mocks.make_keyboard()
+    app_mock.system = mocks.make_system()
+    app_mock.keyboard_manager = KeyboardManager(app_mock.keyboard, app_mock.system)
     app_mock.resize_manager = resize_manager
     app_mock.pointer_event_manager = TestPointerEventManager()
     app_mock.file_system_drop_event_manager = FileSystemDropEventManager()
     app_mock.button_event_manager = ButtonEventManager()
-    app_mock.text_event_manager = TextEventManager(mocks.make_keyboard())
+    app_mock.text_event_manager = TextEventManager(app_mock.keyboard, app_mock.system)
     app_mock.asset_manager = AssetManager()
 
     if overrides then

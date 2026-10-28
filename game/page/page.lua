@@ -272,8 +272,8 @@ function Page:on_pointer_up(x, y, button)
         local selection = self._selection
         selection:set_end_point(wx, wy)
 
-        local shift = app.keyboard_manager:is_key_down("lshift")
-        local ctrl = app.keyboard_manager:is_key_down("lctrl")
+        local shift = app.keyboard_manager:is_shift_down()
+        local ctrl = app.keyboard_manager:is_ctrl_down()
         if shift then
             selection:add_apply()
         elseif ctrl then

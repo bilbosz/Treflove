@@ -105,6 +105,12 @@ function UiApp:register_love_callbacks()
     function love.resize()
         self.resize_manager:resize()
     end
+    ---@param focused boolean
+    function love.focus(focused)
+        if not focused then
+            self.keyboard_manager:release_all()
+        end
+    end
 end
 
 return UiApp
