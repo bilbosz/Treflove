@@ -110,6 +110,12 @@ end
   out in wall-clock seconds (`SCENARIO_WAIT_TIMEOUT`), so a run that is
   fast or slow passes alike; `advance(seconds)` jumps the app's clock
   (a notification's duration, a deferred call) in one frame.
+- `key(key)` presses and releases a key in one frame; `key_down(key)` and
+  `key_up(key)` push one event each, so a modifier is held across the
+  keys between them (`key_down("lctrl")`, `key("a")`, `key_up("lctrl")`):
+  the keyboard manager tracks the pressed keys from the events, since the
+  hardware state a pushed event never changes is what `love.keyboard`
+  reports.
 - `server(chunk)` evaluates Lua on the server through its console
   (`--server-console`) and returns the reply: a scenario checks the
   server's state or nudges its clock from the client side.
@@ -210,9 +216,12 @@ panel. For the side panels: `steps.open_panel` shows one by its quick
 access entry (an entry already active is not clicked again, which would
 hide its panel) and returns it, `steps.select_entry` selects an entry
 in an entries panel's list, `steps.set_text` replaces a field's text as
-a player types it (the field clicked, emptied with Backspace, the text
-typed) and `steps.pick_image` picks an image in the workspace a
-Browse... button opened, with Use.
+a player types it (the field clicked, Ctrl+A, the text typed over the
+selection) and `steps.pick_image` picks an image in the workspace a
+Browse... button opened, with Use. `edit-text` edits the Login field
+with the caret and the selection: a move, a delete, a selection by
+Shift, Ctrl+A, a copy and a paste, each checked on the field's text,
+caret and selection, then `steps.set_text` and the login.
 
 ### The fixture
 

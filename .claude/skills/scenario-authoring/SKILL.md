@@ -28,6 +28,7 @@ return function(driver)
     driver:wait_screen("AssetsWorkspaceScreen")
     driver:expect(driver:try_find("AssetListRow", "token/"), "the store's token folder is listed")
     driver:key(Consts.BACKSTACK_KEY)                     -- Escape: the back key, as the steps write it
+    -- a modifier is held with key_down/key_up around the keys: driver:key_down("lctrl"); driver:key("a"); driver:key_up("lctrl")
     driver:wait_screen("GameScreen")
 end
 ```
@@ -77,7 +78,7 @@ script starts one extra client per peer (see "Several clients").
   and `delete_token` (a selected token, from the panel's Delete),
   `open_panel` (a side panel by its quick access entry), `select_entry`
   (an entry in an entries panel's list), `set_text` (a field's text
-  replaced as a player types it) and `pick_image` (an image through the
+  replaced as a player types it: a click, Ctrl+A, the text) and `pick_image` (an image through the
   workspace a Browse... button opened); a step
   used by two scenarios goes there, named for what it reaches. The folder is skipped
   by `./format-code.sh`, which skips every path containing `lib/` and

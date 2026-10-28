@@ -200,7 +200,19 @@ token is drawn inside its own stencil mask today, which ends a batch anyway.
   (`love.graphics.getSystemLimits().texturesize`) cannot be loaded at all;
   split such an image into tiles on the server or at load
 
-### 14. Scenarios and the console, next steps
+### 14. The text input, next steps
+
+The text input edits one line with a caret, a selection, the clipboard
+and undo ([docs/architecture.md](docs/architecture.md), "UI Control
+Hierarchy"). Still missing:
+
+- A placeholder shown in an empty field, dimmed (Login, Password, a
+  token's name)
+- Up and Down stepping a number input's value, Shift for a larger step
+- IME composition (`love.textedited`) for scripts that compose
+- Cmd as the command key is read from the OS name and untested on macOS
+
+### 15. Scenarios and the console, next steps
 
 The scenarios run headless on the offscreen SDL driver and the console
 port drives the live program ([docs/scenarios-and-console.md](docs/scenarios-and-console.md)).

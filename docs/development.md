@@ -182,8 +182,10 @@ The suite has no external dependencies:
   clock and captured logs), `make_channel()`/`make_thread()` (in-memory LÖVE
   channel and thread stand-ins; the thread records its starts and is ended
   by hand), `make_keyboard()` (a fake `love.keyboard`
-  backend for the text event manager), `ensure_love_data()`,
-  `ensure_love_math()`, `ensure_love_graphics()`, `ensure_love_thread()`
+  backend for the keyboard and the text event managers), `make_system()`
+  (a fake `love.system` holding the clipboard), `ensure_love_data()`,
+  `ensure_love_math()`, `ensure_love_graphics()`, `ensure_love_mouse()`,
+  `ensure_love_thread()`
   (the real modules under LÖVE where they work without a window; reversible
   fakes under plain LuaJIT, so that real controls, screens and a connection
   manager can be built), `install_love_filesystem(files)` /

@@ -236,7 +236,14 @@ Events by source:
   for the position, so a page under the workspace keeps its zoom),
   `app.resize_manager.resized` (width, height)
 - `KeyboardManager`: `key_pressed`/`key_released` (key), always delivered,
-  also during text input (backstack, form navigation, button activation)
+  also during text input (backstack, form navigation, button activation).
+  It remembers the keys it dispatched as pressed and not yet released, so
+  `is_key_down(key)` answers from the events first and from
+  `love.keyboard` second: a scenario, which pushes key events, holds a
+  modifier as a user does. `is_ctrl_down()` (Ctrl, and Cmd on macOS) and
+  `is_shift_down()` are what the consumers ask (the form's Shift+Tab, the
+  page's selection keys, the text event manager); a lost window focus
+  forgets every tracked key (`release_all`)
 - `PointerEventManager` (`pointer_down/up/move`) and
   `FileSystemDropEventManager` (`file_dropped`): owners are Controls; dispatch
   is hit-tested instead of broadcast: only visible controls under the point,
@@ -254,10 +261,18 @@ Events by source:
   `pointer_entered`, `pointer_left`); controls register with
   `register(ctrl, button)`; `unregister(ctrl)` lets go of a button under the
   pointer or pressed (it is unselected and left at once, never driven later)
-- `TextEventManager`: `text_appended`, `characters_removed`, `word_removed`,
-  `entered` go to the focused text field, which applies them to its
-  `TextBuffer` helper (UTF-8 aware editing; events `edited`,
-  `removed_empty`); `set_text_input`/`is_text_input` toggle LÖVE text input
+- `TextEventManager`: `text_appended` (the text typed; dropped while Ctrl
+  is held) and `commanded` (one of `TextEventManager.Command`: a move by a
+  character, a word or to the line's end, with Shift extending the
+  selection; a delete backward or forward, by a character or a word;
+  select all; copy, cut, paste; undo, redo; enter) go to the focused text
+  field, which applies them to its `TextBuffer` (UTF-8 aware; the caret,
+  the selection and the history of edits; events `edited`, `moved`,
+  `removed_empty`). The keys: the arrows, Home and End, Backspace and
+  Delete, Ctrl for a word, Ctrl+A, Ctrl+C/X/V, Ctrl+Z and Ctrl+Shift+Z or
+  Ctrl+Y, Return. The manager also wraps the clipboard (`set_clipboard`,
+  `get_clipboard`: the text flattened to one line, empty when it is not
+  UTF-8); `set_text_input`/`is_text_input` toggle LÖVE text input
 
 The client creates the managers in its constructor and wires them to the
 LÖVE callbacks when it registers them.
@@ -294,7 +309,28 @@ bytes of a font asset, a `love.FileData`) and integer pixel size, and
 forgets a face on request (`fonts.forget`). Axis-aligned
 text is drawn one glyph texel per screen pixel at a whole-pixel position;
 rotated text keeps its transform and scales the glyphs inside it. A text,
-and a text input through it, changes its face with `set_font`.
+and a text input through it, changes its face with `set_font`;
+`Text:measure(text)` gives the width of any text in the face, in model
+units, which the text input places its caret by.
+
+`TextInput` is one line of text over a `TextBuffer`: the caret is drawn at
+the width of the text before it (the bullets of a masked field), the
+selection as a rectangle under the text in `TEXT_INPUT_SELECTION_COLOR`,
+and the content scrolls inside the field's clip only as far as keeping
+the caret in view needs. A press with the left button focuses the field
+and puts the caret at the nearest glyph boundary (Shift extends the
+selection to it); the press is captured, so a drag selects wherever the
+pointer goes; a second press within `MULTI_CLICK_INTERVAL` selects the
+word, a third everything. Focus by Tab selects everything, so Tab, type,
+Tab replaces a field. Typing replaces the selection; copy and cut are
+refused by a masked field, whose Ctrl+Backspace clears it; a paste comes
+flattened from the manager. The pointer over a field shows the I-beam
+cursor where the system offers one (`love.mouse.isCursorSupported`: not
+under the offscreen driver). `NumberInput` is a text input whose buffer
+filter accepts the empty text, a lone minus and what `tonumber` parses,
+asked with the whole text an edit would produce, so an insertion in the
+middle and a paste are checked as a keystroke at the end is. A read-only
+input takes no focus and so has no caret, as before.
 
 `Image` draws a `love.Image` the images module made with its mipmap chain,
 filtered linearly within and between the levels, so a downscaled image (a
