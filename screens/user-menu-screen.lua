@@ -29,7 +29,7 @@ function UserMenuScreen:init(session)
 end
 
 function UserMenuScreen:games()
-    self._session:show_games()
+    self._session:show_games_menu()
 end
 
 function UserMenuScreen:options()

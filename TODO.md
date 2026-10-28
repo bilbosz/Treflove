@@ -121,8 +121,9 @@ editing, dragging, creation and deletion.
 ### 7. Account and game management
 
 An account is created from the login screen and kept by the server in
-`s/accounts.lua`; a game is created from the games list and any account
-may join any game ([docs/architecture.md](docs/architecture.md),
+`s/accounts.lua`; a game is created, joined and deleted from the menu's
+Games (deleted, after a Yes to the question, by a player with `write` on
+`game` in it) and any account may join any game ([docs/architecture.md](docs/architecture.md),
 "Accounts and Games"). What is still done by hand in the files:
 
 - Changing a password, a display name, deleting an account
@@ -130,8 +131,11 @@ may join any game ([docs/architecture.md](docs/architecture.md),
   password, once a game should not be open to every account (a first join
   lands every account in the group `player`; the Permissions panel moves
   it to another)
-- Deleting or renaming a game; a games list that scrolls once it outgrows
-  the window (the menu screen lays its entries out once, top to bottom)
+- Renaming a game; a games list that scrolls once it outgrows the window
+  (the menu screen lays its entries out once, top to bottom); a client
+  that is not connected when a game is deleted keeps its copies of the
+  game's assets under `c/games/<id>`, which a new game under the same id
+  would serve as its own until they are written again
 - Moving a token to another page: pages are made, changed and deleted
   from the Pages panel, but a token stays on the page it was created on
 - A root from before the accounts (an `s/save.lua` without an

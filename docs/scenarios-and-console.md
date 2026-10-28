@@ -99,7 +99,9 @@ return function(driver)
     driver:click("TextButton", "Sign In")
     driver:wait_screen("UserMenuScreen")
     driver:click("TextButton", "Games")
-    driver:wait_screen("GamesScreen")
+    driver:wait_screen("GamesMenuScreen")
+    driver:click("TextButton", "Join Game")
+    driver:wait_screen("JoinGameScreen")
     driver:click("TextButton", "Meadow")
     local game = driver:wait_screen("GameScreen")
     driver:expect(#game:get_page():get_tokens() == 2, "two tokens on the page")
@@ -128,8 +130,8 @@ The shared steps live in `scenarios/lib/steps.lua`. The scenarios:
 (the workspace from the game, its listing against the game's store,
 back), `logout` (out and in again), `sign-up` (an account created from
 the login screen, signed in at once, out and in again), `new-game` (a
-game created from the games list and entered, its template page and
-token, listed afterwards), `fresh-start` (what a user does on a server
+game created from Games and entered, its template page and token,
+listed afterwards), `fresh-start` (what a user does on a server
 that holds nothing: an account signed up, a game created and entered,
 listed afterwards; it reads nothing of the fixture, so it passes on an
 empty root too) and `old-town` (the Old Town world of the fixture of the
@@ -201,10 +203,19 @@ Permissions panel, which bob's session holds within the wait and his
 New Token entry becomes writable, creates the token property `hp` and
 retitles the group `player`, the save holding each, and shows Meadow
 again on both clients; a page creation bob sends past his gate is
-refused with its reason and nothing saved). The shared steps `steps.select_token` and
+refused with its reason and nothing saved) and `delete-game` (bob, as
+piotr, finds no game to delete under Delete Game and a deletion sent past
+his gate refused with the reason, then enters Meadow; adam picks Meadow
+under Delete Game, answers No to the question and nothing changes, then
+deletes it with Yes and lands on the Games menu with the notification,
+bob's client is back on the menu with it, without the game's data and
+store, and the server lists no game and has no session in one). The shared steps `steps.select_token` and
 `steps.drag_token` select a token with a rectangle and drag it with the
 token-drag button, as a player does, `steps.select_tokens` several with
-one rectangle; `steps.enter_game` enters a game from the menu, `steps.create_token` creates one through the New Token
+one rectangle; `steps.open_games_menu` opens the Games menu from the
+menu, `steps.enter_game` enters a game from the menu through it,
+`steps.open_delete_game` opens the games to delete, `steps.delete_game`
+picks a game among them by its name and answers Yes, `steps.create_token` creates one through the New Token
 screen and `steps.delete_token` deletes one, selected alone, from the
 panel. For the side panels: `steps.open_panel` shows one by its quick
 access entry (an entry already active is not clicked again, which would

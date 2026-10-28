@@ -59,10 +59,16 @@ Connection                      (a lost peer → lifetime.destroy;
         │   ├── OptionsMenuScreen       (made on the first visit, kept)
         │   └── back entry: return from the options (one per visit)
         ├── back entry: log out
-        ├── GamesScreen                 (from Games to Back or to the game joined; rebuilt on every listing)
+        ├── GamesMenuScreen             (from Games to Back or to the game joined)
         │   └── back entry: back to the menu
+        ├── JoinGameScreen              (from Join Game to Back or to the game joined; rebuilt on every listing)
+        │   └── back entry: back to the Games menu
         ├── NewGameScreen               (from New Game to Back or to the game created)
-        │   └── back entry: back to the games list
+        │   └── back entry: back to the Games menu
+        ├── DeleteGameScreen            (from Delete Game to Back or to the game deleted; rebuilt on every listing)
+        │   └── back entry: back to the Games menu
+        ├── ConfirmDeleteGameScreen     (from a game picked to No or to the game deleted)
+        │   └── back entry: back to the games to delete
         ├── GameScreen                  (while in the game)
         │   ├── its control tree        (the side panels and their inputs, the page and its tokens;
         │   │                            a page shown in place of another is destroyed, not detached)
@@ -103,14 +109,22 @@ the `release` calls it caused.
   the screen; the entry shows the login screen again and destroys the
   sign-up screen. An account created logs in with the same credentials, and
   the login destroys the sign-up screen as it destroys the login screen.
-- **The games list**: the session builds a games screen under the period
-  from every listing (the previous one destroyed first) and pushes its back
-  entry, anchored to the screen; the entry shows the menu and destroys the
-  screen. New Game builds the new game screen the same way, its entry
-  showing the games list again, which stays alive beneath. Joining a game,
-  from the list or by creating one, destroys both screens first, so their
-  entries never stay under the game's. A listing or a creation that
-  answers after a logout belongs to a period that is over and is ignored.
+- **The Games menu and its screens**: the session builds the Games menu
+  under the period from the menu's entry and pushes its back entry,
+  anchored to the screen; the entry shows the menu and destroys the screen.
+  Under it, the same way: the games to join from every listing Join Game
+  asks for and the games to delete from every listing Delete Game asks
+  for (the previous screen destroyed first), and the new game screen from
+  New Game, each with a back entry that shows the Games menu again (the
+  menu, when the Games menu was closed meanwhile: a listing that answers
+  after its Back) and destroys the screen. A game picked among the games
+  to delete builds the question over them, its entry showing them again.
+  Joining a game, from the list or by creating one, destroys whichever of
+  them is up and then the Games menu, so no entry of theirs stays under
+  the game's; a deletion the server accepted destroys the question and the
+  games to delete and shows the Games menu again. A listing, a creation or
+  a deletion that answers after a logout belongs to a period that is over
+  and is ignored.
 - **The game**: the session builds the game screen under the period once the
   game data and its assets are in, and pushes its back entry, anchored to the
   screen; the entry shows the session's menu screen again (the same one) and

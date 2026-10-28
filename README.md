@@ -33,7 +33,7 @@ To run client instance run command:
 
 The server starts from scratch: its save directory holds no accounts and
 no games until someone signs up from the login screen and creates a game
-from the games list, and it keeps them across restarts. Nothing in the
+from the menu's Games, and it keeps them across restarts. Nothing in the
 program resets it; `--fixture <dir>`, the scenario tooling, empties a
 root and seeds it, and needs `--identity`, a save directory of its own.
 
