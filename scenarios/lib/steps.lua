@@ -53,7 +53,7 @@ end
 ---@return GameScreen
 function steps.enter_game(driver, game)
     steps.open_games_menu(driver)
-    driver:click("TextButton", "Join Game")
+    driver:click("TextButton", "Join")
     driver:wait_screen("JoinGameScreen")
     driver:click("TextButton", game or steps.GAME)
     local screen = driver:wait_screen("GameScreen") --[[@as GameScreen]]
@@ -72,7 +72,7 @@ end
 ---@return DeleteGameScreen The games the player may delete
 function steps.open_delete_game(driver)
     steps.open_games_menu(driver)
-    driver:click("TextButton", "Delete Game")
+    driver:click("TextButton", "Delete")
     return driver:wait_screen("DeleteGameScreen") --[[@as DeleteGameScreen]]
 end
 

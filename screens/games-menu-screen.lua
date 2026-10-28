@@ -10,13 +10,13 @@ function GamesMenuScreen:init(session)
     assert(session)
     self._session = session
     MenuScreen.init(self, "Games", {
-        MenuTextButton(self, "New Game", function()
-            self:new_game()
-        end),
-        MenuTextButton(self, "Join Game", function()
+        MenuTextButton(self, "Join", function()
             self:join_game()
         end),
-        MenuTextButton(self, "Delete Game", function()
+        MenuTextButton(self, "Create", function()
+            self:new_game()
+        end),
+        MenuTextButton(self, "Delete", function()
             self:delete_game()
         end),
         MenuTextButton(self, "Back", function()

@@ -100,7 +100,7 @@ return function(driver)
     driver:wait_screen("UserMenuScreen")
     driver:click("TextButton", "Games")
     driver:wait_screen("GamesMenuScreen")
-    driver:click("TextButton", "Join Game")
+    driver:click("TextButton", "Join")
     driver:wait_screen("JoinGameScreen")
     driver:click("TextButton", "Meadow")
     local game = driver:wait_screen("GameScreen")
@@ -204,9 +204,9 @@ New Token entry becomes writable, creates the token property `hp` and
 retitles the group `player`, the save holding each, and shows Meadow
 again on both clients; a page creation bob sends past his gate is
 refused with its reason and nothing saved) and `delete-game` (bob, as
-piotr, finds no game to delete under Delete Game and a deletion sent past
+piotr, finds no game to delete under Delete and a deletion sent past
 his gate refused with the reason, then enters Meadow; adam picks Meadow
-under Delete Game, answers No to the question and nothing changes, then
+under Delete, answers No to the question and nothing changes, then
 deletes it with Yes and lands on the Games menu with the notification,
 bob's client is back on the menu with it, without the game's data and
 store, and the server lists no game and has no session in one). The shared steps `steps.select_token` and

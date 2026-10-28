@@ -122,13 +122,12 @@ every question is answered no.
   before it went; the deletion removes the grants naming the token from
   the groups', the players' and every live session's set
   (`permissions.remove_key`, `PermissionSet:remove_key`).
-- **A game deleted** (`DeleteGameRp`, from the Games menu's Delete
-  Game): the user must be a player of the game with `write` on `game` in
+- **A game deleted** (`DeleteGameRp`, from the Games menu's Delete): the user must be a player of the game with `write` on `game` in
   it (`write:game`, or `write` as the master group has); the server
   resolves the grants from the game's data at the moment of the request
   (`Game:allows`), whether or not the session is in the game, and the
   listing (`ListGamesRp`) tells each game's `deletable` the same way, so
-  Delete Game offers only those. Every live session in the game leaves it
+  Delete lists only those. Every live session in the game leaves it
   and is told (`GameDeletedRp`), the deleter through the answer; the
   client drops the game's data and copies and, when it is in the game,
   goes back to the menu with the notification.

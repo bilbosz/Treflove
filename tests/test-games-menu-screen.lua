@@ -41,12 +41,12 @@ end
 
 test.suite("GamesMenuScreen")
 
-test.case("titled Games: New Game, Join Game, Delete Game and Back", function()
+test.case("titled Games: Join, Create, Delete and Back", function()
     with_screen(function(screen)
         test.assert_deep_eq(menu_client.captions(screen), {
-            "New Game",
-            "Join Game",
-            "Delete Game",
+            "Join",
+            "Create",
+            "Delete",
             "Back"
         })
         test.assert_deep_eq(menu_client.texts(screen), {
@@ -57,12 +57,12 @@ end)
 
 test.case("each entry asks the session for its screen", function()
     with_screen(function(screen, session)
-        click(screen, "New Game")
-        click(screen, "Join Game")
-        click(screen, "Delete Game")
+        click(screen, "Join")
+        click(screen, "Create")
+        click(screen, "Delete")
         test.assert_deep_eq(session.calls, {
-            "show_new_game",
             "show_join_game",
+            "show_new_game",
             "show_delete_game"
         })
     end)
