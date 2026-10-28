@@ -254,7 +254,10 @@ with real avatars, piotr a player who writes the tokens he owns and views
 `Bilbosz`. A scenario names the fixture it needs in its table form,
 `fixture = "old-town"` beside `run`; `scenario.sh` reads it
 (`tools/scenario-info.lua`) and seeds the server from it, `basic` without
-one, and `--fixture <dir>` on its command line overrides.
+one, and `--fixture <dir>` on its command line overrides. That tool loads
+the scenario file under plain LuaJIT, so a scenario requires no UI module
+at file level (they need LÖVE's `utf8`): it tells a field's kind by
+`get_class_name_of`, as `game-panels` does for a selection box.
 
 ### Running one
 

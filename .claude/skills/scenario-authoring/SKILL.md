@@ -83,7 +83,9 @@ script starts one extra client per peer (see "Several clients").
   replaced as a player types it: a click, Ctrl+A, the text), `select_option` (an option of a
   selection box by its key: the box clicked, the row by its title) and `pick_image` (an image through the
   workspace a Browse... button opened); a step
-  used by two scenarios goes there, named for what it reaches. The folder is skipped
+  used by two scenarios goes there, named for what it reaches. A scenario file requires no UI
+  module at its top level: `tools/scenario-info.lua` loads it under plain LuaJIT to read its
+  fixture, where those modules cannot load; a control's kind is told by `get_class_name_of`. The folder is skipped
   by `./format-code.sh`, which skips every path containing `lib/` and
   rewrites the whole project, so one file is formatted with `lua-format
   -i <file>` and checked with `lua-format --check <file>`,
