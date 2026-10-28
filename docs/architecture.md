@@ -403,7 +403,8 @@ and, when the selected tokens agree on a file the store holds, the image
 itself above the path, fitted into a square of
 `TOKEN_PANEL_IMAGE_PREVIEW_SIZE`: the avatar is the one every token
 shows), in a scroll view above the one row of buttons: Cancel at the
-left, Apply at the right, New and Delete spread between them. New is
+left edge with New beside it, Apply at the right edge, Delete centered
+between New and Apply, each where it always sits. New is
 there with or without a selection, read-only without `write` on the
 tokens kind, and opens the new token screen. The Id field is editable with
 exactly one writable token selected; with several it is read-only and
