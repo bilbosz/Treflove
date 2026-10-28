@@ -9,7 +9,6 @@ local PermissionsPanel = require("game.panels.permissions-panel")
 local TokenPropertiesPanel = require("game.panels.token-properties-panel")
 local QuickAccessPanel = require("game.quick-access-panel")
 local Consts = require("app.consts")
-local permissions = require("game.permissions")
 local entries = require("game.entry.entries")
 local lifetime = require("lifetime")
 
@@ -23,7 +22,6 @@ local lifetime = require("lifetime")
 ---@field private _panels SidePanel[] In the order of their quick access entries
 ---@field private _panel_buttons table<SidePanel, TextButton> The quick access entry that toggles each side panel, active while it is shown
 ---@field private _quick_access_panel QuickAccessPanel
----@field private _new_token_button TextButton Read-only without `write` on the tokens kind
 local GameScreen = class("GameScreen", Model, FormScreen)
 
 ---@param data GameScreenData
@@ -50,10 +48,6 @@ function GameScreen:init(data)
     self._quick_access_panel:add_entry("Assets", function()
         assert(app.session):open_assets_workspace()
     end)
-    self._new_token_button = self._quick_access_panel:add_entry("New Token", function()
-        assert(app.session):show_new_token()
-    end)
-    self:_gate_new_token()
     self:add_side_panel(self._game_panel, "Game")
     self:add_side_panel(pages_panel, "Pages")
     self:add_side_panel(groups_panel, "Groups")
@@ -76,12 +70,6 @@ function GameScreen:add_side_panel(panel, caption)
     return button
 end
 
----@private
-function GameScreen:_gate_new_token()
-    local session = app.session
-    self._new_token_button:set_read_only(not (session and session:is_allowed(permissions.Action.WRITE, permissions.Kind.TOKENS)))
-end
-
 function GameScreen:show()
     self:on_resize(assert(app.width), assert(app.height))
     FormScreen.show(self)
@@ -102,7 +90,6 @@ function GameScreen:on_entries_change(kind, id)
 end
 
 function GameScreen:on_grants_change()
-    self:_gate_new_token()
     for _, panel in ipairs(self._panels) do
         panel:on_grants_change()
     end

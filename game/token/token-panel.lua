@@ -1,18 +1,21 @@
 local SidePanel = require("game.side-panel")
 local Consts = require("app.consts")
 local Text = require("controls.text")
+local Image = require("controls.image")
 local TextInput = require("ui.text-input")
 local NumberInput = require("ui.number-input")
 local TextButton = require("ui.text-button")
 local ScrollView = require("ui.scroll-view")
 local lifetime = require("lifetime")
 local media = require("utils.media")
+local permissions = require("game.permissions")
 local token_id = require("game.token.token-id")
 
 ---@class TokenPanelProperty
 ---@field key string Token data key
 ---@field def TokenProperty Property definition from `token_properties`
 ---@field title Text|nil Set once the property is filled in
+---@field preview Image|nil For an `image` property whose selected tokens agree on a file the store holds: the image, fitted into a square of `TOKEN_PANEL_IMAGE_PREVIEW_SIZE` between the title and the input
 ---@field input TextInput|NumberInput|nil Set once the property is filled in, a `NumberInput` for a `number` property, read-only for an `image` property
 ---@field button TextButton|nil For an `image` property: opens the assets workspace at the asset, to browse for another or, read-only, to show it
 
@@ -21,6 +24,7 @@ local token_id = require("game.token.token-id")
 ---@field private _keys string[]|nil Sorted editable keys of the selected tokens
 ---@field private _selection_set table<Token, boolean>
 ---@field private _cancel_button TextButton|nil
+---@field private _new_button TextButton|nil Read-only without `write` on the tokens kind
 ---@field private _apply_button TextButton|nil Absent while the player may not write every selected token
 ---@field private _delete_button TextButton|nil Absent while nothing is selected or the player may not write every selected token
 ---@field private _scroll_view ScrollView Holds the properties, above the buttons
@@ -37,6 +41,7 @@ function TokenPanel:init(game_screen, width, height)
     self._keys = nil
     self._selection_set = game_screen:get_selection():get_select_set()
     self._cancel_button = nil
+    self._new_button = nil
     self._apply_button = nil
     self._delete_button = nil
     self._scroll_view = ScrollView(self, width, height, true)
@@ -74,13 +79,7 @@ function TokenPanel:_update_view()
     self:_update_property_keys()
     local is_writable = self:_is_selection_writable()
     self:_fill_in_properties(not is_writable)
-    self:_create_cancel_button()
-    if is_writable then
-        if next(self._selection_set) ~= nil then
-            self:_create_delete_button()
-        end
-        self:_create_apply_button()
-    end
+    self:_create_buttons(is_writable)
     self:_layout_scroll_view()
 end
 
@@ -148,6 +147,7 @@ function TokenPanel:_fill_in_properties(read_only)
                 key = k,
                 def = app.data.token_properties[k],
                 title = nil,
+                preview = nil,
                 input = nil,
                 button = nil
             }
@@ -161,6 +161,16 @@ function TokenPanel:_fill_in_properties(read_only)
             end
 
             local t = property.def.type
+            if t == "image" then
+                local preview = self:_create_image_preview(k)
+                if preview then
+                    property.preview = preview
+                    preview:set_position(Consts.PADDING, y)
+                    ---@type number
+                    y = y + Consts.TOKEN_PANEL_IMAGE_PREVIEW_SIZE + Consts.PADDING * 0.5
+                end
+            end
+
             do
                 local input = self:_create_property_input(property)
                 property.input = input
@@ -240,6 +250,22 @@ function TokenPanel:_create_field_title(text)
     local title = Text(self._scroll_view:get_content(), text, Consts.FOREGROUND_COLOR)
     title:set_scale(Consts.PANEL_FIELD_SCALE)
     return title
+end
+
+---@private
+---@param key string An `image` property
+---@return Image|nil Absent unless the selected tokens agree on a file of the joined game's store
+function TokenPanel:_create_image_preview(key)
+    local is_single_value, path = self:_get_value_by_key(key)
+    local store = app.asset_manager:get_store()
+    if not is_single_value or type(path) ~= "string" or not store or store:asset(path):get_type() ~= "file" then
+        return nil
+    end
+    local image = Image(self._scroll_view:get_content(), path)
+    local w, h = image:get_size()
+    local size = Consts.TOKEN_PANEL_IMAGE_PREVIEW_SIZE
+    image:set_scale(math.min(size / w, size / h))
+    return image
 end
 
 ---@private
@@ -335,51 +361,68 @@ function TokenPanel:_get_value_by_key(key)
 end
 
 ---@private
-function TokenPanel:_create_cancel_button()
-    local h = select(2, self:get_size())
+---@param caption string
+---@param action InputHandler
+---@return TextButton
+function TokenPanel:_create_button(caption, action)
+    local button = TextButton(self, self._game_screen, caption, action)
+    button:set_scale(Consts.PANEL_FIELD_SCALE)
+    return button
+end
 
-    local button = TextButton(self, self._game_screen, "Cancel", function()
+---@private
+---@param is_writable boolean Whether the player may write every selected token
+function TokenPanel:_create_buttons(is_writable)
+    local cancel = self:_create_button("Cancel", function()
         self:cancel()
     end)
-    self._cancel_button = button
+    self._cancel_button = cancel
 
-    local s = Consts.PANEL_FIELD_SCALE
-    button:set_scale(s)
+    local new = self:_create_button("New", function()
+        assert(app.session):show_new_token()
+    end)
+    self._new_button = new
+    local session = app.session
+    new:set_read_only(not (session and session:is_allowed(permissions.Action.WRITE, permissions.Kind.TOKENS)))
 
-    local button_h = select(2, button:get_size())
-    button:set_position(Consts.PADDING, h - button_h * s - Consts.PADDING)
+    ---@type TextButton[]
+    local row = {
+        cancel,
+        new
+    }
+    if is_writable then
+        if next(self._selection_set) ~= nil then
+            local delete = self:_create_button("Delete", function()
+                self:_delete()
+            end)
+            self._delete_button = delete
+            table.insert(row, delete)
+        end
+        local apply = self:_create_button("Apply", function()
+            self:_apply()
+        end)
+        self._apply_button = apply
+        table.insert(row, apply)
+    end
+    self:_place_button_row(row)
 end
 
 ---@private
-function TokenPanel:_create_apply_button()
+---@param row TextButton[] Left to right; the first at the left edge, the last at the right edge, equal gaps between them
+function TokenPanel:_place_button_row(row)
     local w, h = self:get_size()
-
-    local button = TextButton(self, self._game_screen, "Apply", function()
-        self:_apply()
-    end)
-    self._apply_button = button
-
-    local s = Consts.PANEL_FIELD_SCALE
-    button:set_scale(s)
-
-    local button_w, button_h = button:get_size()
-    button:set_position(w - button_w * s - Consts.PADDING, h - button_h * s - Consts.PADDING)
-end
-
----@private
-function TokenPanel:_create_delete_button()
-    local w, h = self:get_size()
-
-    local button = TextButton(self, self._game_screen, "Delete", function()
-        self:_delete()
-    end)
-    self._delete_button = button
-
-    local s = Consts.PANEL_FIELD_SCALE
-    button:set_scale(s)
-
-    local button_w, button_h = button:get_size()
-    button:set_position((w - button_w * s) * 0.5, h - button_h * s - Consts.PADDING)
+    local s, p = Consts.PANEL_FIELD_SCALE, Consts.PADDING
+    local widths = 0
+    for _, button in ipairs(row) do
+        widths = widths + button:get_size() * s
+    end
+    local gap = (w - 2 * p - widths) / (#row - 1)
+    local x = p
+    for _, button in ipairs(row) do
+        local button_w, button_h = button:get_size()
+        button:set_position(x, h - button_h * s - p)
+        x = x + button_w * s + gap
+    end
 end
 
 ---@private
@@ -400,6 +443,9 @@ end
 function TokenPanel:_release_properties()
     for _, v in ipairs(self._properties) do
         lifetime.destroy(v.title)
+        if v.preview then
+            lifetime.destroy(v.preview)
+        end
         lifetime.destroy(v.input)
         if v.button then
             lifetime.destroy(v.button)
@@ -420,6 +466,11 @@ function TokenPanel:_release_properties()
     if self._cancel_button then
         lifetime.destroy(self._cancel_button)
         self._cancel_button = nil
+    end
+
+    if self._new_button then
+        lifetime.destroy(self._new_button)
+        self._new_button = nil
     end
 
     if self._apply_button then
