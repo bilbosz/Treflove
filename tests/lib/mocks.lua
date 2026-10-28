@@ -756,6 +756,7 @@ function mocks.ensure_love_graphics()
         setColor = _no_op,
         draw = _no_op,
         circle = _no_op,
+        polygon = _no_op,
         rectangle = _no_op,
         setShader = _no_op,
         reset = _no_op,

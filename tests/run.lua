@@ -116,6 +116,7 @@ local TEST_MODULES = {
     "tests.test-token-id",
     "tests.test-token-panel",
     "tests.test-tree",
+    "tests.test-triangle",
     "tests.test-update-entry-rp",
     "tests.test-update-token-rp",
     "tests.test-upload-asset-rp",
