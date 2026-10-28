@@ -29,6 +29,8 @@ return function(driver)
     driver:expect(driver:try_find("AssetListRow", "token/"), "the store's token folder is listed")
     driver:key(Consts.BACKSTACK_KEY)                     -- Escape: the back key, as the steps write it
     -- a modifier is held with key_down/key_up around the keys: driver:key_down("lctrl"); driver:key("a"); driver:key_up("lctrl")
+    -- headless frames are a sixtieth of a second apart, so two clicks on one field count as a double click
+    -- (the word selected), three as a triple; driver:advance(1) between them makes each a single click
     driver:wait_screen("GameScreen")
 end
 ```

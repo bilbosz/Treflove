@@ -209,6 +209,10 @@ Hierarchy"). Still missing:
 - A placeholder shown in an empty field, dimmed (Login, Password, a
   token's name)
 - Up and Down stepping a number input's value, Shift for a larger step
+- A drag held beyond the field's edge does not scroll the content on:
+  the caret follows the pointer only as far as the text in view, so a
+  selection across a text wider than the field is made with Shift+Home
+  or Shift+End instead
 - IME composition (`love.textedited`) for scripts that compose
 - Cmd as the command key is read from the OS name and untested on macOS
 
