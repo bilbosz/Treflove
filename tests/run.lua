@@ -102,6 +102,7 @@ local TEST_MODULES = {
     "tests.test-screen-manager",
     "tests.test-scroll-view",
     "tests.test-seek-bar",
+    "tests.test-selection-box",
     "tests.test-session",
     "tests.test-sign-up-screen",
     "tests.test-source-playback",
