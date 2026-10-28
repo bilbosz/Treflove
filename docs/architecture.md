@@ -382,17 +382,20 @@ form screen's control as its last child, so it draws over the screen and
 is hit first, and anchored to the box, so it dies with the box or with
 the screen; a backdrop over the whole screen takes every press outside
 the list, which closes it and reaches nothing under it, and the rows
-(`SelectionBoxRow`, one per option, as tall as the box, under it, or
-above it when there is no room below; more than
-`SELECTION_BOX_MAX_ROWS` of them in a scroll view, the selected one in
-view) highlight under the pointer or with Up and Down, and a press on
-one, or Return, picks it: the box's selection changes, `on_change` runs
-when the key differs, the list closes. Up and Down on a closed focused
+(`SelectionBoxRow`, one per option, as tall as the box, in a scroll view
+showing at most `SELECTION_BOX_MAX_ROWS` of them with the selected one in
+view, under the box, or above it when there is no room below) highlight
+under the pointer or with Up and Down, and a press on one, or Return,
+picks it: the box's selection changes, the list closes, `on_change` runs
+when the key differs. A press is only recorded by the pointer dispatch
+and acted on from the list's own `Button` (the button manager runs after
+the pointer dispatch, so a list gone at the press would leave the manager
+pressing what is under it). Up and Down on a closed focused
 box step the selection directly. The list closes too when the focus
 moves on (Tab), the screen hides, the box becomes read-only, the options
 are set (`set_options`, which keeps the selected key when it is still
-among them) or the window resizes; `set_selected` and `set_options`
-never run `on_change`. Escape stays the back key. A scenario finds the
+among them), the selection is set (`set_selected`) or the window
+resizes; `set_selected` and `set_options` never run `on_change`. Escape stays the back key. A scenario finds the
 box by its shown title and a row of the open list by its title
 (`driver:click("SelectionBox", "Player")`,
 `driver:click("SelectionBoxRow", "Game master")`).

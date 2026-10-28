@@ -230,8 +230,15 @@ change to the panel and to the scenario that drives it (`game-panels`):
   `number` and `image`
 - A multivalue state, as the text input has, for a field of the token
   panel whose selected tokens disagree
-- The wheel over an open list of more rows than fit should scroll it,
-  as the panels' lists are scrolled; today only the drag button does
+- The wheel over an open list of more rows than fit should scroll it;
+  today only the drag button does, and the broadcast `app.wheel_event`
+  still reaches a page under the list, which zooms
+- `FormScreen:read_only_change` advances the focus past an input made
+  read-only without `_notify_listeners()`, so the input keeps
+  `is_focused()` and its key registrations and the next one never gets
+  `on_focus`; the fix is a `self:_notify_listeners()` after the
+  `_advance_focus(1)`, with the tests of the inputs that are made
+  read-only while focused (the token panel's fields) checked against it
 
 ### 15. Scenarios and the console, next steps
 
