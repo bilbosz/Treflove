@@ -383,7 +383,9 @@ local function click(client, ctrl)
     local min_x, min_y, max_x, max_y = ctrl:get_global_aabb():get_bounds()
     local x, y = (min_x + max_x) * 0.5, (min_y + max_y) * 0.5
     move(client, x, y)
+    client.pointer_event_manager:dispatch_pointer_down(x, y, 1)
     client.button_event_manager:dispatch_pointer_down(x, y, 1)
+    client.pointer_event_manager:dispatch_pointer_up(x, y, 1)
     client.button_event_manager:dispatch_pointer_up(x, y, 1)
 end
 

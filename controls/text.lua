@@ -13,9 +13,28 @@ local REFERENCE_SIZE = fonts.REFERENCE_SIZE
 local Text = class("Text", DrawableControl)
 
 ---@private
-function Text:_draw()
+---@return number The pixel size the text is rasterized at for its global transform
+---@return number The scale the drawable is drawn at: over the screen when axis-aligned, over the global transform otherwise
+---@return boolean Whether the text is drawn axis-aligned
+---@return number, number The screen position
+function Text:_get_rasterization()
     local scale, is_axis_aligned, tx, ty = self:get_screen_placement()
     local px = fonts.pixel_size(scale)
+    if not is_axis_aligned then
+        return px, REFERENCE_SIZE / px, false, tx, ty
+    end
+    -- One glyph texel per screen pixel when the size rounds within half a
+    -- pixel: the rounding of the font size is absorbed by the layout, not
+    -- resampled
+    if math.abs(scale * REFERENCE_SIZE - px) <= 0.5 then
+        return px, 1, true, tx, ty
+    end
+    return px, scale * REFERENCE_SIZE / px, true, tx, ty
+end
+
+---@private
+function Text:_draw()
+    local px, k, is_axis_aligned, tx, ty = self:_get_rasterization()
     if px ~= self._pixel_size then
         self._pixel_size = px
         self._text_drawable:setFont(fonts.get(self._face, px))
@@ -23,18 +42,10 @@ function Text:_draw()
 
     love.graphics.setColor(self._color)
     if is_axis_aligned then
-        -- One glyph texel per screen pixel, at a whole-pixel position; the
-        -- rounding of the font size is absorbed by the layout, not resampled
-        local k = scale * REFERENCE_SIZE / px
-        if math.abs(scale * REFERENCE_SIZE - px) <= 0.5 then
-            k = 1
-        end
         love.graphics.origin()
         love.graphics.translate(math.floor(tx + 0.5), math.floor(ty + 0.5))
-        love.graphics.scale(k)
-    else
-        love.graphics.scale(REFERENCE_SIZE / px)
     end
+    love.graphics.scale(k)
     love.graphics.draw(self._text_drawable)
 end
 
@@ -88,6 +99,15 @@ end
 ---@return string
 function Text:get_text()
     return self._text
+end
+
+---@param text string
+---@return number The width of `text` as the text draws it, in model units before the control's scale: measured in the font rasterized for the text's size on screen, whose hinted advances the reference font scaled down would miss by a glyph over a line
+function Text:measure(text)
+    local scale, is_axis_aligned = self:get_screen_placement()
+    local px, k = self:_get_rasterization()
+    local units = is_axis_aligned and k / scale or k
+    return fonts.get(self._face, px):getWidth(text) * units
 end
 
 ---@return number The line height of the font, in model units

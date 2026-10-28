@@ -90,7 +90,7 @@ end
 ---@param key string
 function FormScreen:on_key_pressed(key)
     if key == "tab" then
-        if app.keyboard_manager:is_key_down("lshift") then
+        if app.keyboard_manager:is_shift_down() then
             self:_advance_focus(-1)
         else
             self:_advance_focus(1)

@@ -224,6 +224,18 @@ function ScenarioDriver:key(key)
     coroutine.yield()
 end
 
+---@param key love.KeyConstant Held until `key_up`, so the keyboard manager reads it down (a modifier for the keys and the clicks between)
+function ScenarioDriver:key_down(key)
+    love.event.push("keypressed", key, key, false)
+    coroutine.yield()
+end
+
+---@param key love.KeyConstant
+function ScenarioDriver:key_up(key)
+    love.event.push("keyreleased", key, key)
+    coroutine.yield()
+end
+
 ---@param text string
 function ScenarioDriver:type(text)
     for character in string.gmatch(text, UTF8_CHARACTER) do

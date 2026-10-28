@@ -1,4 +1,4 @@
----`len`, `offset` and `codes` only, for valid UTF-8 only.
+---`len`, `offset` and `codes` only; `len` validates, the others assume valid UTF-8.
 ---@class Utf8Shim
 local utf8_shim = {}
 
@@ -10,14 +10,38 @@ local function _is_continuation(s, i)
     return byte ~= nil and byte >= 0x80 and byte < 0xC0
 end
 
+---@param byte number
+---@return number|nil The number of continuation bytes a lead byte announces; nil for a byte that leads nothing
+local function _sequence_tail(byte)
+    if byte < 0x80 then
+        return 0
+    elseif byte >= 0xC2 and byte < 0xE0 then
+        return 1
+    elseif byte >= 0xE0 and byte < 0xF0 then
+        return 2
+    elseif byte >= 0xF0 and byte < 0xF5 then
+        return 3
+    end
+    return nil
+end
+
 ---@param s string
----@return number
+---@return number|nil The number of characters, or nil for a string that is not UTF-8
+---@return number|nil The byte position of the first invalid byte
 function utf8_shim.len(s)
-    local n = 0
-    for i = 1, #s do
-        if not _is_continuation(s, i) then
-            n = n + 1
+    local n, i = 0, 1
+    while i <= #s do
+        local tail = _sequence_tail(string.byte(s, i))
+        if not tail then
+            return nil, i
         end
+        for j = i + 1, i + tail do
+            if not _is_continuation(s, j) then
+                return nil, i
+            end
+        end
+        n = n + 1
+        i = i + tail + 1
     end
     return n
 end

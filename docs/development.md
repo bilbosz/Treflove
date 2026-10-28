@@ -182,13 +182,18 @@ The suite has no external dependencies:
   clock and captured logs), `make_channel()`/`make_thread()` (in-memory LÖVE
   channel and thread stand-ins; the thread records its starts and is ended
   by hand), `make_keyboard()` (a fake `love.keyboard`
-  backend for the text event manager), `ensure_love_data()`,
-  `ensure_love_math()`, `ensure_love_graphics()`, `ensure_love_thread()`
+  backend for the keyboard and the text event managers), `make_system()`
+  (a fake `love.system` holding the clipboard and the OS name; the mock
+  app's managers share one of each, `app_mock.keyboard` and
+  `app_mock.system`, so a test holds a modifier or reads the clipboard
+  there), `ensure_love_data()`,
+  `ensure_love_math()`, `ensure_love_graphics()`, `ensure_love_mouse()`,
+  `ensure_love_thread()`
   (the real modules under LÖVE where they work without a window; reversible
   fakes under plain LuaJIT, so that real controls, screens and a connection
   manager can be built), `install_love_filesystem(files)` /
   `restore_love_filesystem()` (an in-memory file system over a table).
-- A pure-Lua `utf8` shim is preloaded under plain LuaJIT (LÖVE bundles the
+- A pure-Lua `utf8` shim is preloaded under plain LuaJIT, its `len` validating as the real one does (LÖVE bundles the
   real one).
 - The main loop, the console, the console client and session, the
   console command, the monitor, the scenario driver and the runner are

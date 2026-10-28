@@ -17,6 +17,7 @@ by the loop's poll in between, through the same callbacks as real input.
 | `click(target, text?, index?)` | a control or `find(...)`; queues move, press, release of button 1 at the center of its bounding box; yields one frame | |
 | `move(x, y)`, `press(x, y, button?)`, `release_button(x, y, button?)` | queue the pointer events; no yield | a drag: press, moves, release, then `frames(1)` |
 | `key(key)` | queues keypressed and keyreleased; yields one frame | `"escape"` is the back key, `"return"` submits a field |
+| `key_down(key)`, `key_up(key)` | queue one keypressed or keyreleased; yield one frame each | a modifier held across the keys and clicks between them: `key_down("lctrl")`, `key("a")`, `key_up("lctrl")` |
 | `type(text)` | queues one textinput per UTF-8 character; yields one frame | the focused field receives it; click the field first |
 | `expect(condition, message)` | raises `message` when falsy, at the scenario's line | put the found value in the message |
 | `log(message)` | `app:log("scenario: " .. message)`, flushed | shows in the client log with a timestamp |

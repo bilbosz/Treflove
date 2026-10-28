@@ -118,6 +118,12 @@ Monitor:
     LEFT_MOUSE_BUTTON = 1,
     CARET_BLINK_INTERVAL = 0.5,
     CARET_WIDTH = 3,
+    TEXT_INPUT_SELECTION_COLOR = {
+        0.65,
+        0.8,
+        1
+    },
+    MULTI_CLICK_INTERVAL = 0.4,
     LOGGER_NAME_BLACKLIST = {
         "client%-host",
         "server%-host"
