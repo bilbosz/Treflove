@@ -470,13 +470,9 @@ end)
 
 test.case("a clipboard that is not UTF-8 reads empty", function()
     local app_mock, manager = setup_commands()
-    -- The pure-Lua shim of plain LuaJIT does not validate: only LÖVE's utf8 rejects the invalid text
-    local utf8_validates = require("utf8").len("\255") == nil
 
     app_mock.system.clipboard = "ab\255cd"
-    if utf8_validates then
-        test.assert_eq(manager:get_clipboard(), "")
-    end
+    test.assert_eq(manager:get_clipboard(), "")
     app_mock.system.clipboard = "żółw"
     test.assert_eq(manager:get_clipboard(), "żółw")
 end)
