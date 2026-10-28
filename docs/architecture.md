@@ -258,9 +258,7 @@ managers (or by `app` directly) and consumers register handlers on it:
   `on_screen_hide()` and `on_focus_lost()`)
 
 Events by source:
-- Broadcast events: `app.update_event` (dt), `app.wheel_event` (x, y, client
-  only; a consumer asks its screen `is_showed()` and the pointer manager
-  for the position, so a page under the workspace keeps its zoom),
+- Broadcast events: `app.update_event` (dt),
   `app.resize_manager.resized` (width, height)
 - `KeyboardManager`: `key_pressed`/`key_released` (key), always delivered,
   also during text input (backstack, form navigation, button activation).
@@ -271,7 +269,8 @@ Events by source:
   `is_shift_down()` are what the consumers ask (the form's Shift+Tab, the
   page's selection keys, the text event manager); a lost window focus
   forgets every tracked key (`release_all`)
-- `PointerEventManager` (`pointer_down/up/move`) and
+- `PointerEventManager` (`pointer_down/up/move`, and `wheel` with the
+  pointer's position and the movement `(x, y, dx, dy)`, client only) and
   `FileSystemDropEventManager` (`file_dropped`): owners are Controls; dispatch
   is hit-tested instead of broadcast: only visible controls under the point,
   top-most first; a falsy return consumes the event; `set_receive_through`
@@ -323,7 +322,11 @@ TextInput, NumberInput, SelectionBox, ScrollView) build on them. `ScrollView` is
 viewport over a content control larger than itself (`get_content`,
 `set_content_size`): the content is dragged with `SCROLL_VIEW_DRAG_BUTTON`,
 press, drag, release, no further than its edges, holding the pointer
-meanwhile. Optional indicators of a fixed size (`SCROLL_VIEW_INDICATOR_*`)
+meanwhile, and scrolled with the wheel over it by `SCROLL_VIEW_WHEEL_STEP`
+units a notch (`set_wheel_step` for another step: the monitor's panes by
+lines, a selection box's list by rows), consumed whether or not the
+content overflows, so the page under a side panel's list keeps its zoom.
+Optional indicators of a fixed size (`SCROLL_VIEW_INDICATOR_*`)
 along the overflowed edges mark where the view is. The token panel and the
 workspace's details keep what is above their buttons in one, the
 workspace's usage list its buttons.
@@ -385,8 +388,8 @@ the list, which closes it and reaches nothing under it, and the rows
 (`SelectionBoxRow`, one per option, as tall as the box, in a scroll view
 showing at most `SELECTION_BOX_MAX_ROWS` of them with the selected one in
 view, under the box, or above it when there is no room below) highlight
-under the pointer or with Up and Down, and a press on one, or Return,
-picks it: the box's selection changes, the list closes, `on_change` runs
+under the pointer or with Up and Down, the wheel scrolls them and reaches
+nothing under the list, and a press on one, or Return, picks it: the box's selection changes, the list closes, `on_change` runs
 when the key differs. A press is only recorded by the pointer dispatch
 and acted on from the list's own `Button` (the button manager runs after
 the pointer dispatch, so a list gone at the press would leave the manager
@@ -652,7 +655,11 @@ without `write` on `game`. The other four are `EntriesPanel`
 scroll view (the selected one active), an Id field, one field per
 `EntryField` (a text input, a number input, a read-only path with
 `Browse...` into the assets workspace for an image, the grants separated
-by spaces), and the buttons `New` and `Delete` above `Cancel` and
+by spaces, a selection box for an `enum` such as a token property's
+`type` and for a player's `group`, over the game's groups by their titles;
+a value outside the options is shown as an option of its own, so the
+field shows the truth and Apply sends nothing for it untouched), and the
+buttons `New` and `Delete` above `Cancel` and
 `Apply`. `New` empties the fields for a creation; `Apply` sends only the
 fields that differ (with the rename when the Id field changed) after the
 module's checks, a refusal notified before anything is sent; `Delete`

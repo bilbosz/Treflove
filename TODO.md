@@ -221,24 +221,13 @@ Hierarchy"). Still missing:
 - Cmd as the command key is read from the OS name and untested on macOS
 
 The selection box ([docs/architecture.md](docs/architecture.md), "UI
-Control Hierarchy") has no use yet. Where it belongs, each a small
-change to the panel and to the scenario that drives it (`game-panels`):
+Control Hierarchy") is used by the entries panels for a token property's
+`type` and a player's `group`. Still missing:
 
-- The Permissions panel's `group` field: a box over the game's groups,
-  by their titles, instead of a text input taking a key
-- The Token Properties panel's `type` field: a box over `string`,
-  `number` and `image`
 - A multivalue state, as the text input has, for a field of the token
   panel whose selected tokens disagree
-- The wheel over an open list of more rows than fit should scroll it;
-  today only the drag button does, and the broadcast `app.wheel_event`
-  still reaches a page under the list, which zooms
-- `FormScreen:read_only_change` advances the focus past an input made
-  read-only without `_notify_listeners()`, so the input keeps
-  `is_focused()` and its key registrations and the next one never gets
-  `on_focus`; the fix is a `self:_notify_listeners()` after the
-  `_advance_focus(1)`, with the tests of the inputs that are made
-  read-only while focused (the token panel's fields) checked against it
+- Escape closing an open list without leaving the screen: the back key
+  is broadcast with no way to consume it
 
 ### 15. Scenarios and the console, next steps
 
