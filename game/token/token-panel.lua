@@ -371,7 +371,7 @@ function TokenPanel:_create_button(caption, action)
 end
 
 ---@private
----@param is_writable boolean Whether the player may write every selected token
+---@param is_writable boolean Whether the player may write every selected token: Apply, and Delete for a selection that is not empty
 function TokenPanel:_create_buttons(is_writable)
     local cancel = self:_create_button("Cancel", function()
         self:cancel()
@@ -385,44 +385,43 @@ function TokenPanel:_create_buttons(is_writable)
     local session = app.session
     new:set_read_only(not (session and session:is_allowed(permissions.Action.WRITE, permissions.Kind.TOKENS)))
 
-    ---@type TextButton[]
-    local row = {
-        cancel,
-        new
-    }
-    if is_writable then
-        if next(self._selection_set) ~= nil then
-            local delete = self:_create_button("Delete", function()
-                self:_delete()
-            end)
-            self._delete_button = delete
-            table.insert(row, delete)
-        end
-        local apply = self:_create_button("Apply", function()
-            self:_apply()
-        end)
-        self._apply_button = apply
-        table.insert(row, apply)
+    local y = self:_get_button_y(cancel)
+    local s, p = Consts.PANEL_FIELD_SCALE, Consts.PADDING
+    cancel:set_position(p, y)
+    local new_x = p + cancel:get_size() * s + p
+    new:set_position(new_x, y)
+
+    if not is_writable then
+        return
     end
-    self:_place_button_row(row)
+    ---@type TextButton|nil
+    local delete
+    if next(self._selection_set) ~= nil then
+        delete = self:_create_button("Delete", function()
+            self:_delete()
+        end)
+        self._delete_button = delete
+    end
+    local apply = self:_create_button("Apply", function()
+        self:_apply()
+    end)
+    self._apply_button = apply
+    local w = self:get_size()
+    local apply_x = w - apply:get_size() * s - p
+    apply:set_position(apply_x, y)
+    if delete then
+        local new_end = new_x + new:get_size() * s
+        delete:set_position((new_end + apply_x - delete:get_size() * s) * 0.5, y)
+    end
 end
 
 ---@private
----@param row TextButton[] Left to right; the first at the left edge, the last at the right edge, equal gaps between them
-function TokenPanel:_place_button_row(row)
-    local w, h = self:get_size()
-    local s, p = Consts.PANEL_FIELD_SCALE, Consts.PADDING
-    local widths = 0
-    for _, button in ipairs(row) do
-        widths = widths + button:get_size() * s
-    end
-    local gap = (w - 2 * p - widths) / (#row - 1)
-    local x = p
-    for _, button in ipairs(row) do
-        local button_w, button_h = button:get_size()
-        button:set_position(x, h - button_h * s - p)
-        x = x + button_w * s + gap
-    end
+---@param button TextButton Scaled by `PANEL_FIELD_SCALE`
+---@return number The top of the bottom row, a padding above the panel's bottom
+function TokenPanel:_get_button_y(button)
+    local _, h = self:get_size()
+    local _, button_h = button:get_size()
+    return h - button_h * Consts.PANEL_FIELD_SCALE - Consts.PADDING
 end
 
 ---@private

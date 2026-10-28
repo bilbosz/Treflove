@@ -698,6 +698,7 @@ end
 
 ---@param client GameClient
 ---@return string[] The captions of the panel's bottom row, left to right
+---@return number New's x
 local function assert_button_row(client)
     local panel = client.game_screen:get_token_panel()
     local panel_w, panel_h = panel:get_size()
@@ -712,6 +713,9 @@ local function assert_button_row(client)
     }) do
         local button = find(client)
         if button then
+            test.assert_eq(button:get_parent(), panel)
+            local _, y, _, h = button:get_position_and_size()
+            test.assert_near(y, panel_h - h * s - p, 1e-9, button:get_text() .. " at the panel's bottom")
             table.insert(row, button)
         end
     end
@@ -720,29 +724,30 @@ local function assert_button_row(client)
     end)
     ---@type string[]
     local captions = {}
-    ---@type number[]
-    local gaps = {}
-    local previous_right = nil
     for _, button in ipairs(row) do
         table.insert(captions, button:get_text())
-        local x, y, w, h = button:get_position_and_size()
-        test.assert_eq(button:get_parent(), panel)
-        test.assert_near(y, panel_h - h * s - p, 1e-9, button:get_text() .. " at the panel's bottom")
-        if previous_right then
-            table.insert(gaps, x - previous_right)
+    end
+
+    local cancel, new = assert(cancel_button(client)), assert(new_button(client))
+    local cancel_x, _, cancel_w = cancel:get_position_and_size()
+    test.assert_eq(cancel_x, p, "Cancel at the left edge")
+    local new_x, _, new_w = new:get_position_and_size()
+    test.assert_near(new_x, cancel_x + cancel_w * s + p, 1e-9, "New a padding right of Cancel")
+    local apply = apply_button(client)
+    if apply then
+        local apply_x, _, apply_w = apply:get_position_and_size()
+        test.assert_near(apply_x + apply_w * s, panel_w - p, 1e-9, "Apply at the right edge")
+        local delete = delete_button(client)
+        if delete then
+            local delete_x, _, delete_w = delete:get_position_and_size()
+            test.assert_near(delete_x + delete_w * s * 0.5, (new_x + new_w * s + apply_x) * 0.5, 1e-9, "Delete centered between New and Apply")
+            test.assert_true(new_x + new_w * s < delete_x and delete_x + delete_w * s < apply_x, "Delete apart from both")
         end
-        previous_right = x + w * s
     end
-    test.assert_near((row[1]:get_position()), p, 1e-9, "the first at the left edge")
-    test.assert_near(assert(previous_right), panel_w - p, 1e-9, "the last at the right edge")
-    for _, gap in ipairs(gaps) do
-        test.assert_true(gap > 0, "apart")
-        test.assert_near(gap, gaps[1], 1e-9, "equal gaps")
-    end
-    return captions
+    return captions, new_x
 end
 
-test.case("the bottom row reads Cancel, New, Delete and Apply, from edge to edge with equal gaps; New is there without a selection and for a read-only one", function()
+test.case("the bottom row reads Cancel, New, Delete and Apply, each in its fixed place; New stays put without a selection and for a read-only one", function()
     with_client({
         "read",
         "write:tokens/@owned"
@@ -750,25 +755,30 @@ test.case("the bottom row reads Cancel, New, Delete and Apply, from edge to edge
         game_client.select(client, {
             "Bilbosza"
         })
-        test.assert_deep_eq(assert_button_row(client), {
+        local captions, new_x = assert_button_row(client)
+        test.assert_deep_eq(captions, {
             "Cancel",
             "New",
             "Delete",
             "Apply"
         })
         game_client.select(client, {})
-        test.assert_deep_eq(assert_button_row(client), {
+        local empty_captions, empty_new_x = assert_button_row(client)
+        test.assert_deep_eq(empty_captions, {
             "Cancel",
             "New",
             "Apply"
         }, "nothing selected")
+        test.assert_eq(empty_new_x, new_x, "New in its place without a selection")
         game_client.select(client, {
             "Smaug"
         })
-        test.assert_deep_eq(assert_button_row(client), {
+        local read_only_captions, read_only_new_x = assert_button_row(client)
+        test.assert_deep_eq(read_only_captions, {
             "Cancel",
             "New"
         }, "a token the player may not write")
+        test.assert_eq(read_only_new_x, new_x, "New in its place for a read-only selection")
     end)
 end)
 
