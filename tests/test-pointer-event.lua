@@ -54,6 +54,16 @@ function TestHitControl:on_event(x, y, arg)
     return self.result
 end
 
+---@param x number
+---@param y number
+---@param dx number
+---@param dy number
+---@return boolean|nil
+function TestHitControl:on_wheel(x, y, dx, dy)
+    table.insert(self.log, string.format("%s:%s,%s,%s,%s", self.name, tostring(x), tostring(y), tostring(dx), tostring(dy)))
+    return self.result
+end
+
 ---@class TestHitTree
 ---@field log string[]
 ---@field root TestHitControl 0..100 square
@@ -396,4 +406,86 @@ test.case("file drops use the same hit-tested order at the pointer position", fu
         "token:20,25,file",
         "root:20,25,file"
     })
+end)
+
+---@param manager PointerEventManager
+---@param ctrls TestHitControl[]
+local function _register_wheel(manager, ctrls)
+    for _, ctrl in ipairs(ctrls) do
+        manager.wheel:register(ctrl, ctrl.on_wheel)
+    end
+end
+
+test.case("the wheel goes to the top-most control at the pointer position with the movement, a falsy return consuming it", function()
+    local tree = _make_tree()
+    local app_mock = _install(tree)
+    local manager = app_mock.pointer_event_manager
+    _register_wheel(manager, {
+        tree.root,
+        tree.page,
+        tree.token,
+        tree.popup
+    })
+    app_mock:set_pointer_position(20, 25)
+
+    manager:dispatch_wheel(0, 1)
+    test.assert_deep_eq(tree.log, {
+        "popup:20,25,0,1"
+    }, "the popup drawn on top consumes it")
+
+    tree.log[1] = nil
+    app_mock:set_pointer_position(70, 80)
+    manager:dispatch_wheel(-1, 0)
+    test.assert_deep_eq(tree.log, {
+        "page:70,80,-1,0"
+    }, "beside the popup and the token: the page")
+end)
+
+test.case("the wheel passes through on a truthy return, and reaches a wheel receive-through control below a consumer", function()
+    local tree = _make_tree()
+    local app_mock = _install(tree)
+    local manager = app_mock.pointer_event_manager
+    _register_wheel(manager, {
+        tree.root,
+        tree.page,
+        tree.token,
+        tree.popup
+    })
+    app_mock:set_pointer_position(20, 20)
+    tree.popup.result = true
+
+    manager:dispatch_wheel(0, -2)
+    test.assert_deep_eq(tree.log, {
+        "popup:20,20,0,-2",
+        "token:20,20,0,-2"
+    })
+
+    for i = #tree.log, 1, -1 do
+        tree.log[i] = nil
+    end
+    manager:set_wheel_receive_through(tree.root, true)
+    manager:dispatch_wheel(0, 1)
+    test.assert_deep_eq(tree.log, {
+        "popup:20,20,0,1",
+        "token:20,20,0,1",
+        "root:20,20,0,1"
+    })
+end)
+
+test.case("the pointer events' receive-through does not reach the wheel", function()
+    local tree = _make_tree()
+    local app_mock = _install(tree)
+    local manager = app_mock.pointer_event_manager
+    _register_wheel(manager, {
+        tree.page,
+        tree.popup
+    })
+    manager:set_receive_through(tree.page, true)
+    app_mock:set_pointer_position(20, 20)
+
+    manager:dispatch_wheel(0, 1)
+
+    test.assert_deep_eq(tree.log, {
+        "popup:20,20,0,1"
+    }, "a page under an open list keeps its zoom")
 end)
