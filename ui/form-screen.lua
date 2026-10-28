@@ -30,28 +30,15 @@ function FormScreen:_advance_focus(d)
     self._prev_focus = self._focus
 
     local n = #inputs
-    if n == 0 then
-        return
-    end
-
-    local count = 0
-    for _, v in ipairs(inputs) do
-        if not v:is_read_only() then
-            count = count + 1
-        end
-    end
-    if count == 0 then
-        return
-    end
-
     local i = self._focus or 0
-    while true do
+    for _ = 1, n do
         i = (i + d - 1 + n) % n + 1
         if inputs[i]:are_all_predecessors_enabled() and not inputs[i]:is_read_only() then
-            break
+            self._focus = i
+            return
         end
     end
-    self._focus = i
+    self._focus = nil
 end
 
 function FormScreen:init()
@@ -130,8 +117,9 @@ end
 function FormScreen:read_only_change(input)
     local found = table.find_array_idx(self._inputs, input)
     assert(found)
-    if found == self._focus then
+    if found == self._focus and input:is_read_only() then
         self:_advance_focus(1)
+        self:_notify_listeners()
     end
 end
 
