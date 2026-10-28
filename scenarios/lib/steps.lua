@@ -281,6 +281,29 @@ function steps.set_text(driver, input, text)
     driver:expect(input:get_text() == text, string.format("the field holds %q: %q", text, input:get_text()))
 end
 
+---@param driver ScenarioDriver
+---@param box SelectionBox Shown, not read-only
+---@param key string One of the box's options: its row is clicked in the list a click on the box opens, as a player picks it
+function steps.select_option(driver, box, key)
+    driver:click(box)
+    driver:wait_for(function()
+        return box:is_open()
+    end, nil, "the selection box's list open")
+    ---@type string|nil
+    local title
+    for _, option in ipairs(box:get_options()) do
+        if option.key == key then
+            title = option.title
+        end
+    end
+    driver:expect(title, string.format("the selection box offers %q", key))
+    driver:click("SelectionBoxRow", assert(title))
+    driver:wait_for(function()
+        return box:get_selected() == key
+    end, nil, "the option " .. key .. " selected")
+    driver:log(string.format("selected the option %s (%s)", key, title))
+end
+
 ---@param driver ScenarioDriver In the assets workspace, opened with a pick of an image (a panel's Browse...)
 ---@param path string An image of the game's store, in a folder of the store's root
 function steps.pick_image(driver, path)

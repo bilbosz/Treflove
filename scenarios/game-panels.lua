@@ -82,11 +82,56 @@ end
 
 ---@param driver ScenarioDriver
 ---@param panel EntriesPanel
----@param texts {[1]: string, [2]: string}[] Field keys and what is typed in them, in order
+---@param texts {[1]: string, [2]: string}[] Field keys and what is typed in them, or the key selected in a selection box, in order
 local function _fill(driver, panel, texts)
     for _, pair in ipairs(texts) do
-        steps.set_text(driver, assert(panel:get_field_input(pair[1]), "the field " .. pair[1]), pair[2])
+        local input = assert(panel:get_field_input(pair[1]), "the field " .. pair[1])
+        -- by class name, not required: tools/scenario-info.lua loads this
+        -- file under plain LuaJIT, where the UI's modules cannot load
+        if get_class_name_of(input) == "SelectionBox" then
+            ---@cast input SelectionBox
+            steps.select_option(driver, input, pair[2])
+        else
+            ---@cast input TextInput
+            steps.set_text(driver, input, pair[2])
+        end
     end
+end
+
+---@param panel EntriesPanel
+---@param key string
+---@return TextInput
+local function _text_field(panel, key)
+    local input = assert(panel:get_field_input(key), "the field " .. key)
+    assert(get_class_name_of(input) == "TextInput", "a text field " .. key)
+    ---@cast input TextInput
+    return input
+end
+
+---@param driver ScenarioDriver
+---@param players PermissionsPanel piotr selected
+---@param save GameData
+local function _expect_group_box(driver, players, save)
+    local box = players:get_field_input("group")
+    driver:expect(box and get_class_name_of(box) == "SelectionBox", "the group field is a selection box: " .. (box and get_class_name_of(box) or "none"))
+    ---@cast box SelectionBox
+    driver:expect(box:get_selected() == "player", "piotr's group selected: " .. tostring(box:get_selected()))
+    ---@type string[]
+    local titles = {}
+    for _, option in ipairs(box:get_options()) do
+        table.insert(titles, option.title)
+    end
+    ---@type string[]
+    local expected = {}
+    for id in pairs(save.groups) do
+        table.insert(expected, id)
+    end
+    table.sort(expected)
+    for i, id in ipairs(expected) do
+        expected[i] = save.groups[id].title
+    end
+    driver:expect(table.concat(titles, ", ") == table.concat(expected, ", "), "the group box offers the groups' titles: " .. table.concat(titles, ", "))
+    driver:log("the group box offers " .. table.concat(titles, ", ") .. ", piotr's player selected")
 end
 
 ---@param driver ScenarioDriver
@@ -156,7 +201,7 @@ return {
         driver:click(assert(pages:get_field_button("image"), "the image's Browse..."))
         driver:wait_screen("AssetsWorkspaceScreen")
         steps.pick_image(driver, PAGE_IMAGE)
-        local image = assert(pages:get_field_input("image"))
+        local image = _text_field(pages, "image")
         driver:expect(image:get_text() == PAGE_IMAGE, "the image field holds the pick: " .. image:get_text())
         local created = _apply(driver, pages, function()
             return data.pages[PAGE] ~= nil and _lists(pages, PAGE)
@@ -174,6 +219,7 @@ return {
 
         local players = steps.open_panel(driver, "Permissions") --[[@as PermissionsPanel]]
         steps.select_entry(driver, players, "piotr")
+        _expect_group_box(driver, players, save)
         _fill(driver, players, {
             {
                 "permissions",
@@ -221,7 +267,7 @@ return {
         driver:log(string.format("the group player retitled %.1f ms after the click on Apply", group_ms))
         local group = _read_save(driver).groups.player
         driver:expect(group.title == GROUP_TITLE, "the group's title in the save: " .. group.title)
-        driver:expect(assert(groups:get_field_input("title")):get_text() == GROUP_TITLE, "the field refilled from the answer")
+        driver:expect(_text_field(groups, "title"):get_text() == GROUP_TITLE, "the field refilled from the answer")
 
         _show_page(driver, "Meadow")
         driver:expect(#game:get_page():get_tokens() == 2, "Meadow's tokens on adam's page again: " .. #game:get_page():get_tokens())
