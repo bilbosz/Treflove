@@ -40,17 +40,21 @@ local function install_graphics()
     love.graphics = {
         ---@param face string|TestFontFile
         ---@param size number
-        ---@return {handle: string, char_width: number, getHeight: fun(): number}
+        ---@return {handle: string, char_width: number, getHeight: fun(): number, getWidth: fun(self: table, text: string): number}
         newFont = function(face, size)
             font_count = font_count + 1
             local name = type(face) == "string" and string.match(face, "[^/]+$") or face.name
             local handle = string.format("%s@%d", name, size)
             log.fonts[handle] = size
+            local char_width = type(face) == "string" and 10 or face.char_width
             return {
                 handle = handle,
-                char_width = type(face) == "string" and 10 or face.char_width,
+                char_width = char_width,
                 getHeight = function()
                     return size
+                end,
+                getWidth = function(_, text)
+                    return char_width * #text
                 end
             }
         end,

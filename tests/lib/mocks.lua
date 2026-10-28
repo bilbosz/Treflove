@@ -699,10 +699,14 @@ end
 ---Fakes under both runners: plain LuaJIT has no `love`, and `love . test`
 ---has no window, so the real module refuses every call.
 function mocks.ensure_love_graphics()
+    mocks.ensure_love_mouse()
     local function new_font(_, size)
         return {
             getHeight = function()
                 return size
+            end,
+            getWidth = function(_, text)
+                return 10 * #text
             end
         }
     end

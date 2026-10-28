@@ -353,9 +353,12 @@ function game_client.click(client, ctrl)
     app = client.app
     local min_x, min_y, max_x, max_y = ctrl:get_global_aabb():get_bounds()
     local x, y = (min_x + max_x) * 0.5, (min_y + max_y) * 0.5
-    local manager = client.app.button_event_manager
+    local pointer_manager, manager = client.app.pointer_event_manager, client.app.button_event_manager
+    pointer_manager:dispatch_pointer_move(x, y, nil)
     manager:dispatch_pointer_move(x, y, 1)
+    pointer_manager:dispatch_pointer_down(x, y, 1)
     manager:dispatch_pointer_down(x, y, 1)
+    pointer_manager:dispatch_pointer_up(x, y, 1)
     manager:dispatch_pointer_up(x, y, 1)
 end
 

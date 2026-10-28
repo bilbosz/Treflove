@@ -1,135 +1,10 @@
 local test = require("tests.lib.test")
 local mocks = require("tests.lib.mocks")
 local KeyboardManager = require("events.keyboard")
-local TextBuffer = require("ui.text-buffer")
 local TextEventManager = require("ui.text-event")
 
----@class TestTextField: Object
----@field buffer TextBuffer
----@field log string[] Entries are "edited:<text>", "removed_empty" or "entered"
-local TestTextField = class("TestTextField")
-
-function TestTextField:init()
-    self.log = {}
-    self.buffer = TextBuffer()
-    self.buffer.edited:register(self, self.on_edit)
-    self.buffer.removed_empty:register(self, self.on_remove_empty)
-end
-
----@param manager TextEventManager
-function TestTextField:register(manager)
-    manager.text_appended:register(self, self.on_append_text)
-    manager.characters_removed:register(self, self.on_remove_characters)
-    manager.word_removed:register(self, self.on_remove_word)
-    manager.entered:register(self, self.on_enter)
-end
-
----@param text string
-function TestTextField:on_edit(text)
-    table.insert(self.log, "edited:" .. text)
-end
-
-function TestTextField:on_remove_empty()
-    table.insert(self.log, "removed_empty")
-end
-
-function TestTextField:on_enter()
-    table.insert(self.log, "entered")
-end
-
----@param text string
-function TestTextField:on_append_text(text)
-    self.buffer:append_text(text)
-end
-
----@param character_number number
-function TestTextField:on_remove_characters(character_number)
-    self.buffer:remove_characters(character_number)
-end
-
-function TestTextField:on_remove_word()
-    self.buffer:remove_word()
-end
-
-test.suite("TextBuffer")
-
-test.case("appending triggers edited with the whole text", function()
-    local field = TestTextField()
-
-    field.buffer:append_text("ab")
-    field.buffer:append_text("c")
-
-    test.assert_eq(field.buffer:get_text(), "abc")
-    test.assert_deep_eq(field.log, {
-        "edited:ab",
-        "edited:abc"
-    })
-end)
-
-test.case("removing characters counts UTF-8 characters, not bytes", function()
-    local field = TestTextField()
-    field.buffer:set_text("aé€")
-    test.assert_eq(field.buffer:get_text_length(), 3)
-
-    field.buffer:remove_characters(1)
-    field.buffer:remove_characters(1)
-
-    test.assert_eq(field.buffer:get_text(), "a")
-    test.assert_deep_eq(field.log, {
-        "edited:aé",
-        "edited:a"
-    })
-end)
-
-test.case("removing from an empty text triggers removed_empty only", function()
-    local field = TestTextField()
-
-    field.buffer:remove_characters(1)
-    field.buffer:remove_word()
-
-    test.assert_deep_eq(field.log, {
-        "removed_empty",
-        "removed_empty"
-    })
-end)
-
-test.case("removing more characters than the text has does nothing", function()
-    local field = TestTextField()
-    field.buffer:set_text("ab")
-
-    field.buffer:remove_characters(3)
-
-    test.assert_eq(field.buffer:get_text(), "ab")
-    test.assert_deep_eq(field.log, {})
-end)
-
-test.case("removing a word cuts at the last whitespace, including non-ASCII ones", function()
-    local field = TestTextField()
-    field.buffer:set_text("hello big\194\160world")
-
-    for _ = 1, 4 do
-        field.buffer:remove_word()
-    end
-
-    test.assert_deep_eq(field.log, {
-        "edited:hello big",
-        "edited:hello",
-        "edited:",
-        "removed_empty"
-    })
-end)
-
-test.case("set_text replaces the text without triggering edited", function()
-    local field = TestTextField()
-
-    field.buffer:set_text("x")
-
-    test.assert_eq(field.buffer:get_text(), "x")
-    test.assert_deep_eq(field.log, {})
-end)
-
 ---@class TestTextListener: Object
----@field log string[] One entry per event: "text:<text>", "<command> <direction> <step> <extend>" with the absent arguments left out, "characters_removed:<n>", "word_removed" or "entered"
+---@field log string[] One entry per event: "text:<text>", "<command> <direction> <step> <extend>" with the absent arguments left out
 local TestTextListener = class("TestTextListener")
 
 ---@param manager TextEventManager
@@ -137,9 +12,6 @@ function TestTextListener:init(manager)
     self.log = {}
     manager.text_appended:register(self, self.on_append_text)
     manager.commanded:register(self, self.on_command)
-    manager.characters_removed:register(self, self.on_remove_characters)
-    manager.word_removed:register(self, self.on_remove_word)
-    manager.entered:register(self, self.on_enter)
 end
 
 ---@param text string
@@ -164,19 +36,6 @@ function TestTextListener:on_command(command, direction, step, extend)
         entry = entry .. " " .. tostring(extend)
     end
     table.insert(self.log, entry)
-end
-
----@param character_number number
-function TestTextListener:on_remove_characters(character_number)
-    table.insert(self.log, "characters_removed:" .. character_number)
-end
-
-function TestTextListener:on_remove_word()
-    table.insert(self.log, "word_removed")
-end
-
-function TestTextListener:on_enter()
-    table.insert(self.log, "entered")
 end
 
 ---@return AppMock, TextEventManager, TestTextListener With text input on
@@ -314,7 +173,7 @@ test.case("home and end move by line whatever ctrl says, extending with shift", 
     })
 end)
 
-test.case("backspace and delete delete by character, by word with ctrl; the deprecated events follow a backward delete", function()
+test.case("backspace and delete delete by character, by word with ctrl", function()
     local app_mock, _, listener = setup_commands()
 
     press_with(app_mock, {}, "backspace")
@@ -328,15 +187,13 @@ test.case("backspace and delete delete by character, by word with ctrl; the depr
 
     test.assert_deep_eq(listener.log, {
         "delete -1 character",
-        "characters_removed:1",
         "delete -1 word",
-        "word_removed",
         "delete 1 character",
         "delete 1 word"
     })
 end)
 
-test.case("return and the keypad's enter enter; the deprecated event follows", function()
+test.case("return and the keypad's enter enter", function()
     local app_mock, _, listener = setup_commands()
 
     press_with(app_mock, {}, "return")
@@ -346,9 +203,7 @@ test.case("return and the keypad's enter enter; the deprecated event follows", f
 
     test.assert_deep_eq(listener.log, {
         "enter",
-        "entered",
-        "enter",
-        "entered"
+        "enter"
     })
 end)
 

@@ -8,9 +8,6 @@ local utf8 = require("utf8")
 
 ---@alias TextFilter fun(candidate: string): boolean|nil
 
----A line of text with a caret and a selection. Indices count codepoints:
----the caret is the number of codepoints before it, from 0 to the length;
----the selection is the span between the anchor and the caret.
 ---@class TextBuffer: Object
 ---@field public edited Event Triggered with (text) after the text changed by an edit, an undo or a redo
 ---@field public moved Event Triggered when the caret or the anchor changed and the text did not

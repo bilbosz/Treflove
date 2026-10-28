@@ -77,6 +77,12 @@ local function make_font(log, face, size)
     end
 
     ---@param text string
+    ---@return number
+    function font:getWidth(text)
+        return self.char_width * #text
+    end
+
+    ---@param text string
     ---@param limit number
     ---@return number, string[]
     function font:getWrap(text, limit)
@@ -292,6 +298,7 @@ test.case("an edit rebuilds the sample, the old lines destroyed, as many as fit 
     s.form:focus(input)
     local old_lines = sample:get_children()
 
+    s.app.text_event_manager:key_pressed("end")
     s.app.text_event_manager:text_input("!")
     test.assert_eq(input:get_text(), Consts.FONT_PREVIEW_TEXT .. "!")
     local lines = lines_of(sample)

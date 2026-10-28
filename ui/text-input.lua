@@ -330,7 +330,6 @@ function TextInput:init(parent, form_screen, width, height, masked, on_input, on
     local button = self:get_button()
     button.pointer_entered:register(self, self.on_pointer_entered)
     button.pointer_left:register(self, self.on_pointer_left)
-    button.selected:register(self, self.on_select)
     self._buffer.edited:register(self, self.on_edit)
     self._buffer.moved:register(self, self._update_view)
     self._buffer.removed_empty:register(self, self.on_remove_empty)
@@ -371,15 +370,6 @@ end
 
 function TextInput:on_pointer_left()
     _set_cursor("arrow")
-    self:_update_view()
-end
-
----A press the button manager delivers without the pointer manager (a
----test's click) still focuses; after `on_pointer_down` it has nothing to do
-function TextInput:on_select()
-    if not self:is_focused() then
-        self:get_form_screen():focus(self)
-    end
     self:_update_view()
 end
 

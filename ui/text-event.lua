@@ -7,9 +7,6 @@ local Event = require("events.event")
 ---@class TextEventManager: Object
 ---@field public text_appended Event Triggered with (text) typed by the user
 ---@field public commanded Event Triggered with (command: TextCommand, direction: TextDirection|nil, step: TextStep|nil, extend: boolean|nil)
----@field public characters_removed Event Deprecated, beside `commanded` for the append-only input: triggered with (1) by a backward delete by character
----@field public word_removed Event Deprecated, beside `commanded` for the append-only input: triggered by a backward delete by word
----@field public entered Event Deprecated, beside `commanded` for the append-only input: triggered by ENTER
 ---@field private _keyboard love.keyboard
 ---@field private _system love.system|nil The backend given; `love.system` when nil, read at the call
 local TextEventManager = class("TextEventManager")
@@ -67,9 +64,6 @@ local ENTER_KEYS = {
 function TextEventManager:init(keyboard, system)
     self.text_appended = Event()
     self.commanded = Event()
-    self.characters_removed = Event()
-    self.word_removed = Event()
-    self.entered = Event()
     self._keyboard = keyboard or love.keyboard
     self._system = system
     self:set_text_input(false)
@@ -95,10 +89,9 @@ function TextEventManager:key_pressed(key)
     elseif LINE_KEYS[key] then
         self.commanded:trigger(Command.MOVE, LINE_KEYS[key], "line", keyboard_manager:is_shift_down())
     elseif DELETE_KEYS[key] then
-        self:_delete(DELETE_KEYS[key], keyboard_manager:is_ctrl_down() and "word" or "character")
+        self.commanded:trigger(Command.DELETE, DELETE_KEYS[key], keyboard_manager:is_ctrl_down() and "word" or "character")
     elseif ENTER_KEYS[key] then
         self.commanded:trigger(Command.ENTER)
-        self.entered:trigger()
     elseif key == "z" and self:_is_command_chord() then
         self.commanded:trigger(keyboard_manager:is_shift_down() and Command.REDO or Command.UNDO)
     elseif CTRL_COMMANDS[key] and self:_is_command_chord() then
@@ -111,20 +104,6 @@ end
 function TextEventManager:_is_command_chord()
     local keyboard_manager = app.keyboard_manager
     return keyboard_manager:is_ctrl_down() and not keyboard_manager:is_key_down("ralt")
-end
-
----@private
----@param direction TextDirection
----@param step TextStep
-function TextEventManager:_delete(direction, step)
-    self.commanded:trigger(Command.DELETE, direction, step)
-    if direction == -1 then
-        if step == "word" then
-            self.word_removed:trigger()
-        else
-            self.characters_removed:trigger(1)
-        end
-    end
 end
 
 ---@param value boolean

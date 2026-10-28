@@ -146,23 +146,6 @@ test.case("a destroyed focused text input under the pointer lets go of it, then 
     finish(form)
 end)
 
-test.case("a click delivered by the button manager alone focuses the field, as the press does", function()
-    local app_mock, form = setup()
-    mocks.ensure_love_graphics()
-    mocks.ensure_love_mouse()
-    app_mock.text_event_manager = TextEventManager(mocks.make_keyboard())
-    local field = TextInput(form:get_control(), form, 100, 20, false, nil, nil)
-    form:show()
-    local manager = app_mock.button_event_manager
-    manager:dispatch_pointer_move(50, 10, 1)
-    manager:dispatch_pointer_down(50, 10, 1)
-    test.assert_true(field:is_focused())
-    manager:dispatch_pointer_up(50, 10, 1)
-    test.assert_true(field:is_focused())
-    manager:dispatch_pointer_move(200, 200, 1)
-    finish(form)
-end)
-
 test.case("removing an input below the focused one keeps the focus on the same input", function()
     local _, form = setup()
     local a = TestInput(nil, form, "a")
