@@ -1,3 +1,4 @@
+local Asset = require("data.asset")
 local Consts = require("app.consts")
 local Game = require("game.game")
 local fixture = require("data.fixture")
@@ -101,6 +102,13 @@ function Games:create(name, creator)
     end
     game:save()
     return game
+end
+
+---@param id string A game `get` gives: its directory, the save and the store under it, is removed
+function Games:delete(id)
+    assert(self:get(id), "no such game " .. tostring(id))
+    self._games[id] = nil
+    Asset(self:_get_directory(id)):remove()
 end
 
 return Games

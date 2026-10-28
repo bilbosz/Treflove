@@ -121,9 +121,9 @@ A `Session` ties a connection to a user:
   creation of an account (`sign_up`: `CreateAccountRp`, then the login
   with the same credentials)
 - Coordinates the screen transitions (connecting → login, or the sign-up
-  over it → user menu → the games list or the new game screen over it →
-  game, the new token screen over it, and the assets workspace over the
-  game or the new token screen)
+  over it → user menu → Manage Games → the games list, the new game or
+  the delete game screen over it → game, the new token screen over it,
+  and the assets workspace over the game or the new token screen)
 - Integrates with the asset manager and backstack navigation
 - Holds the user's `PermissionSet` while in a game: the server resolves it
   from the game's data when the session selects the game
@@ -155,16 +155,26 @@ A `Session` ties a connection to a user:
   (`apply_grants`)
 - Is anchored to its connection and owns its login, its remote procedures
   and, on the client, the "logged in" token that owns the menu and game
-  screens; the games list, the new game screen, the game screen and the
-  assets workspace are built under the token and destroyed on the way
-  back, see [lifetimes.md](lifetimes.md)
+  screens; the Manage Games screen, the games list, the new game and
+  delete game screens, the game screen and the assets workspace are built
+  under the token and destroyed on the way back, see
+  [lifetimes.md](lifetimes.md)
 - The client shows the session's login screen on connect
-  (`Session:show_login`); a login lands on the user menu, whose Join Game
-  entry lists the server's games (`show_games`), a click joining one
-  (`join_game(id)`), and whose New Game entry opens the new game screen
+  (`Session:show_login`); a login lands on the user menu, whose Manage
+  Games entry opens the Manage Games screen (`show_manage_games`): its
+  Join Game lists the server's games (`show_games`), a click joining one
+  (`join_game(id)`), its New Game opens the new game screen
   (`show_new_game`), which creates a game and joins it (`create_game`),
-  by the user or by a scenario
-  ([scenarios-and-console.md](scenarios-and-console.md))
+  and its Delete Game the delete game screen (`show_delete_game`), where
+  the game's name typed and Delete delete it (`delete_game(id)`), by the
+  user or by a scenario ([scenarios-and-console.md](scenarios-and-console.md))
+- Holds, on the client, the id of the game whose data it holds
+  (`set_game_data` at the game data response, `get_game_id`) and drops
+  that game when the server says it is deleted (`apply_game_deleted`: the
+  notification, the way out of the game screen when the client is in it,
+  then `clear_game_data`: `app.data`, the grants, the store and the
+  client's copies of the game's assets); on the server, leaves the
+  selected game (`deselect_game`) when it is deleted or at the logout
 
 ## Accounts and Games
 
@@ -187,7 +197,8 @@ s/games/<id>/assets/...        that game's asset store
 - `Games` (`data/games.lua`) is the games directory: `list` the ids (the
   directories holding a `save.lua`), `get` a `Game` (`game/game.lua`:
   the id, the `GameData`, its `AssetStore`, `save`, `add_player`), loaded
-  once and kept, `create` a new one from the template
+  once and kept, `delete` one (its directory removed with the save and
+  the store, the id free again), `create` a new one from the template
   (`server/template/`: a table page of 20 by 15 meters with one token,
   `Hero`, and the groups `master` and `player`) seeded into
   `s/games/<id>/` with the name given, the creator in `master` and as
@@ -201,7 +212,14 @@ s/games/<id>/assets/...        that game's asset store
   for the session, adds the user to its `players` in the group `player`
   when absent, since games are open to every account, resolves the
   permissions and answers with the filtered data and the grants, or with
-  `success = false` for an unknown id).
+  `success = false` for an unknown id), `DeleteGameRp` (the id: the
+  server refuses a session not logged in, an unknown id and a user who is
+  not a player of the game or whose grants in it lack `write` on `game`,
+  each with a reason; otherwise every live session in the game leaves it,
+  the other ones are pushed `GameDeletedRp` with the id and the name, the
+  directory is removed and the answer carries the id and the name). The
+  deleter's answer and the push take one path on the client,
+  `Session:apply_game_deleted`.
 - The server starts from scratch: a root with nothing under it has no
   accounts and no games; `Accounts` writes `s/accounts.lua` at the first
   sign-up and `Games` makes `s/games/<id>` at the first game. The root is
@@ -677,11 +695,11 @@ browser history). `push(cb)` returns the entry, which the caller anchors to
 what it is for (a screen, the logged-in token); an entry leaves the stack
 when it dies. On the back key the top entry is destroyed and its callback
 invoked. The session pushes the entries of the screens it opens (the sign-up,
-the games list, the new game, the game, the new token screen, the assets
-workspace) once, when
-it opens them, so a screen shown again (the game after the workspace)
-gets no second entry; joining a game destroys the games list and the new
-game screen with their entries, so none stays under the game's.
+Manage Games, the games list, the new game, the delete game, the game, the
+new token screen, the assets workspace) once, when it opens them, so a
+screen shown again (the game after the workspace) gets no second entry;
+joining a game destroys the games list, the new game screen and Manage
+Games with their entries, so none stays under the game's.
 
 ## Key Design Patterns
 

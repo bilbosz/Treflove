@@ -1,5 +1,3 @@
-local Consts = require("app.consts")
-local AssetStore = require("data.asset-store")
 local RemoteProcedure = require("networking.remote-procedure")
 local WaitingScreen = require("screens.waiting-screen")
 local permissions = require("game.permissions")
@@ -115,9 +113,7 @@ function GameDataRp:receive_response(response)
         return
     end
     local data = assert(response.data)
-    app.data = data
-    session:set_grants(assert(response.permissions))
-    app.asset_manager:set_store(AssetStore(Consts.CLIENT_ROOT .. "/games/" .. response.game))
+    session:set_game_data(response.game, data, assert(response.permissions))
     local page = _get_shown_page(data)
     if not page then
         app.notification_manager:notify("Nothing to show: no page you may see")

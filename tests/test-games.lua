@@ -203,6 +203,30 @@ test.case("a fresh root has no games; the first game makes the games directory a
     end)
 end)
 
+test.case("a deleted game is gone with its directory, no longer listed, and its id is free for a new game", function()
+    with_games({
+        ["server/template/save.lua"] = template(),
+        ["s/games/meadow/save.lua"] = save_of("Meadow"),
+        ["s/games/meadow/assets/world/w.png"] = "W",
+        ["s/games/old-town/save.lua"] = save_of("Old Town")
+    }, function(games)
+        local game = assert(games:get("meadow"))
+        games:delete("meadow")
+        test.assert_eq(games:get("meadow"), nil)
+        test.assert_eq(love.filesystem.getInfo("s/games/meadow"), nil)
+        test.assert_deep_eq(games:list(), {
+            "old-town"
+        })
+        test.assert_eq(game:get_name(), "Meadow", "the object a holder keeps is unchanged")
+        local again = assert(games:create("Meadow", "frodo"))
+        test.assert_true(again ~= game, "a new game under the id")
+        test.assert_eq(love.filesystem.getInfo("s/games/meadow/assets/world/w.png"), nil, "nothing of the old one")
+        test.assert_error(function()
+            games:delete("none")
+        end)
+    end)
+end)
+
 test.case("a new game is refused without a letter or a digit, with a name too long, or where a game is", function()
     with_games({
         ["server/template/save.lua"] = template(),

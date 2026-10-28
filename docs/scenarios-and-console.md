@@ -98,6 +98,8 @@ return function(driver)
     driver:type("krause")
     driver:click("TextButton", "Sign In")
     driver:wait_screen("UserMenuScreen")
+    driver:click("TextButton", "Manage Games")
+    driver:wait_screen("ManageGamesScreen")
     driver:click("TextButton", "Join Game")
     driver:wait_screen("GamesScreen")
     driver:click("TextButton", "Meadow")
@@ -128,7 +130,7 @@ The shared steps live in `scenarios/lib/steps.lua`. The scenarios:
 (the workspace from the game, its listing against the game's store,
 back), `logout` (out and in again), `sign-up` (an account created from
 the login screen, signed in at once, out and in again), `new-game` (a
-game created from the menu and entered, its template page and token,
+game created from Manage Games and entered, its template page and token,
 listed afterwards), `fresh-start` (what a user does on a server
 that holds nothing: an account signed up, a game created and entered,
 listed afterwards; it reads nothing of the fixture, so it passes on an
@@ -201,10 +203,17 @@ Permissions panel, which bob's session holds within the wait and his
 New Token entry becomes writable, creates the token property `hp` and
 retitles the group `player`, the save holding each, and shows Meadow
 again on both clients; a page creation bob sends past his gate is
-refused with its reason and nothing saved). The shared steps `steps.select_token` and
+refused with its reason and nothing saved) and `delete-game` (bob, as
+piotr, asks Delete Game for Meadow and is refused with the reason, then
+enters it; adam deletes it from Delete Game and lands on Manage Games
+with the notification, bob's client is back on the menu with it, without
+the game's data and store, and the server lists no game and has no
+session in one). The shared steps `steps.select_token` and
 `steps.drag_token` select a token with a rectangle and drag it with the
 token-drag button, as a player does, `steps.select_tokens` several with
-one rectangle; `steps.enter_game` enters a game from the menu, `steps.create_token` creates one through the New Token
+one rectangle; `steps.open_manage_games` opens Manage Games from the
+menu, `steps.enter_game` enters a game from the menu through it,
+`steps.delete_game` asks Delete Game for a game by its name, `steps.create_token` creates one through the New Token
 screen and `steps.delete_token` deletes one, selected alone, from the
 panel. For the side panels: `steps.open_panel` shows one by its quick
 access entry (an entry already active is not clicked again, which would

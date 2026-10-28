@@ -19,6 +19,7 @@ end
 ---@param driver ScenarioDriver
 return function(driver)
     steps.log_in(driver)
+    steps.open_manage_games(driver)
     driver:click("TextButton", "New Game")
     driver:wait_screen("NewGameScreen")
     driver:click("TextInput", nil, 1)
@@ -32,6 +33,7 @@ return function(driver)
 
     driver:key(Consts.BACKSTACK_KEY)
     driver:wait_screen("UserMenuScreen")
+    steps.open_manage_games(driver)
     driver:click("TextButton", "Join Game")
     driver:wait_screen("GamesScreen")
     local first, second = game_button(driver, 1), game_button(driver, 2)

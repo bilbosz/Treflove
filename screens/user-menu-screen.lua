@@ -13,11 +13,8 @@ function UserMenuScreen:init(session)
     self._session = session
     self._options_screen = nil
     MenuScreen.init(self, "Menu", {
-        MenuTextButton(self, "New Game", function()
-            self:new_game()
-        end),
-        MenuTextButton(self, "Join Game", function()
-            self:join_game()
+        MenuTextButton(self, "Manage Games", function()
+            self:manage_games()
         end),
         MenuTextButton(self, "Options", function()
             self:options()
@@ -31,12 +28,8 @@ function UserMenuScreen:init(session)
     })
 end
 
-function UserMenuScreen:new_game()
-    self._session:show_new_game()
-end
-
-function UserMenuScreen:join_game()
-    self._session:show_games()
+function UserMenuScreen:manage_games()
+    self._session:show_manage_games()
 end
 
 function UserMenuScreen:options()
