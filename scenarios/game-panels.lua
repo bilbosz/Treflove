@@ -26,10 +26,11 @@ local BOB_WAITS_FOR_THE_GRANT = [[
         return app.session:get_permissions():allows("write", "tokens")
     end, nil, "bob's session granted write on the tokens")
     local granted = require("utils.utils").get_time()
+    steps.open_panel(driver, "Tokens")
     driver:wait_for(function()
-        local button = driver:try_find("TextButton", "New Token")
+        local button = driver:try_find("TextButton", "New")
         return button and not button:is_read_only() and button
-    end, nil, "bob's New Token entry writable")
+    end, nil, "bob's New button writable")
     return granted
 ]]
 

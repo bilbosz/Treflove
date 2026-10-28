@@ -70,7 +70,8 @@ local BOB_SEES_THE_DELETION = [[
 ]]
 
 local BOB_IS_REFUSED = [[
-    driver:expect(driver:find("TextButton", "New Token"):is_read_only(), "bob's New Token entry is read-only")
+    steps.open_panel(driver, "Tokens")
+    driver:expect(driver:find("TextButton", "New"):is_read_only(), "bob's New button is read-only")
     app.session:create_token("Orc", {name = "Orc", diameter = 1, avatar = "token/smaug.png", position = {1, 1}})
     driver:wait_for(function()
         return driver:try_find("Text", %q)
@@ -134,7 +135,7 @@ return {
             x,
             y
         }, center_x, center_y, "Gandalf on adam's page, at the view's center")
-        driver:log(string.format("Gandalf shown at (%g, %g) on the lead %.1f ms after the click on New Token, the fields typed and Create clicked in between", x, y, (shown - requested) * 1000))
+        driver:log(string.format("Gandalf shown at (%g, %g) on the lead %.1f ms after the click on New, the fields typed and Create clicked in between", x, y, (shown - requested) * 1000))
         local data = assert(app.data)
         driver:expect(data.tokens.Gandalf and _contains(data.pages.Meadow.tokens, ID), "Gandalf in adam's data and on its page's list")
 

@@ -179,43 +179,6 @@ local function quick_access_button(client, caption)
     return assert(client.game_screen._quick_access_panel._buttons[caption])
 end
 
----@param grants string[]
----@param fn fun(client: GameClient)
-local function with_grants(grants, fn)
-    local client = game_client.enter(grants)
-    ---@type boolean, any
-    local ok, err = pcall(fn, client)
-    game_client.finish(client)
-    if not ok then
-        error(err, 0)
-    end
-end
-
-test.case("the New Token entry follows Assets, and a click shows the new token screen", function()
-    with_client(function(client)
-        local assets, new_token = quick_access_button(client, "Assets"), quick_access_button(client, "New Token")
-        test.assert_true(new_token:get_position() > assets:get_position())
-        test.assert_false(new_token:is_read_only(), "the master writes the tokens")
-        game_client.click(client, new_token)
-        test.assert_eq(get_class_name_of(client.app.screen_manager:get_screen()), "NewTokenScreen")
-        test.assert_eq(client.app.screen_manager:get_screen(), client.session:get_new_token_screen())
-    end)
-end)
-
-test.case("the New Token entry is read-only, dimmed and not clickable, for a player who writes only the tokens they own", function()
-    with_grants({
-        "read",
-        "write:tokens/@owned"
-    }, function(client)
-        local new_token = quick_access_button(client, "New Token")
-        test.assert_true(new_token:is_read_only())
-        test.assert_deep_eq(new_token:get_color(), Consts.BUTTON_READ_ONLY_COLOR)
-        game_client.click(client, new_token)
-        test.assert_eq(client.app.screen_manager:get_screen(), client.game_screen)
-        test.assert_eq(client.session:get_new_token_screen(), nil)
-    end)
-end)
-
 ---@param client GameClient
 ---@return string[] The captions of the quick access entries, left to right
 local function quick_access_captions(client)
@@ -237,12 +200,11 @@ local function quick_access_captions(client)
     return captions
 end
 
-test.case("the quick access entries are Tokens, Assets, New Token, Game, Pages, Groups, Permissions and Token Properties, left to right", function()
+test.case("the quick access entries are Tokens, Assets, Game, Pages, Groups, Permissions and Token Properties, left to right", function()
     with_client(function(client)
         test.assert_deep_eq(quick_access_captions(client), {
             "Tokens",
             "Assets",
-            "New Token",
             "Game",
             "Pages",
             "Groups",
@@ -367,27 +329,6 @@ test.case("show_page replaces the page with one over the page named, at the same
         data.game.page = "P"
         screen:show_page("P")
         test.assert_eq(#screen:get_page():get_tokens(), 2, "the tokens of the page shown again")
-    end)
-end)
-
-test.case("on_grants_change gates the New Token entry by the grants the session holds now", function()
-    with_grants({
-        "read",
-        "write:tokens/@owned"
-    }, function(client)
-        local new_token = quick_access_button(client, "New Token")
-        test.assert_true(new_token:is_read_only())
-        client.session:set_grants({
-            "read",
-            "write:tokens"
-        })
-        client.game_screen:on_grants_change()
-        test.assert_false(new_token:is_read_only())
-        client.session:set_grants({
-            "read"
-        })
-        client.game_screen:on_grants_change()
-        test.assert_true(new_token:is_read_only())
     end)
 end)
 
