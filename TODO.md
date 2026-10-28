@@ -220,6 +220,19 @@ Hierarchy"). Still missing:
 - IME composition (`love.textedited`) for scripts that compose
 - Cmd as the command key is read from the OS name and untested on macOS
 
+The selection box ([docs/architecture.md](docs/architecture.md), "UI
+Control Hierarchy") has no use yet. Where it belongs, each a small
+change to the panel and to the scenario that drives it (`game-panels`):
+
+- The Permissions panel's `group` field: a box over the game's groups,
+  by their titles, instead of a text input taking a key
+- The Token Properties panel's `type` field: a box over `string`,
+  `number` and `image`
+- A multivalue state, as the text input has, for a field of the token
+  panel whose selected tokens disagree
+- The wheel over an open list of more rows than fit should scroll it,
+  as the panels' lists are scrolled; today only the drag button does
+
 ### 15. Scenarios and the console, next steps
 
 The scenarios run headless on the offscreen SDL driver and the console

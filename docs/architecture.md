@@ -287,7 +287,12 @@ Events by source:
   (hover and selection state; events `clicked`, `selected`, `unselected`,
   `pointer_entered`, `pointer_left`); controls register with
   `register(ctrl, button)`; `unregister(ctrl)` lets go of a button under the
-  pointer or pressed (it is unselected and left at once, never driven later)
+  pointer or pressed (it is unselected and left at once, never driven later).
+  The button under the point is the top-most one, the last in tree order
+  among the visible, hit, non-read-only controls holding a button (a child
+  after its parent, a later sibling after an earlier one), the control the
+  pointer dispatch would call first, so a list opened over other inputs
+  takes the hover and the click
 - `TextEventManager`: `text_appended` (the text typed; dropped while Ctrl
   is held) and `commanded` (one of `TextEventManager.Command`: a move by a
   character, a word or to the line's end, with Shift extending the
@@ -314,7 +319,7 @@ border-only `Rectangle` draws its line inside its box.
 `ClippingRectangle` and `ClippingMask` clip their children to their box
 (every pixel the box touches), nested clips intersect, and their bounds are
 the box, so what is clipped is neither drawn nor hit. Higher-level components (Panel, TextButton, Input,
-TextInput, NumberInput, ScrollView) build on them. `ScrollView` is a
+TextInput, NumberInput, SelectionBox, ScrollView) build on them. `ScrollView` is a
 viewport over a content control larger than itself (`get_content`,
 `set_content_size`): the content is dragged with `SCROLL_VIEW_DRAG_BUTTON`,
 press, drag, release, no further than its edges, holding the pointer
@@ -361,6 +366,33 @@ filter accepts the empty text, a lone minus and what `tonumber` parses,
 asked with the whole text an edit would produce, so an insertion in the
 middle and a paste are checked as a keystroke at the end is. A read-only
 input takes no focus and so has no caret, as before.
+
+`SelectionBox` (`ui/selection-box.lua`) is one option of a closed set
+(`SelectionOption[]`: a `key` the program reads and writes, a `title` the
+user sees) shown as a field: the selected option's title at the left,
+clipped before the arrow, and "▼" at the right edge, both in the input
+font (`fonts.Kind.USER_INPUT`, the one of the program's fonts with the
+glyph), over a background in the button colors a text input uses. A
+press, or Return or Space while focused, opens the list
+(`SelectionBoxList`, `ui/selection-box-list.lua`): a tree parented to the
+form screen's control as its last child, so it draws over the screen and
+is hit first, and anchored to the box, so it dies with the box or with
+the screen; a backdrop over the whole screen takes every press outside
+the list, which closes it and reaches nothing under it, and the rows
+(`SelectionBoxRow`, one per option, as tall as the box, under it, or
+above it when there is no room below; more than
+`SELECTION_BOX_MAX_ROWS` of them in a scroll view, the selected one in
+view) highlight under the pointer or with Up and Down, and a press on
+one, or Return, picks it: the box's selection changes, `on_change` runs
+when the key differs, the list closes. Up and Down on a closed focused
+box step the selection directly. The list closes too when the focus
+moves on (Tab), the screen hides, the box becomes read-only, the options
+are set (`set_options`, which keeps the selected key when it is still
+among them) or the window resizes; `set_selected` and `set_options`
+never run `on_change`. Escape stays the back key. A scenario finds the
+box by its shown title and a row of the open list by its title
+(`driver:click("SelectionBox", "Player")`,
+`driver:click("SelectionBoxRow", "Game master")`).
 
 `Image` draws a `love.Image` the images module made with its mipmap chain,
 filtered linearly within and between the levels, so a downscaled image (a
