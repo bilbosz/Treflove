@@ -57,21 +57,18 @@ end
 ---@param buttons table<Control, Button>
 ---@param x number
 ---@param y number
----@return Button|nil
+---@return Button|nil The top-most hit button: the last in pre-order, the one the pointer dispatch calls first
 local function _find_button(ctrl, buttons, x, y)
     if not ctrl:is_visible() or not ctrl:get_global_recursive_aabb():is_point_inside(x, y) or _is_read_only_input(ctrl) then
         return nil
     end
-    if buttons[ctrl] then
-        return buttons[ctrl]
-    end
-    for _, child in ipairs(ctrl:get_children()) do
+    for _, child in ripairs(ctrl:get_children()) do
         local found = _find_button(child, buttons, x, y)
         if found then
             return found
         end
     end
-    return nil
+    return buttons[ctrl]
 end
 
 ---@private
