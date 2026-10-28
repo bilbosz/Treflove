@@ -243,13 +243,13 @@ end
 
 ---@param driver ScenarioDriver
 ---@param input TextInput|NumberInput A field shown, not read-only
----@param text string Replaces what the field holds, character by character as a player types
+---@param text string Replaces what the field holds, all of it selected with Ctrl+A and typed over character by character as a player does
 function steps.set_text(driver, input, text)
     driver:click(input)
     driver:expect(input:is_focused(), "the field took the focus")
-    for _ = 1, select(2, string.gsub(input:get_text(), "[^\128-\191]", "")) do
-        driver:key("backspace")
-    end
+    driver:key_down("lctrl")
+    driver:key("a")
+    driver:key_up("lctrl")
     driver:type(text)
     driver:expect(input:get_text() == text, string.format("the field holds %q: %q", text, input:get_text()))
 end
