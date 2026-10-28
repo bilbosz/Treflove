@@ -7,6 +7,7 @@ local FormScreen = require("ui.form-screen")
 local SelectionBox = require("ui.selection-box")
 local SelectionBoxList = require("ui.selection-box-list")
 local SelectionBoxRow = require("ui.selection-box-row")
+local ScrollView = require("ui.scroll-view")
 local TextButton = require("ui.text-button")
 
 local PADDING = Consts.SELECTION_BOX_PADDING
@@ -527,6 +528,60 @@ test.case("a press of another mouse button outside closes the list too; the drag
     release(s, 1500, 1000, 2)
     test.assert_false(s.box:is_open())
     test.assert_false(lifetime.alive(list))
+    finish(s)
+end)
+
+test.case("the wheel over the open list scrolls its rows by a notch's rows and reaches nothing under the list", function()
+    local s = setup(many_options(12))
+    local manager = s.app.pointer_event_manager
+    local page = Control(s.form:get_control(), 2000, 1500)
+    local page_wheels = 0
+    ---@return boolean|nil
+    local function on_page_wheel()
+        page_wheels = page_wheels + 1
+    end
+    manager.wheel:register(page, on_page_wheel)
+    manager:set_receive_through(page, true)
+    local under = ScrollView(s.form:get_control(), 300, 300)
+    under:set_position(1000, 600)
+    under:set_content_size(300, 1000)
+    under:set_scroll(0, 100)
+    click_box(s)
+    local list = list_of(s.box)
+    local view = list:get_view()
+    test.assert_eq(view:get_wheel_step(), HEIGHT * Consts.SELECTION_BOX_WHEEL_ROWS)
+
+    s.app:set_pointer_position(center_of(list:get_frame()))
+    manager:dispatch_wheel(0, -1)
+    test.assert_deep_eq({
+        view:get_scroll()
+    }, {
+        0,
+        Consts.SELECTION_BOX_WHEEL_ROWS * HEIGHT
+    })
+    test.assert_deep_eq(highlighted_rows(list), {
+        1
+    }, "the highlight follows a move only")
+
+    s.app:set_pointer_position(center_of(under))
+    manager:dispatch_wheel(0, -1)
+    test.assert_deep_eq({
+        under:get_scroll()
+    }, {
+        0,
+        100
+    }, "a scroll view under the backdrop keeps its scroll")
+    test.assert_eq(page_wheels, 0, "and a page under it, receiving the pointer events consumed above it, its zoom")
+    test.assert_true(s.box:is_open(), "the wheel closes nothing")
+
+    s.box:close()
+    manager:dispatch_wheel(0, -1)
+    test.assert_deep_eq({
+        under:get_scroll()
+    }, {
+        0,
+        160
+    }, "with the list gone the wheel reaches it")
     finish(s)
 end)
 

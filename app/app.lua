@@ -37,7 +37,6 @@ local lifetime = require("lifetime")
 ---@field public session Session|nil The client's, while connected
 ---@field public text_event_manager TextEventManager
 ---@field public update_event Event Triggered with (dt) every frame
----@field public wheel_event Event Triggered with (x, y) wheel movement (client only)
 ---@field public width number|nil Model width, with a window
 ---@field protected load fun(self:App)
 ---@field public params ArgParserResult The parsed command line
