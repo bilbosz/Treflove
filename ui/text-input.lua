@@ -140,8 +140,7 @@ end
 function TextInput:_scroll_to_caret(caret_x)
     local clip_w = self._clip:get_size()
     local caret_w = Consts.CARET_WIDTH
-    local text = self._text_ctrl
-    local text_w = text:get_size() * text:get_scale()
+    local text_w = self:_get_x_of(self:get_text_length())
     local offset = self._offset
     if caret_x + offset + caret_w > clip_w then
         offset = clip_w - caret_w - caret_x

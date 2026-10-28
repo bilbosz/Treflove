@@ -54,7 +54,7 @@ local function install_graphics()
                     return size
                 end,
                 getWidth = function(_, text)
-                    return char_width * #text
+                    return math.floor(char_width * size / 80 + 0.5) * #text
                 end
             }
         end,
@@ -253,4 +253,22 @@ test.case("a text made with a font file's face lays out with it", function()
         30,
         20
     })
+end)
+
+test.case("measure gives the width as drawn: the whole-pixel advances of the font at the on-screen size, in model units", function()
+    local _, root = setup()
+    local text = Text(root, "abc")
+    test.assert_eq(text:measure("abc"), 30, "at the reference size the glyphs are 10 wide")
+
+    root:set_scale(0.33)
+    test.assert_near(text:measure("abc"), 3 * 3 / 0.33, 1e-4, "26 pixels: the glyph rounds down to 3 pixels, one per screen pixel, where the reference scaled down says 30")
+
+    root:set_scale(0.35)
+    test.assert_near(text:measure("abc"), 3 * 4 / 0.35, 1e-4, "28 pixels: the glyph rounds up to 4")
+
+    root:set_scale(1)
+    text:set_rotation(0.5)
+    test.assert_near(text:measure("abc"), 30, 1e-4, "rotated at the reference size")
+    root:set_scale(0.33)
+    test.assert_near(text:measure("abc"), 3 * 3 * 80 / 26, 1e-4, "rotated, the drawable is scaled over the transform by the reference size over the pixel size")
 end)

@@ -706,7 +706,7 @@ function mocks.ensure_love_graphics()
                 return size
             end,
             getWidth = function(_, text)
-                return 10 * #text
+                return 10 * size / 80 * #text
             end
         }
     end

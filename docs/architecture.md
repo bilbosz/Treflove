@@ -337,8 +337,11 @@ forgets a face on request (`fonts.forget`). Axis-aligned
 text is drawn one glyph texel per screen pixel at a whole-pixel position;
 rotated text keeps its transform and scales the glyphs inside it. A text,
 and a text input through it, changes its face with `set_font`;
-`Text:measure(text)` gives the width of any text in the face, in model
-units, which the text input places its caret by.
+`Text:measure(text)` gives the width of any text as drawn, in model
+units: measured in the font rasterized for the text's size on screen,
+since its hinted advances are whole pixels and the reference font scaled
+down misses them by a glyph over a line, which is where the text input
+places its caret.
 
 `TextInput` is one line of text over a `TextBuffer`: the caret is drawn at
 the width of the text before it (the bullets of a masked field), the

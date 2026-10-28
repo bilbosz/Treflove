@@ -179,18 +179,18 @@ test.case("the caret is drawn at the width of the text before it; a masked field
     local s = setup()
     s.form:focus(s.field)
     type_text(s, "hello")
-    test.assert_near(caret_x(s.field), 5 * CHAR, 1e-9)
+    test.assert_near(caret_x(s.field), 5 * CHAR, 1e-4)
     command(s, Command.MOVE, -1, "character")
     command(s, Command.MOVE, -1, "character")
-    test.assert_near(caret_x(s.field), 3 * CHAR, 1e-9)
+    test.assert_near(caret_x(s.field), 3 * CHAR, 1e-4)
     finish(s)
 
     local m = setup(nil, true)
     m.form:focus(m.field)
     type_text(m, "ab")
-    test.assert_near(caret_x(m.field), 2 * BULLET, 1e-9)
+    test.assert_near(caret_x(m.field), 2 * BULLET, 1e-4)
     command(m, Command.MOVE, -1, "character")
-    test.assert_near(caret_x(m.field), BULLET, 1e-9)
+    test.assert_near(caret_x(m.field), BULLET, 1e-4)
     finish(m)
 end)
 
@@ -207,8 +207,8 @@ test.case("the selection rectangle spans the selection under the text, and goes 
     type_text(s, "hello world")
     command(s, Command.MOVE, -1, "word", true)
     test.assert_true(selection:is_enabled())
-    test.assert_near(selection:get_position(), 6 * CHAR, 1e-9)
-    test.assert_near(selection:get_size(), 5 * CHAR, 1e-9)
+    test.assert_near(selection:get_position(), 6 * CHAR, 1e-4)
+    test.assert_near(selection:get_size(), 5 * CHAR, 1e-4)
     local _, h = selection:get_size()
     test.assert_eq(h, HEIGHT - 2 * PADDING, "as high as the caret")
     test.assert_deep_eq(selection:get_color(), Consts.TEXT_INPUT_SELECTION_COLOR)
@@ -218,7 +218,7 @@ test.case("the selection rectangle spans the selection under the text, and goes 
     test.assert_false(selection:is_enabled(), "an unfocused field shows no selection")
     s.form:focus(field)
     test.assert_true(selection:is_enabled())
-    test.assert_near(selection:get_size(), 11 * CHAR, 1e-9, "the focus selected all")
+    test.assert_near(selection:get_size(), 11 * CHAR, 1e-4, "the focus selected all")
     command(s, Command.MOVE, 1, "character")
     test.assert_false(selection:is_enabled())
     finish(s)
@@ -230,7 +230,7 @@ test.case("the content scrolls just enough to keep the caret in the clip, and ne
     local clip_w = 60 - 2 * PADDING
     field:set_text("abcdefghijklmnop")
     local text_w = 16 * CHAR
-    test.assert_near(offset_of(field), clip_w - Consts.CARET_WIDTH - text_w, 1e-9, "the caret at the end is just inside")
+    test.assert_near(offset_of(field), clip_w - Consts.CARET_WIDTH - text_w, 1e-4, "the caret at the end is just inside")
 
     s.form:focus(field)
     command(s, Command.MOVE, -1, "line")
@@ -240,7 +240,7 @@ test.case("the content scrolls just enough to keep the caret in the clip, and ne
     for _ = 1, 11 do
         command(s, Command.MOVE, 1, "character")
     end
-    test.assert_near(offset_of(field), clip_w - Consts.CARET_WIDTH - 12 * CHAR, 1e-9, "the caret went past the right edge")
+    test.assert_near(offset_of(field), clip_w - Consts.CARET_WIDTH - 12 * CHAR, 1e-4, "the caret went past the right edge")
     local scrolled = offset_of(field)
     command(s, Command.MOVE, -1, "character")
     test.assert_eq(offset_of(field), scrolled, "a caret back inside leaves the scroll")
@@ -249,7 +249,7 @@ test.case("the content scrolls just enough to keep the caret in the clip, and ne
     command(s, Command.DELETE, -1, "character")
     command(s, Command.DELETE, -1, "character")
     command(s, Command.DELETE, -1, "character")
-    test.assert_near(offset_of(field), clip_w - Consts.CARET_WIDTH - 12 * CHAR, 1e-9, "the shortened text keeps its end at the right edge")
+    test.assert_near(offset_of(field), clip_w - Consts.CARET_WIDTH - 12 * CHAR, 1e-4, "the shortened text keeps its end at the right edge")
 
     field:set_text("ab")
     test.assert_eq(offset_of(field), 0, "a narrow text sits at the left")
