@@ -314,8 +314,8 @@ LÖVE callbacks when it registers them.
 `Control` is the base of every UI element: parent-child relationships
 (`add_child`/`remove_child`), transforms (position, scale, rotation),
 axis-aligned bounding boxes for hit testing. `DrawableControl` adds
-rendering; the primitives are Rectangle, Circle, Text and Image; a
-border-only `Rectangle` draws its line inside its box.
+rendering; the primitives are Rectangle, Circle, Triangle, Text and
+Image; a border-only `Rectangle` draws its line inside its box.
 `ClippingRectangle` and `ClippingMask` clip their children to their box
 (every pixel the box touches), nested clips intersect, and their bounds are
 the box, so what is clipped is neither drawn nor hit. Higher-level components (Panel, TextButton, Input,
@@ -370,9 +370,12 @@ input takes no focus and so has no caret, as before.
 `SelectionBox` (`ui/selection-box.lua`) is one option of a closed set
 (`SelectionOption[]`: a `key` the program reads and writes, a `title` the
 user sees) shown as a field: the selected option's title at the left,
-clipped before the arrow, and "▼" at the right edge, both in the input
-font (`fonts.Kind.USER_INPUT`, the one of the program's fonts with the
-glyph), over a background in the button colors a text input uses. A
+clipped before the arrow, in the input font as a text input's content,
+and the arrow at the right edge, a `Triangle` pointing down
+(`controls/triangle.lua`, the primitive filling its box with
+`love.graphics.polygon`, drawn as the caret is a `Rectangle`, since the
+display font has no such glyph), over a background in the button colors
+a text input uses. A
 press, or Return or Space while focused, opens the list
 (`SelectionBoxList`, `ui/selection-box-list.lua`): a tree parented to the
 form screen's control as its last child, so it draws over the screen and
