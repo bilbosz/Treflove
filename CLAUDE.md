@@ -6,6 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Treflove is a multiplayer turn-based tabletop game engine built on LÖVE (love2d). The game master creates rules in Lua and can dynamically modify game state during gameplay. The project follows a server-client uniform architecture where many classes work in both server and client contexts. Only vanilla love2d is used - no external dependencies, with one exception on this branch: object lifetimes are tracked by [lua-lifetime](lib/lua-lifetime/README.md) (a git submodule at `lib/lua-lifetime`, required as a library, nothing transpiled) - see [docs/lifetimes.md](docs/lifetimes.md).
 
+## Branches
+
+Every piece of work is done on a working branch of its own, never on
+`master` directly, and the branch carries a meaningful name: short,
+kebab-case, naming what the branch delivers so a reader of `git branch`
+knows what it holds without opening it (`assets-workspace`,
+`game-panels`, `user-menu-new-and-join-game`); never a bare `fix`, `wip`,
+`test`, a date or a ticket number alone.
+
 ## Prerequisites
 
 External tools required by the dev scripts (`love`, `lua-format`, `lua-language-server`, `jq`, `rg`) are listed with installation instructions in [REQUIREMENTS.md](REQUIREMENTS.md).

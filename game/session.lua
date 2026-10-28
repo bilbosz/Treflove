@@ -58,8 +58,8 @@ local token_id = require("game.token.token-id")
 ---@field _assets_workspace_return Screen|nil The screen the workspace was opened from, shown again when it closes
 ---@field _login_screen LoginScreen|nil The login screen, from `show_login` (at the connect, at a logout) to the next login (client only)
 ---@field _sign_up_screen SignUpScreen|nil The sign-up screen, from `show_sign_up` to its way back or the next login (client only)
----@field _games_screen GamesScreen|nil The games list, from the listing `show_games` asked for to its way back or a join (client only)
----@field _new_game_screen NewGameScreen|nil Over the games list, from `show_new_game` to its way back or a join (client only)
+---@field _games_screen GamesScreen|nil The games list, from the listing `show_games` asked for (the menu's Join Game) to its way back or a join (client only)
+---@field _new_game_screen NewGameScreen|nil Over the menu, from `show_new_game` (its New Game) to its way back or the join of the game created (client only)
 ---@field _new_token_screen NewTokenScreen|nil Over the game, from `show_new_token` to its way back or the token created (client only)
 ---@field _period lifetime.Token|nil The "logged in" span (client only): the menu screen, the games and new-game screens, the game screen and their back entries die with it
 local Session = class("Session")
@@ -838,11 +838,7 @@ function Session:close_new_game()
     assert(app.is_client and self._new_game_screen)
     local screen = self._new_game_screen
     self._new_game_screen = nil
-    if self._games_screen then
-        app.screen_manager:show(self._games_screen)
-    else
-        self:show_menu()
-    end
+    self:show_menu()
     lifetime.destroy(screen)
 end
 

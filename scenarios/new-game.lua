@@ -19,8 +19,6 @@ end
 ---@param driver ScenarioDriver
 return function(driver)
     steps.log_in(driver)
-    driver:click("TextButton", "Games")
-    driver:wait_screen("GamesScreen")
     driver:click("TextButton", "New Game")
     driver:wait_screen("NewGameScreen")
     driver:click("TextInput", nil, 1)
@@ -34,7 +32,7 @@ return function(driver)
 
     driver:key(Consts.BACKSTACK_KEY)
     driver:wait_screen("UserMenuScreen")
-    driver:click("TextButton", "Games")
+    driver:click("TextButton", "Join Game")
     driver:wait_screen("GamesScreen")
     local first, second = game_button(driver, 1), game_button(driver, 2)
     driver:expect(first == "Meadow" and second == NAME, "the games are listed by name: " .. first .. ", " .. second)

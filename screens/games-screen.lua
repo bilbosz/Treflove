@@ -21,22 +21,15 @@ function GamesScreen:init(session, games)
             self:join_game(info.id)
         end))
     end
-    table.insert(entries, MenuTextButton(self, "New Game", function()
-        self:new_game()
-    end))
     table.insert(entries, MenuTextButton(self, "Back", function()
         app.backstack_manager:back()
     end))
-    MenuScreen.init(self, "Games", entries)
+    MenuScreen.init(self, "Join Game", entries)
 end
 
 ---@param id string
 function GamesScreen:join_game(id)
     self._session:join_game(id)
-end
-
-function GamesScreen:new_game()
-    self._session:show_new_game()
 end
 
 return GamesScreen

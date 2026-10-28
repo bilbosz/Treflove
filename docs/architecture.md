@@ -121,9 +121,9 @@ A `Session` ties a connection to a user:
   creation of an account (`sign_up`: `CreateAccountRp`, then the login
   with the same credentials)
 - Coordinates the screen transitions (connecting → login, or the sign-up
-  over it → user menu → the games list, the new game over it → game, the
-  new token screen over it, and the assets workspace over the game or the
-  new token screen)
+  over it → user menu → the games list or the new game screen over it →
+  game, the new token screen over it, and the assets workspace over the
+  game or the new token screen)
 - Integrates with the asset manager and backstack navigation
 - Holds the user's `PermissionSet` while in a game: the server resolves it
   from the game's data when the session selects the game
@@ -159,9 +159,10 @@ A `Session` ties a connection to a user:
   assets workspace are built under the token and destroyed on the way
   back, see [lifetimes.md](lifetimes.md)
 - The client shows the session's login screen on connect
-  (`Session:show_login`); a login lands on the user menu, the Games entry
-  lists the server's games (`show_games`), a click joins one
-  (`join_game(id)`), New Game creates one and joins it (`create_game`),
+  (`Session:show_login`); a login lands on the user menu, whose Join Game
+  entry lists the server's games (`show_games`), a click joining one
+  (`join_game(id)`), and whose New Game entry opens the new game screen
+  (`show_new_game`), which creates a game and joins it (`create_game`),
   by the user or by a scenario
   ([scenarios-and-console.md](scenarios-and-console.md))
 

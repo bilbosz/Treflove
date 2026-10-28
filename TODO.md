@@ -121,8 +121,8 @@ editing, dragging, creation and deletion.
 ### 7. Account and game management
 
 An account is created from the login screen and kept by the server in
-`s/accounts.lua`; a game is created from the games list and any account
-may join any game ([docs/architecture.md](docs/architecture.md),
+`s/accounts.lua`; a game is created from the menu's New Game and any
+account may join any game from its Join Game ([docs/architecture.md](docs/architecture.md),
 "Accounts and Games"). What is still done by hand in the files:
 
 - Changing a password, a display name, deleting an account

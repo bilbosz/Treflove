@@ -16,10 +16,6 @@ function TestGamesSession:join_game(id)
     table.insert(self.calls, "join_game " .. id)
 end
 
-function TestGamesSession:show_new_game()
-    table.insert(self.calls, "show_new_game")
-end
-
 ---@return GameInfo[]
 local function two_games()
     return {
@@ -55,16 +51,15 @@ end
 
 test.suite("GamesScreen")
 
-test.case("one button per game, captioned by its name in the order given, then New Game and Back", function()
+test.case("one button per game, captioned by its name in the order given, then Back", function()
     with_screen(two_games(), function(screen)
         test.assert_deep_eq(menu_client.captions(screen), {
             "Meadow",
             "The Shire",
-            "New Game",
             "Back"
         })
         test.assert_deep_eq(menu_client.texts(screen), {
-            "Games"
+            "Join Game"
         }, "the title, no line for an empty list")
     end)
 end)
@@ -76,15 +71,6 @@ test.case("a click on a game joins it by its id", function()
         test.assert_deep_eq(session.calls, {
             "join_game the-shire",
             "join_game meadow"
-        })
-    end)
-end)
-
-test.case("New Game asks the session for the new-game screen", function()
-    with_screen(two_games(), function(screen, session)
-        click(screen, "New Game")
-        test.assert_deep_eq(session.calls, {
-            "show_new_game"
         })
     end)
 end)
@@ -105,16 +91,15 @@ end)
 test.case("with no games, a line says so above the buttons", function()
     with_screen({}, function(screen)
         test.assert_deep_eq(menu_client.captions(screen), {
-            "New Game",
             "Back"
         })
         test.assert_deep_eq(menu_client.texts(screen), {
-            "Games",
+            "Join Game",
             "No games yet"
         })
         local line = menu_client.find_all(screen, "Text")[2]
         local _, line_bottom = select(3, line:get_global_aabb():get_bounds())
-        local _, button_top = menu_client.button(screen, "New Game"):get_global_aabb():get_bounds()
-        test.assert_true(line_bottom <= button_top, "the line is above New Game")
+        local _, button_top = menu_client.button(screen, "Back"):get_global_aabb():get_bounds()
+        test.assert_true(line_bottom <= button_top, "the line is above Back")
     end)
 end)

@@ -52,7 +52,7 @@ end
 ---@param game string|nil The game's name, defaults to `steps.GAME`
 ---@return GameScreen
 function steps.enter_game(driver, game)
-    driver:click("TextButton", "Games")
+    driver:click("TextButton", "Join Game")
     driver:wait_screen("GamesScreen")
     driver:click("TextButton", game or steps.GAME)
     local screen = driver:wait_screen("GameScreen") --[[@as GameScreen]]

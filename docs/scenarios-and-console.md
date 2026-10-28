@@ -98,7 +98,7 @@ return function(driver)
     driver:type("krause")
     driver:click("TextButton", "Sign In")
     driver:wait_screen("UserMenuScreen")
-    driver:click("TextButton", "Games")
+    driver:click("TextButton", "Join Game")
     driver:wait_screen("GamesScreen")
     driver:click("TextButton", "Meadow")
     local game = driver:wait_screen("GameScreen")
@@ -128,8 +128,8 @@ The shared steps live in `scenarios/lib/steps.lua`. The scenarios:
 (the workspace from the game, its listing against the game's store,
 back), `logout` (out and in again), `sign-up` (an account created from
 the login screen, signed in at once, out and in again), `new-game` (a
-game created from the games list and entered, its template page and
-token, listed afterwards), `fresh-start` (what a user does on a server
+game created from the menu and entered, its template page and token,
+listed afterwards), `fresh-start` (what a user does on a server
 that holds nothing: an account signed up, a game created and entered,
 listed afterwards; it reads nothing of the fixture, so it passes on an
 empty root too) and `old-town` (the Old Town world of the fixture of the

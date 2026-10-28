@@ -1245,10 +1245,10 @@ flow_case("a listing asked for again replaces the games screen; one that answers
     test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "LoginScreen", "the listing came after the logout")
 end, log_in_to_the_menu)
 
-flow_case("the new game over the games: back shows the games again; a join destroys both, so the game's entry is right above the logout's", function(flow)
+flow_case("the new game from the menu: back shows the menu again; a join destroys it, so the game's entry is right above the logout's", function(flow)
     local client = flow.client
+    local menu = client.screen_manager:get_screen()
     local logout_entry = client.backstack_manager:get_top()
-    local games = show_the_games(flow)
     client.session:show_new_game()
     local new_game = client.screen_manager:get_screen()
     test.assert_eq(get_class_name_of(new_game), "NewGameScreen")
@@ -1256,9 +1256,13 @@ flow_case("the new game over the games: back shows the games again; a join destr
     test.assert_deep_eq(class_names(lifetime.dependents(client.session._period)), {
         "UserMenuScreen",
         "BackstackEntry",
-        "GamesScreen",
         "NewGameScreen"
     })
+    local new_game_dependents = lifetime.dependents(assert(new_game))
+    test.assert_deep_eq(class_names_but_hooks(new_game_dependents), {
+        "BackstackEntry"
+    })
+    test.assert_eq(client.backstack_manager:get_top(), new_game_dependents[#new_game_dependents])
     local log = {}
     with_release_log(log, function()
         client.backstack_manager:back()
@@ -1266,7 +1270,10 @@ flow_case("the new game over the games: back shows the games again; a join destr
     test.assert_deep_eq(log, {
         "NewGameScreen:release(destroy)"
     })
-    test.assert_eq(client.screen_manager:get_screen(), games)
+    test.assert_eq(client.screen_manager:get_screen(), menu)
+    test.assert_eq(client.backstack_manager:get_top(), logout_entry)
+    ---@diagnostic disable-next-line: invisible
+    test.assert_eq(client.session._new_game_screen, nil)
 
     client.session:show_new_game()
     new_game = client.screen_manager:get_screen()
@@ -1275,11 +1282,35 @@ flow_case("the new game over the games: back shows the games again; a join destr
         client.session:join_game(mocks.GAME_ID)
     end)
     test.assert_deep_eq(log, {
-        "NewGameScreen:release(destroy)",
+        "NewGameScreen:release(destroy)"
+    })
+    test.assert_false(lifetime.alive(new_game))
+    load_the_game(flow)
+    ---@diagnostic disable-next-line: invisible
+    test.assert_deep_eq(class_names(lifetime.dependents(client.session._period)), {
+        "UserMenuScreen",
+        "BackstackEntry",
+        "GameScreen"
+    })
+    client.backstack_manager:back()
+    test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "UserMenuScreen")
+    test.assert_eq(client.backstack_manager:get_top(), logout_entry)
+end, log_in_to_the_menu)
+
+flow_case("a join from the games list destroys it, so the game's entry is right above the logout's", function(flow)
+    local client = flow.client
+    local logout_entry = client.backstack_manager:get_top()
+    local games = show_the_games(flow)
+    local log = {}
+    with_release_log(log, function()
+        client.session:join_game(mocks.GAME_ID)
+    end)
+    test.assert_deep_eq(log, {
         "GamesScreen:release(destroy)"
     })
     test.assert_false(lifetime.alive(games))
-    test.assert_false(lifetime.alive(new_game))
+    ---@diagnostic disable-next-line: invisible
+    test.assert_eq(client.session._games_screen, nil)
     load_the_game(flow)
     ---@diagnostic disable-next-line: invisible
     test.assert_deep_eq(class_names(lifetime.dependents(client.session._period)), {
@@ -1307,7 +1338,6 @@ end, log_in_to_the_menu)
 
 flow_case("a new game: made from the template on the server, its creator the master and the owner of its token, and joined", function(flow)
     local client, server = flow.client, flow.server
-    show_the_games(flow)
     client.session:show_new_game()
     client.session:create_game("The Shire!")
     frame(server)

@@ -41,7 +41,7 @@ password?)` (waits for the login screen, fills both fields, "Sign In",
 waits for the menu, returns it), `sign_up(driver, login, name, password)`
 ("Sign Up" from the login screen, the four fields, "Create Account", waits
 for the menu), `join_game(driver, login?, password?, game?)` (then
-"Games", the game's button in the list, "Meadow" by default, waits for
+"Join Game", the game's button in the list, "Meadow" by default, waits for
 the game screen, returns it), `log_out(driver)` (Escape
 to the menu, "Log Out", waits for the login screen),
 `open_assets_workspace(driver)` ("Assets", waits for the listing),
@@ -56,7 +56,7 @@ other clients in the game about 25 ms later headless, which
 `move-token` measures), `select_tokens(driver, labels)` (one rectangle
 over the union of the tokens' bounding squares, returns the `Token[]`;
 `select_token` is the one-label case), `enter_game(driver, game?)` (from
-the menu: "Games", the game's button, waits for the game screen, returns
+the menu: "Join Game", the game's button, waits for the game screen, returns
 it; `join_game` is `log_in` followed by it),
 `create_token(driver, id, name, avatar)` ("New Token", the three fields,
 "Create", waits for the game screen showing the token, returns the
