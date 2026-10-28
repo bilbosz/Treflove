@@ -80,7 +80,8 @@ script starts one extra client per peer (see "Several clients").
   and `delete_token` (a selected token, from the panel's Delete),
   `open_panel` (a side panel by its quick access entry), `select_entry`
   (an entry in an entries panel's list), `set_text` (a field's text
-  replaced as a player types it: a click, Ctrl+A, the text) and `pick_image` (an image through the
+  replaced as a player types it: a click, Ctrl+A, the text), `select_option` (an option of a
+  selection box by its key: the box clicked, the row by its title) and `pick_image` (an image through the
   workspace a Browse... button opened); a step
   used by two scenarios goes there, named for what it reaches. The folder is skipped
   by `./format-code.sh`, which skips every path containing `lib/` and
