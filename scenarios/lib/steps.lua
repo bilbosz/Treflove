@@ -196,7 +196,8 @@ end
 ---@param avatar string An image of the game's store
 ---@return Token The new token, shown on the page
 function steps.create_token(driver, id, name, avatar)
-    driver:click("TextButton", "New Token")
+    steps.open_panel(driver, "Tokens")
+    driver:click("TextButton", "New")
     driver:wait_screen("NewTokenScreen")
     for i, text in ipairs({
         id,

@@ -532,7 +532,7 @@ local function delete_button(client)
     return client.game_screen:get_token_panel()._delete_button
 end
 
-test.case("a writable selection has a Delete button between Cancel and Apply, on their line; a read-only or an empty one has none", function()
+test.case("a writable selection has a Delete button; a read-only or an empty one has none", function()
     with_client({
         "read",
         "write:tokens/@owned"
@@ -540,17 +540,7 @@ test.case("a writable selection has a Delete button between Cancel and Apply, on
         game_client.select(client, {
             "Bilbosza"
         })
-        local delete = assert(delete_button(client))
-        local cancel_x, cancel_y = assert(cancel_button(client)):get_position()
-        local apply_x, apply_y = assert(apply_button(client)):get_position()
-        local delete_x, delete_y = delete:get_position()
-        test.assert_eq(delete_y, cancel_y)
-        test.assert_eq(delete_y, apply_y)
-        local cancel_w = assert(cancel_button(client)):get_size()
-        local delete_w = delete:get_size()
-        local s = Consts.PANEL_FIELD_SCALE
-        test.assert_true(cancel_x + cancel_w * s < delete_x, "apart from Cancel")
-        test.assert_true(delete_x + delete_w * s < apply_x, "apart from Apply")
+        test.assert_eq(assert(delete_button(client)):get_text(), "Delete")
         game_client.select(client, {
             "Bilbosza",
             "Smaug"
@@ -696,5 +686,312 @@ test.case("on_grants_change gates the selection by the grants the session holds 
         test.assert_true(apply_button(client) ~= nil)
         test.assert_true(delete_button(client) ~= nil)
         test.assert_false(assert(id_input(client)):is_read_only())
+    end)
+end)
+
+---@param client GameClient
+---@return TextButton|nil
+local function new_button(client)
+    ---@diagnostic disable-next-line: invisible
+    return client.game_screen:get_token_panel()._new_button
+end
+
+---@param client GameClient
+---@return string[] The captions of the panel's bottom row, left to right
+---@return number New's x
+local function assert_button_row(client)
+    local panel = client.game_screen:get_token_panel()
+    local panel_w, panel_h = panel:get_size()
+    local s, p = Consts.PANEL_FIELD_SCALE, Consts.PADDING
+    ---@type TextButton[]
+    local row = {}
+    for _, find in ipairs({
+        cancel_button,
+        new_button,
+        delete_button,
+        apply_button
+    }) do
+        local button = find(client)
+        if button then
+            test.assert_eq(button:get_parent(), panel)
+            local _, y, _, h = button:get_position_and_size()
+            test.assert_near(y, panel_h - h * s - p, 1e-9, button:get_text() .. " at the panel's bottom")
+            table.insert(row, button)
+        end
+    end
+    table.sort(row, function(a, b)
+        return a:get_position() < b:get_position()
+    end)
+    ---@type string[]
+    local captions = {}
+    for _, button in ipairs(row) do
+        table.insert(captions, button:get_text())
+    end
+
+    local cancel, new = assert(cancel_button(client)), assert(new_button(client))
+    local cancel_x, _, cancel_w = cancel:get_position_and_size()
+    test.assert_eq(cancel_x, p, "Cancel at the left edge")
+    local new_x, _, new_w = new:get_position_and_size()
+    test.assert_near(new_x, cancel_x + cancel_w * s + p, 1e-9, "New a padding right of Cancel")
+    local apply = apply_button(client)
+    if apply then
+        local apply_x, _, apply_w = apply:get_position_and_size()
+        test.assert_near(apply_x + apply_w * s, panel_w - p, 1e-9, "Apply at the right edge")
+        local delete = delete_button(client)
+        if delete then
+            local delete_x, _, delete_w = delete:get_position_and_size()
+            test.assert_near(delete_x + delete_w * s * 0.5, (new_x + new_w * s + apply_x) * 0.5, 1e-9, "Delete centered between New and Apply")
+            test.assert_true(new_x + new_w * s < delete_x and delete_x + delete_w * s < apply_x, "Delete apart from both")
+        end
+    end
+    return captions, new_x
+end
+
+test.case("the bottom row reads Cancel, New, Delete and Apply, each in its fixed place; New stays put without a selection and for a read-only one", function()
+    with_client({
+        "read",
+        "write:tokens/@owned"
+    }, function(client)
+        game_client.select(client, {
+            "Bilbosza"
+        })
+        local captions, new_x = assert_button_row(client)
+        test.assert_deep_eq(captions, {
+            "Cancel",
+            "New",
+            "Delete",
+            "Apply"
+        })
+        game_client.select(client, {})
+        local empty_captions, empty_new_x = assert_button_row(client)
+        test.assert_deep_eq(empty_captions, {
+            "Cancel",
+            "New",
+            "Apply"
+        }, "nothing selected")
+        test.assert_eq(empty_new_x, new_x, "New in its place without a selection")
+        game_client.select(client, {
+            "Smaug"
+        })
+        local read_only_captions, read_only_new_x = assert_button_row(client)
+        test.assert_deep_eq(read_only_captions, {
+            "Cancel",
+            "New"
+        }, "a token the player may not write")
+        test.assert_eq(read_only_new_x, new_x, "New in its place for a read-only selection")
+    end)
+end)
+
+test.case("New shows the new token screen", function()
+    with_client({
+        "read",
+        "write"
+    }, function(client)
+        local new = assert(new_button(client))
+        test.assert_false(new:is_read_only(), "the master writes the tokens")
+        game_client.click(client, new)
+        test.assert_eq(get_class_name_of(client.app.screen_manager:get_screen()), "NewTokenScreen")
+        test.assert_eq(client.app.screen_manager:get_screen(), client.session:get_new_token_screen())
+    end)
+end)
+
+test.case("New is read-only, dimmed and not clickable, for a player who writes only the tokens they own, with or without a selection", function()
+    with_client({
+        "read",
+        "write:tokens/@owned"
+    }, function(client)
+        for _, ids in ipairs({
+            {},
+            {
+                "Bilbosza"
+            }
+        }) do
+            game_client.select(client, ids)
+            local new = assert(new_button(client))
+            test.assert_true(new:is_read_only())
+            test.assert_deep_eq(new:get_color(), Consts.BUTTON_READ_ONLY_COLOR)
+            game_client.click(client, new)
+            test.assert_eq(client.app.screen_manager:get_screen(), client.game_screen)
+            test.assert_eq(client.session:get_new_token_screen(), nil)
+        end
+    end)
+end)
+
+test.case("on_grants_change gates New by the grants the session holds now", function()
+    with_client({
+        "read",
+        "write:tokens/@owned"
+    }, function(client)
+        test.assert_true(assert(new_button(client)):is_read_only())
+        client.session:set_grants({
+            "read",
+            "write:tokens"
+        })
+        client.game_screen:on_grants_change()
+        test.assert_false(assert(new_button(client)):is_read_only())
+        client.session:set_grants({
+            "read"
+        })
+        client.game_screen:on_grants_change()
+        test.assert_true(assert(new_button(client)):is_read_only())
+    end)
+end)
+
+test.case("the avatar of one selected token shows under its title and above its path, in a circle of the preview size as on the page", function()
+    with_client({
+        "read",
+        "write"
+    }, function(client)
+        game_client.select(client, {
+            "Bilbosza"
+        })
+        local avatar = property_by_key(client, "avatar")
+        local preview = assert(avatar.preview, "a preview")
+        ---@diagnostic disable-next-line: invisible
+        test.assert_eq(preview:get_parent(), client.game_screen:get_token_panel()._scroll_view:get_content())
+        local size = Consts.TOKEN_PANEL_IMAGE_PREVIEW_SIZE
+        test.assert_eq(get_class_name_of(preview), "Avatar")
+        test.assert_deep_eq({
+            preview:get_size()
+        }, {
+            size,
+            size
+        })
+        local image = preview --[[@as Avatar]] :get_image()
+        test.assert_eq(image:get_parent(), preview)
+        local w, h = image:get_size()
+        test.assert_near(image:get_scale(), math.max(size / w, size / h), 1e-9, "covering the circle")
+        test.assert_deep_eq({
+            image:get_position()
+        }, {
+            size * 0.5,
+            size * 0.5
+        })
+        local _, title_y = assert(avatar.title):get_position()
+        local _, title_h = assert(avatar.title):get_size()
+        local preview_x, preview_y = preview:get_position()
+        test.assert_eq(preview_x, Consts.PADDING)
+        test.assert_near(preview_y, title_y + title_h * Consts.PANEL_FIELD_SCALE, 1e-9, "under the title")
+        local _, input_y = assert(avatar.input):get_position()
+        test.assert_near(input_y, preview_y + size + Consts.PADDING * 0.5, 1e-9, "the input a half padding under the square")
+        for _, property in ipairs(properties(client)) do
+            if property.key ~= "avatar" then
+                test.assert_eq(property.preview, nil, property.key .. " is no image")
+            end
+        end
+    end)
+end)
+
+---@param client GameClient
+---@param fn fun() Run while `love.graphics.newImage` answers an image of 128 by 32 texels for any file
+local function with_wide_image(client, fn)
+    local graphics = assert(love.graphics)
+    local new_image = graphics.newImage
+    assert(love.filesystem.write("c/games/g/assets/token/wide.png", "W"))
+    graphics.newImage = function()
+        return {
+            getDimensions = function()
+                return 128, 32
+            end,
+            setFilter = function()
+            end,
+            setMipmapFilter = function()
+            end
+        } --[[@as love.Image]]
+    end
+    ---@type boolean, any
+    local ok, err = pcall(fn)
+    graphics.newImage = new_image
+    assert(ok, err)
+end
+
+test.case("a wide avatar covers its circle by the shorter side, as on the page", function()
+    with_client({
+        "read",
+        "write"
+    }, function(client)
+        with_wide_image(client, function()
+            game_client.find_token(client, "Bilbosza"):set_data("avatar", "token/wide.png")
+            game_client.select(client, {
+                "Bilbosza"
+            })
+        end)
+        local avatar = property_by_key(client, "avatar")
+        local preview = assert(avatar.preview) --[[@as Avatar]]
+        local size = Consts.TOKEN_PANEL_IMAGE_PREVIEW_SIZE
+        test.assert_near(preview:get_image():get_scale(), size / 32, 1e-9, "by the shorter side")
+        local _, preview_y = preview:get_position()
+        local _, input_y = assert(avatar.input):get_position()
+        test.assert_near(input_y, preview_y + size + Consts.PADDING * 0.5, 1e-9, "the circle's height")
+    end)
+end)
+
+test.case("another image property shows its image fitted into the square, keeping its aspect, the square's whole height taken", function()
+    with_client({
+        "read",
+        "write"
+    }, function(client)
+        app.data.token_properties.portrait = {
+            title = "Portrait",
+            type = "image"
+        }
+        with_wide_image(client, function()
+            game_client.find_token(client, "Bilbosza"):set_data("portrait", "token/wide.png")
+            game_client.select(client, {
+                "Bilbosza"
+            })
+        end)
+        local portrait = property_by_key(client, "portrait")
+        local preview = assert(portrait.preview)
+        test.assert_eq(get_class_name_of(preview), "Image")
+        local size = Consts.TOKEN_PANEL_IMAGE_PREVIEW_SIZE
+        test.assert_near(preview:get_scale(), size / 128, 1e-9, "by the longer side")
+        local _, preview_y = preview:get_position()
+        local _, input_y = assert(portrait.input):get_position()
+        test.assert_near(input_y, preview_y + size + Consts.PADDING * 0.5, 1e-9, "the square's height, not the image's")
+    end)
+end)
+
+test.case("no preview for a multivalue image property or a path the store has no file for", function()
+    with_client({
+        "read",
+        "write"
+    }, function(client)
+        game_client.select(client, {
+            "Bilbosza",
+            "Smaug"
+        })
+        test.assert_eq(property_by_key(client, "avatar").preview, nil, "multivalue")
+        game_client.find_token(client, "Smaug"):set_data("avatar", "token/missing.png")
+        game_client.select(client, {
+            "Smaug"
+        })
+        local avatar = property_by_key(client, "avatar")
+        test.assert_eq(avatar.preview, nil, "not in the store")
+        local _, title_y = assert(avatar.title):get_position()
+        local _, title_h = assert(avatar.title):get_size()
+        local _, input_y = assert(avatar.input):get_position()
+        test.assert_near(input_y, title_y + title_h * Consts.PANEL_FIELD_SCALE, 1e-9, "the path field right under the title")
+    end)
+end)
+
+test.case("a rebuild destroys the preview, and an image chosen in the workspace shows the new one", function()
+    with_client({
+        "read",
+        "write"
+    }, function(client)
+        game_client.select(client, {
+            "Bilbosza"
+        })
+        local preview = assert(property_by_key(client, "avatar").preview)
+        local panel = client.game_screen:get_token_panel()
+        ---@diagnostic disable-next-line: invisible
+        panel:_set_image("avatar", "token/s.png")
+        test.assert_false(lifetime.alive(preview), "the old preview destroyed")
+        local shown = assert(property_by_key(client, "avatar").preview) --[[@as Avatar]]
+        test.assert_true(lifetime.alive(shown))
+        test.assert_eq(shown:get_image():get_love_image(), require("graphics.images").get("c/games/g/assets/token/s.png"))
+        game_client.select(client, {})
+        test.assert_false(lifetime.alive(shown), "destroyed with the selection's properties")
     end)
 end)

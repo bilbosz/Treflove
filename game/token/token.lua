@@ -1,13 +1,11 @@
 local Model = require("data.model")
 local Control = require("controls.control")
-local ClippingMask = require("controls.clipping-mask")
-local Image = require("controls.image")
+local Avatar = require("game.token.avatar")
 local Consts = require("app.consts")
 local Circle = require("controls.circle")
 local Text = require("controls.text")
 local permissions = require("game.permissions")
 local token_id = require("game.token.token-id")
-local lifetime = require("lifetime")
 
 ---@alias TokenDataValue string|number|string[]|number[] The value of a token property, by its `TokenPropertyType`: `string`, `number`, `image` (an asset path) or `array`
 
@@ -24,8 +22,7 @@ local lifetime = require("lifetime")
 ---@field get_data fun(self: Token): TokenData
 ---@field private _id string The token's key in `GameData.tokens`
 ---@field _diameter number
----@field _clip ClippingMask
----@field _image Image
+---@field _avatar Avatar
 ---@field _label Text
 ---@field _selection Circle Selection-highlight circle
 ---@field private _is_selected boolean
@@ -35,28 +32,12 @@ local lifetime = require("lifetime")
 local Token = class("Token", Model, Control)
 
 ---@param self Token
-local function _fit_avatar(self)
-    local d = self._diameter
-    local r = d * 0.5
-    local img = self._image
-    local img_w, img_h = img:get_size()
-    img:set_origin(img_w * 0.5, img_h * 0.5)
-    img:set_scale(math.max(d / img_w, d / img_h))
-    img:set_position(r, r)
-end
-
----@param self Token
 ---@param path string Avatar image asset path
 local function _create_avatar(self, path)
     local d = self._diameter
-    local r = d * 0.5
-    local clip = ClippingMask(self, d, d, function()
-        love.graphics.circle("fill", r, r, r)
-    end)
-    self._clip = clip
-    clip:set_origin(r, r)
-    self._image = Image(clip, path)
-    _fit_avatar(self)
+    local avatar = Avatar(self, path, d)
+    avatar:set_origin(d * 0.5, d * 0.5)
+    self._avatar = avatar
 end
 
 ---@param self Token
@@ -176,14 +157,9 @@ function Token:set_data(key, value)
         local d = self._diameter
         local r = d * 0.5
 
-        local clip = self._clip
-        clip:set_size(d, d)
-        clip:set_origin(r, r)
-        clip:set_draw_mask_callback(function()
-            love.graphics.circle("fill", r, r, r)
-        end)
-
-        _fit_avatar(self)
+        local avatar = self._avatar
+        avatar:set_diameter(d)
+        avatar:set_origin(r, r)
 
         local selection_r = self._diameter * 0.5 - Consts.TOKEN_SELECTION_THICKNESS * 0.5
         local selection = self._selection
@@ -192,9 +168,7 @@ function Token:set_data(key, value)
 
         _center_label(self)
     elseif key == "avatar" then
-        lifetime.destroy(self._image)
-        self._image = Image(self._clip, self.data.avatar)
-        _fit_avatar(self)
+        self._avatar:set_image(self.data.avatar)
     end
 end
 

@@ -568,12 +568,12 @@ test.case("a token's avatar follows its data, fitted to the token", function()
     ---@type boolean, any
     local ok, err = pcall(function()
         local token = game_client.find_token(client, "Bilbosza")
-        local old = token._image
+        local old = token._avatar:get_image()
         token:set_data("avatar", "token/s.png")
         test.assert_false(lifetime.alive(old))
-        local image = token._image
+        local image = token._avatar:get_image()
         test.assert_true(image ~= old)
-        test.assert_eq(image:get_parent(), token._clip)
+        test.assert_eq(image:get_parent(), token._avatar)
         local w, h = image:get_size()
         local d = token:get_data().diameter
         test.assert_near((image:get_scale()), math.max(d / w, d / h))

@@ -73,7 +73,7 @@ Connection                      (a lost peer → lifetime.destroy;
         │   ├── its control tree        (the side panels and their inputs, the page and its tokens;
         │   │                            a page shown in place of another is destroyed, not detached)
         │   └── back entry: leave the game
-        ├── NewTokenScreen              (from New Token to Back or to the token created)
+        ├── NewTokenScreen              (from the panel's New to Back or to the token created)
         │   └── back entry: back to the game
         └── AssetsWorkspaceScreen       (while open, over the game)
             ├── its control tree        (the list and its rows, the details with the preview
@@ -134,7 +134,7 @@ the `release` calls it caused.
   destroyed by the page (`Page:remove_token`), out of the selection first,
   not detached.
 - **The new token screen**: the session builds it under the period from
-  the game's New Token entry and pushes its back entry, anchored to the
+  the token panel's New button and pushes its back entry, anchored to the
   screen; the entry, or a creation the server accepted, shows the game
   again and destroys the screen; leaving the game destroys an open one, a
   logout takes it with the period. The assets workspace its Browse...
