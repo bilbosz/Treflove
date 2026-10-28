@@ -1043,4 +1043,20 @@ function mocks.ensure_love_math()
     }
 end
 
+---Fakes under plain LuaJIT, which has no `love.mouse`: no cursor is
+---supported, so none is asked for
+function mocks.ensure_love_mouse()
+    if love and love.mouse then
+        return
+    end
+    ---@diagnostic disable-next-line: missing-fields, assign-type-mismatch
+    love = love or {}
+    ---@diagnostic disable-next-line: missing-fields, assign-type-mismatch
+    love.mouse = {
+        isCursorSupported = function()
+            return false
+        end
+    }
+end
+
 return mocks
