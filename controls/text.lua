@@ -90,6 +90,13 @@ function Text:get_text()
     return self._text
 end
 
+---@param text string
+---@return number The width of `text` in the text's face, in model units, before the control's scale
+function Text:measure(text)
+    local w = love.graphics.newText(fonts.reference(self._face), text):getDimensions()
+    return w or 0
+end
+
 ---@return number The line height of the font, in model units
 function Text:get_font_height()
     return fonts.reference(self._face):getHeight()

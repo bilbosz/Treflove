@@ -4,6 +4,12 @@ local TextInput = require("ui.text-input")
 ---@field private _number number|nil Nil when the text is not a valid number
 local NumberInput = class("NumberInput", TextInput)
 
+---@param candidate string
+---@return boolean
+local function _is_number_text(candidate)
+    return candidate == "" or candidate == "-" or tonumber(candidate) ~= nil
+end
+
 ---@param parent Control
 ---@param form_screen FormScreen
 ---@param width number
@@ -13,6 +19,7 @@ local NumberInput = class("NumberInput", TextInput)
 function NumberInput:init(parent, form_screen, width, height, on_input, on_enter)
     TextInput.init(self, parent, form_screen, width, height, false, on_input, on_enter)
     self._number = 0
+    self:set_filter(_is_number_text)
 end
 
 ---@param number number
@@ -27,23 +34,9 @@ function NumberInput:get_number()
 end
 
 ---@param text string
-function NumberInput:on_append_text(text)
-    if self:get_text() == "" and text == "-" then
-        self._number = 0
-        TextInput.on_append_text(self, text)
-        return
-    end
-    local n = tonumber(self:get_text() .. text)
-    if n then
-        self._number = n
-        TextInput.on_append_text(self, text)
-    end
-end
-
----@param character_number number
-function NumberInput:on_remove_characters(character_number)
-    TextInput.on_remove_characters(self, character_number)
-    self._number = tonumber(self:get_text())
+function NumberInput:on_edit(text)
+    self._number = tonumber(text)
+    TextInput.on_edit(self, text)
 end
 
 ---@param text string
