@@ -269,8 +269,11 @@ Events by source:
   `is_shift_down()` are what the consumers ask (the form's Shift+Tab, the
   page's selection keys, the text event manager); a lost window focus
   forgets every tracked key (`release_all`)
-- `PointerEventManager` (`pointer_down/up/move`, and `wheel` with the
-  pointer's position and the movement `(x, y, dx, dy)`, client only) and
+- `PointerEventManager` (`pointer_down/up/move`, and `wheel`, dispatched
+  at the pointer's position with the movement, `(x, y, dx, dy)`, `dy`
+  positive away from the user, with a receive-through set of its own,
+  `set_wheel_receive_through`, since the page receives the pointer events
+  through and must not zoom under a list) and
   `FileSystemDropEventManager` (`file_dropped`): owners are Controls; dispatch
   is hit-tested instead of broadcast: only visible controls under the point,
   top-most first; a falsy return consumes the event; `set_receive_through`
@@ -324,8 +327,11 @@ viewport over a content control larger than itself (`get_content`,
 press, drag, release, no further than its edges, holding the pointer
 meanwhile, and scrolled with the wheel over it by `SCROLL_VIEW_WHEEL_STEP`
 units a notch (`set_wheel_step` for another step: the monitor's panes by
-lines, a selection box's list by rows), consumed whether or not the
-content overflows, so the page under a side panel's list keeps its zoom.
+lines, a selection box's list by `SELECTION_BOX_WHEEL_ROWS` rows),
+consumed whether or not the content overflows, so the page under a side
+panel's list keeps its zoom; a hover or a highlight follows the pointer
+only on a move, so what scrolled under a still pointer keeps its state
+until the next move, as under a drag.
 Optional indicators of a fixed size (`SCROLL_VIEW_INDICATOR_*`)
 along the overflowed edges mark where the view is. The token panel and the
 workspace's details keep what is above their buttons in one, the
