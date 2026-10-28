@@ -2,41 +2,35 @@ local MenuScreen = require("screens.menu-screen")
 local MenuText = require("ui.menu.menu-text")
 local MenuTextButton = require("ui.menu.menu-text-button")
 
----@class GamesScreen: MenuScreen
+---@class DeleteGameScreen: MenuScreen
 ---@field private _session Session
-local GamesScreen = class("GamesScreen", MenuScreen)
+local DeleteGameScreen = class("DeleteGameScreen", MenuScreen)
 
 ---@param session Session
----@param games GameInfo[] In the order the buttons list them
-function GamesScreen:init(session, games)
+---@param games GameInfo[] The games the user may delete, in the order the buttons list them
+function DeleteGameScreen:init(session, games)
     assert(session)
     self._session = session
     ---@type MenuEntry[]
     local entries = {}
     if #games == 0 then
-        table.insert(entries, MenuText(self, "No games yet"))
+        table.insert(entries, MenuText(self, "No games to delete"))
     end
     for _, info in ipairs(games) do
         table.insert(entries, MenuTextButton(self, info.name, function()
-            self:join_game(info.id)
+            self:pick(info.id, info.name)
         end))
     end
-    table.insert(entries, MenuTextButton(self, "New Game", function()
-        self:new_game()
-    end))
     table.insert(entries, MenuTextButton(self, "Back", function()
         app.backstack_manager:back()
     end))
-    MenuScreen.init(self, "Games", entries)
+    MenuScreen.init(self, "Delete Game", entries)
 end
 
 ---@param id string
-function GamesScreen:join_game(id)
-    self._session:join_game(id)
+---@param name string
+function DeleteGameScreen:pick(id, name)
+    self._session:confirm_delete_game(id, name)
 end
 
-function GamesScreen:new_game()
-    self._session:show_new_game()
-end
-
-return GamesScreen
+return DeleteGameScreen

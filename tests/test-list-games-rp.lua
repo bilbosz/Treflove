@@ -1,5 +1,8 @@
 local test = require("tests.lib.test")
 local mocks = require("tests.lib.mocks")
+local lifetime = require("lifetime")
+local Connection = require("networking.connection")
+local Session = require("game.session")
 
 ---@return GameData
 local function game_data()
@@ -8,7 +11,21 @@ local function game_data()
         game = {
             page = "P"
         },
-        groups = {},
+        groups = {
+            master = {
+                title = "Game master",
+                permissions = {
+                    "read",
+                    "write"
+                }
+            },
+            player = {
+                title = "Player",
+                permissions = {
+                    "read"
+                }
+            }
+        },
         players = {
             adam = {
                 group = "master"
@@ -44,7 +61,7 @@ end
 
 test.suite("ListGamesRp")
 
-test.case("a logged-in session gets every game by name, then by id, and whether it plays in it; before the login, none", function()
+test.case("a logged-in session gets every game by name, then by id, whether it plays in it and whether it may delete it; before the login, none", function()
     local side = mocks.make_server_session(game_data, {
         ["s/games/a-zoo/save.lua"] = save_of("A Zoo"),
         ["s/games/a-zoo-2/save.lua"] = save_of("A Zoo")
@@ -55,18 +72,32 @@ test.case("a logged-in session gets every game by name, then by id, and whether 
         {
             id = "a-zoo",
             name = "A Zoo",
-            member = false
+            member = false,
+            deletable = false
         },
         {
             id = "a-zoo-2",
             name = "A Zoo",
-            member = false
+            member = false,
+            deletable = false
         },
         {
             id = mocks.GAME_ID,
             name = "Meadow",
-            member = true
+            member = true,
+            deletable = false
         }
     })
+    lifetime.destroy(side.connection)
+    side.connection = Connection(mocks.make_channel(), mocks.make_channel())
+    side.session = Session(side.connection):attach_lifetime(side.connection)
+    test.assert_eq(mocks.log_in(side.connection, "adam"), "adam")
+    test.assert_deep_eq(list(side)[3], {
+        id = mocks.GAME_ID,
+        name = "Meadow",
+        member = true,
+        deletable = true
+    }, "the master may delete the game")
+    test.assert_true(list(side)[1].deletable, "and the master of A Zoo as the save makes it")
     mocks.finish_server_session(side)
 end)

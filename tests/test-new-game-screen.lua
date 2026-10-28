@@ -35,7 +35,7 @@ end
 
 test.suite("NewGameScreen")
 
-test.case("titled New Game: a Name field, Create and Back", function()
+test.case("titled Create Game: a Name field, Create and Back", function()
     with_screen(function(screen)
         test.assert_eq(#menu_client.find_all(screen, "TextInput"), 1)
         test.assert_deep_eq(menu_client.captions(screen), {
@@ -43,7 +43,7 @@ test.case("titled New Game: a Name field, Create and Back", function()
             "Back"
         })
         test.assert_deep_eq(menu_client.texts(screen), {
-            "New Game",
+            "Create Game",
             "Name"
         })
     end)

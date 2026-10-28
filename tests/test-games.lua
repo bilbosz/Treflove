@@ -203,6 +203,51 @@ test.case("a fresh root has no games; the first game makes the games directory a
     end)
 end)
 
+test.case("a deleted game is gone with its directory, no longer listed, and its id is free for a new game", function()
+    with_games({
+        ["server/template/save.lua"] = template(),
+        ["s/games/meadow/save.lua"] = save_of("Meadow"),
+        ["s/games/meadow/assets/world/w.png"] = "W",
+        ["s/games/old-town/save.lua"] = save_of("Old Town")
+    }, function(games)
+        local game = assert(games:get("meadow"))
+        games:delete("meadow")
+        test.assert_eq(games:get("meadow"), nil)
+        test.assert_eq(love.filesystem.getInfo("s/games/meadow"), nil)
+        test.assert_deep_eq(games:list(), {
+            "old-town"
+        })
+        test.assert_eq(game:get_name(), "Meadow", "the object a holder keeps is unchanged")
+        local again = assert(games:create("Meadow", "frodo"))
+        test.assert_true(again ~= game, "a new game under the id")
+        test.assert_eq(love.filesystem.getInfo("s/games/meadow/assets/world/w.png"), nil, "nothing of the old one")
+        test.assert_error(function()
+            games:delete("none")
+        end)
+    end)
+end)
+
+test.case("a game answers whether a login's grants in it allow an action: a player's, resolved from the data; nothing for anyone else", function()
+    local side = mocks.make_server_session(mocks.entries_game_data, {})
+    ---@type boolean, any
+    local ok, err = pcall(function()
+        local game = assert(assert(side.server.games):get(mocks.GAME_ID))
+        test.assert_true(game:allows("adam", "write", "game"))
+        test.assert_true(game:allows("adam", "read"))
+        test.assert_false(game:allows("piotr", "write", "game"))
+        test.assert_true(game:allows("piotr", "read", "groups"))
+        test.assert_false(game:allows("nobody", "read"))
+        game:get_data().players.piotr.permissions = {
+            "write:game"
+        }
+        test.assert_true(game:allows("piotr", "write", "game"), "read from the data at the moment of the question")
+    end)
+    mocks.finish_server_session(side)
+    if not ok then
+        error(err, 0)
+    end
+end)
+
 test.case("a new game is refused without a letter or a digit, with a name too long, or where a game is", function()
     with_games({
         ["server/template/save.lua"] = template(),

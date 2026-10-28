@@ -12,9 +12,8 @@ local SERVER_GAME = [[
 ---@param driver ScenarioDriver
 return function(driver)
     steps.sign_up(driver, LOGIN, "Frodo", "ring")
-    driver:click("TextButton", "Games")
-    driver:wait_screen("GamesScreen")
-    driver:click("TextButton", "New Game")
+    steps.open_games_menu(driver)
+    driver:click("TextButton", "Create")
     driver:wait_screen("NewGameScreen")
     driver:click("TextInput", nil, 1)
     driver:type(NAME)
@@ -27,8 +26,9 @@ return function(driver)
 
     driver:key(Consts.BACKSTACK_KEY)
     driver:wait_screen("UserMenuScreen")
-    driver:click("TextButton", "Games")
-    driver:wait_screen("GamesScreen")
+    steps.open_games_menu(driver)
+    driver:click("TextButton", "Join")
+    driver:wait_screen("JoinGameScreen")
     driver:find("TextButton", NAME)
 
     local body = driver:server(SERVER_GAME)

@@ -15,6 +15,8 @@ local AssetList = require("game.assets.workspace.asset-list")
 local AssetsWorkspaceScreen = require("game.assets.workspace.assets-workspace-screen")
 local PreviewArea = require("game.assets.preview-area.preview-area")
 local CreateGameRp = require("game.create-game-rp")
+local DeleteGameRp = require("game.delete-game-rp")
+local GameDeletedRp = require("game.game-deleted-rp")
 local GameDataRp = require("game.game-data-rp")
 local GameScreen = require("game.game-screen")
 local ListGamesRp = require("game.list-games-rp")
@@ -26,7 +28,10 @@ local LogoutRp = require("login.logout-rp")
 local SignUpScreen = require("login.sign-up-screen")
 local Connection = require("networking.connection")
 local ConnectionManager = require("networking.connection-manager")
-local GamesScreen = require("screens.games-screen")
+local ConfirmDeleteGameScreen = require("screens.confirm-delete-game-screen")
+local DeleteGameScreen = require("screens.delete-game-screen")
+local JoinGameScreen = require("screens.join-game-screen")
+local GamesMenuScreen = require("screens.games-menu-screen")
 local NewGameScreen = require("screens.new-game-screen")
 local OptionsMenuScreen = require("screens.options-menu-screen")
 local ScreenManager = require("screens.screen-manager")
@@ -288,13 +293,18 @@ local CLASSES = {
     GameDataRp = GameDataRp,
     ListGamesRp = ListGamesRp,
     CreateGameRp = CreateGameRp,
+    DeleteGameRp = DeleteGameRp,
+    GameDeletedRp = GameDeletedRp,
     UploadAssetRp = UploadAssetRp,
     DownloadAssetRp = DownloadAssetRp,
     DownloadMissingAssetsRp = DownloadMissingAssetsRp,
     LoginScreen = LoginScreen,
     SignUpScreen = SignUpScreen,
     UserMenuScreen = UserMenuScreen,
-    GamesScreen = GamesScreen,
+    ConfirmDeleteGameScreen = ConfirmDeleteGameScreen,
+    DeleteGameScreen = DeleteGameScreen,
+    JoinGameScreen = JoinGameScreen,
+    GamesMenuScreen = GamesMenuScreen,
     NewGameScreen = NewGameScreen,
     OptionsMenuScreen = OptionsMenuScreen,
     WaitingScreen = WaitingScreen,
@@ -514,6 +524,8 @@ flow_case("connect and log in: the session owns the period, which owns the menu,
         "GameDataRp",
         "ListGamesRp",
         "CreateGameRp",
+        "DeleteGameRp",
+        "GameDeletedRp",
         "UpdateTokenRp",
         "TokenChangedRp",
         "CreateTokenRp",
@@ -561,6 +573,8 @@ flow_case("connect: the login screen is the session's; signing in through its fi
         "GameDataRp",
         "ListGamesRp",
         "CreateGameRp",
+        "DeleteGameRp",
+        "GameDeletedRp",
         "UpdateTokenRp",
         "TokenChangedRp",
         "CreateTokenRp",
@@ -608,6 +622,8 @@ flow_case("connect: the login screen is the session's; signing in through its fi
         "GameDataRp",
         "ListGamesRp",
         "CreateGameRp",
+        "DeleteGameRp",
+        "GameDeletedRp",
         "UpdateTokenRp",
         "TokenChangedRp",
         "CreateTokenRp",
@@ -653,6 +669,8 @@ flow_case("disconnect before the login: the login screen dies with the session, 
         "DownloadMissingAssetsRp:release(anchor)",
         "DownloadAssetRp:release(anchor)",
         "UploadAssetRp:release(anchor)",
+        "GameDeletedRp:release(anchor)",
+        "DeleteGameRp:release(anchor)",
         "CreateGameRp:release(anchor)",
         "ListGamesRp:release(anchor)",
         "GameDataRp:release(anchor)",
@@ -856,6 +874,8 @@ flow_case("the assets workspace from the game dies with the period on a disconne
         "DownloadMissingAssetsRp:release(anchor)",
         "DownloadAssetRp:release(anchor)",
         "UploadAssetRp:release(anchor)",
+        "GameDeletedRp:release(anchor)",
+        "DeleteGameRp:release(anchor)",
         "CreateGameRp:release(anchor)",
         "ListGamesRp:release(anchor)",
         "GameDataRp:release(anchor)",
@@ -948,6 +968,8 @@ flow_case("logout: the period dies with the menu, the options and the back entri
         "GameDataRp",
         "ListGamesRp",
         "CreateGameRp",
+        "DeleteGameRp",
+        "GameDeletedRp",
         "UpdateTokenRp",
         "TokenChangedRp",
         "CreateTokenRp",
@@ -1015,6 +1037,8 @@ flow_case("logging in again from the login screen: the screen dies at the login 
         "GameDataRp",
         "ListGamesRp",
         "CreateGameRp",
+        "DeleteGameRp",
+        "GameDeletedRp",
         "UpdateTokenRp",
         "TokenChangedRp",
         "CreateTokenRp",
@@ -1084,6 +1108,8 @@ flow_case("disconnect: one cascade per side, the connection first, then the sess
         "DownloadMissingAssetsRp:release(anchor)",
         "DownloadAssetRp:release(anchor)",
         "UploadAssetRp:release(anchor)",
+        "GameDeletedRp:release(anchor)",
+        "DeleteGameRp:release(anchor)",
         "CreateGameRp:release(anchor)",
         "ListGamesRp:release(anchor)",
         "GameDataRp:release(anchor)",
@@ -1113,6 +1139,8 @@ flow_case("disconnect: one cascade per side, the connection first, then the sess
         "DownloadMissingAssetsRp:release(anchor)",
         "DownloadAssetRp:release(anchor)",
         "UploadAssetRp:release(anchor)",
+        "GameDeletedRp:release(anchor)",
+        "DeleteGameRp:release(anchor)",
         "CreateGameRp:release(anchor)",
         "ListGamesRp:release(anchor)",
         "GameDataRp:release(anchor)",
@@ -1138,6 +1166,8 @@ flow_case("quit: remove_all tears every connection down in order, as love.quit d
         "DownloadMissingAssetsRp:release(anchor)",
         "DownloadAssetRp:release(anchor)",
         "UploadAssetRp:release(anchor)",
+        "GameDeletedRp:release(anchor)",
+        "DeleteGameRp:release(anchor)",
         "CreateGameRp:release(anchor)",
         "ListGamesRp:release(anchor)",
         "GameDataRp:release(anchor)",
@@ -1150,6 +1180,8 @@ flow_case("quit: remove_all tears every connection down in order, as love.quit d
         "DownloadMissingAssetsRp:release(anchor)",
         "DownloadAssetRp:release(anchor)",
         "UploadAssetRp:release(anchor)",
+        "GameDeletedRp:release(anchor)",
+        "DeleteGameRp:release(anchor)",
         "CreateGameRp:release(anchor)",
         "ListGamesRp:release(anchor)",
         "GameDataRp:release(anchor)",
@@ -1164,16 +1196,17 @@ flow_case("quit: remove_all tears every connection down in order, as love.quit d
 end)
 
 ---@param flow TestFlow Logged in, on the menu
----@return GamesScreen
+---@return JoinGameScreen
 local function show_the_games(flow)
     local client, server = flow.client, flow.server
     app = client
-    client.session:show_games()
-    test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "UserMenuScreen", "nothing before the listing is in")
+    client.session:show_games_menu()
+    client.session:show_join_game()
+    test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "GamesMenuScreen", "nothing before the listing is in")
     frame(server)
     frame(client)
-    local screen = client.screen_manager:get_screen() --[[@as GamesScreen]]
-    test.assert_eq(get_class_name_of(screen), "GamesScreen")
+    local screen = client.screen_manager:get_screen() --[[@as JoinGameScreen]]
+    test.assert_eq(get_class_name_of(screen), "JoinGameScreen")
     return screen
 end
 
@@ -1184,16 +1217,23 @@ local function log_in_to_the_menu()
     return flow
 end
 
-flow_case("the games: listed under the period with a way back of their own; back shows the menu and destroys them", function(flow)
+flow_case("the games: listed under the period with a way back of their own; back shows Games again and destroys them, and its back the menu", function(flow)
     local client = flow.client
     local menu = client.screen_manager:get_screen()
     local logout_entry = client.backstack_manager:get_top()
     local games = show_the_games(flow)
     ---@diagnostic disable-next-line: invisible
+    local manage = assert(client.session._games_menu_screen)
+    ---@diagnostic disable-next-line: invisible
     test.assert_deep_eq(class_names(lifetime.dependents(client.session._period)), {
         "UserMenuScreen",
         "BackstackEntry",
-        "GamesScreen"
+        "GamesMenuScreen",
+        "JoinGameScreen"
+    })
+    local manage_dependents = lifetime.dependents(manage)
+    test.assert_deep_eq(class_names_but_hooks(manage_dependents), {
+        "BackstackEntry"
     })
     local games_dependents = lifetime.dependents(games)
     test.assert_deep_eq(class_names_but_hooks(games_dependents), {
@@ -1206,12 +1246,24 @@ flow_case("the games: listed under the period with a way back of their own; back
         client.backstack_manager:back()
     end)
     test.assert_deep_eq(log, {
-        "GamesScreen:release(destroy)"
+        "JoinGameScreen:release(destroy)"
+    })
+    test.assert_eq(client.screen_manager:get_screen(), manage)
+    test.assert_eq(client.backstack_manager:get_top(), manage_dependents[#manage_dependents])
+    ---@diagnostic disable-next-line: invisible
+    test.assert_eq(client.session._join_game_screen, nil)
+
+    log = {}
+    with_release_log(log, function()
+        client.backstack_manager:back()
+    end)
+    test.assert_deep_eq(log, {
+        "GamesMenuScreen:release(destroy)"
     })
     test.assert_eq(client.screen_manager:get_screen(), menu)
     test.assert_eq(client.backstack_manager:get_top(), logout_entry)
     ---@diagnostic disable-next-line: invisible
-    test.assert_eq(client.session._games_screen, nil)
+    test.assert_eq(client.session._games_menu_screen, nil)
     ---@diagnostic disable-next-line: invisible
     test.assert_deep_eq(class_names(lifetime.dependents(client.session._period)), {
         "UserMenuScreen",
@@ -1224,33 +1276,35 @@ flow_case("a listing asked for again replaces the games screen; one that answers
     local first = show_the_games(flow)
     local log = {}
     with_release_log(log, function()
-        client.session:show_games()
+        client.session:show_join_game()
         frame(server)
         frame(client)
     end)
     test.assert_deep_eq(log, {
-        "GamesScreen:release(destroy)"
+        "JoinGameScreen:release(destroy)"
     }, "the first screen, once the second is shown")
     test.assert_false(lifetime.alive(first))
     ---@diagnostic disable-next-line: invisible
     test.assert_deep_eq(class_names(lifetime.dependents(client.session._period)), {
         "UserMenuScreen",
         "BackstackEntry",
-        "GamesScreen"
+        "GamesMenuScreen",
+        "JoinGameScreen"
     })
 
     client.backstack_manager:back()
-    client.session:show_games()
+    client.session:show_join_game()
     client.session:logout()
     frame(server)
     frame(client)
     test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "LoginScreen", "the listing came after the logout")
 end, log_in_to_the_menu)
 
-flow_case("the new game over the games: back shows the games again; a join destroys both, so the game's entry is right above the logout's", function(flow)
+flow_case("the new game from Games: back shows Games again; a join destroys both, so the game's entry is right above the logout's", function(flow)
     local client = flow.client
     local logout_entry = client.backstack_manager:get_top()
-    local games = show_the_games(flow)
+    client.session:show_games_menu()
+    local manage = client.screen_manager:get_screen()
     client.session:show_new_game()
     local new_game = client.screen_manager:get_screen()
     test.assert_eq(get_class_name_of(new_game), "NewGameScreen")
@@ -1258,9 +1312,14 @@ flow_case("the new game over the games: back shows the games again; a join destr
     test.assert_deep_eq(class_names(lifetime.dependents(client.session._period)), {
         "UserMenuScreen",
         "BackstackEntry",
-        "GamesScreen",
+        "GamesMenuScreen",
         "NewGameScreen"
     })
+    local new_game_dependents = lifetime.dependents(assert(new_game))
+    test.assert_deep_eq(class_names_but_hooks(new_game_dependents), {
+        "BackstackEntry"
+    })
+    test.assert_eq(client.backstack_manager:get_top(), new_game_dependents[#new_game_dependents])
     local log = {}
     with_release_log(log, function()
         client.backstack_manager:back()
@@ -1268,7 +1327,10 @@ flow_case("the new game over the games: back shows the games again; a join destr
     test.assert_deep_eq(log, {
         "NewGameScreen:release(destroy)"
     })
-    test.assert_eq(client.screen_manager:get_screen(), games)
+    test.assert_eq(client.screen_manager:get_screen(), manage)
+    test.assert_eq(get_class_name_of(client.backstack_manager:get_top()), "BackstackEntry")
+    ---@diagnostic disable-next-line: invisible
+    test.assert_eq(client.session._new_game_screen, nil)
 
     client.session:show_new_game()
     new_game = client.screen_manager:get_screen()
@@ -1278,10 +1340,10 @@ flow_case("the new game over the games: back shows the games again; a join destr
     end)
     test.assert_deep_eq(log, {
         "NewGameScreen:release(destroy)",
-        "GamesScreen:release(destroy)"
+        "GamesMenuScreen:release(destroy)"
     })
-    test.assert_false(lifetime.alive(games))
     test.assert_false(lifetime.alive(new_game))
+    test.assert_false(lifetime.alive(manage))
     load_the_game(flow)
     ---@diagnostic disable-next-line: invisible
     test.assert_deep_eq(class_names(lifetime.dependents(client.session._period)), {
@@ -1292,6 +1354,97 @@ flow_case("the new game over the games: back shows the games again; a join destr
     client.backstack_manager:back()
     test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "UserMenuScreen")
     test.assert_eq(client.backstack_manager:get_top(), logout_entry)
+end, log_in_to_the_menu)
+
+flow_case("a join from the games list destroys it and Games, so the game's entry is right above the logout's", function(flow)
+    local client = flow.client
+    local logout_entry = client.backstack_manager:get_top()
+    local games = show_the_games(flow)
+    local log = {}
+    with_release_log(log, function()
+        client.session:join_game(mocks.GAME_ID)
+    end)
+    test.assert_deep_eq(log, {
+        "JoinGameScreen:release(destroy)",
+        "GamesMenuScreen:release(destroy)"
+    })
+    test.assert_false(lifetime.alive(games))
+    ---@diagnostic disable-next-line: invisible
+    test.assert_eq(client.session._join_game_screen, nil)
+    ---@diagnostic disable-next-line: invisible
+    test.assert_eq(client.session._games_menu_screen, nil)
+    load_the_game(flow)
+    ---@diagnostic disable-next-line: invisible
+    test.assert_deep_eq(class_names(lifetime.dependents(client.session._period)), {
+        "UserMenuScreen",
+        "BackstackEntry",
+        "GameScreen"
+    })
+    client.backstack_manager:back()
+    test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "UserMenuScreen")
+    test.assert_eq(client.backstack_manager:get_top(), logout_entry)
+end, log_in_to_the_menu)
+
+flow_case("a game deleted: the games to delete listed under Games, the question over them, the deleter's answer closes both over Games, the server has no such game, and a session in it is out of it",
+          function(flow)
+    local client, server = flow.client, flow.server
+    client.session:show_games_menu()
+    local menu = client.screen_manager:get_screen()
+    client.session:show_delete_game()
+    test.assert_eq(client.screen_manager:get_screen(), menu, "nothing before the listing is in")
+    frame(server)
+    frame(client)
+    local list = client.screen_manager:get_screen()
+    test.assert_eq(get_class_name_of(list), "DeleteGameScreen")
+    client.session:confirm_delete_game(mocks.GAME_ID, "G")
+    local question = client.screen_manager:get_screen()
+    test.assert_eq(get_class_name_of(question), "ConfirmDeleteGameScreen")
+    ---@diagnostic disable-next-line: invisible
+    test.assert_deep_eq(class_names(lifetime.dependents(client.session._period)), {
+        "UserMenuScreen",
+        "BackstackEntry",
+        "GamesMenuScreen",
+        "DeleteGameScreen",
+        "ConfirmDeleteGameScreen"
+    })
+    local log = {}
+    with_release_log(log, function()
+        client.backstack_manager:back()
+    end)
+    test.assert_deep_eq(log, {
+        "ConfirmDeleteGameScreen:release(destroy)"
+    })
+    test.assert_eq(client.screen_manager:get_screen(), list, "No: the games to delete again")
+
+    client.session:confirm_delete_game(mocks.GAME_ID, "G")
+    client.session:delete_game(mocks.GAME_ID)
+    log = {}
+    with_release_log(log, function()
+        frame(server)
+        frame(client)
+    end)
+    test.assert_deep_eq(log, {
+        "ConfirmDeleteGameScreen:release(destroy)",
+        "DeleteGameScreen:release(destroy)"
+    })
+    test.assert_eq(client.screen_manager:get_screen(), menu)
+    ---@diagnostic disable-next-line: invisible
+    test.assert_deep_eq(class_names(lifetime.dependents(client.session._period)), {
+        "UserMenuScreen",
+        "BackstackEntry",
+        "GamesMenuScreen"
+    })
+    local notifications = client.notification_manager --[[@as TestNotificationManager]]
+    test.assert_eq(notifications.messages[#notifications.messages], "The game \"G\" was deleted")
+    app = server
+    test.assert_eq(assert(server.games):get(mocks.GAME_ID), nil)
+    test.assert_deep_eq(assert(server.games):list(), {})
+    app = client
+    client.session:join_game(mocks.GAME_ID)
+    frame(server)
+    frame(client)
+    test.assert_eq(notifications.messages[#notifications.messages], "No such game")
+    test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "UserMenuScreen")
 end, log_in_to_the_menu)
 
 flow_case("a game that is not there: the refusal is notified and the menu shown", function(flow)
@@ -1309,14 +1462,14 @@ end, log_in_to_the_menu)
 
 flow_case("a new game: made from the template on the server, its creator the master and the owner of its token, and joined", function(flow)
     local client, server = flow.client, flow.server
-    show_the_games(flow)
+    client.session:show_games_menu()
     client.session:show_new_game()
     client.session:create_game("The Shire!")
     frame(server)
     frame(client)
     test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "WaitingScreen", "created: the game is joined")
     ---@diagnostic disable-next-line: invisible
-    test.assert_eq(client.session._games_screen, nil)
+    test.assert_eq(client.session._join_game_screen, nil)
     ---@diagnostic disable-next-line: invisible
     test.assert_eq(client.session._new_game_screen, nil)
     frame(server)
@@ -1347,12 +1500,14 @@ flow_case("a new game: made from the template on the server, its creator the mas
         {
             id = "g",
             name = "G",
-            member = true
+            member = true,
+            deletable = true
         },
         {
             id = "the-shire",
             name = "The Shire!",
-            member = true
+            member = true,
+            deletable = true
         }
     })
 
@@ -1362,7 +1517,7 @@ flow_case("a new game: made from the template on the server, its creator the mas
     frame(client)
     local notifications = client.notification_manager --[[@as TestNotificationManager]]
     test.assert_eq(notifications.messages[#notifications.messages], "A game named \"The Shire!\" exists already")
-    test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "GamesScreen", "a refusal joins nothing")
+    test.assert_eq(get_class_name_of(client.screen_manager:get_screen()), "JoinGameScreen", "a refusal joins nothing")
 end, log_in_to_the_menu)
 
 flow_case("sign up: the screen is the session's with a way back; the account is made and the client logged in, both screens destroyed at the login", function(flow)

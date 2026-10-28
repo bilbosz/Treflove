@@ -52,12 +52,38 @@ end
 ---@param game string|nil The game's name, defaults to `steps.GAME`
 ---@return GameScreen
 function steps.enter_game(driver, game)
-    driver:click("TextButton", "Games")
-    driver:wait_screen("GamesScreen")
+    steps.open_games_menu(driver)
+    driver:click("TextButton", "Join")
+    driver:wait_screen("JoinGameScreen")
     driver:click("TextButton", game or steps.GAME)
     local screen = driver:wait_screen("GameScreen") --[[@as GameScreen]]
     driver:log("in the game")
     return screen
+end
+
+---@param driver ScenarioDriver On the user menu
+---@return GamesMenuScreen
+function steps.open_games_menu(driver)
+    driver:click("TextButton", "Games")
+    return driver:wait_screen("GamesMenuScreen") --[[@as GamesMenuScreen]]
+end
+
+---@param driver ScenarioDriver On the user menu
+---@return DeleteGameScreen The games the player may delete
+function steps.open_delete_game(driver)
+    steps.open_games_menu(driver)
+    driver:click("TextButton", "Delete")
+    return driver:wait_screen("DeleteGameScreen") --[[@as DeleteGameScreen]]
+end
+
+---@param driver ScenarioDriver On the user menu
+---@param name string The game's name, picked among the games to delete and confirmed with Yes; the caller waits for the outcome
+function steps.delete_game(driver, name)
+    steps.open_delete_game(driver)
+    driver:click("TextButton", name)
+    driver:wait_screen("ConfirmDeleteGameScreen")
+    driver:click("TextButton", "Yes")
+    driver:log("asked to delete the game " .. name)
 end
 
 ---@param driver ScenarioDriver In the game
