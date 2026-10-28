@@ -23,7 +23,7 @@ local steps = require("scenarios.lib.steps")
 
 ---@param driver ScenarioDriver
 return function(driver)
-    local game = steps.join_game(driver)                 -- the login, "Manage Games", "Join Game" and the game "Meadow", as adam
+    local game = steps.join_game(driver)                 -- the login, "Games", "Join Game" and the game "Meadow", as adam
     driver:click("TextButton", "Assets")                 -- a control by class and caption
     driver:wait_screen("AssetsWorkspaceScreen")
     driver:expect(driver:try_find("AssetListRow", "token/"), "the store's token folder is listed")

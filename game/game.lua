@@ -1,6 +1,8 @@
 local Asset = require("data.asset")
 local AssetStore = require("data.asset-store")
+local PermissionSet = require("game.permission-set")
 local lifetime = require("lifetime")
+local permissions = require("game.permissions")
 
 ---@class Game: Object
 ---@field private _id string
@@ -57,6 +59,19 @@ function Game:add_player(login, group)
         group = group
     }
     self:save()
+end
+
+---@param login string
+---@param action permissions.Action
+---@param kind permissions.Kind|nil
+---@param key string|nil
+---@return boolean Whether the login is a player of the game whose grants in it, resolved from the data now, allow it
+function Game:allows(login, action, kind, key)
+    if not self._data.players[login] then
+        return false
+    end
+    local set = PermissionSet(login, permissions.resolve(self._data, login), self._data)
+    return set:allows(action, kind, key)
 end
 
 ---@param session Session

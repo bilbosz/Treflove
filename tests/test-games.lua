@@ -227,6 +227,27 @@ test.case("a deleted game is gone with its directory, no longer listed, and its 
     end)
 end)
 
+test.case("a game answers whether a login's grants in it allow an action: a player's, resolved from the data; nothing for anyone else", function()
+    local side = mocks.make_server_session(mocks.entries_game_data, {})
+    ---@type boolean, any
+    local ok, err = pcall(function()
+        local game = assert(assert(side.server.games):get(mocks.GAME_ID))
+        test.assert_true(game:allows("adam", "write", "game"))
+        test.assert_true(game:allows("adam", "read"))
+        test.assert_false(game:allows("piotr", "write", "game"))
+        test.assert_true(game:allows("piotr", "read", "groups"))
+        test.assert_false(game:allows("nobody", "read"))
+        game:get_data().players.piotr.permissions = {
+            "write:game"
+        }
+        test.assert_true(game:allows("piotr", "write", "game"), "read from the data at the moment of the question")
+    end)
+    mocks.finish_server_session(side)
+    if not ok then
+        error(err, 0)
+    end
+end)
+
 test.case("a new game is refused without a letter or a digit, with a name too long, or where a game is", function()
     with_games({
         ["server/template/save.lua"] = template(),

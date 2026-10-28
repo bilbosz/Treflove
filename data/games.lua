@@ -7,6 +7,7 @@ local fixture = require("data.fixture")
 ---@field id string
 ---@field name string
 ---@field member boolean Whether the asking login is among the game's players
+---@field deletable boolean Whether the asking login may delete the game: a player with `write` on `game` in it
 
 ---@class Games: Object
 ---@field private _root string

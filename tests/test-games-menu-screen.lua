@@ -1,47 +1,47 @@
 local test = require("tests.lib.test")
 local menu_client = require("tests.lib.menu-client")
-local ManageGamesScreen = require("screens.manage-games-screen")
+local GamesMenuScreen = require("screens.games-menu-screen")
 local Session = require("game.session")
 
----@class TestManageGamesSession: Session
+---@class TestGamesMenuSession: Session
 ---@field calls string[] The session calls the screen made, in order
-local TestManageGamesSession = class("TestManageGamesSession", Session)
+local TestGamesMenuSession = class("TestGamesMenuSession", Session)
 
-function TestManageGamesSession:init()
+function TestGamesMenuSession:init()
     self.calls = {}
 end
 
-function TestManageGamesSession:show_new_game()
+function TestGamesMenuSession:show_new_game()
     table.insert(self.calls, "show_new_game")
 end
 
-function TestManageGamesSession:show_games()
-    table.insert(self.calls, "show_games")
+function TestGamesMenuSession:show_join_game()
+    table.insert(self.calls, "show_join_game")
 end
 
-function TestManageGamesSession:show_delete_game()
+function TestGamesMenuSession:show_delete_game()
     table.insert(self.calls, "show_delete_game")
 end
 
----@param fn fun(screen: ManageGamesScreen, session: TestManageGamesSession)
+---@param fn fun(screen: GamesMenuScreen, session: TestGamesMenuSession)
 local function with_screen(fn)
     menu_client.install()
-    local session = TestManageGamesSession()
-    local screen = ManageGamesScreen(session)
+    local session = TestGamesMenuSession()
+    local screen = GamesMenuScreen(session)
     menu_client.with_screen(screen, function()
         fn(screen, session)
     end)
 end
 
----@param screen ManageGamesScreen
+---@param screen GamesMenuScreen
 ---@param caption string
 local function click(screen, caption)
     menu_client.click(menu_client.button(screen, caption))
 end
 
-test.suite("ManageGamesScreen")
+test.suite("GamesMenuScreen")
 
-test.case("titled Manage Games: New Game, Join Game, Delete Game and Back", function()
+test.case("titled Games: New Game, Join Game, Delete Game and Back", function()
     with_screen(function(screen)
         test.assert_deep_eq(menu_client.captions(screen), {
             "New Game",
@@ -50,7 +50,7 @@ test.case("titled Manage Games: New Game, Join Game, Delete Game and Back", func
             "Back"
         })
         test.assert_deep_eq(menu_client.texts(screen), {
-            "Manage Games"
+            "Games"
         })
     end)
 end)
@@ -62,7 +62,7 @@ test.case("each entry asks the session for its screen", function()
         click(screen, "Delete Game")
         test.assert_deep_eq(session.calls, {
             "show_new_game",
-            "show_games",
+            "show_join_game",
             "show_delete_game"
         })
     end)

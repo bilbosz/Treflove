@@ -159,18 +159,41 @@ local function client_case(name, fn)
     end)
 end
 
----@param client GameClient Back on the menu, Manage Games and Delete Game opened
+---@param client GameClient Back on the menu, Games, Delete Game with its listing in, and the question about the game opened
+---@return Screen The games to delete
+---@return Screen The question
 local function open_delete_game(client)
     client.app.backstack_manager:back()
     test.assert_eq(get_class_name_of(client.app.screen_manager:get_screen()), "UserMenuScreen")
-    client.session:show_manage_games()
+    client.session:show_games_menu()
     client.session:show_delete_game()
-    test.assert_eq(get_class_name_of(client.app.screen_manager:get_screen()), "DeleteGameScreen")
+    test.assert_deep_eq(game_client.pop_request(client, "ListGamesRp"), {})
+    game_client.answer(client, "ListGamesRp", {
+        games = {
+            {
+                id = mocks.GAME_ID,
+                name = "Meadow",
+                member = true,
+                deletable = true
+            },
+            {
+                id = "other",
+                name = "Other",
+                member = false,
+                deletable = false
+            }
+        }
+    })
+    local list = assert(client.app.screen_manager:get_screen())
+    test.assert_eq(get_class_name_of(list), "DeleteGameScreen")
+    client.session:confirm_delete_game(mocks.GAME_ID, "Meadow")
+    local question = assert(client.app.screen_manager:get_screen())
+    test.assert_eq(get_class_name_of(question), "ConfirmDeleteGameScreen")
+    return list, question
 end
 
-client_case("the client: a deletion the server accepted is notified, drops the game's data and its copies, and closes Delete Game", function(client)
-    open_delete_game(client)
-    local delete_screen = assert(client.app.screen_manager:get_screen())
+client_case("the client: a deletion the server accepted is notified, drops the game's data and its copies, and closes the question and the list over Games", function(client)
+    local list, question = open_delete_game(client)
     client.session:delete_game(mocks.GAME_ID)
     test.assert_deep_eq(game_client.pop_request(client, "DeleteGameRp"), {
         id = mocks.GAME_ID
@@ -188,13 +211,13 @@ client_case("the client: a deletion the server accepted is notified, drops the g
     test.assert_eq(client.session:get_game_id(), nil)
     test.assert_eq(client.app.asset_manager:get_store(), nil)
     test.assert_eq(love.filesystem.getInfo("c/games/" .. mocks.GAME_ID), nil, "the client's copies")
-    test.assert_false(lifetime.alive(delete_screen))
-    test.assert_eq(get_class_name_of(client.app.screen_manager:get_screen()), "ManageGamesScreen")
+    test.assert_false(lifetime.alive(question))
+    test.assert_false(lifetime.alive(list))
+    test.assert_eq(get_class_name_of(client.app.screen_manager:get_screen()), "GamesMenuScreen")
 end)
 
-client_case("the client: a refusal is notified and Delete Game stays, the data kept", function(client)
-    open_delete_game(client)
-    local delete_screen = assert(client.app.screen_manager:get_screen())
+client_case("the client: a refusal is notified and the question stays, the data kept", function(client)
+    local _, question = open_delete_game(client)
     client.session:delete_game("other")
     game_client.pop_request(client, "DeleteGameRp")
     game_client.answer(client, "DeleteGameRp", {
@@ -207,5 +230,5 @@ client_case("the client: a refusal is notified and Delete Game stays, the data k
     })
     test.assert_eq(client.app.data ~= nil, true)
     test.assert_eq(client.session:get_game_id(), mocks.GAME_ID)
-    test.assert_eq(client.app.screen_manager:get_screen(), delete_screen)
+    test.assert_eq(client.app.screen_manager:get_screen(), question)
 end)

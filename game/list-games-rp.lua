@@ -1,4 +1,5 @@
 local RemoteProcedure = require("networking.remote-procedure")
+local permissions = require("game.permissions")
 
 ---@class ListGamesRequest: RequestBody
 
@@ -39,7 +40,8 @@ function ListGamesRp:send_response(request)
             table.insert(games, {
                 id = id,
                 name = game:get_name(),
-                member = game:get_data().players[user] ~= nil
+                member = game:get_data().players[user] ~= nil,
+                deletable = game:allows(user, permissions.Action.WRITE, permissions.Kind.GAME)
             })
         end
         table.sort(games, _by_name_then_id)

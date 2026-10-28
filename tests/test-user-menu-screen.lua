@@ -11,8 +11,8 @@ function TestUserMenuSession:init()
     self.calls = {}
 end
 
-function TestUserMenuSession:show_manage_games()
-    table.insert(self.calls, "show_manage_games")
+function TestUserMenuSession:show_games_menu()
+    table.insert(self.calls, "show_games_menu")
 end
 
 function TestUserMenuSession:logout()
@@ -31,10 +31,10 @@ end
 
 test.suite("UserMenuScreen")
 
-test.case("Manage Games, Options, Log Out and Quit", function()
+test.case("Games, Options, Log Out and Quit", function()
     with_screen(function(screen)
         test.assert_deep_eq(menu_client.captions(screen), {
-            "Manage Games",
+            "Games",
             "Options",
             "Log Out",
             "Quit"
@@ -42,11 +42,11 @@ test.case("Manage Games, Options, Log Out and Quit", function()
     end)
 end)
 
-test.case("Manage Games asks the session for the Manage Games screen", function()
+test.case("Games asks the session for the Games screen", function()
     with_screen(function(screen, session)
-        menu_client.click(menu_client.button(screen, "Manage Games"))
+        menu_client.click(menu_client.button(screen, "Games"))
         test.assert_deep_eq(session.calls, {
-            "show_manage_games"
+            "show_games_menu"
         })
     end)
 end)

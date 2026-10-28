@@ -1,18 +1,18 @@
 local test = require("tests.lib.test")
 local menu_client = require("tests.lib.menu-client")
-local GamesScreen = require("screens.games-screen")
+local JoinGameScreen = require("screens.join-game-screen")
 local Session = require("game.session")
 
----@class TestGamesSession: Session
+---@class TestJoinGameSession: Session
 ---@field calls string[] The session calls the screen made, in order
-local TestGamesSession = class("TestGamesSession", Session)
+local TestJoinGameSession = class("TestJoinGameSession", Session)
 
-function TestGamesSession:init()
+function TestJoinGameSession:init()
     self.calls = {}
 end
 
 ---@param id string
-function TestGamesSession:join_game(id)
+function TestJoinGameSession:join_game(id)
     table.insert(self.calls, "join_game " .. id)
 end
 
@@ -22,34 +22,36 @@ local function two_games()
         {
             id = "meadow",
             name = "Meadow",
-            member = true
+            member = true,
+            deletable = true
         },
         {
             id = "the-shire",
             name = "The Shire",
-            member = false
+            member = false,
+            deletable = false
         }
     }
 end
 
 ---@param games GameInfo[]
----@param fn fun(screen: GamesScreen, session: TestGamesSession)
+---@param fn fun(screen: JoinGameScreen, session: TestJoinGameSession)
 local function with_screen(games, fn)
     menu_client.install()
-    local session = TestGamesSession()
-    local screen = GamesScreen(session, games)
+    local session = TestJoinGameSession()
+    local screen = JoinGameScreen(session, games)
     menu_client.with_screen(screen, function()
         fn(screen, session)
     end)
 end
 
----@param screen GamesScreen
+---@param screen JoinGameScreen
 ---@param caption string
 local function click(screen, caption)
     menu_client.click(menu_client.button(screen, caption))
 end
 
-test.suite("GamesScreen")
+test.suite("JoinGameScreen")
 
 test.case("one button per game, captioned by its name in the order given, then Back", function()
     with_screen(two_games(), function(screen)

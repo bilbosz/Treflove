@@ -1,4 +1,3 @@
-local PermissionSet = require("game.permission-set")
 local RemoteProcedure = require("networking.remote-procedure")
 local permissions = require("game.permissions")
 
@@ -43,14 +42,8 @@ function DeleteGameRp:send_response(request)
     if not game then
         return _refusal("No such game")
     end
-    local data = game:get_data()
-    local refusal = _refusal(string.format("You may not delete the game %q", game:get_name()))
-    if not data.players[user] then
-        return refusal
-    end
-    local set = PermissionSet(user, permissions.resolve(data, user), data)
-    if not set:allows(permissions.Action.WRITE, permissions.Kind.GAME) then
-        return refusal
+    if not game:allows(user, permissions.Action.WRITE, permissions.Kind.GAME) then
+        return _refusal(string.format("You may not delete the game %q", game:get_name()))
     end
     local id, name = game:get_id(), game:get_name()
     for _, session in ipairs(game:get_sessions()) do

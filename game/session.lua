@@ -1,6 +1,7 @@
 local Asset = require("data.asset")
 local AssetStore = require("data.asset-store")
 local AssetsWorkspaceScreen = require("game.assets.workspace.assets-workspace-screen")
+local ConfirmDeleteGameScreen = require("screens.confirm-delete-game-screen")
 local Consts = require("app.consts")
 local CreateGameRp = require("game.create-game-rp")
 local CreateEntryRp = require("game.entry.create-entry-rp")
@@ -15,12 +16,12 @@ local EntryDeletedRp = require("game.entry.entry-deleted-rp")
 local GameDataRp = require("game.game-data-rp")
 local GameDeletedRp = require("game.game-deleted-rp")
 local GameScreen = require("game.game-screen")
-local GamesScreen = require("screens.games-screen")
+local JoinGameScreen = require("screens.join-game-screen")
 local GrantsChangedRp = require("game.entry.grants-changed-rp")
 local ListGamesRp = require("game.list-games-rp")
 local Login = require("login.login")
 local LoginScreen = require("login.login-screen")
-local ManageGamesScreen = require("screens.manage-games-screen")
+local GamesMenuScreen = require("screens.games-menu-screen")
 local NewGameScreen = require("screens.new-game-screen")
 local NewTokenScreen = require("screens.new-token-screen")
 local PermissionSet = require("game.permission-set")
@@ -68,12 +69,13 @@ local token_id = require("game.token.token-id")
 ---@field _assets_workspace_return Screen|nil The screen the workspace was opened from, shown again when it closes
 ---@field _login_screen LoginScreen|nil The login screen, from `show_login` (at the connect, at a logout) to the next login (client only)
 ---@field _sign_up_screen SignUpScreen|nil The sign-up screen, from `show_sign_up` to its way back or the next login (client only)
----@field _manage_games_screen ManageGamesScreen|nil Over the menu, from `show_manage_games` (the menu's Manage Games) to its way back or a join (client only)
----@field _games_screen GamesScreen|nil The games list, from the listing `show_games` asked for (Join Game) to its way back or a join (client only)
----@field _new_game_screen NewGameScreen|nil Over Manage Games, from `show_new_game` (New Game) to its way back or the join of the game created (client only)
----@field _delete_game_screen DeleteGameScreen|nil Over Manage Games, from `show_delete_game` (Delete Game) to its way back or the deletion of a game (client only)
+---@field _games_menu_screen GamesMenuScreen|nil Over the menu, from `show_games_menu` (the menu's Games) to its way back or a join (client only)
+---@field _join_game_screen JoinGameScreen|nil The games list, from the listing `show_join_game` asked for (Join Game) to its way back or a join (client only)
+---@field _new_game_screen NewGameScreen|nil Over Games, from `show_new_game` (New Game) to its way back or the join of the game created (client only)
+---@field _delete_game_screen DeleteGameScreen|nil The games to delete, from the listing `show_delete_game` asked for (Delete Game) to its way back or the deletion of a game (client only)
+---@field _confirm_delete_game_screen ConfirmDeleteGameScreen|nil Over the games to delete, from `confirm_delete_game` (a game picked) to its way back or the deletion (client only)
 ---@field _new_token_screen NewTokenScreen|nil Over the game, from `show_new_token` to its way back or the token created (client only)
----@field _period lifetime.Token|nil The "logged in" span (client only): the menu screen, the screens of Manage Games, the game screen and their back entries die with it
+---@field _period lifetime.Token|nil The "logged in" span (client only): the menu screen, the screens of Games, the game screen and their back entries die with it
 local Session = class("Session")
 
 ---@param a TokenDataValue|EntryValue|nil
@@ -175,10 +177,11 @@ local function _on_logout(self)
         lifetime.destroy(self._period)
         self._period = nil
         self._user_menu_screen = nil
-        self._manage_games_screen = nil
-        self._games_screen = nil
+        self._games_menu_screen = nil
+        self._join_game_screen = nil
         self._new_game_screen = nil
         self._delete_game_screen = nil
+        self._confirm_delete_game_screen = nil
         self._new_token_screen = nil
         self._game_screen = nil
         self._assets_workspace_screen = nil
@@ -196,10 +199,11 @@ function Session:init(connection)
     self._game_id = nil
     self._period = nil
     self._user_menu_screen = nil
-    self._manage_games_screen = nil
-    self._games_screen = nil
+    self._games_menu_screen = nil
+    self._join_game_screen = nil
     self._new_game_screen = nil
     self._delete_game_screen = nil
+    self._confirm_delete_game_screen = nil
     self._new_token_screen = nil
     self._game_screen = nil
     self._assets_workspace_screen = nil
@@ -854,33 +858,33 @@ function Session:is_logged_in()
     return not not self._user
 end
 
-function Session:show_manage_games()
+function Session:show_games_menu()
     assert(app.is_client)
     local period = assert(self._period, "managing the games needs a logged-in user")
-    if self._manage_games_screen then
-        lifetime.destroy(self._manage_games_screen)
+    if self._games_menu_screen then
+        lifetime.destroy(self._games_menu_screen)
     end
-    local screen = ManageGamesScreen(self):attach_lifetime(period)
-    self._manage_games_screen = screen
+    local screen = GamesMenuScreen(self):attach_lifetime(period)
+    self._games_menu_screen = screen
     app.screen_manager:show(screen)
     app.backstack_manager:push(function()
-        self:close_manage_games()
+        self:close_games_menu()
     end):attach_lifetime(screen)
 end
 
-function Session:close_manage_games()
-    assert(app.is_client and self._manage_games_screen)
-    local screen = self._manage_games_screen
-    self._manage_games_screen = nil
+function Session:close_games_menu()
+    assert(app.is_client and self._games_menu_screen)
+    local screen = self._games_menu_screen
+    self._games_menu_screen = nil
     self:show_menu()
     lifetime.destroy(screen)
 end
 
----Shows Manage Games again, or the menu when Manage Games was closed meanwhile
+---Shows Games again, or the menu when Games was closed meanwhile
 ---(a listing that answers after its Back)
 ---@private
-function Session:_return_to_manage_games()
-    local screen = self._manage_games_screen
+function Session:_return_to_games_menu()
+    local screen = self._games_menu_screen
     if screen then
         app.screen_manager:show(screen)
     else
@@ -888,19 +892,19 @@ function Session:_return_to_manage_games()
     end
 end
 
-function Session:show_games()
+function Session:show_join_game()
     assert(app.is_client)
     local period = assert(self._period, "the games need a logged-in user")
     self._list_games_rp:send_request({}, function(response)
         if not lifetime.alive(period) then
             return
         end
-        local previous = self._games_screen
-        local screen = GamesScreen(self, (response --[[@as ListGamesResponse]] ).games):attach_lifetime(period)
-        self._games_screen = screen
+        local previous = self._join_game_screen
+        local screen = JoinGameScreen(self, (response --[[@as ListGamesResponse]] ).games):attach_lifetime(period)
+        self._join_game_screen = screen
         app.screen_manager:show(screen)
         app.backstack_manager:push(function()
-            self:close_games()
+            self:close_join_game()
         end):attach_lifetime(screen)
         if previous then
             lifetime.destroy(previous)
@@ -908,11 +912,11 @@ function Session:show_games()
     end)
 end
 
-function Session:close_games()
-    assert(app.is_client and self._games_screen)
-    local screen = self._games_screen
-    self._games_screen = nil
-    self:_return_to_manage_games()
+function Session:close_join_game()
+    assert(app.is_client and self._join_game_screen)
+    local screen = self._join_game_screen
+    self._join_game_screen = nil
+    self:_return_to_games_menu()
     lifetime.destroy(screen)
 end
 
@@ -934,33 +938,90 @@ function Session:close_new_game()
     assert(app.is_client and self._new_game_screen)
     local screen = self._new_game_screen
     self._new_game_screen = nil
-    self:_return_to_manage_games()
+    self:_return_to_games_menu()
     lifetime.destroy(screen)
 end
 
 function Session:show_delete_game()
     assert(app.is_client)
     local period = assert(self._period, "deleting a game needs a logged-in user")
-    if self._delete_game_screen then
-        lifetime.destroy(self._delete_game_screen)
-    end
-    local screen = DeleteGameScreen(self):attach_lifetime(period)
-    self._delete_game_screen = screen
-    app.screen_manager:show(screen)
-    app.backstack_manager:push(function()
-        self:close_delete_game()
-    end):attach_lifetime(screen)
+    self._list_games_rp:send_request({}, function(response)
+        if not lifetime.alive(period) then
+            return
+        end
+        ---@type GameInfo[]
+        local deletable = {}
+        for _, info in ipairs((response --[[@as ListGamesResponse]] ).games) do
+            if info.deletable then
+                table.insert(deletable, info)
+            end
+        end
+        local previous = self._delete_game_screen
+        local screen = DeleteGameScreen(self, deletable):attach_lifetime(period)
+        self._delete_game_screen = screen
+        app.screen_manager:show(screen)
+        app.backstack_manager:push(function()
+            self:close_delete_game()
+        end):attach_lifetime(screen)
+        if previous then
+            lifetime.destroy(previous)
+        end
+    end)
 end
 
 function Session:close_delete_game()
     assert(app.is_client and self._delete_game_screen)
     local screen = self._delete_game_screen
     self._delete_game_screen = nil
-    self:_return_to_manage_games()
+    self:_return_to_games_menu()
     lifetime.destroy(screen)
 end
 
----@param id string A game's id, as `Games.make_id` gives it
+---@param id string A game's id, as `show_delete_game` listed it
+---@param name string The game's name, asked about
+function Session:confirm_delete_game(id, name)
+    assert(app.is_client)
+    local period = assert(self._period, "deleting a game needs a logged-in user")
+    if self._confirm_delete_game_screen then
+        lifetime.destroy(self._confirm_delete_game_screen)
+    end
+    local screen = ConfirmDeleteGameScreen(self, id, name):attach_lifetime(period)
+    self._confirm_delete_game_screen = screen
+    app.screen_manager:show(screen)
+    app.backstack_manager:push(function()
+        self:close_confirm_delete_game()
+    end):attach_lifetime(screen)
+end
+
+---Back to the games to delete, or where they would have led
+function Session:close_confirm_delete_game()
+    assert(app.is_client and self._confirm_delete_game_screen)
+    local screen = self._confirm_delete_game_screen
+    self._confirm_delete_game_screen = nil
+    if self._delete_game_screen then
+        app.screen_manager:show(self._delete_game_screen)
+    else
+        self:_return_to_games_menu()
+    end
+    lifetime.destroy(screen)
+end
+
+---The deletion is over: the question and the games to delete go, Games is shown again
+---@private
+function Session:_close_deletion()
+    local confirm, list = self._confirm_delete_game_screen, self._delete_game_screen
+    self._confirm_delete_game_screen = nil
+    self._delete_game_screen = nil
+    self:_return_to_games_menu()
+    if confirm then
+        lifetime.destroy(confirm)
+    end
+    if list then
+        lifetime.destroy(list)
+    end
+end
+
+---@param id string A game's id, as `show_delete_game` listed it
 function Session:delete_game(id)
     assert(app.is_client)
     local period = assert(self._period, "deleting a game needs a logged-in user")
@@ -970,9 +1031,7 @@ function Session:delete_game(id)
         local deleted = response --[[@as DeleteGameResponse]]
         if lifetime.alive(period) and deleted.success then
             self:apply_game_deleted(assert(deleted.id), assert(deleted.name))
-            if self._delete_game_screen then
-                self:close_delete_game()
-            end
+            self:_close_deletion()
         end
     end)
 end
@@ -1008,7 +1067,7 @@ function Session:create_game(name)
     end)
 end
 
----@param id string A game's id, as `show_games` listed it
+---@param id string A game's id, as `show_join_game` listed it
 function Session:join_game(id)
     assert(app.is_client)
     assert_type(id, "string")
@@ -1017,17 +1076,21 @@ function Session:join_game(id)
         lifetime.destroy(self._new_game_screen)
         self._new_game_screen = nil
     end
-    if self._games_screen then
-        lifetime.destroy(self._games_screen)
-        self._games_screen = nil
+    if self._join_game_screen then
+        lifetime.destroy(self._join_game_screen)
+        self._join_game_screen = nil
+    end
+    if self._confirm_delete_game_screen then
+        lifetime.destroy(self._confirm_delete_game_screen)
+        self._confirm_delete_game_screen = nil
     end
     if self._delete_game_screen then
         lifetime.destroy(self._delete_game_screen)
         self._delete_game_screen = nil
     end
-    if self._manage_games_screen then
-        lifetime.destroy(self._manage_games_screen)
-        self._manage_games_screen = nil
+    if self._games_menu_screen then
+        lifetime.destroy(self._games_menu_screen)
+        self._games_menu_screen = nil
     end
     self._game_data_rp:send_request({
         game = id

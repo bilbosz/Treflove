@@ -1,15 +1,15 @@
 local MenuScreen = require("screens.menu-screen")
 local MenuTextButton = require("ui.menu.menu-text-button")
 
----@class ManageGamesScreen: MenuScreen
+---@class GamesMenuScreen: MenuScreen
 ---@field private _session Session
-local ManageGamesScreen = class("ManageGamesScreen", MenuScreen)
+local GamesMenuScreen = class("GamesMenuScreen", MenuScreen)
 
 ---@param session Session
-function ManageGamesScreen:init(session)
+function GamesMenuScreen:init(session)
     assert(session)
     self._session = session
-    MenuScreen.init(self, "Manage Games", {
+    MenuScreen.init(self, "Games", {
         MenuTextButton(self, "New Game", function()
             self:new_game()
         end),
@@ -25,16 +25,16 @@ function ManageGamesScreen:init(session)
     })
 end
 
-function ManageGamesScreen:new_game()
+function GamesMenuScreen:new_game()
     self._session:show_new_game()
 end
 
-function ManageGamesScreen:join_game()
-    self._session:show_games()
+function GamesMenuScreen:join_game()
+    self._session:show_join_game()
 end
 
-function ManageGamesScreen:delete_game()
+function GamesMenuScreen:delete_game()
     self._session:show_delete_game()
 end
 
-return ManageGamesScreen
+return GamesMenuScreen

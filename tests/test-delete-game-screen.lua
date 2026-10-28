@@ -12,79 +12,79 @@ function TestDeleteGameSession:init()
 end
 
 ---@param id string
-function TestDeleteGameSession:delete_game(id)
-    table.insert(self.calls, "delete_game " .. id)
-end
-
----@param fn fun(screen: DeleteGameScreen, session: TestDeleteGameSession, notifications: TestNotificationManager)
-local function with_screen(fn)
-    local app_mock = menu_client.install()
-    local session = TestDeleteGameSession()
-    local screen = DeleteGameScreen(session)
-    menu_client.with_screen(screen, function()
-        fn(screen, session, app_mock.notification_manager --[[@as TestNotificationManager]] )
-    end)
-end
-
----@param screen DeleteGameScreen
 ---@param name string
-local function type_name(screen, name)
-    menu_client.click(menu_client.find_all(screen, "TextInput")[1])
-    app.text_event_manager:text_input(name)
+function TestDeleteGameSession:confirm_delete_game(id, name)
+    table.insert(self.calls, "confirm_delete_game " .. id .. " " .. name)
+end
+
+---@return GameInfo[]
+local function two_games()
+    return {
+        {
+            id = "meadow",
+            name = "Meadow",
+            member = true,
+            deletable = true
+        },
+        {
+            id = "the-shire",
+            name = "The Shire",
+            member = true,
+            deletable = true
+        }
+    }
+end
+
+---@param games GameInfo[]
+---@param fn fun(screen: DeleteGameScreen, session: TestDeleteGameSession)
+local function with_screen(games, fn)
+    menu_client.install()
+    local session = TestDeleteGameSession()
+    local screen = DeleteGameScreen(session, games)
+    menu_client.with_screen(screen, function()
+        fn(screen, session)
+    end)
 end
 
 test.suite("DeleteGameScreen")
 
-test.case("titled Delete Game: a Name field, Delete and Back", function()
-    with_screen(function(screen)
-        test.assert_eq(#menu_client.find_all(screen, "TextInput"), 1)
+test.case("titled Delete Game: one button per game, captioned by its name in the order given, then Back", function()
+    with_screen(two_games(), function(screen)
         test.assert_deep_eq(menu_client.captions(screen), {
-            "Delete",
+            "Meadow",
+            "The Shire",
+            "Back"
+        })
+        test.assert_deep_eq(menu_client.texts(screen), {
+            "Delete Game"
+        })
+    end)
+end)
+
+test.case("a click on a game asks the session for the question about it", function()
+    with_screen(two_games(), function(screen, session)
+        menu_client.click(menu_client.button(screen, "The Shire"))
+        test.assert_deep_eq(session.calls, {
+            "confirm_delete_game the-shire The Shire"
+        })
+    end)
+end)
+
+test.case("with no game to delete, a line says so above Back", function()
+    with_screen({}, function(screen, session)
+        test.assert_deep_eq(menu_client.captions(screen), {
             "Back"
         })
         test.assert_deep_eq(menu_client.texts(screen), {
             "Delete Game",
-            "Name"
-        })
-    end)
-end)
-
-test.case("Delete asks the session to delete the game whose id the typed name makes", function()
-    with_screen(function(screen, session, notifications)
-        type_name(screen, "The Shire!")
-        menu_client.click(menu_client.button(screen, "Delete"))
-        test.assert_deep_eq(session.calls, {
-            "delete_game the-shire"
-        })
-        test.assert_deep_eq(notifications.messages, {})
-    end)
-end)
-
-test.case("Enter in the field deletes the game", function()
-    with_screen(function(screen, session)
-        type_name(screen, "Meadow")
-        app.text_event_manager:key_pressed("return")
-        test.assert_deep_eq(session.calls, {
-            "delete_game meadow"
-        })
-    end)
-end)
-
-test.case("a name that makes no id is refused with the reason, nothing asked of the session", function()
-    with_screen(function(screen, session, notifications)
-        menu_client.click(menu_client.button(screen, "Delete"))
-        type_name(screen, " -!- ")
-        app.text_event_manager:key_pressed("return")
-        test.assert_deep_eq(notifications.messages, {
-            "Type the name of the game to delete",
-            "Type the name of the game to delete"
+            "No games to delete"
         })
         test.assert_deep_eq(session.calls, {})
     end)
 end)
 
 test.case("Back goes back through the back stack", function()
-    with_screen(function(screen, session)
+    with_screen(two_games(), function(screen, session)
         local backs = 0
         app.backstack_manager:push(function()
             backs = backs + 1

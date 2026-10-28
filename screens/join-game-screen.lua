@@ -2,13 +2,13 @@ local MenuScreen = require("screens.menu-screen")
 local MenuText = require("ui.menu.menu-text")
 local MenuTextButton = require("ui.menu.menu-text-button")
 
----@class GamesScreen: MenuScreen
+---@class JoinGameScreen: MenuScreen
 ---@field private _session Session
-local GamesScreen = class("GamesScreen", MenuScreen)
+local JoinGameScreen = class("JoinGameScreen", MenuScreen)
 
 ---@param session Session
 ---@param games GameInfo[] In the order the buttons list them
-function GamesScreen:init(session, games)
+function JoinGameScreen:init(session, games)
     assert(session)
     self._session = session
     ---@type MenuEntry[]
@@ -28,8 +28,8 @@ function GamesScreen:init(session, games)
 end
 
 ---@param id string
-function GamesScreen:join_game(id)
+function JoinGameScreen:join_game(id)
     self._session:join_game(id)
 end
 
-return GamesScreen
+return JoinGameScreen
