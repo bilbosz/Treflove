@@ -61,11 +61,11 @@ Connection                      (a lost peer → lifetime.destroy;
         ├── back entry: log out
         ├── GamesMenuScreen             (from Games to Back or to the game joined)
         │   └── back entry: back to the menu
-        ├── JoinGameScreen              (from Join Game to Back or to the game joined; rebuilt on every listing)
+        ├── JoinGameScreen              (from Join to Back or to the game joined; rebuilt on every listing)
         │   └── back entry: back to the Games menu
-        ├── NewGameScreen               (from New Game to Back or to the game created)
+        ├── NewGameScreen               (from Create to Back or to the game created)
         │   └── back entry: back to the Games menu
-        ├── DeleteGameScreen            (from Delete Game to Back or to the game deleted; rebuilt on every listing)
+        ├── DeleteGameScreen            (from Delete to Back or to the game deleted; rebuilt on every listing)
         │   └── back entry: back to the Games menu
         ├── ConfirmDeleteGameScreen     (from a game picked to No or to the game deleted)
         │   └── back entry: back to the games to delete
@@ -112,10 +112,10 @@ the `release` calls it caused.
 - **The Games menu and its screens**: the session builds the Games menu
   under the period from the menu's entry and pushes its back entry,
   anchored to the screen; the entry shows the menu and destroys the screen.
-  Under it, the same way: the games to join from every listing Join Game
-  asks for and the games to delete from every listing Delete Game asks
-  for (the previous screen destroyed first), and the new game screen from
-  New Game, each with a back entry that shows the Games menu again (the
+  Under it, the same way: the games to join from every listing Join asks
+  for and the games to delete from every listing Delete asks for (the
+  previous screen destroyed first), and the new game screen from Create,
+  each with a back entry that shows the Games menu again (the
   menu, when the Games menu was closed meanwhile: a listing that answers
   after its Back) and destroys the screen. A game picked among the games
   to delete builds the question over them, its entry showing them again.

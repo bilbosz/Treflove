@@ -159,7 +159,7 @@ local function client_case(name, fn)
     end)
 end
 
----@param client GameClient Back on the menu, Games, Delete Game with its listing in, and the question about the game opened
+---@param client GameClient Back on the menu, the Games menu, Delete with its listing in, and the question about the game opened
 ---@return Screen The games to delete
 ---@return Screen The question
 local function open_delete_game(client)

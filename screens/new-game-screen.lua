@@ -15,7 +15,7 @@ function NewGameScreen:init(session)
     self._name_input = MenuTextInput(self, "Name", false, function()
         self:create()
     end)
-    MenuScreen.init(self, "New Game", {
+    MenuScreen.init(self, "Create Game", {
         self._name_input,
         MenuTextButton(self, "Create", function()
             self:create()

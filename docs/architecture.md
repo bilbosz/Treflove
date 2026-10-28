@@ -162,11 +162,12 @@ A `Session` ties a connection to a user:
   back, see [lifetimes.md](lifetimes.md)
 - The client shows the session's login screen on connect
   (`Session:show_login`); a login lands on the user menu, whose Games
-  entry opens the Games menu (`show_games_menu`, `GamesMenuScreen`): its
-  Join Game lists the server's games (`show_join_game`, `JoinGameScreen`),
-  a click joining one (`join_game(id)`), its New Game opens the new game
-  screen (`show_new_game`), which creates a game and joins it
-  (`create_game`), and its Delete Game lists the games the user may delete
+  entry opens the Games menu (`show_games_menu`, `GamesMenuScreen`), with
+  Join, Create, Delete and Back: Join lists the server's games
+  (`show_join_game`, `JoinGameScreen`), a click joining one
+  (`join_game(id)`), Create opens the new game screen (`show_new_game`),
+  which creates a game and joins it (`create_game`), and Delete lists the
+  games the user may delete
   (`show_delete_game`, `DeleteGameScreen`, from the same listing), a click
   asking `Are you sure to delete "<name>" game?` with Yes and No
   (`confirm_delete_game(id, name)`, `ConfirmDeleteGameScreen`), Yes
