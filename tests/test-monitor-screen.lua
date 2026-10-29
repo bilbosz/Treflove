@@ -206,6 +206,32 @@ test.case("the log lines follow the selected target's log, kept scrolled to the 
     finish(side)
 end)
 
+test.case("the wheel over a pane scrolls it by the lines of a notch, the other pane staying", function()
+    local side = show_screen()
+    for i = 1, 200 do
+        side.client:append_log("line " .. i)
+        side.client:set_watch(string.format("w%03d", i), "x")
+    end
+    frame(side)
+    ---@diagnostic disable-next-line: invisible
+    local log_view, watches_view = side.screen._log.view, side.screen._watches.view
+    ---@diagnostic disable-next-line: invisible
+    local step = Consts.MONITOR_SCROLL_LINES * side.screen._line_height
+    test.assert_eq(log_view:get_wheel_step(), step)
+    test.assert_eq(watches_view:get_wheel_step(), step)
+    local _, max_y = log_view:get_max_scroll()
+    local min_x, min_y, max_x, max_y_px = log_view:get_global_aabb():get_bounds()
+    side.app:set_pointer_position((min_x + max_x) * 0.5, (min_y + max_y_px) * 0.5)
+
+    side.app.pointer_event_manager:dispatch_wheel(0, 1)
+
+    local _, y = log_view:get_scroll()
+    test.assert_near(y, max_y - step, 1e-6, "the log back by a notch")
+    local _, watches_y = watches_view:get_scroll()
+    test.assert_eq(watches_y, 0, "the watches stay")
+    finish(side)
+end)
+
 test.case("Enter evaluates the line on the selected target, logs its reply after >, and clears the field", function()
     local side = show_screen()
     test.assert_true(side.screen:get_input():is_focused(), "the line has the focus")

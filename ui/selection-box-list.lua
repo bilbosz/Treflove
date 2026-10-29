@@ -76,6 +76,7 @@ function SelectionBoxList:_create_frame(anchor, count)
     local view = ScrollView(frame, width, height, true)
     self._view = view
     view:set_content_size(width, count * row_height)
+    view:set_wheel_step(row_height * Consts.SELECTION_BOX_WHEEL_ROWS)
 end
 
 ---@private
@@ -100,6 +101,7 @@ function SelectionBoxList:_register_events()
     pointer_event_manager.pointer_down:register(self, self.on_backdrop_pointer_down)
     pointer_event_manager.pointer_down:register(self._frame, _on_frame_pointer_down)
     pointer_event_manager.pointer_move:register(self._frame, _on_frame_pointer_move)
+    pointer_event_manager.wheel:register(self, self.on_backdrop_wheel)
     app.resize_manager.resized:register(self, self.on_resize)
 
     self._backdrop_button = Button()
@@ -236,6 +238,14 @@ function SelectionBoxList:on_frame_pointer_move(x, y, id)
     if index then
         self:_highlight(index)
     end
+end
+
+---@param x number
+---@param y number
+---@param dx number
+---@param dy number
+---@return boolean|nil
+function SelectionBoxList:on_backdrop_wheel(x, y, dx, dy)
 end
 
 function SelectionBoxList:on_backdrop_selected()

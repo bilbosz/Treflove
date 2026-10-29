@@ -242,11 +242,10 @@ local function point_at(client, x, y)
 end
 
 ---@param client GameClient
----@param steps number Positive zooms in
+---@param steps number Positive zooms in; dispatched at the pointer's position
 local function wheel(client, steps)
-    local page = client.game_screen:get_page()
     for _ = 1, math.abs(steps) do
-        page:on_wheel_moved(0, steps > 0 and 1 or -1)
+        client.app.pointer_event_manager:dispatch_wheel(0, steps > 0 and 1 or -1)
     end
 end
 
@@ -386,6 +385,33 @@ test.case("the wheel zooms about the pointer, out to the page fitted and in to t
         wheel(client, 50)
         test.assert_near(units_per_meter(page), Consts.PAGE_MAX_UNITS_PER_METER, 1e-3, "in no further than the limit")
         assert_pan_limit(page)
+    end)
+    game_client.finish(client)
+    if not ok then
+        error(err, 0)
+    end
+end)
+
+test.case("the wheel beside the page zooms nothing", function()
+    local client = game_client.enter({
+        "read"
+    })
+    ---@type boolean, any
+    local ok, err = pcall(function()
+        local page = client.game_screen:get_page()
+        local _, min_y, max_x, max_y = page:get_global_aabb():get_bounds()
+        local before = {
+            map_rect(page)
+        }
+        client.app:set_pointer_position(max_x + 10, (min_y + max_y) * 0.5)
+        wheel(client, 3)
+        test.assert_deep_eq({
+            map_rect(page)
+        }, before, "the map neither scaled nor moved")
+        local fitted = units_per_meter(page)
+        point_at(client, 10, 10)
+        wheel(client, 1)
+        test.assert_true(units_per_meter(page) > fitted, "over the page it zooms")
     end)
     game_client.finish(client)
     if not ok then

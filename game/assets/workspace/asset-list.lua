@@ -42,7 +42,7 @@ function AssetList:init(screen, parent, width, height)
     local measure = Text(nil, "Ag")
     self._row_height = measure:get_font_height() * Consts.PANEL_FIELD_SCALE + Consts.PADDING * 0.5
 
-    app.wheel_event:register(self, self.on_wheel_moved)
+    app.pointer_event_manager.wheel:register(self, self.on_wheel)
 end
 
 ---@private
@@ -125,12 +125,12 @@ function AssetList:on_row_clicked(row)
 end
 
 ---@param x number
----@param y number Vertical wheel movement, positive away from the user
-function AssetList:on_wheel_moved(x, y)
-    if not self._screen:is_showed() or not self:get_global_aabb():is_point_inside(app.pointer_event_manager:get_position()) then
-        return
-    end
-    self._scroll = self._scroll - y * Consts.ASSET_LIST_SCROLL_ROWS * self._row_height
+---@param y number
+---@param dx number
+---@param dy number Positive scrolls toward the top
+---@return boolean|nil
+function AssetList:on_wheel(x, y, dx, dy)
+    self._scroll = self._scroll - dy * Consts.ASSET_LIST_SCROLL_ROWS * self._row_height
     self:_apply_scroll()
 end
 

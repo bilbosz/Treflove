@@ -6,11 +6,15 @@ local lifetime = require("lifetime")
 
 ---@alias PointerEventHandler fun(ctrl: Control, x: number, y: number, id: PointerId): boolean|nil Return truthy to let the event through to controls below
 
+---@alias WheelEventHandler fun(ctrl: Control, x: number, y: number, dx: number, dy: number): boolean|nil Return truthy to let the event through to controls below
+
 ---@class PointerEventManager: Object
 ---@field public pointer_down Event Hit-tested with (x, y, id)
 ---@field public pointer_up Event Hit-tested with (x, y, id)
 ---@field public pointer_move Event Hit-tested with (x, y, id); id is the pressed pointer for mouse drags, nil for hover
+---@field public wheel Event Hit-tested at the pointer position with (x, y, dx, dy), the wheel movement: `dx` to the right, `dy` away from the user, as LÖVE gives them
 ---@field private _receive_through ReceiveThroughSet
+---@field private _wheel_receive_through ReceiveThroughSet Of its own: a control that receives the pointer events consumed above it still has the wheel taken by what is over it
 ---@field private _down_id PointerId Pointer id of the press currently being tracked
 ---@field private _captors table<PointerId, Control> By the press each holds: its moves and its release go to the captor alone
 local PointerEventManager = class("PointerEventManager")
@@ -19,7 +23,9 @@ function PointerEventManager:init()
     self.pointer_down = Event()
     self.pointer_up = Event()
     self.pointer_move = Event()
+    self.wheel = Event()
     self._receive_through = hit_test.make_receive_through_set()
+    self._wheel_receive_through = hit_test.make_receive_through_set()
     self._down_id = nil
     self._captors = {}
 end
@@ -80,6 +86,12 @@ function PointerEventManager:set_receive_through(ctrl, value)
     self._receive_through[ctrl] = value or nil
 end
 
+---@param ctrl Control
+---@param value boolean
+function PointerEventManager:set_wheel_receive_through(ctrl, value)
+    self._wheel_receive_through[ctrl] = value or nil
+end
+
 ---@param x number
 ---@param y number
 ---@param id PointerId
@@ -121,6 +133,13 @@ function PointerEventManager:dispatch_pointer_move(x, y, id)
     for captor in pairs(held) do
         _deliver(captor, self.pointer_move, x, y, id or self._down_id)
     end
+end
+
+---@param dx number
+---@param dy number
+function PointerEventManager:dispatch_wheel(dx, dy)
+    local x, y = self:get_position()
+    hit_test.dispatch(self.wheel, self._wheel_receive_through, x, y, dx, dy)
 end
 
 ---@return number, number

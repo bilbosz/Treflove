@@ -85,7 +85,7 @@ function Page:init(data, game_screen, width, height)
     pointer_event_manager.pointer_up:register(self, self.on_pointer_up)
     pointer_event_manager.pointer_move:register(self, self.on_pointer_move)
     pointer_event_manager:set_receive_through(self, true)
-    app.wheel_event:register(self, self.on_wheel_moved)
+    pointer_event_manager.wheel:register(self, self.on_wheel)
     self:_constrain_view()
 end
 
@@ -333,25 +333,22 @@ function Page:on_pointer_move(x, y)
     end
 end
 
----@param x number Horizontal wheel movement
----@param y number Vertical wheel movement
-function Page:on_wheel_moved(x, y)
-    if not self._game_screen:is_showed() then
-        return
-    end
-    local real_mouse_x, real_mouse_y = app.pointer_event_manager:get_position()
-    local self_mouse_x, self_mouse_y = self:transform_to_local(real_mouse_x, real_mouse_y)
-    if self_mouse_x >= 0 and self_mouse_x < self.size[1] and self_mouse_y >= 0 and self_mouse_y < self.size[2] then
-        local bg = self._background
-        local bg_mouse_x, bg_mouse_y = bg:transform_to_local(real_mouse_x, real_mouse_y)
+---@param x number
+---@param y number
+---@param dx number
+---@param dy number Positive zooms in
+---@return boolean|nil
+function Page:on_wheel(x, y, dx, dy)
+    local self_x, self_y = self:transform_to_local(x, y)
+    local bg = self._background
+    local bg_x, bg_y = bg:transform_to_local(x, y)
 
-        local scale = self:_clamp_scale(bg:get_scale() * math.pow(Consts.PAGE_ZOOM_INCREASE, y))
+    local scale = self:_clamp_scale(bg:get_scale() * math.pow(Consts.PAGE_ZOOM_INCREASE, dy))
 
-        bg:set_origin(bg_mouse_x, bg_mouse_y)
-        bg:set_position(self_mouse_x, self_mouse_y)
-        bg:set_scale(scale)
-        self:_constrain_view()
-    end
+    bg:set_origin(bg_x, bg_y)
+    bg:set_position(self_x, self_y)
+    bg:set_scale(scale)
+    self:_constrain_view()
 end
 
 ---@param x number In page meters

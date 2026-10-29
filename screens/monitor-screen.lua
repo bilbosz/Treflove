@@ -91,9 +91,11 @@ local function _paint_button(button, selected)
 end
 
 ---@param parent Control
+---@param line_height number
 ---@return MonitorPane
-local function _create_pane(parent)
+local function _create_pane(parent, line_height)
     local view = ScrollView(parent, 1, 1, true)
+    view:set_wheel_step(Consts.MONITOR_SCROLL_LINES * line_height)
     local lines = Control(view:get_content())
     lines:set_position(Consts.PADDING * 0.5, Consts.PADDING * 0.5)
     return {
@@ -148,8 +150,8 @@ function MonitorScreen:init(targets)
         table.insert(self._buttons, button)
         table.insert(self._captions, caption)
     end
-    self._watches = _create_pane(self.screen)
-    self._log = _create_pane(self.screen)
+    self._watches = _create_pane(self.screen, self._line_height)
+    self._log = _create_pane(self.screen, self._line_height)
     self._input = nil
     self:on_resize(w, h)
 end
@@ -157,7 +159,6 @@ end
 function MonitorScreen:show()
     FormScreen.show(self)
     app.update_event:register(self, self.on_update)
-    app.wheel_event:register(self, self.on_wheel_moved)
     self:on_resize(app.width, app.height)
     self:focus(self:get_input())
     self:refresh()
@@ -165,7 +166,6 @@ end
 
 function MonitorScreen:hide()
     app.update_event:unregister(self)
-    app.wheel_event:unregister(self)
     FormScreen.hide(self)
 end
 
@@ -266,24 +266,6 @@ function MonitorScreen:refresh()
         self._shown_revision = target:get_revision()
         self:_show_watches(target)
         self:_show_log(target, first_shown)
-    end
-end
-
----@param x number
----@param y number Vertical wheel movement, positive away from the user
-function MonitorScreen:on_wheel_moved(x, y)
-    if not self:is_showed() then
-        return
-    end
-    local px, py = app.pointer_event_manager:get_position()
-    for _, pane in ipairs({
-        self._watches,
-        self._log
-    }) do
-        if pane.view:get_global_aabb():is_point_inside(px, py) then
-            local scroll_x, scroll_y = pane.view:get_scroll()
-            pane.view:set_scroll(scroll_x, scroll_y - y * Consts.MONITOR_SCROLL_LINES * self._line_height)
-        end
     end
 end
 
