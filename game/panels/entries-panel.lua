@@ -4,6 +4,7 @@ local Rectangle = require("controls.rectangle")
 local Text = require("controls.text")
 local TextInput = require("ui.text-input")
 local NumberInput = require("ui.number-input")
+local SelectionBox = require("ui.selection-box")
 local TextButton = require("ui.text-button")
 local ScrollView = require("ui.scroll-view")
 local entries = require("game.entry.entries")
@@ -14,10 +15,10 @@ local permissions = require("game.permissions")
 ---@class EntriesPanelField
 ---@field def EntryField
 ---@field title Text
----@field input TextInput|NumberInput A `NumberInput` for a `number` field, read-only for an `image` field
+---@field input TextInput|NumberInput|SelectionBox A `NumberInput` for a `number` field, a `SelectionBox` for an `enum` or a `group` field, read-only for an `image` field
 ---@field button TextButton|nil For an `image` field: opens the assets workspace at the image, to browse for another or, read-only, to show it
 
----@alias EntriesPanelTexts {id: string|nil, fields: table<string, string>} What the fields hold, kept across a rebuild
+---@alias EntriesPanelTexts {id: string|nil, fields: table<string, string>} What the fields hold, kept across a rebuild: a text, or a selection box's selected key
 
 ---@class EntriesPanel: SidePanel
 ---@field private _kind EntryKind
@@ -79,6 +80,48 @@ local function _equal(a, b)
     return true
 end
 
+---@param def EntryField
+---@return boolean Whether the field is a closed set, shown in a `SelectionBox`
+local function _is_selection(def)
+    return def.type == "enum" or def.type == "group"
+end
+
+---@param def EntryField An `enum` or a `group` field
+---@return SelectionOption[] An `enum`'s options, each its own title; a `group`'s the game's groups by id, titled by their titles
+local function _get_options(def)
+    ---@type SelectionOption[]
+    local options = {}
+    if def.type == "enum" then
+        for _, key in ipairs(assert(def.options)) do
+            table.insert(options, {
+                key = key,
+                title = key
+            })
+        end
+        return options
+    end
+    local data = assert(app.data)
+    for _, id in ipairs(entries.list(data, "groups")) do
+        table.insert(options, {
+            key = id,
+            title = data.groups[id].title
+        })
+    end
+    return options
+end
+
+---@param options SelectionOption[]
+---@param key string
+---@return boolean
+local function _has_option(options, key)
+    for _, option in ipairs(options) do
+        if option.key == key then
+            return true
+        end
+    end
+    return false
+end
+
 ---@param game_screen GameScreen
 ---@param width number
 ---@param height number
@@ -130,7 +173,7 @@ function EntriesPanel:get_id_input()
 end
 
 ---@param key string
----@return TextInput|NumberInput|nil
+---@return TextInput|NumberInput|SelectionBox|nil
 function EntriesPanel:get_field_input(key)
     for _, field in ipairs(self._fields) do
         if field.def.key == key then
@@ -190,6 +233,9 @@ end
 ---@param id string The entry's id after the change; the deleted one's for a deletion
 function EntriesPanel:on_entries_change(kind, id)
     if kind ~= self._kind then
+        if kind == "groups" and self:_has_group_field() then
+            self:_update_view(self:_get_texts())
+        end
         return
     end
     local data = assert(app.data)
@@ -331,12 +377,17 @@ function EntriesPanel:_read_fields()
     for _, field in ipairs(self._fields) do
         local input = field.input
         local t = field.def.type
-        if t == "number" then
+        if _is_selection(field.def) then
+            ---@cast input SelectionBox
+            values[field.def.key] = input:get_selected()
+        elseif t == "number" then
             ---@cast input NumberInput
             values[field.def.key] = assert(input:get_number())
         elseif t == "grants" then
+            ---@cast input TextInput
             values[field.def.key] = _split_grants(input:get_text())
         else
+            ---@cast input TextInput
             values[field.def.key] = input:get_text()
         end
     end
@@ -357,6 +408,17 @@ function EntriesPanel:_find_changes()
         end
     end
     return changes
+end
+
+---@private
+---@return boolean
+function EntriesPanel:_has_group_field()
+    for _, def in ipairs(entries.FIELDS[self._kind]) do
+        if def.type == "group" then
+            return true
+        end
+    end
+    return false
 end
 
 ---@private
@@ -428,7 +490,14 @@ function EntriesPanel:_get_texts()
         fields = {}
     }
     for _, field in ipairs(self._fields) do
-        texts.fields[field.def.key] = field.input:get_text()
+        local input = field.input
+        if _is_selection(field.def) then
+            ---@cast input SelectionBox
+            texts.fields[field.def.key] = input:get_selected()
+        else
+            ---@cast input TextInput
+            texts.fields[field.def.key] = input:get_text()
+        end
     end
     return texts
 end
@@ -597,6 +666,34 @@ function EntriesPanel:_create_input(is_number)
     return TextInput(content, self:get_game_screen(), w, Consts.PANEL_TEXT_INPUT_HEIGHT, false, nil, apply)
 end
 
+---@private
+---@param def EntryField An `enum` or a `group` field
+---@param value EntryValue|nil The selected entry's; a value that is not among the options is appended as an option of its own, titled by itself
+---@param kept string|nil The key to select instead of the value, when it is among the options
+---@return SelectionBox Showing the value, or the first option for a new entry
+function EntriesPanel:_create_selection_box(def, value, kept)
+    local options = _get_options(def)
+    ---@type string|nil
+    local shown
+    if not self._is_new then
+        shown = type(value) == "string" and value or ""
+        if not _has_option(options, shown) then
+            table.insert(options, {
+                key = shown,
+                title = shown
+            })
+        end
+    end
+    local w = self:get_size() - 2 * Consts.PADDING
+    local box = SelectionBox(self._fields_view:get_content(), self:get_game_screen(), w, Consts.PANEL_TEXT_INPUT_HEIGHT, options, nil)
+    if kept and _has_option(options, kept) then
+        box:set_selected(kept)
+    elseif shown then
+        box:set_selected(shown)
+    end
+    return box
+end
+
 ---@param input TextInput|NumberInput
 ---@param def EntryField
 ---@param value EntryValue|nil
@@ -662,14 +759,21 @@ function EntriesPanel:_create_field(def, y, value, kept, editable)
     local _, title_h = title:get_size()
     local input_y = y + title_h * s
 
-    local input = self:_create_input(def.type == "number")
+    ---@type TextInput|NumberInput|SelectionBox
+    local input
+    if _is_selection(def) then
+        input = self:_create_selection_box(def, value, kept)
+    else
+        local text_input = self:_create_input(def.type == "number")
+        if kept then
+            text_input:set_text(kept)
+        else
+            _show_value(text_input, def, value)
+        end
+        input = text_input
+    end
     input:set_position(p, input_y)
     input:set_read_only(not editable or def.type == "image")
-    if kept then
-        input:set_text(kept)
-    else
-        _show_value(input, def, value)
-    end
     local _, input_h = input:get_size()
     local bottom = input_y + input_h
 
@@ -698,7 +802,7 @@ end
 ---@private
 ---@param key string An `image` field
 function EntriesPanel:_open_assets(key)
-    local path = assert(self:get_field_input(key)):get_text()
+    local path = assert(self:_find_image_input(key)):get_text()
     ---@type AssetPick
     local pick = {
         path = path ~= "" and path or nil,
@@ -720,10 +824,23 @@ function EntriesPanel:_set_image(key, path)
     if not lifetime.alive(self) then
         return
     end
-    local input = self:get_field_input(key)
+    local input = self:_find_image_input(key)
     if input then
         input:set_text(path)
     end
+end
+
+---@private
+---@param key string An `image` field
+---@return TextInput|nil
+function EntriesPanel:_find_image_input(key)
+    local input = self:get_field_input(key)
+    if not input then
+        return nil
+    end
+    assert(is_instance_of(input, TextInput))
+    ---@cast input TextInput
+    return input
 end
 
 ---@private

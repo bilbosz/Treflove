@@ -44,6 +44,12 @@ local function enabled_rows(list)
     return n
 end
 
+---@param client GameClient
+---@param dy number Positive away from the user; dispatched at the pointer's position
+local function wheel(client, dy)
+    client.app.pointer_event_manager:dispatch_wheel(0, dy)
+end
+
 ---@param fn fun(client: GameClient, screen: AssetsWorkspaceScreen, list: AssetList)
 local function with_list(fn)
     local client = game_client.enter({
@@ -84,11 +90,11 @@ test.case("the wheel scrolls the list under the pointer, within its content; ano
         local visible = enabled_rows(list)
 
         client.app:set_pointer_position(max_x + 10, (min_y + max_y) * 0.5)
-        client.app.wheel_event:trigger(0, -1)
+        wheel(client, -1)
         test.assert_true(rows[1]:is_enabled(), "a wheel beside the list scrolls nothing")
 
         client.app:set_pointer_position((min_x + max_x) * 0.5, (min_y + max_y) * 0.5)
-        client.app.wheel_event:trigger(0, -1)
+        wheel(client, -1)
         test.assert_false(rows[1]:is_enabled(), "scrolled down: the first rows left the view")
         test.assert_true(rows[4]:is_enabled())
         test.assert_true(enabled_rows(list) >= visible, "as many in view, with a partial row at an end")
@@ -96,22 +102,22 @@ test.case("the wheel scrolls the list under the pointer, within its content; ano
         test.assert_true(list._scroll > 0)
 
         for _ = 1, 100 do
-            client.app.wheel_event:trigger(0, -1)
+            wheel(client, -1)
         end
         test.assert_true(rows[61]:is_enabled(), "scrolled to the end")
         ---@diagnostic disable-next-line: invisible
         test.assert_eq(list._scroll, list:_get_max_scroll(), "no further than the content")
 
-        client.app.wheel_event:trigger(0, 1)
+        wheel(client, 1)
         ---@diagnostic disable-next-line: invisible
         test.assert_true(list._scroll < list:_get_max_scroll())
         for _ = 1, 100 do
-            client.app.wheel_event:trigger(0, 1)
+            wheel(client, 1)
         end
         ---@diagnostic disable-next-line: invisible
         test.assert_eq(list._scroll, 0)
 
-        client.app.wheel_event:trigger(0, -1)
+        wheel(client, -1)
         screen:select_entry(rows[1]:get_entry())
         screen:open_selected()
         ---@diagnostic disable-next-line: invisible
@@ -128,14 +134,14 @@ test.case("a hidden workspace's list ignores the wheel, and the shown game page 
         ---@diagnostic disable-next-line: invisible
         local background = page._background
         local scale = background:get_scale()
-        client.app.wheel_event:trigger(0, -1)
+        wheel(client, -1)
         test.assert_eq(background:get_scale(), scale, "a page under the workspace keeps its zoom")
         ---@diagnostic disable-next-line: invisible
         local scrolled = list._scroll
         test.assert_true(scrolled > 0, "the shown list scrolled")
 
         client.app.screen_manager:show(client.game_screen)
-        client.app.wheel_event:trigger(0, 1)
+        wheel(client, 1)
         ---@diagnostic disable-next-line: invisible
         test.assert_eq(list._scroll, scrolled, "the hidden list stays")
         test.assert_true(background:get_scale() > scale, "the shown page zoomed in")

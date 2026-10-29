@@ -10,6 +10,7 @@ local Utils = require("utils.utils")
 ---@field private _vertical_indicator Rectangle|nil With indicators: along the right edge
 ---@field private _horizontal_indicator Rectangle|nil With indicators: along the bottom edge
 ---@field private _drag_pos [number, number]|nil The last pointer position of the drag in progress, in the view's coordinates
+---@field private _wheel_step number How far a notch of the wheel scrolls, in the view's units
 local ScrollView = class("ScrollView", ClippingRectangle)
 
 ---@param parent Control|nil
@@ -24,6 +25,7 @@ function ScrollView:init(parent, width, height, with_indicators)
         0
     }
     self._drag_pos = nil
+    self._wheel_step = Consts.SCROLL_VIEW_WHEEL_STEP
     if with_indicators then
         self._vertical_indicator = Rectangle(self, Consts.SCROLL_VIEW_INDICATOR_THICKNESS, Consts.SCROLL_VIEW_INDICATOR_LENGTH, Consts.SCROLL_VIEW_INDICATOR_COLOR)
         self._horizontal_indicator = Rectangle(self, Consts.SCROLL_VIEW_INDICATOR_LENGTH, Consts.SCROLL_VIEW_INDICATOR_THICKNESS, Consts.SCROLL_VIEW_INDICATOR_COLOR)
@@ -34,6 +36,7 @@ function ScrollView:init(parent, width, height, with_indicators)
     pointer_event_manager.pointer_down:register(self, self.on_pointer_down)
     pointer_event_manager.pointer_up:register(self, self.on_pointer_up)
     pointer_event_manager.pointer_move:register(self, self.on_pointer_move)
+    pointer_event_manager.wheel:register(self, self.on_wheel)
 end
 
 ---@return Control The control to parent the scrolled content to
@@ -73,6 +76,26 @@ end
 ---@return number, number
 function ScrollView:get_scroll()
     return self._scroll[1], self._scroll[2]
+end
+
+---@param units number How far a notch of the wheel scrolls, in the view's units
+function ScrollView:set_wheel_step(units)
+    self._wheel_step = units
+end
+
+---@return number
+function ScrollView:get_wheel_step()
+    return self._wheel_step
+end
+
+---@param color number[]
+function ScrollView:set_indicator_color(color)
+    local vertical, horizontal = self._vertical_indicator, self._horizontal_indicator
+    if not vertical or not horizontal then
+        return
+    end
+    vertical:set_color(color)
+    horizontal:set_color(color)
 end
 
 ---@return boolean
@@ -147,6 +170,16 @@ function ScrollView:on_pointer_up(x, y, id)
         return true
     end
     self._drag_pos = nil
+end
+
+---@param x number
+---@param y number
+---@param dx number Positive scrolls toward the content's right
+---@param dy number Positive scrolls toward the content's top
+---@return boolean|nil
+function ScrollView:on_wheel(x, y, dx, dy)
+    local step = self._wheel_step
+    self:set_scroll(self._scroll[1] + dx * step, self._scroll[2] - dy * step)
 end
 
 return ScrollView

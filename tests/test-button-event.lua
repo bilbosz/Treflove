@@ -240,32 +240,65 @@ test.case("read-only inputs and their subtrees are ignored", function()
     test.assert_deep_eq(tree.log, {})
 
     tree.input.read_only = false
+    tree.manager:dispatch_pointer_down(5, 65, 1)
+    tree.manager:dispatch_pointer_up(5, 65, 1)
     tree.manager:dispatch_pointer_down(20, 80, 1)
     tree.manager:dispatch_pointer_up(20, 80, 1)
     test.assert_deep_eq(tree.log, {
         "input:selected",
         "input:unselected",
-        "input:clicked"
+        "input:clicked",
+        "inner:selected",
+        "inner:unselected",
+        "inner:clicked"
     })
 end)
 
-test.case("invisible controls are skipped, overlaps go to the first control in tree order", function()
+test.case("overlapping siblings: the later one, drawn on top, gets the hover, the press and the click; an invisible one is skipped", function()
     local tree = _make_tree()
     tree.b:get_global_recursive_aabb():set_position_and_size(0, 0, 40, 40)
 
+    tree.manager:dispatch_pointer_move(20, 20, nil)
     tree.manager:dispatch_pointer_down(20, 20, 1)
     tree.manager:dispatch_pointer_up(20, 20, 1)
-    tree.a.visible = false
-    tree.manager:dispatch_pointer_down(20, 20, 1)
-    tree.manager:dispatch_pointer_up(20, 20, 1)
+    tree.b.visible = false
+    tree.manager:dispatch_pointer_move(21, 21, nil)
+    tree.manager:dispatch_pointer_down(21, 21, 1)
+    tree.manager:dispatch_pointer_up(21, 21, 1)
 
     test.assert_deep_eq(tree.log, {
-        "a:selected",
-        "a:unselected",
-        "a:clicked",
+        "b:entered",
         "b:selected",
         "b:unselected",
-        "b:clicked"
+        "b:clicked",
+        "b:left",
+        "a:entered",
+        "a:selected",
+        "a:unselected",
+        "a:clicked"
+    })
+end)
+
+test.case("a child over its parent wins the hover, the press and the click; the parent keeps the rest of its box", function()
+    local tree = _make_tree()
+
+    tree.manager:dispatch_pointer_move(20, 80, nil)
+    tree.manager:dispatch_pointer_down(20, 80, 1)
+    tree.manager:dispatch_pointer_up(20, 80, 1)
+    tree.manager:dispatch_pointer_move(5, 65, nil)
+    tree.manager:dispatch_pointer_down(5, 65, 1)
+    tree.manager:dispatch_pointer_up(5, 65, 1)
+
+    test.assert_deep_eq(tree.log, {
+        "inner:entered",
+        "inner:selected",
+        "inner:unselected",
+        "inner:clicked",
+        "inner:left",
+        "input:entered",
+        "input:selected",
+        "input:unselected",
+        "input:clicked"
     })
 end)
 

@@ -1,6 +1,5 @@
 local App = require("app.app")
 local Consts = require("app.consts")
-local Event = require("events.event")
 local FileSystemDropEventManager = require("events.file-drop-event")
 local KeyboardManager = require("events.keyboard")
 local PointerEventManager = require("events.pointer-event")
@@ -20,7 +19,6 @@ function UiApp:init(params)
     self.resize_manager = ResizeManager()
     self.screen_manager = ScreenManager()
     self.pointer_event_manager = PointerEventManager()
-    self.wheel_event = Event()
     self.button_event_manager = ButtonEventManager()
     self.keyboard_manager = KeyboardManager()
     self.text_event_manager = TextEventManager()
@@ -51,7 +49,7 @@ function UiApp:register_love_callbacks()
     ---@param x number
     ---@param y number
     function love.wheelmoved(x, y)
-        self.wheel_event:trigger(x, y)
+        self.pointer_event_manager:dispatch_wheel(x, y)
     end
     ---@param x number
     ---@param y number

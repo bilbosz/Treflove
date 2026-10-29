@@ -258,9 +258,7 @@ managers (or by `app` directly) and consumers register handlers on it:
   `on_screen_hide()` and `on_focus_lost()`)
 
 Events by source:
-- Broadcast events: `app.update_event` (dt), `app.wheel_event` (x, y, client
-  only; a consumer asks its screen `is_showed()` and the pointer manager
-  for the position, so a page under the workspace keeps its zoom),
+- Broadcast events: `app.update_event` (dt),
   `app.resize_manager.resized` (width, height)
 - `KeyboardManager`: `key_pressed`/`key_released` (key), always delivered,
   also during text input (backstack, form navigation, button activation).
@@ -271,7 +269,11 @@ Events by source:
   `is_shift_down()` are what the consumers ask (the form's Shift+Tab, the
   page's selection keys, the text event manager); a lost window focus
   forgets every tracked key (`release_all`)
-- `PointerEventManager` (`pointer_down/up/move`) and
+- `PointerEventManager` (`pointer_down/up/move`, and `wheel`, dispatched
+  at the pointer's position with the movement, `(x, y, dx, dy)`, `dy`
+  positive away from the user, with a receive-through set of its own,
+  `set_wheel_receive_through`, since the page receives the pointer events
+  through and must not zoom under a list) and
   `FileSystemDropEventManager` (`file_dropped`): owners are Controls; dispatch
   is hit-tested instead of broadcast: only visible controls under the point,
   top-most first; a falsy return consumes the event; `set_receive_through`
@@ -287,7 +289,12 @@ Events by source:
   (hover and selection state; events `clicked`, `selected`, `unselected`,
   `pointer_entered`, `pointer_left`); controls register with
   `register(ctrl, button)`; `unregister(ctrl)` lets go of a button under the
-  pointer or pressed (it is unselected and left at once, never driven later)
+  pointer or pressed (it is unselected and left at once, never driven later).
+  The button under the point is the top-most one, the last in tree order
+  among the visible, hit, non-read-only controls holding a button (a child
+  after its parent, a later sibling after an earlier one), the control the
+  pointer dispatch would call first, so a list opened over other inputs
+  takes the hover and the click
 - `TextEventManager`: `text_appended` (the text typed; dropped while Ctrl
   is held) and `commanded` (one of `TextEventManager.Command`: a move by a
   character, a word or to the line's end, with Shift extending the
@@ -309,17 +316,27 @@ LÖVE callbacks when it registers them.
 `Control` is the base of every UI element: parent-child relationships
 (`add_child`/`remove_child`), transforms (position, scale, rotation),
 axis-aligned bounding boxes for hit testing. `DrawableControl` adds
-rendering; the primitives are Rectangle, Circle, Text and Image; a
-border-only `Rectangle` draws its line inside its box.
+rendering; the primitives are Rectangle, Circle, Triangle, Text and
+Image; a border-only `Rectangle` draws its line inside its box.
 `ClippingRectangle` and `ClippingMask` clip their children to their box
 (every pixel the box touches), nested clips intersect, and their bounds are
 the box, so what is clipped is neither drawn nor hit. Higher-level components (Panel, TextButton, Input,
-TextInput, NumberInput, ScrollView) build on them. `ScrollView` is a
+TextInput, NumberInput, SelectionBox, ScrollView) build on them. `ScrollView` is a
 viewport over a content control larger than itself (`get_content`,
 `set_content_size`): the content is dragged with `SCROLL_VIEW_DRAG_BUTTON`,
 press, drag, release, no further than its edges, holding the pointer
-meanwhile. Optional indicators of a fixed size (`SCROLL_VIEW_INDICATOR_*`)
-along the overflowed edges mark where the view is. The token panel and the
+meanwhile, and scrolled with the wheel over it by `SCROLL_VIEW_WHEEL_STEP`
+units a notch (`set_wheel_step` for another step: the monitor's panes by
+lines, a selection box's list by `SELECTION_BOX_WHEEL_ROWS` rows),
+consumed whether or not the content overflows, so the page under a side
+panel's list keeps its zoom; a hover or a highlight follows the pointer
+only on a move, so what scrolled under a still pointer keeps its state
+until the next move, as under a drag.
+Optional indicators of a fixed size (`SCROLL_VIEW_INDICATOR_*`)
+along the overflowed edges mark where the view is, in
+`SCROLL_VIEW_INDICATOR_COLOR` unless `set_indicator_color` gives another
+(a selection box's list uses its text color, since the light default is
+lost over its rows). The token panel and the
 workspace's details keep what is above their buttons in one, the
 workspace's usage list its buttons.
 A destroyed control takes its subtree with it, newest child first; a screen
@@ -361,6 +378,39 @@ filter accepts the empty text, a lone minus and what `tonumber` parses,
 asked with the whole text an edit would produce, so an insertion in the
 middle and a paste are checked as a keystroke at the end is. A read-only
 input takes no focus and so has no caret, as before.
+
+`SelectionBox` (`ui/selection-box.lua`) is one option of a closed set
+(`SelectionOption[]`: a `key` the program reads and writes, a `title` the
+user sees) shown as a field: the selected option's title at the left,
+clipped before the arrow, in the input font as a text input's content,
+and the arrow at the right edge, a `Triangle` pointing down
+(`controls/triangle.lua`, the primitive filling its box with
+`love.graphics.polygon`, drawn as the caret is a `Rectangle`, since the
+display font has no such glyph), over a background in the button colors
+a text input uses. A
+press, or Return or Space while focused, opens the list
+(`SelectionBoxList`, `ui/selection-box-list.lua`): a tree parented to the
+form screen's control as its last child, so it draws over the screen and
+is hit first, and anchored to the box, so it dies with the box or with
+the screen; a backdrop over the whole screen takes every press outside
+the list, which closes it and reaches nothing under it, and the rows
+(`SelectionBoxRow`, one per option, as tall as the box, in a scroll view
+showing at most `SELECTION_BOX_MAX_ROWS` of them with the selected one in
+view, under the box, or above it when there is no room below) highlight
+under the pointer or with Up and Down, the wheel scrolls them and reaches
+nothing under the list, and a press on one, or Return, picks it: the box's selection changes, the list closes, `on_change` runs
+when the key differs. A press is only recorded by the pointer dispatch
+and acted on from the list's own `Button` (the button manager runs after
+the pointer dispatch, so a list gone at the press would leave the manager
+pressing what is under it). Up and Down on a closed focused
+box step the selection directly. The list closes too when the focus
+moves on (Tab), the screen hides, the box becomes read-only, the options
+are set (`set_options`, which keeps the selected key when it is still
+among them), the selection is set (`set_selected`) or the window
+resizes; `set_selected` and `set_options` never run `on_change`. Escape stays the back key. A scenario finds the
+box by its shown title and a row of the open list by its title
+(`driver:click("SelectionBox", "Player")`,
+`driver:click("SelectionBoxRow", "Game master")`).
 
 `Image` draws a `love.Image` the images module made with its mipmap chain,
 filtered linearly within and between the levels, so a downscaled image (a
@@ -614,7 +664,11 @@ without `write` on `game`. The other four are `EntriesPanel`
 scroll view (the selected one active), an Id field, one field per
 `EntryField` (a text input, a number input, a read-only path with
 `Browse...` into the assets workspace for an image, the grants separated
-by spaces), and the buttons `New` and `Delete` above `Cancel` and
+by spaces, a selection box for an `enum` such as a token property's
+`type` and for a player's `group`, over the game's groups by their titles;
+a value outside the options is shown as an option of its own, so the
+field shows the truth and Apply sends nothing for it untouched), and the
+buttons `New` and `Delete` above `Cancel` and
 `Apply`. `New` empties the fields for a creation; `Apply` sends only the
 fields that differ (with the rename when the Id field changed) after the
 module's checks, a refusal notified before anything is sent; `Delete`

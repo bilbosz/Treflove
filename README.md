@@ -82,6 +82,7 @@ Milestones that are consider done at this point:
 * token changes synchronized through the server: checked against the player's grants, saved, pushed to the other clients in the game
 * tokens created from the token panel's New button and deleted from its Delete, through the server like a change; an image property's image shown in the panel, the avatar in its circle as on the page
 * the game's pages, groups, players' grants, token properties and the shown page edited from the game's side panels, through the server like a token, the shown page switching on every client
+* a selection box among the gui elements: one option of a closed set shown as a field with an arrow, its list opened over the screen
 
 Known to-dos:
 * game master script handling

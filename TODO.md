@@ -220,6 +220,21 @@ Hierarchy"). Still missing:
 - IME composition (`love.textedited`) for scripts that compose
 - Cmd as the command key is read from the OS name and untested on macOS
 
+The selection box ([docs/architecture.md](docs/architecture.md), "UI
+Control Hierarchy") is used by the entries panels for a token property's
+`type` and a player's `group`. Still missing:
+
+- A multivalue state, as the text input has, for a field of the token
+  panel whose selected tokens disagree
+- Escape closing an open list without leaving the screen: the back key
+  is broadcast with no way to consume it
+- A scenario cannot aim the wheel: `ScenarioDriver:move` pushes a
+  `mousemoved` event, which leaves `love.mouse.getPosition`, where the
+  wheel is dispatched, as it was; a `driver:wheel(x, y, dx, dy)` that
+  sets the mouse position (`love.mouse.setPosition`, which works under
+  the offscreen driver) and pushes `wheelmoved`, or the pointer manager
+  answering `get_position` from the last pointer event it dispatched
+
 ### 15. Scenarios and the console, next steps
 
 The scenarios run headless on the offscreen SDL driver and the console

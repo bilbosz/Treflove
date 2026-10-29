@@ -116,7 +116,6 @@ function mocks.make_app(overrides)
     ---@class AppMock: App
     ---@field logs any[][] Arguments of every `app:log` call, in order
     ---@field update_event Event Real event instance, triggerable by tests
-    ---@field wheel_event Event Real event instance, triggerable by tests
     ---@field keyboard FakeKeyboard The backend of `keyboard_manager` and `text_event_manager`
     ---@field system FakeSystem The backend of `keyboard_manager` and `text_event_manager`
     ---@field keyboard_manager KeyboardManager Real manager over `keyboard` and `system`
@@ -161,7 +160,6 @@ function mocks.make_app(overrides)
     }
 
     app_mock.update_event = Event()
-    app_mock.wheel_event = Event()
     app_mock.keyboard = mocks.make_keyboard()
     app_mock.system = mocks.make_system()
     app_mock.keyboard_manager = KeyboardManager(app_mock.keyboard, app_mock.system)
@@ -756,6 +754,7 @@ function mocks.ensure_love_graphics()
         setColor = _no_op,
         draw = _no_op,
         circle = _no_op,
+        polygon = _no_op,
         rectangle = _no_op,
         setShader = _no_op,
         reset = _no_op,

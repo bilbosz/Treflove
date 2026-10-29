@@ -246,6 +246,20 @@ test.case("what is scrolled out of the view is not hit, what is in it is", funct
     lifetime.destroy(s.root)
 end)
 
+test.case("set_indicator_color recolors both indicators", function()
+    local s = setup(300, 500, true)
+    local color = {
+        0.1,
+        0.2,
+        0.3
+    }
+    s.view:set_indicator_color(color)
+    local vertical, horizontal = indicators(s.view)
+    test.assert_deep_eq(vertical:get_color(), color)
+    test.assert_deep_eq(horizontal:get_color(), color)
+    lifetime.destroy(s.root)
+end)
+
 test.case("the indicators mark how far the content is scrolled along each overflowed edge", function()
     local s = setup(300, 500, true)
     local vertical, horizontal = indicators(s.view)
@@ -324,6 +338,101 @@ test.case("a scroll, a content size and a view size are clamped against each oth
     lifetime.destroy(s.root)
 end)
 
+---@param view ScrollView
+---@return [number, number]
+local function scroll_of(view)
+    return {
+        view:get_scroll()
+    }
+end
+
+test.case("the wheel over the view scrolls it by the step on each axis, no further than the content's edges", function()
+    local s = setup(300, 500)
+    local step = Consts.SCROLL_VIEW_WHEEL_STEP
+    local manager = s.app.pointer_event_manager
+    s.app:set_pointer_position(100, 200)
+
+    manager:dispatch_wheel(0, -1)
+    test.assert_deep_eq(scroll_of(s.view), {
+        0,
+        step
+    }, "toward the user scrolls the content up, its bottom into view")
+    manager:dispatch_wheel(1, 0)
+    test.assert_deep_eq(scroll_of(s.view), {
+        step,
+        step
+    }, "to the right scrolls its right side into view")
+    manager:dispatch_wheel(0, 1)
+    manager:dispatch_wheel(-1, 0)
+    test.assert_deep_eq(scroll_of(s.view), {
+        0,
+        0
+    }, "and back")
+
+    manager:dispatch_wheel(100, -100)
+    test.assert_deep_eq(scroll_of(s.view), {
+        200,
+        300
+    }, "clamped at the far edges")
+    manager:dispatch_wheel(-100, 100)
+    test.assert_deep_eq(scroll_of(s.view), {
+        0,
+        0
+    }, "and at the near ones")
+    lifetime.destroy(s.root)
+end)
+
+test.case("the wheel step is the view's own", function()
+    local s = setup(100, 500)
+    local manager = s.app.pointer_event_manager
+    test.assert_eq(s.view:get_wheel_step(), Consts.SCROLL_VIEW_WHEEL_STEP)
+    s.view:set_wheel_step(25)
+    test.assert_eq(s.view:get_wheel_step(), 25)
+    s.app:set_pointer_position(100, 200)
+    manager:dispatch_wheel(0, -3)
+    test.assert_deep_eq(scroll_of(s.view), {
+        0,
+        75
+    })
+    lifetime.destroy(s.root)
+end)
+
+test.case("the wheel over the view is consumed, even with content that fits; beside it the view takes nothing", function()
+    local s = setup(80, 150)
+    local manager = s.app.pointer_event_manager
+    ---@type string[]
+    local log = {}
+    ---@param _ Control
+    ---@param _x number
+    ---@param _y number
+    ---@param _dx number
+    ---@param dy number
+    local function on_root_wheel(_, _x, _y, _dx, dy)
+        table.insert(log, "root wheel " .. tostring(dy))
+    end
+    manager.wheel:register(s.root, on_root_wheel)
+
+    s.app:set_pointer_position(100, 200)
+    manager:dispatch_wheel(0, -1)
+    test.assert_deep_eq(scroll_of(s.view), {
+        0,
+        0
+    }, "nothing to scroll")
+    test.assert_deep_eq(log, {}, "an opaque area for the wheel")
+
+    s.view:set_content_size(100, 500)
+    s.app:set_pointer_position(10, 10)
+    manager:dispatch_wheel(0, -1)
+    test.assert_deep_eq(scroll_of(s.view), {
+        0,
+        0
+    }, "beside the view")
+    test.assert_deep_eq(log, {
+        "root wheel -1"
+    })
+    lifetime.destroy(s.root)
+end)
+
 test.case("the view's death takes its content and indicators, and ends its registrations", function()
     local s = setup(100, 500, true)
     local item = Rectangle(s.content, 100, 50)
@@ -339,6 +448,7 @@ test.case("the view's death takes its content and indicators, and ends its regis
     test.assert_eq(manager.pointer_down:get_handler(s.view), nil)
     test.assert_eq(manager.pointer_move:get_handler(s.view), nil)
     test.assert_eq(manager.pointer_up:get_handler(s.view), nil)
+    test.assert_eq(manager.wheel:get_handler(s.view), nil)
     manager:dispatch_pointer_up(100, 200, DRAG)
     test.assert_eq(manager:get_captor(DRAG), nil, "the dead view let go of the pointer")
     lifetime.destroy(s.root)

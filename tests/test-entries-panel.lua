@@ -9,6 +9,7 @@ local PagesPanel = require("game.panels.pages-panel")
 local PermissionsPanel = require("game.panels.permissions-panel")
 local TokenPropertiesPanel = require("game.panels.token-properties-panel")
 local AssetListRow = require("game.assets.workspace.asset-list-row")
+local SelectionBox = require("ui.selection-box")
 
 ---@alias TestEntriesPanelMake fun(game_screen: GameScreen, width: number, height: number): EntriesPanel
 
@@ -30,16 +31,16 @@ local PANELS = {
 
 ---@class TestEntriesCreation
 ---@field id string
----@field texts table<string, string> What is typed in the fields
+---@field texts table<string, string> What is typed in the text fields, or selected in the selection boxes
 ---@field entry table<string, EntryValue> What is sent
 
 ---@class TestEntriesKindCase
 ---@field kind EntryKind
 ---@field ids string[] The list, sorted
 ---@field selected string The entry the case selects
----@field texts table<string, string> The selected entry's fields
----@field change {key: string, text: string, value: EntryValue} A change the checks accept
----@field refused {key: string, text: string} A change the checks refuse
+---@field texts table<string, string> The selected entry's fields: the texts, a selection box's selected key
+---@field change {key: string, text: string, value: EntryValue} A change the checks accept: a text typed, or a key selected
+---@field refused {key: string, text: string} A text the checks refuse, in a text field
 ---@field rename string|nil A free id, for a kind that renames
 ---@field taken string|nil An id the kind holds already, other than the selected one
 ---@field creation TestEntriesCreation|nil For a kind that creates
@@ -144,8 +145,8 @@ local KINDS = {
             value = "master"
         },
         refused = {
-            key = "group",
-            text = "nobody"
+            key = "permissions",
+            text = "read fly"
         }
     },
     {
@@ -169,8 +170,8 @@ local KINDS = {
             value = "string"
         },
         refused = {
-            key = "type",
-            text = "colour"
+            key = "title",
+            text = ""
         },
         rename = "health",
         taken = "name",
@@ -264,18 +265,66 @@ end
 
 ---@param panel EntriesPanel
 ---@param key string
----@return TextInput|NumberInput
-local function field(panel, key)
+---@return TextInput|NumberInput|SelectionBox
+local function input_of(panel, key)
     return assert(panel:get_field_input(key), "no field " .. key)
 end
 
 ---@param panel EntriesPanel
----@return table<string, string> By key, every field's text
+---@param key string A text field
+---@return TextInput|NumberInput
+local function field(panel, key)
+    local input = input_of(panel, key)
+    assert(not is_instance_of(input, SelectionBox), "a selection box " .. key)
+    ---@cast input TextInput|NumberInput
+    return input
+end
+
+---@param panel EntriesPanel
+---@param key string An `enum` or a `group` field
+---@return SelectionBox
+local function box(panel, key)
+    local input = input_of(panel, key)
+    assert(is_instance_of(input, SelectionBox), "no selection box " .. key)
+    ---@cast input SelectionBox
+    return input
+end
+
+---@param panel EntriesPanel
+---@param key string
+---@return boolean
+local function is_box(panel, key)
+    return is_instance_of(input_of(panel, key), SelectionBox)
+end
+
+---@param panel EntriesPanel
+---@param key string
+---@return string The field's text, or the selection box's selected key
+local function value_of(panel, key)
+    if is_box(panel, key) then
+        return assert(box(panel, key):get_selected())
+    end
+    return field(panel, key):get_text()
+end
+
+---@param panel EntriesPanel
+---@param key string
+---@param text string Typed into a text field, or the key selected in a selection box
+local function set_value(panel, key, text)
+    if is_box(panel, key) then
+        box(panel, key):set_selected(text)
+    else
+        field(panel, key):set_text(text)
+    end
+end
+
+---@param panel EntriesPanel
+---@return table<string, string> By key, every field's text or selected key
 local function texts(panel)
     ---@type table<string, string>
     local result = {}
     for _, def in ipairs(entries.FIELDS[panel:get_kind()]) do
-        result[def.key] = field(panel, def.key):get_text()
+        result[def.key] = value_of(panel, def.key)
     end
     return result
 end
@@ -284,7 +333,7 @@ end
 ---@param values table<string, string>
 local function type_texts(panel, values)
     for key, text in pairs(values) do
-        field(panel, key):set_text(text)
+        set_value(panel, key, text)
     end
 end
 
@@ -294,8 +343,37 @@ end
 local function assert_fields_read_only(panel, read_only, message)
     for _, def in ipairs(entries.FIELDS[panel:get_kind()]) do
         local expected = read_only or def.type == "image"
-        test.assert_eq(field(panel, def.key):is_read_only(), expected, message .. ": " .. def.key)
+        test.assert_eq(input_of(panel, def.key):is_read_only(), expected, message .. ": " .. def.key)
     end
+end
+
+---@param options SelectionOption[]
+---@return string[] The keys and the titles, `key=title`, in order
+local function describe_options(options)
+    ---@type string[]
+    local result = {}
+    for _, option in ipairs(options) do
+        table.insert(result, option.key .. "=" .. option.title)
+    end
+    return result
+end
+
+---@param client GameClient
+---@param selection_box SelectionBox Not read-only
+---@param title string An option's
+local function pick_option(client, selection_box, title)
+    game_client.click(client, selection_box)
+    test.assert_true(selection_box:is_open(), "the list opened")
+    ---@diagnostic disable-next-line: invisible
+    local list = assert(selection_box._list)
+    for _, row in ipairs(list:get_rows()) do
+        if row:get_title() == title then
+            game_client.click(client, row)
+            test.assert_false(selection_box:is_open(), "the pick closed the list")
+            return
+        end
+    end
+    error("no row " .. title)
 end
 
 ---@param fn fun(case: TestEntriesKindCase)
@@ -439,7 +517,7 @@ test.case("Apply sends only the fields that differ from the data; nothing differ
             click_entry(client, panel, case.selected)
             game_client.click(client, assert(panel:get_apply_button()))
             test.assert_deep_eq(sent, {}, "nothing changed")
-            field(panel, case.change.key):set_text(case.change.text)
+            set_value(panel, case.change.key, case.change.text)
             game_client.click(client, assert(panel:get_apply_button()))
             test.assert_deep_eq(sent, {
                 {
@@ -452,7 +530,7 @@ test.case("Apply sends only the fields that differ from the data; nothing differ
                 }
             })
             test.assert_deep_eq(game_client.take_notifications(client), {})
-            test.assert_deep_eq(texts(panel)[case.change.key], case.change.text, "the field keeps the text")
+            test.assert_deep_eq(texts(panel)[case.change.key], case.change.text, "the field keeps the change")
             test.assert_deep_eq(entries.get(assert(client.app.data), case.kind, case.selected), entries.get(game_client.entries_game_data(), case.kind, case.selected), "nothing applied to the data")
         end)
     end)
@@ -485,7 +563,7 @@ test.case("a new id in the Id field sends a rename, with the changes", function(
             test.assert_false(id_input:is_read_only())
             id_input:set_text(assert(case.rename))
             game_client.click(client, assert(panel:get_apply_button()))
-            field(panel, case.change.key):set_text(case.change.text)
+            set_value(panel, case.change.key, case.change.text)
             game_client.click(client, assert(panel:get_apply_button()))
             test.assert_deep_eq(sent, {
                 {
@@ -520,7 +598,7 @@ test.case("the players panel shows the login read-only, without New or Delete", 
     end)
 end)
 
-test.case("New empties the fields and makes the Id field editable; Apply sends the creation", function()
+test.case("New empties the text fields, shows a selection box's first option and makes the Id field editable; Apply sends the creation", function()
     for_kinds(function(case)
         with_panel(case.kind, GAME_MASTER, function(client, panel, sent)
             local creation = assert(case.creation)
@@ -533,7 +611,8 @@ test.case("New empties the fields and makes the Id field editable; Apply sends t
             test.assert_eq(id_input:get_text(), "")
             test.assert_false(id_input:is_read_only())
             for key, text in pairs(texts(panel)) do
-                test.assert_eq(text, "", "empty: " .. key)
+                local expected = is_box(panel, key) and box(panel, key):get_options()[1].key or ""
+                test.assert_eq(text, expected, "emptied: " .. key)
             end
             test.assert_eq(panel:get_delete_button(), nil, "nothing to delete")
 
@@ -642,7 +721,7 @@ test.case("a rename to a taken id is notified and nothing is sent", function()
         with_panel(case.kind, GAME_MASTER, function(client, panel, sent)
             click_entry(client, panel, case.selected)
             assert(panel:get_id_input()):set_text(assert(case.taken))
-            field(panel, case.change.key):set_text(case.change.text)
+            set_value(panel, case.change.key, case.change.text)
             game_client.click(client, assert(panel:get_apply_button()))
             test.assert_eq(#game_client.take_notifications(client), 1)
             test.assert_deep_eq(sent, {})
@@ -705,7 +784,7 @@ test.case("without write the fields are read-only, with Cancel and no Apply, New
             test.assert_eq(panel:get_apply_button(), nil)
             test.assert_eq(panel:get_delete_button(), nil)
             test.assert_true(panel:get_cancel_button() ~= nil)
-            field(panel, case.change.key):on_enter()
+            field(panel, case.refused.key):on_enter()
             panel:apply()
             panel:delete()
             panel:start_new()
@@ -990,5 +1069,219 @@ test.case("a destroyed panel takes its controls and stops following the list's s
         test.assert_false(lifetime.alive(input))
         test.assert_false(lifetime.alive(button))
         client.app.update_event:trigger(0.016)
+    end)
+end)
+
+test.case("a token property's type is a selection box over the four types, each its own title, the property's selected", function()
+    with_panel("token_properties", GAME_MASTER, function(client, panel)
+        click_entry(client, panel, "hp")
+        local type_box = box(panel, "type")
+        test.assert_deep_eq(describe_options(type_box:get_options()), {
+            "string=string",
+            "number=number",
+            "image=image",
+            "array=array"
+        })
+        test.assert_eq(type_box:get_selected(), "number")
+        local title_x, _, title_w, title_h = field(panel, "title"):get_position_and_size()
+        local box_x, _, box_w, box_h = type_box:get_position_and_size()
+        test.assert_deep_eq({
+            box_x,
+            box_w,
+            box_h
+        }, {
+            title_x,
+            title_w,
+            title_h
+        }, "placed and sized as the text field above it")
+        test.assert_false(type_box:is_read_only())
+    end)
+end)
+
+test.case("a player's group is a selection box over the game's groups by id, titled by their titles, the player's selected", function()
+    with_panel("players", GAME_MASTER, function(client, panel)
+        click_entry(client, panel, "piotr")
+        local group_box = box(panel, "group")
+        test.assert_deep_eq(describe_options(group_box:get_options()), {
+            "guest=Guest",
+            "master=Game master",
+            "player=Player"
+        })
+        test.assert_eq(group_box:get_selected(), "player")
+        click_entry(client, panel, "adam")
+        test.assert_eq(box(panel, "group"):get_selected(), "master")
+    end)
+end)
+
+test.case("a value outside the options is appended, titled by itself, and shown; Apply sends nothing for it", function()
+    with_panel("players", GAME_MASTER, function(client, panel, sent)
+        local data = assert(client.app.data)
+        data.players.piotr.group = "ghosts"
+        data.players.adam.group = nil
+        click_entry(client, panel, "piotr")
+        local group_box = box(panel, "group")
+        test.assert_deep_eq(describe_options(group_box:get_options()), {
+            "guest=Guest",
+            "master=Game master",
+            "player=Player",
+            "ghosts=ghosts"
+        })
+        test.assert_eq(group_box:get_selected(), "ghosts")
+        game_client.click(client, assert(panel:get_apply_button()))
+        click_entry(client, panel, "adam")
+        test.assert_eq(box(panel, "group"):get_selected(), "", "no group, shown as an empty option")
+        game_client.click(client, assert(panel:get_apply_button()))
+        test.assert_deep_eq(sent, {}, "nothing picked, nothing sent")
+
+        click_entry(client, panel, "piotr")
+        pick_option(client, box(panel, "group"), "Guest")
+        game_client.click(client, assert(panel:get_apply_button()))
+        test.assert_deep_eq(sent, {
+            {
+                method = "update_entry",
+                kind = "players",
+                id = "piotr",
+                changes = {
+                    group = "guest"
+                }
+            }
+        })
+    end)
+end)
+
+test.case("a pick does not apply by itself; Apply sends the picked key when it differs from the data", function()
+    with_panel("token_properties", GAME_MASTER, function(client, panel, sent)
+        click_entry(client, panel, "hp")
+        pick_option(client, box(panel, "type"), "image")
+        test.assert_eq(box(panel, "type"):get_selected(), "image")
+        test.assert_deep_eq(sent, {}, "sent with the next Apply")
+        game_client.click(client, assert(panel:get_apply_button()))
+        test.assert_deep_eq(sent, {
+            {
+                method = "update_entry",
+                kind = "token_properties",
+                id = "hp",
+                changes = {
+                    type = "image"
+                }
+            }
+        })
+        pick_option(client, box(panel, "type"), "number")
+        game_client.click(client, assert(panel:get_apply_button()))
+        test.assert_eq(#sent, 1, "picked back to the data's type: nothing differs")
+    end)
+    with_panel("players", GAME_MASTER, function(client, panel, sent)
+        click_entry(client, panel, "piotr")
+        pick_option(client, box(panel, "group"), "Game master")
+        game_client.click(client, assert(panel:get_apply_button()))
+        test.assert_deep_eq(sent, {
+            {
+                method = "update_entry",
+                kind = "players",
+                id = "piotr",
+                changes = {
+                    group = "master"
+                }
+            }
+        })
+    end)
+end)
+
+test.case("a picked type the checks refuse is notified and nothing is sent; the box keeps the pick", function()
+    with_panel("token_properties", GAME_MASTER, function(client, panel, sent)
+        click_entry(client, panel, "name")
+        pick_option(client, box(panel, "type"), "number")
+        game_client.click(client, assert(panel:get_apply_button()))
+        test.assert_eq(#game_client.take_notifications(client), 1, "every token has a name")
+        test.assert_deep_eq(sent, {})
+        test.assert_eq(box(panel, "type"):get_selected(), "number")
+    end)
+end)
+
+test.case("New shows the first option and the creation carries it, or the option picked", function()
+    with_panel("token_properties", GAME_MASTER, function(client, panel, sent)
+        game_client.click(client, assert(panel:get_new_button()))
+        test.assert_eq(box(panel, "type"):get_selected(), "string")
+        assert(panel:get_id_input()):set_text("mood")
+        field(panel, "title"):set_text("Mood")
+        game_client.click(client, assert(panel:get_apply_button()))
+        assert(panel:get_id_input()):set_text("speed")
+        field(panel, "title"):set_text("Speed")
+        pick_option(client, box(panel, "type"), "number")
+        game_client.click(client, assert(panel:get_apply_button()))
+        test.assert_deep_eq(sent, {
+            {
+                method = "create_entry",
+                kind = "token_properties",
+                id = "mood",
+                entry = {
+                    title = "Mood",
+                    type = "string"
+                }
+            },
+            {
+                method = "create_entry",
+                kind = "token_properties",
+                id = "speed",
+                entry = {
+                    title = "Speed",
+                    type = "number"
+                }
+            }
+        })
+    end)
+end)
+
+test.case("a pick survives a rebuild for another entry; a change of the groups rebuilds the options and keeps the pick", function()
+    with_panel("players", GAME_MASTER, function(client, panel)
+        click_entry(client, panel, "piotr")
+        pick_option(client, box(panel, "group"), "Game master")
+        local data = assert(client.app.data)
+        data.players.adam.permissions = {
+            "read"
+        }
+        panel:on_entries_change("players", "adam")
+        test.assert_eq(box(panel, "group"):get_selected(), "master", "another player's change")
+
+        data.groups.scouts = {
+            title = "Scouts",
+            permissions = {}
+        }
+        panel:on_entries_change("groups", "scouts")
+        local group_box = box(panel, "group")
+        test.assert_deep_eq(describe_options(group_box:get_options()), {
+            "guest=Guest",
+            "master=Game master",
+            "player=Player",
+            "scouts=Scouts"
+        })
+        test.assert_eq(group_box:get_selected(), "master", "a created group")
+
+        data.groups.masters = data.groups.master
+        data.groups.master = nil
+        data.players.adam.group = "masters"
+        panel:on_entries_change("groups", "masters")
+        test.assert_eq(box(panel, "group"):get_selected(), "player", "the picked group renamed away: the data's value again")
+    end)
+end)
+
+test.case("Cancel refills a selection box from the data", function()
+    with_panel("players", GAME_MASTER, function(client, panel, sent)
+        click_entry(client, panel, "piotr")
+        pick_option(client, box(panel, "group"), "Guest")
+        game_client.click(client, panel:get_cancel_button())
+        test.assert_eq(box(panel, "group"):get_selected(), "player")
+        test.assert_deep_eq(sent, {})
+    end)
+end)
+
+test.case("a selection box of an entry the player may not write is read-only and opens on nothing", function()
+    with_panel("players", READER, function(client, panel)
+        click_entry(client, panel, "piotr")
+        local group_box = box(panel, "group")
+        test.assert_true(group_box:is_read_only())
+        game_client.click(client, group_box)
+        test.assert_false(group_box:is_open())
+        test.assert_false(group_box:is_focused())
     end)
 end)

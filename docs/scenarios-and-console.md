@@ -228,7 +228,8 @@ access entry (an entry already active is not clicked again, which would
 hide its panel) and returns it, `steps.select_entry` selects an entry
 in an entries panel's list, `steps.set_text` replaces a field's text as
 a player types it (the field clicked, Ctrl+A, the text typed over the
-selection) and `steps.pick_image` picks an image in the workspace a
+selection), `steps.select_option` picks an option of a selection box by
+its key (the box clicked, the row by its title) and `steps.pick_image` picks an image in the workspace a
 Browse... button opened, with Use. `edit-text` edits the Login field
 with the caret and the selection: a move, a delete, a selection by
 Shift, Ctrl+A, a copy and a paste, each checked on the field's text,
@@ -253,7 +254,10 @@ with real avatars, piotr a player who writes the tokens he owns and views
 `Bilbosz`. A scenario names the fixture it needs in its table form,
 `fixture = "old-town"` beside `run`; `scenario.sh` reads it
 (`tools/scenario-info.lua`) and seeds the server from it, `basic` without
-one, and `--fixture <dir>` on its command line overrides.
+one, and `--fixture <dir>` on its command line overrides. That tool loads
+the scenario file under plain LuaJIT, so a scenario requires no UI module
+at file level (they need LÖVE's `utf8`): it tells a field's kind by
+`get_class_name_of`, as `game-panels` does for a selection box.
 
 ### Running one
 

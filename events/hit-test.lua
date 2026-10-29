@@ -41,7 +41,7 @@ function hit_test.dispatch(event, receive_through, x, y, ...)
     local top_to_be_called = true
     for _, ctrl in ripairs(list) do
         local handler = event:get_handler(ctrl)
-        ---@cast handler PointerEventHandler|FileDroppedHandler|nil
+        ---@cast handler PointerEventHandler|WheelEventHandler|FileDroppedHandler|nil
         if handler then
             if top_to_be_called then
                 local pass_through = handler(ctrl, x, y, ...)
