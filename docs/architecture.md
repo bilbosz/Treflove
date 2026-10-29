@@ -333,7 +333,10 @@ panel's list keeps its zoom; a hover or a highlight follows the pointer
 only on a move, so what scrolled under a still pointer keeps its state
 until the next move, as under a drag.
 Optional indicators of a fixed size (`SCROLL_VIEW_INDICATOR_*`)
-along the overflowed edges mark where the view is. The token panel and the
+along the overflowed edges mark where the view is, in
+`SCROLL_VIEW_INDICATOR_COLOR` unless `set_indicator_color` gives another
+(a selection box's list uses its text color, since the light default is
+lost over its rows). The token panel and the
 workspace's details keep what is above their buttons in one, the
 workspace's usage list its buttons.
 A destroyed control takes its subtree with it, newest child first; a screen

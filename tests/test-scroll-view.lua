@@ -246,6 +246,20 @@ test.case("what is scrolled out of the view is not hit, what is in it is", funct
     lifetime.destroy(s.root)
 end)
 
+test.case("set_indicator_color recolors both indicators", function()
+    local s = setup(300, 500, true)
+    local color = {
+        0.1,
+        0.2,
+        0.3
+    }
+    s.view:set_indicator_color(color)
+    local vertical, horizontal = indicators(s.view)
+    test.assert_deep_eq(vertical:get_color(), color)
+    test.assert_deep_eq(horizontal:get_color(), color)
+    lifetime.destroy(s.root)
+end)
+
 test.case("the indicators mark how far the content is scrolled along each overflowed edge", function()
     local s = setup(300, 500, true)
     local vertical, horizontal = indicators(s.view)

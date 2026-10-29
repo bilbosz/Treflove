@@ -228,8 +228,6 @@ Control Hierarchy") is used by the entries panels for a token property's
   panel whose selected tokens disagree
 - Escape closing an open list without leaving the screen: the back key
   is broadcast with no way to consume it
-- The scroll indicator (`SCROLL_VIEW_INDICATOR_COLOR`, light at 0.6
-  alpha) is nearly invisible over the list's light gray rows
 - A scenario cannot aim the wheel: `ScenarioDriver:move` pushes a
   `mousemoved` event, which leaves `love.mouse.getPosition`, where the
   wheel is dispatched, as it was; a `driver:wheel(x, y, dx, dy)` that

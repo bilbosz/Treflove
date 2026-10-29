@@ -438,6 +438,10 @@ test.case("more options than the max rows scroll in the list, the selected row s
     test.assert_deep_eq(highlighted_rows(list), {
         9
     })
+    ---@diagnostic disable-next-line: invisible
+    local indicator = assert(view._vertical_indicator)
+    test.assert_true(indicator:is_visible())
+    test.assert_deep_eq(indicator:get_color(), Consts.TEXT_INPUT_FOREGROUND_COLOR, "the indicator shows in the text color over the rows")
 
     click_row(s, 4)
     test.assert_eq(s.box:get_selected(), "o4", "a row scrolled into place is picked by where it is shown")

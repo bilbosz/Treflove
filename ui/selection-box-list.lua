@@ -77,6 +77,7 @@ function SelectionBoxList:_create_frame(anchor, count)
     self._view = view
     view:set_content_size(width, count * row_height)
     view:set_wheel_step(row_height * Consts.SELECTION_BOX_WHEEL_ROWS)
+    view:set_indicator_color(Consts.TEXT_INPUT_FOREGROUND_COLOR)
 end
 
 ---@private

@@ -88,6 +88,16 @@ function ScrollView:get_wheel_step()
     return self._wheel_step
 end
 
+---@param color number[]
+function ScrollView:set_indicator_color(color)
+    local vertical, horizontal = self._vertical_indicator, self._horizontal_indicator
+    if not vertical or not horizontal then
+        return
+    end
+    vertical:set_color(color)
+    horizontal:set_color(color)
+end
+
 ---@return boolean
 function ScrollView:is_dragging()
     return self._drag_pos ~= nil
